@@ -1,0 +1,5 @@
+{
+  "name": "Vulcan CARs Manager",
+  "description": "Critical Activity Requisitions (RAC) training management system with booking, results tracking, KPI dashboard, and printable certification cards.",
+  "requestFramePermissions": []
+}
