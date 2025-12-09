@@ -1,8 +1,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { Booking, BookingStatus, UserRole } from '../types';
-import { MOCK_SESSIONS } from '../constants';
+import { Booking, BookingStatus, UserRole, TrainingSession } from '../types';
 import { Upload, Download, FileSpreadsheet } from 'lucide-react';
 import { v4 as uuidv4 } from 'uuid';
 import { format, addYears } from 'date-fns';
@@ -12,9 +11,10 @@ interface ResultsPageProps {
   updateBookingStatus: (id: string, status: BookingStatus) => void;
   importBookings?: (newBookings: Booking[]) => void;
   userRole: UserRole;
+  sessions: TrainingSession[];
 }
 
-const ResultsPage: React.FC<ResultsPageProps> = ({ bookings, updateBookingStatus, importBookings, userRole }) => {
+const ResultsPage: React.FC<ResultsPageProps> = ({ bookings, updateBookingStatus, importBookings, userRole, sessions }) => {
   const [searchParams] = useSearchParams();
   const initialQuery = searchParams.get('q') || '';
   const [filter, setFilter] = useState(initialQuery);
@@ -121,13 +121,13 @@ const ResultsPage: React.FC<ResultsPageProps> = ({ bookings, updateBookingStatus
   };
   
   const filteredBookings = bookings.filter(b => 
-    b.employee.name.toLowerCase().includes(filter.toLowerCase()) ||
-    b.employee.recordId.includes(filter)
+    String(b.employee.name).toLowerCase().includes(filter.toLowerCase()) ||
+    String(b.employee.recordId).includes(filter)
   );
 
   const getRacDetails = (sessionId: string) => {
       if (sessionId.includes('RAC02') || sessionId.includes('RAC 02')) return { isRac02: true };
-      const session = MOCK_SESSIONS.find(s => s.id === sessionId);
+      const session = sessions.find(s => s.id === sessionId);
       if (session && (session.racType.includes('RAC02') || session.racType.includes('RAC 02'))) {
           return { isRac02: true };
       }
@@ -225,7 +225,10 @@ const ResultsPage: React.FC<ResultsPageProps> = ({ bookings, updateBookingStatus
                     <td className="px-4 py-4 whitespace-nowrap">
                         {isRac02 ? (
                             <div className="flex flex-col text-xs">
-                                <div><span className="font-bold text-gray-500">No:</span> {dlNum || <span className="text-red-400 italic">Missing</span>}</div>
+                                <div>
+                                    <span className="font-bold text-gray-500">No:</span> 
+                                    {booking.employee.driverLicenseNumber ? String(booking.employee.driverLicenseNumber) : <span className="text-red-400 italic">Missing</span>}
+                                </div>
                                 <div><span className="font-bold text-gray-500">Class:</span> {dlClass}</div>
                                 <div className={`${isDlExpired ? 'text-red-600 font-bold' : 'text-gray-600'}`}>
                                     <span className="font-bold text-gray-500">Exp:</span> {dlExpStr}

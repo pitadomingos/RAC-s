@@ -1,18 +1,19 @@
 
 import React, { useState, useMemo } from 'react';
-import { Booking, BookingStatus } from '../types';
-import { MOCK_SESSIONS, DEPARTMENTS, RAC_KEYS } from '../constants';
+import { Booking, BookingStatus, TrainingSession } from '../types';
+import { DEPARTMENTS, RAC_KEYS } from '../constants';
 import { generateSafetyReport } from '../services/geminiService';
-import { FileText, Calendar, Sparkles, BarChart3, Printer, UserX, AlertCircle } from 'lucide-react';
+import { FileText, Calendar, Sparkles, BarChart3, Printer, UserX, AlertCircle, UserCheck } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 
 interface ReportsPageProps {
   bookings: Booking[];
+  sessions: TrainingSession[];
 }
 
 type ReportPeriod = 'Weekly' | 'Monthly' | 'YTD' | 'Custom';
 
-const ReportsPage: React.FC<ReportsPageProps> = ({ bookings }) => {
+const ReportsPage: React.FC<ReportsPageProps> = ({ bookings, sessions }) => {
   const [period, setPeriod] = useState<ReportPeriod>('Monthly');
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
@@ -27,13 +28,13 @@ const ReportsPage: React.FC<ReportsPageProps> = ({ bookings }) => {
     // If it has a result date, use that
     if (b.resultDate) return b.resultDate;
     // Otherwise try to find session date
-    const session = MOCK_SESSIONS.find(s => s.id === b.sessionId);
+    const session = sessions.find(s => s.id === b.sessionId);
     return session ? session.date : '';
   };
 
   // Helper to resolve RAC code
   const getRacCode = (b: Booking) => {
-    const session = MOCK_SESSIONS.find(s => s.id === b.sessionId);
+    const session = sessions.find(s => s.id === b.sessionId);
     const rawName = session ? session.racType : b.sessionId;
     return rawName.split(' - ')[0].replace(' ', '');
   };
@@ -72,7 +73,7 @@ const ReportsPage: React.FC<ReportsPageProps> = ({ bookings }) => {
 
        return true;
     });
-  }, [bookings, period, startDate, endDate, selectedDept, selectedRac]);
+  }, [bookings, period, startDate, endDate, selectedDept, selectedRac, sessions]);
 
   // 2. Calculate Stats
   const stats = useMemo(() => {
@@ -112,7 +113,39 @@ const ReportsPage: React.FC<ReportsPageProps> = ({ bookings }) => {
      };
   }, [filteredBookings]);
 
-  // 3. No Show (Absentee) List
+  // 3. Trainer Performance Stats
+  const trainerStats = useMemo(() => {
+    const tStats: Record<string, { total: number, passed: number, theorySum: number, practicalSum: number, practicalCount: number }> = {};
+
+    filteredBookings.forEach(b => {
+        const session = sessions.find(s => s.id === b.sessionId);
+        if (!session) return;
+        const trainer = session.instructor;
+
+        if (!tStats[trainer]) {
+            tStats[trainer] = { total: 0, passed: 0, theorySum: 0, practicalSum: 0, practicalCount: 0 };
+        }
+
+        tStats[trainer].total++;
+        if (b.status === BookingStatus.PASSED) tStats[trainer].passed++;
+        tStats[trainer].theorySum += (b.theoryScore || 0);
+        
+        if (b.practicalScore && b.practicalScore > 0) {
+            tStats[trainer].practicalSum += b.practicalScore;
+            tStats[trainer].practicalCount++;
+        }
+    });
+
+    return Object.entries(tStats).map(([name, data]) => ({
+        name,
+        students: data.total,
+        passRate: data.total > 0 ? (data.passed / data.total * 100).toFixed(1) : '0.0',
+        avgTheory: data.total > 0 ? (data.theorySum / data.total).toFixed(1) : '0.0',
+        avgPractical: data.practicalCount > 0 ? (data.practicalSum / data.practicalCount).toFixed(1) : '-'
+    })).sort((a, b) => parseFloat(b.passRate) - parseFloat(a.passRate));
+  }, [filteredBookings, sessions]);
+
+  // 4. No Show (Absentee) List
   const noShowList = useMemo(() => {
     return filteredBookings
         .filter(b => !b.attendance)
@@ -140,7 +173,8 @@ const ReportsPage: React.FC<ReportsPageProps> = ({ bookings }) => {
             attendanceRate: stats.attendanceRate + '%',
             noShowCount: noShowList.length,
             topFailingRacs: stats.failingRacs.map(r => `${r.key} (${r.failRate.toFixed(1)}% fail rate)`),
-            racBreakdown: stats.chartData
+            racBreakdown: stats.chartData,
+            trainerPerformance: trainerStats.map(t => `${t.name}: ${t.passRate}% Pass Rate`)
         }
      };
 
@@ -366,8 +400,58 @@ const ReportsPage: React.FC<ReportsPageProps> = ({ bookings }) => {
                 </div>
              </div>
           </div>
-
        </div>
+
+       {/* Trainer Performance Section */}
+       <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+          <div className="p-4 border-b border-gray-200 bg-gray-50 flex items-center gap-2">
+              <UserCheck size={20} className="text-slate-600" />
+              <h3 className="font-bold text-slate-800">Trainer Performance Metrics</h3>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-gray-200">
+               <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Trainer Name</th>
+                    <th className="px-6 py-3 text-center text-xs font-bold text-gray-500 uppercase tracking-wider">Sessions Conducted / Students</th>
+                    <th className="px-6 py-3 text-center text-xs font-bold text-gray-500 uppercase tracking-wider">Pass Rate</th>
+                    <th className="px-6 py-3 text-center text-xs font-bold text-gray-500 uppercase tracking-wider">Avg Theory Score</th>
+                    <th className="px-6 py-3 text-center text-xs font-bold text-gray-500 uppercase tracking-wider">Avg Practical Score</th>
+                  </tr>
+               </thead>
+               <tbody className="bg-white divide-y divide-gray-200">
+                  {trainerStats.length === 0 ? (
+                     <tr>
+                        <td colSpan={5} className="px-6 py-8 text-center text-gray-400 text-sm">No trainer data available for this period.</td>
+                     </tr>
+                  ) : (
+                     trainerStats.map((trainer) => (
+                        <tr key={trainer.name} className="hover:bg-gray-50">
+                           <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-slate-800">{String(trainer.name)}</td>
+                           <td className="px-6 py-4 whitespace-nowrap text-center text-sm text-gray-600">
+                              {String(trainer.students)} students
+                           </td>
+                           <td className="px-6 py-4 whitespace-nowrap text-center">
+                              <span className={`px-2 py-1 inline-flex text-xs leading-5 font-bold rounded-full 
+                                 ${parseFloat(trainer.passRate) >= 90 ? 'bg-green-100 text-green-800' : 
+                                   parseFloat(trainer.passRate) >= 70 ? 'bg-yellow-100 text-yellow-800' : 'bg-red-100 text-red-800'}`}>
+                                 {String(trainer.passRate)}%
+                              </span>
+                           </td>
+                           <td className="px-6 py-4 whitespace-nowrap text-center text-sm text-gray-700 font-mono">
+                              {String(trainer.avgTheory)}
+                           </td>
+                           <td className="px-6 py-4 whitespace-nowrap text-center text-sm text-gray-700 font-mono">
+                              {String(trainer.avgPractical)}
+                           </td>
+                        </tr>
+                     ))
+                  )}
+               </tbody>
+            </table>
+          </div>
+       </div>
+
     </div>
   );
 };

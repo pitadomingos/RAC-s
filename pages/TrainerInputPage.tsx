@@ -1,19 +1,34 @@
 
 import React, { useState, useEffect } from 'react';
-import { Booking, BookingStatus, RAC } from '../types';
-import { MOCK_SESSIONS } from '../constants';
-import { Save, AlertCircle, CheckCircle, Lock, Users, ClipboardList, ShieldAlert } from 'lucide-react';
+import { Booking, BookingStatus, RAC, TrainingSession, UserRole } from '../types';
+import { Save, AlertCircle, CheckCircle, Lock, Users, ClipboardList, ShieldAlert, UserCheck } from 'lucide-react';
 
 interface TrainerInputPageProps {
   bookings: Booking[];
   updateBookings: (updates: Booking[]) => void;
+  sessions: TrainingSession[];
+  userRole?: UserRole;
+  currentUserName?: string;
 }
 
-const TrainerInputPage: React.FC<TrainerInputPageProps> = ({ bookings, updateBookings }) => {
+const TrainerInputPage: React.FC<TrainerInputPageProps> = ({ 
+  bookings, 
+  updateBookings, 
+  sessions,
+  userRole = UserRole.SYSTEM_ADMIN,
+  currentUserName = ''
+}) => {
   const [selectedSessionId, setSelectedSessionId] = useState('');
   const [sessionBookings, setSessionBookings] = useState<Booking[]>([]);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [successMsg, setSuccessMsg] = useState('');
+
+  // --- SECURITY FILTER ---
+  // If user is a RAC_TRAINER, only show sessions where they are the instructor.
+  // Admins see everything.
+  const availableSessions = (userRole === UserRole.RAC_TRAINER) 
+    ? sessions.filter(s => s.instructor === currentUserName)
+    : sessions;
 
   // When session changes, load bookings into local state
   const handleSessionChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
@@ -65,7 +80,7 @@ const TrainerInputPage: React.FC<TrainerInputPageProps> = ({ bookings, updateBoo
   };
 
   const handleInputChange = (id: string, field: keyof Booking, value: any) => {
-    const selectedSession = MOCK_SESSIONS.find(s => s.id === selectedSessionId);
+    const selectedSession = sessions.find(s => s.id === selectedSessionId);
     const isRac02 = selectedSession?.racType.includes('RAC 02') || selectedSession?.racType.includes('RAC02') || false;
 
     setSessionBookings(prev => prev.map(b => {
@@ -104,7 +119,7 @@ const TrainerInputPage: React.FC<TrainerInputPageProps> = ({ bookings, updateBoo
     return { total, pending };
   };
 
-  const selectedSessionDetails = MOCK_SESSIONS.find(s => s.id === selectedSessionId);
+  const selectedSessionDetails = sessions.find(s => s.id === selectedSessionId);
   const isRac02 = selectedSessionDetails?.racType.includes('RAC 02') || selectedSessionDetails?.racType.includes('RAC02');
 
   return (
@@ -114,37 +129,51 @@ const TrainerInputPage: React.FC<TrainerInputPageProps> = ({ bookings, updateBoo
           <h2 className="text-xl font-bold text-slate-800">Trainer Input Portal</h2>
           <p className="text-sm text-gray-500">Record attendance and exam results. <span className="font-bold text-yellow-600">Pass Mark: 70%</span></p>
         </div>
-        {successMsg && (
-            <div className="flex items-center gap-2 text-green-600 bg-green-50 px-3 py-1 rounded-lg text-sm font-medium animate-pulse">
-                <CheckCircle size={16} />
-                {successMsg}
+        <div className="flex flex-col items-end gap-1">
+             {successMsg && (
+                <div className="flex items-center gap-2 text-green-600 bg-green-50 px-3 py-1 rounded-lg text-sm font-medium animate-pulse">
+                    <CheckCircle size={16} />
+                    {successMsg}
+                </div>
+            )}
+            <div className="flex items-center gap-2 text-xs text-gray-400">
+                <UserCheck size={14} />
+                <span>Logged in as: <span className="font-bold text-slate-700">{currentUserName}</span></span>
             </div>
-        )}
+        </div>
       </div>
 
       {/* Session Selector */}
       <div className="mb-8 max-w-xl">
         <label className="block text-sm font-medium text-gray-700 mb-1">Select Active Session</label>
-        <div className="relative">
-          <select 
-            value={selectedSessionId} 
-            onChange={handleSessionChange}
-            className="w-full border-gray-300 rounded-lg shadow-sm focus:border-yellow-500 focus:ring-yellow-500 p-2 border pl-10"
-          >
-            <option value="">-- Select a Session to Grade --</option>
-            {MOCK_SESSIONS.map(session => {
-              const { total, pending } = getSessionStats(session.id);
-              return (
-                <option key={session.id} value={session.id}>
-                  {session.racType} - {session.date} • {total} Attendees {pending > 0 ? `(${pending} Pending)` : ''}
-                </option>
-              );
-            })}
-          </select>
-          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
-            <ClipboardList size={18} />
-          </div>
-        </div>
+        
+        {availableSessions.length === 0 ? (
+            <div className="bg-orange-50 text-orange-800 p-3 rounded-lg text-sm border border-orange-200 flex items-center gap-2">
+                <AlertCircle size={16} />
+                <span>No training sessions are currently assigned to you.</span>
+            </div>
+        ) : (
+            <div className="relative">
+            <select 
+                value={selectedSessionId} 
+                onChange={handleSessionChange}
+                className="w-full border-gray-300 rounded-lg shadow-sm focus:border-yellow-500 focus:ring-yellow-500 p-2 border pl-10"
+            >
+                <option value="">-- Select a Session to Grade --</option>
+                {availableSessions.map(session => {
+                const { total, pending } = getSessionStats(session.id);
+                return (
+                    <option key={session.id} value={session.id}>
+                    {session.racType} - {session.date} • {total} Attendees {pending > 0 ? `(${pending} Pending)` : ''}
+                    </option>
+                );
+                })}
+            </select>
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
+                <ClipboardList size={18} />
+            </div>
+            </div>
+        )}
       </div>
 
       {/* Grading Table */}
@@ -291,10 +320,12 @@ const TrainerInputPage: React.FC<TrainerInputPageProps> = ({ bookings, updateBoo
              </div>
          </div>
       ) : (
-        <div className="flex flex-col items-center justify-center py-12 text-gray-400 border border-dashed rounded-lg bg-gray-50">
-           <ClipboardList size={48} className="text-gray-300 mb-3" />
-           <p>Please select a session from the dropdown above to begin grading.</p>
-        </div>
+        availableSessions.length > 0 && (
+            <div className="flex flex-col items-center justify-center py-12 text-gray-400 border border-dashed rounded-lg bg-gray-50">
+                <ClipboardList size={48} className="text-gray-300 mb-3" />
+                <p>Please select a session from the dropdown above to begin grading.</p>
+            </div>
+        )
       )}
     </div>
   );

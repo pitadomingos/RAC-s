@@ -1,18 +1,21 @@
-
-import React, { useState } from 'react';
-import { Employee, BookingStatus, Booking, UserRole } from '../types';
-import { COMPANIES, DEPARTMENTS, ROLES, MOCK_SESSIONS } from '../constants';
-import { Plus, Trash2, Save, Settings } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Employee, BookingStatus, Booking, UserRole, TrainingSession } from '../types';
+import { COMPANIES, DEPARTMENTS, ROLES } from '../constants';
+import { Plus, Trash2, Save, Settings, ShieldCheck } from 'lucide-react';
 import { v4 as uuidv4 } from 'uuid';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { sanitizeInput } from '../utils/security';
+import { logger } from '../utils/logger';
 
 interface BookingFormProps {
   addBookings: (newBookings: Booking[]) => void;
+  sessions: TrainingSession[];
   userRole: UserRole;
 }
 
-const BookingForm: React.FC<BookingFormProps> = ({ addBookings, userRole }) => {
+const BookingForm: React.FC<BookingFormProps> = ({ addBookings, sessions, userRole }) => {
   const navigate = useNavigate();
+  const location = useLocation();
   const [selectedSession, setSelectedSession] = useState('');
   
   const canManageSessions = userRole === UserRole.SYSTEM_ADMIN || userRole === UserRole.RAC_ADMIN;
@@ -32,10 +35,24 @@ const BookingForm: React.FC<BookingFormProps> = ({ addBookings, userRole }) => {
   const [rows, setRows] = useState(initialRows);
   const [submitted, setSubmitted] = useState(false);
 
+  // Effect to handle pre-fill data from "Renewals"
+  useEffect(() => {
+    if (location.state && location.state.prefill) {
+        setRows(location.state.prefill);
+        // Clear state history so refresh doesn't duplicate
+        window.history.replaceState({}, document.title);
+    }
+  }, [location]);
+
   const handleRowChange = (index: number, field: keyof Employee, value: string) => {
+    // Sanitize input for free-text fields
+    const safeValue = (field === 'name' || field === 'recordId' || field === 'driverLicenseNumber' || field === 'driverLicenseClass') 
+        ? sanitizeInput(value) 
+        : value;
+
     const newRows = [...rows];
     // @ts-ignore
-    newRows[index][field] = value;
+    newRows[index][field] = safeValue;
     setRows(newRows);
   };
 
@@ -75,30 +92,41 @@ const BookingForm: React.FC<BookingFormProps> = ({ addBookings, userRole }) => {
       return;
     }
 
-    const newBookings: Booking[] = validRows.map(row => ({
-      id: uuidv4(),
-      sessionId: selectedSession,
-      employee: { ...row },
-      status: BookingStatus.PENDING,
-    }));
+    try {
+        const newBookings: Booking[] = validRows.map(row => ({
+            id: uuidv4(),
+            sessionId: selectedSession,
+            employee: { ...row },
+            status: BookingStatus.PENDING,
+        }));
 
-    addBookings(newBookings);
-    setSubmitted(true);
-    setTimeout(() => setSubmitted(false), 3000);
-    setRows(initialRows);
-    setSelectedSession('');
+        addBookings(newBookings);
+        logger.audit('Manual Booking Submitted', userRole, { count: newBookings.length, session: selectedSession });
+
+        setSubmitted(true);
+        setTimeout(() => setSubmitted(false), 3000);
+        setRows(initialRows);
+        setSelectedSession('');
+    } catch (err) {
+        logger.error('Error submitting booking', err);
+        alert('An error occurred while processing the booking.');
+    }
   };
 
   // Check if RAC02 is selected to highlight DL fields
-  const isRac02Selected = MOCK_SESSIONS.find(s => s.id === selectedSession)?.racType.includes('RAC02') || 
-                          MOCK_SESSIONS.find(s => s.id === selectedSession)?.racType.includes('RAC 02');
+  const sessionData = sessions.find(s => s.id === selectedSession);
+  const isRac02Selected = sessionData?.racType.includes('RAC02') || sessionData?.racType.includes('RAC 02');
 
   return (
     <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
       <div className="mb-6 border-b border-slate-100 pb-4 flex justify-between items-start">
         <div>
            <h2 className="text-xl font-bold text-slate-800">Book Training Session</h2>
-           <p className="text-sm text-gray-500">Register employees for upcoming RAC training. {isRac02Selected && <span className="text-red-500 font-bold">Driver License details required for RAC 02.</span>}</p>
+           <p className="text-sm text-gray-500 flex items-center gap-1">
+             <ShieldCheck size={14} className="text-green-600" />
+             Secure Data Entry Mode
+           </p>
+           {isRac02Selected && <p className="text-xs text-red-500 font-bold mt-1">Driver License details required for RAC 02.</p>}
         </div>
         {canManageSessions && (
             <button 
@@ -112,7 +140,7 @@ const BookingForm: React.FC<BookingFormProps> = ({ addBookings, userRole }) => {
       </div>
 
       {submitted && (
-        <div className="mb-4 p-4 bg-green-50 text-green-700 rounded-lg border border-green-200">
+        <div className="mb-4 p-4 bg-green-50 text-green-700 rounded-lg border border-green-200 animate-fade-in-up">
           Booking submitted successfully!
         </div>
       )}
@@ -127,7 +155,7 @@ const BookingForm: React.FC<BookingFormProps> = ({ addBookings, userRole }) => {
             required
           >
             <option value="">-- Choose a Session --</option>
-            {MOCK_SESSIONS.map(session => (
+            {sessions.map(session => (
               <option key={session.id} value={session.id}>
                 {session.racType} - {session.date} ({session.location})
               </option>
@@ -206,7 +234,7 @@ const BookingForm: React.FC<BookingFormProps> = ({ addBookings, userRole }) => {
                           <input 
                             type="text" 
                             className="w-full border-gray-300 rounded-md shadow-sm focus:ring-yellow-500 focus:border-yellow-500 sm:text-sm border p-1"
-                            placeholder="Class (e.g. C+E)"
+                            placeholder="Class"
                             value={row.driverLicenseClass}
                             onChange={(e) => handleRowChange(index, 'driverLicenseClass', e.target.value)}
                           />

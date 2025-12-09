@@ -20,6 +20,14 @@ export enum UserRole {
   USER = 'User'
 }
 
+export interface User {
+    id: number;
+    name: string;
+    email: string;
+    role: UserRole;
+    status: 'Active' | 'Inactive';
+}
+
 export interface Employee {
   id: string;
   name: string;
@@ -35,7 +43,7 @@ export interface Employee {
 
 export interface TrainingSession {
   id: string;
-  racType: RAC;
+  racType: string; // Changed from RAC enum to string to support custom RACs
   date: string;
   startTime: string;
   location: string;

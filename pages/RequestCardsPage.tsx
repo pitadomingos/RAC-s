@@ -16,8 +16,11 @@ const RequestCardsPage: React.FC<RequestCardsPageProps> = ({ bookings, requireme
   const [requestSent, setRequestSent] = useState(false);
   const [sentCount, setSentCount] = useState(0);
 
+  // Safeguard: Ensure bookings exists and filter safe values
+  const safeBookings = Array.isArray(bookings) ? bookings : [];
+  
   // Filter only passed bookings
-  const eligibleBookings = bookings.filter(b => b && b.status === BookingStatus.PASSED);
+  const eligibleBookings = safeBookings.filter(b => b && b.status === BookingStatus.PASSED && b.employee);
 
   const toggleSelection = (id: string) => {
     const newSelection = new Set(selectedIds);
@@ -52,7 +55,10 @@ const RequestCardsPage: React.FC<RequestCardsPageProps> = ({ bookings, requireme
     }, 4000);
   };
 
-  const getRequirement = (empId: string) => requirements.find(r => r.employeeId === empId);
+  const getRequirement = (empId: string) => {
+      if (!Array.isArray(requirements)) return undefined;
+      return requirements.find(r => r.employeeId === empId);
+  };
 
   return (
     <div className="flex flex-col h-full space-y-6">
@@ -76,7 +82,7 @@ const RequestCardsPage: React.FC<RequestCardsPageProps> = ({ bookings, requireme
                 <span>Go to Print View (A4)</span>
              </button>
              <div className="text-right">
-                <div className="text-2xl font-bold text-slate-800">{selectedIds.size}</div>
+                <div className="text-2xl font-bold text-slate-800">{String(selectedIds.size)}</div>
                 <div className="text-xs text-gray-500 uppercase font-semibold">Selected</div>
              </div>
           </div>
@@ -89,7 +95,7 @@ const RequestCardsPage: React.FC<RequestCardsPageProps> = ({ bookings, requireme
            <CheckCircle className="flex-shrink-0" size={24} />
            <div>
              <p className="font-bold">Request Sent Successfully!</p>
-             <p className="text-sm">A PDF containing {sentCount} cards has been sent to your registered email address.</p>
+             <p className="text-sm">A PDF containing {String(sentCount)} cards has been sent to your registered email address.</p>
            </div>
         </div>
       )}
@@ -114,7 +120,7 @@ const RequestCardsPage: React.FC<RequestCardsPageProps> = ({ bookings, requireme
                   <span>Select All</span>
                 </button>
                 <span className="text-gray-300">|</span>
-                <span className="text-xs text-gray-500">Showing {eligibleBookings.length} eligible records</span>
+                <span className="text-xs text-gray-500">Showing {String(eligibleBookings.length)} eligible records</span>
              </div>
 
              {/* Grid of Cards */}
@@ -123,7 +129,7 @@ const RequestCardsPage: React.FC<RequestCardsPageProps> = ({ bookings, requireme
                  const isSelected = selectedIds.has(booking.id);
                  return (
                    <div 
-                    key={booking.id}
+                    key={String(booking.id)}
                     onClick={() => toggleSelection(booking.id)}
                     className={`
                       relative group cursor-pointer transition-all duration-200 border-2 rounded-xl overflow-hidden bg-white shadow-sm hover:shadow-md
@@ -153,11 +159,11 @@ const RequestCardsPage: React.FC<RequestCardsPageProps> = ({ bookings, requireme
                      
                      <div className="bg-white px-4 py-3 border-t border-gray-100">
                         <div className="flex justify-between items-center mb-1">
-                            <span className="text-sm font-bold text-slate-800 truncate">{booking.employee.name}</span>
-                            <span className="text-xs text-gray-500 font-mono bg-gray-100 px-1 rounded">{booking.employee.recordId}</span>
+                            <span className="text-sm font-bold text-slate-800 truncate">{String(booking.employee.name)}</span>
+                            <span className="text-xs text-gray-500 font-mono bg-gray-100 px-1 rounded">{String(booking.employee.recordId)}</span>
                         </div>
                         <div className="text-[10px] text-gray-400 uppercase tracking-wide">
-                            {booking.employee.role}
+                            {String(booking.employee.role)}
                         </div>
                      </div>
                    </div>
@@ -179,7 +185,7 @@ const RequestCardsPage: React.FC<RequestCardsPageProps> = ({ bookings, requireme
           `}
         >
           <Mail size={20} />
-          <span>{requestSent ? 'Sending...' : `Request ${selectedIds.size} Cards`}</span>
+          <span>{requestSent ? 'Sending...' : `Request ${String(selectedIds.size)} Cards`}</span>
         </button>
       </div>
     </div>

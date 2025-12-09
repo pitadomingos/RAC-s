@@ -1,5 +1,4 @@
 
-
 import React, { useState, useEffect } from 'react';
 import { HashRouter, Routes, Route, Navigate } from 'react-router-dom';
 import Layout from './components/Layout';
@@ -15,8 +14,10 @@ import UserManagement from './pages/UserManagement';
 import ScheduleTraining from './pages/ScheduleTraining';
 import SettingsPage from './pages/SettingsPage';
 import ReportsPage from './pages/ReportsPage';
+import UserManualsPage from './pages/UserManualsPage';
+import LogsPage from './pages/LogsPage'; // Fixed import path
 import GeminiAdvisor from './components/GeminiAdvisor';
-import { Booking, BookingStatus, UserRole, EmployeeRequirement, SystemNotification } from './types';
+import { Booking, BookingStatus, UserRole, EmployeeRequirement, SystemNotification, TrainingSession, User } from './types';
 import { format, addYears, differenceInDays } from 'date-fns';
 import { v4 as uuidv4 } from 'uuid';
 import { MOCK_SESSIONS, RAC_KEYS } from './constants';
@@ -177,11 +178,26 @@ const initialRequirements: EmployeeRequirement[] = [
   }
 ];
 
+const initialUsers: User[] = [
+    { id: 1, name: 'System Admin', email: 'admin@vulcan.com', role: UserRole.SYSTEM_ADMIN, status: 'Active' },
+    { id: 2, name: 'Sarah Connor', email: 'sarah.c@vulcan.com', role: UserRole.RAC_ADMIN, status: 'Active' },
+    // Updated Name to match MOCK_SESSIONS instructor for demo purposes
+    { id: 3, name: 'John Doe', email: 'john.d@vulcan.com', role: UserRole.RAC_TRAINER, status: 'Active' },
+    { id: 4, name: 'Ellen Ripley', email: 'e.ripley@vulcan.com', role: UserRole.DEPT_ADMIN, status: 'Active' },
+    { id: 5, name: 'Regular User', email: 'user@vulcan.com', role: UserRole.USER, status: 'Inactive' },
+];
+
 const App: React.FC = () => {
   const [bookings, setBookings] = useState<Booking[]>(initialBookings);
   const [requirements, setRequirements] = useState<EmployeeRequirement[]>(initialRequirements);
+  const [sessions, setSessions] = useState<TrainingSession[]>(MOCK_SESSIONS);
+  const [users, setUsers] = useState<User[]>(initialUsers);
   const [userRole, setUserRole] = useState<UserRole>(UserRole.SYSTEM_ADMIN);
   const [notifications, setNotifications] = useState<SystemNotification[]>([]);
+
+  // Derive current user based on selected role for simulation
+  // In a real app, this would be from auth state
+  const currentUser = users.find(u => u.role === userRole) || users[0];
 
   // System Logic: Run on mount
   useEffect(() => {
@@ -197,10 +213,6 @@ const App: React.FC = () => {
 
   const runDailyComplianceCheck = () => {
     const today = new Date();
-    console.log("Running Daily Compliance Check...");
-    
-    // We only want to trigger this once per session for the prototype
-    // In production, this would be a backend cron job
     
     let newAutoBookings: Booking[] = [];
     let alertCount = 0;
@@ -233,10 +245,14 @@ const App: React.FC = () => {
 
                     // Logic 1: 30 Day Warning
                     if (daysToExpiry <= 30 && daysToExpiry > 7) {
-                        addNotification('warning', 'Expiry Warning Email Sent', 
-                            `Email sent to ${employee.name} & Dept Admin: ${racKey} expires in ${daysToExpiry} days.`
-                        );
-                        alertCount++;
+                        // Prevent duplicate notifications in this simplified model
+                        const alreadyNotified = notifications.some(n => n.message.includes(employee.name) && n.message.includes('expires in'));
+                        if (!alreadyNotified) {
+                            addNotification('warning', 'Expiry Warning Email Sent', 
+                                `Email sent to ${employee.name} & Dept Admin: ${racKey} expires in ${daysToExpiry} days.`
+                            );
+                            alertCount++;
+                        }
                     }
 
                     // Logic 2: 7 Day Auto-Booking
@@ -253,7 +269,7 @@ const App: React.FC = () => {
 
                         if (!hasPending) {
                             // Find next available session
-                            const nextSession = MOCK_SESSIONS
+                            const nextSession = sessions
                                 .filter(s => getRacKeyFromSessionId(s.racType) === racKey && new Date(s.date) > today)
                                 .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())[0];
 
@@ -272,9 +288,13 @@ const App: React.FC = () => {
                                     `CRITICAL: ${employee.name} expiring in ${daysToExpiry} days. Auto-booked for ${nextSession.date}.`
                                 );
                             } else {
-                                addNotification('alert', 'Auto-Booking Failed', 
-                                    `Could not auto-book ${employee.name} for ${racKey}. No future sessions available!`
-                                );
+                                // Don't spam
+                                const alreadyAlerted = notifications.some(n => n.message.includes(employee.name) && n.message.includes('Could not auto-book'));
+                                if (!alreadyAlerted) {
+                                    addNotification('alert', 'Auto-Booking Failed', 
+                                        `Could not auto-book ${employee.name} for ${racKey}. No future sessions available!`
+                                    );
+                                }
                             }
                         }
                     }
@@ -359,20 +379,27 @@ const App: React.FC = () => {
         clearNotifications={() => setNotifications([])}
       >
         <Routes>
-          <Route path="/" element={<Dashboard bookings={bookings} requirements={requirements} userRole={userRole} />} />
-          <Route path="/database" element={<DatabasePage bookings={bookings} requirements={requirements} updateRequirements={handleUpdateRequirement} />} />
+          <Route path="/" element={<Dashboard bookings={bookings} requirements={requirements} sessions={sessions} userRole={userRole} />} />
+          <Route path="/database" element={<DatabasePage bookings={bookings} requirements={requirements} updateRequirements={handleUpdateRequirement} sessions={sessions} />} />
           <Route path="/proposal" element={userRole === UserRole.SYSTEM_ADMIN ? <ProjectProposal /> : <Navigate to="/" replace />} />
-          <Route path="/booking" element={<BookingForm addBookings={handleAddBookings} userRole={userRole} />} />
-          <Route path="/trainer-input" element={[UserRole.SYSTEM_ADMIN, UserRole.RAC_ADMIN, UserRole.RAC_TRAINER].includes(userRole) ? <TrainerInputPage bookings={bookings} updateBookings={handleBulkUpdate} /> : <Navigate to="/" replace />} />
-          <Route path="/results" element={<ResultsPage bookings={bookings} updateBookingStatus={handleUpdateStatus} importBookings={handleAddBookings} userRole={userRole} />} />
-          <Route path="/reports" element={[UserRole.SYSTEM_ADMIN, UserRole.RAC_ADMIN, UserRole.RAC_TRAINER, UserRole.DEPT_ADMIN].includes(userRole) ? <ReportsPage bookings={bookings} /> : <Navigate to="/" replace />} />
+          <Route path="/booking" element={<BookingForm addBookings={handleAddBookings} sessions={sessions} userRole={userRole} />} />
+          <Route path="/trainer-input" element={
+              [UserRole.SYSTEM_ADMIN, UserRole.RAC_ADMIN, UserRole.RAC_TRAINER].includes(userRole) 
+              ? <TrainerInputPage bookings={bookings} updateBookings={handleBulkUpdate} sessions={sessions} userRole={userRole} currentUserName={currentUser.name} /> 
+              : <Navigate to="/" replace />
+            } 
+          />
+          <Route path="/results" element={<ResultsPage bookings={bookings} updateBookingStatus={handleUpdateStatus} importBookings={handleAddBookings} userRole={userRole} sessions={sessions} />} />
+          <Route path="/reports" element={[UserRole.SYSTEM_ADMIN, UserRole.RAC_ADMIN, UserRole.RAC_TRAINER, UserRole.DEPT_ADMIN].includes(userRole) ? <ReportsPage bookings={bookings} sessions={sessions} /> : <Navigate to="/" replace />} />
           
           <Route path="/request-cards" element={[UserRole.SYSTEM_ADMIN, UserRole.DEPT_ADMIN, UserRole.RAC_ADMIN, UserRole.USER].includes(userRole) ? <RequestCardsPage bookings={bookings} requirements={requirements} /> : <Navigate to="/" replace />} />
           <Route path="/print-cards" element={[UserRole.SYSTEM_ADMIN, UserRole.DEPT_ADMIN, UserRole.RAC_ADMIN, UserRole.USER].includes(userRole) ? <CardsPage bookings={bookings} requirements={requirements} /> : <Navigate to="/" replace />} />
           
-          <Route path="/users" element={userRole === UserRole.SYSTEM_ADMIN ? <UserManagement /> : <Navigate to="/" replace />} />
-          <Route path="/schedule" element={[UserRole.SYSTEM_ADMIN, UserRole.RAC_ADMIN].includes(userRole) ? <ScheduleTraining /> : <Navigate to="/" replace />} />
+          <Route path="/users" element={userRole === UserRole.SYSTEM_ADMIN ? <UserManagement users={users} setUsers={setUsers} /> : <Navigate to="/" replace />} />
+          <Route path="/schedule" element={[UserRole.SYSTEM_ADMIN, UserRole.RAC_ADMIN].includes(userRole) ? <ScheduleTraining sessions={sessions} setSessions={setSessions} /> : <Navigate to="/" replace />} />
           <Route path="/settings" element={[UserRole.SYSTEM_ADMIN, UserRole.RAC_ADMIN].includes(userRole) ? <SettingsPage /> : <Navigate to="/" replace />} />
+          <Route path="/manuals" element={<UserManualsPage />} />
+          <Route path="/logs" element={[UserRole.SYSTEM_ADMIN, UserRole.RAC_ADMIN].includes(userRole) ? <LogsPage /> : <Navigate to="/" replace />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
         <GeminiAdvisor />

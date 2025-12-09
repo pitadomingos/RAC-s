@@ -12,6 +12,7 @@ import { useNavigate } from 'react-router-dom';
 interface DashboardStatsProps {
   bookings: Booking[];
   requirements: EmployeeRequirement[];
+  onBookRenewals?: () => void;
 }
 
 // Colors for Training Status
@@ -20,7 +21,7 @@ const STATUS_COLORS = {
   'Non-Compliant': '#ef4444'  // Red 500
 };
 
-const DashboardStats: React.FC<DashboardStatsProps> = ({ bookings, requirements }) => {
+const DashboardStats: React.FC<DashboardStatsProps> = ({ bookings, requirements, onBookRenewals }) => {
   const navigate = useNavigate();
 
   // 1. Basic Counts
@@ -138,6 +139,14 @@ const DashboardStats: React.FC<DashboardStatsProps> = ({ bookings, requirements 
     ? ((compliantCount / totalEmployees) * 100).toFixed(1) 
     : '0.0';
 
+  const handleRenewalClick = () => {
+    if (onBookRenewals) {
+      onBookRenewals();
+    } else {
+      navigate('/booking');
+    }
+  };
+
   return (
     <div className="space-y-6">
       {/* KPI Cards */}
@@ -210,24 +219,6 @@ const DashboardStats: React.FC<DashboardStatsProps> = ({ bookings, requirements 
         </div>
       </div>
 
-      {/* Expiring Notification */}
-      {expiring.length > 0 && (
-        <div className="bg-yellow-50 border-l-4 border-yellow-500 p-4 rounded-r-lg flex flex-col md:flex-row justify-between items-start md:items-center animate-fade-in-down">
-          <div className="mb-4 md:mb-0">
-            <h3 className="text-lg font-bold text-yellow-800">Action Required: Training Renewal</h3>
-            <p className="text-sm text-yellow-700">
-              {String(expiring.length)} employees have critical training expiring within 30 days. 
-            </p>
-          </div>
-          <button 
-            onClick={() => navigate('/booking')}
-            className="bg-yellow-600 text-white px-4 py-2 rounded-md hover:bg-yellow-700 transition shadow-sm text-sm font-medium"
-          >
-            Book Renewals
-          </button>
-        </div>
-      )}
-
       {/* Charts Row */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         
@@ -283,6 +274,25 @@ const DashboardStats: React.FC<DashboardStatsProps> = ({ bookings, requirements 
           </div>
         </div>
       </div>
+
+      {/* Expiring Notification - Moved Below Charts */}
+      {expiring.length > 0 && (
+        <div className="bg-yellow-50 border-l-4 border-yellow-500 p-4 rounded-r-lg flex flex-col md:flex-row justify-between items-start md:items-center animate-fade-in-down">
+          <div className="mb-4 md:mb-0">
+            <h3 className="text-lg font-bold text-yellow-800">Action Required: Training Renewal</h3>
+            <p className="text-sm text-yellow-700">
+              {String(expiring.length)} employees have critical training expiring within 30 days. 
+            </p>
+          </div>
+          <button 
+            onClick={handleRenewalClick}
+            className="bg-yellow-600 text-white px-4 py-2 rounded-md hover:bg-yellow-700 transition shadow-sm text-sm font-medium"
+          >
+            Book Renewals
+          </button>
+        </div>
+      )}
+
     </div>
   );
 };

@@ -10,8 +10,9 @@ interface CardTemplateProps {
 }
 
 const CardTemplate: React.FC<CardTemplateProps> = ({ booking, requirement }) => {
+  // Robust guard clause: returns null if essential data is missing, preventing crashes
   if (!booking || !booking.employee) {
-    return <div className="text-red-500 text-[8px]">Invalid Data</div>;
+    return null;
   }
 
   const { employee } = booking;
@@ -27,13 +28,14 @@ const CardTemplate: React.FC<CardTemplateProps> = ({ booking, requirement }) => 
   const dlExp = String(employee.driverLicenseExpiry || '');
 
   // Logic: Show DL details only if RAC02 is effectively mapped/required.
+  // requirement?.requiredRacs might be undefined, access safely.
   const isRac02Mapped = requirement?.requiredRacs ? !!requirement.requiredRacs['RAC02'] : false;
   
   // ASO Date - explicitly cast to string
   const asoDate = String(requirement?.asoExpiryDate || '');
 
   // Generate QR Code Link
-  const appOrigin = window.location.origin;
+  const appOrigin = typeof window !== 'undefined' ? window.location.origin : '';
   const qrUrl = `${appOrigin}/#/results?q=${safeRecordId}`;
 
   // Helper to get date for a specific RAC - returns strict string
@@ -208,7 +210,7 @@ const CardTemplate: React.FC<CardTemplateProps> = ({ booking, requirement }) => 
                <div className="border-b-[1px] border-dotted border-black w-[18mm]"></div>
            </div>
 
-           {/* Shield Logo Graphic (SVG) - Shifted slightly left/resized if needed, but looks ok. */}
+           {/* Shield Logo Graphic (SVG) */}
            <div className="absolute right-[2px] bottom-[2px] w-[12mm] h-[14mm] z-10">
                 <svg viewBox="0 0 100 120" className="w-full h-full drop-shadow-sm">
                      <path d="M50 0 L100 25 V50 C100 85 50 120 50 120 C50 120 0 85 0 50 V25 Z" fill="#fff" stroke="#d97706" strokeWidth="4"/>

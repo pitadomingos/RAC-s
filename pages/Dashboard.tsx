@@ -1,17 +1,21 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import DashboardStats from '../components/DashboardStats';
-import { Booking, UserRole, EmployeeRequirement } from '../types';
-import { MOCK_SESSIONS, COMPANIES, RAC_KEYS } from '../constants';
-import { Calendar, Clock, MapPin, ChevronRight, Filter, Timer, User, Search, Building } from 'lucide-react';
+import { Booking, UserRole, EmployeeRequirement, TrainingSession } from '../types';
+import { COMPANIES, RAC_KEYS } from '../constants';
+import { Calendar, Clock, MapPin, ChevronRight, Filter, Timer, User } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { v4 as uuidv4 } from 'uuid';
 
 interface DashboardProps {
   bookings: Booking[];
   requirements: EmployeeRequirement[];
+  sessions: TrainingSession[];
   userRole: UserRole;
 }
 
-const Dashboard: React.FC<DashboardProps> = ({ bookings, requirements, userRole }) => {
+const Dashboard: React.FC<DashboardProps> = ({ bookings, requirements, sessions, userRole }) => {
+  const navigate = useNavigate();
   const [selectedCompany, setSelectedCompany] = useState<string>('All');
   // Trigger re-render every minute to update countdowns
   const [, setTick] = useState(0);
@@ -39,7 +43,7 @@ const Dashboard: React.FC<DashboardProps> = ({ bookings, requirements, userRole 
     });
 
   // Sort sessions by date (closest first) for the "Upcoming" view
-  const upcomingSessions = [...MOCK_SESSIONS]
+  const upcomingSessions = [...sessions]
     .sort((a, b) => new Date(`${a.date}T${a.startTime}`).getTime() - new Date(`${b.date}T${b.startTime}`).getTime())
     .slice(0, 5);
 
@@ -84,11 +88,42 @@ const Dashboard: React.FC<DashboardProps> = ({ bookings, requirements, userRole 
     }
   };
 
+  // Identify expiring bookings for the auto-fill feature
+  const expiringBookings = useMemo(() => {
+    const today = new Date();
+    const thirtyDaysFromNow = new Date();
+    thirtyDaysFromNow.setDate(today.getDate() + 30);
+    
+    return bookings.filter(b => {
+      if (!b.expiryDate) return false;
+      const expDate = new Date(b.expiryDate);
+      return expDate > today && expDate <= thirtyDaysFromNow;
+    });
+  }, [bookings]);
+
+  const handleBookRenewals = () => {
+      // Create new booking templates from expiring employees
+      const renewalList = expiringBookings.map(b => ({
+          id: uuidv4(),
+          name: b.employee.name,
+          recordId: b.employee.recordId,
+          company: b.employee.company,
+          department: b.employee.department,
+          role: b.employee.role,
+          driverLicenseNumber: b.employee.driverLicenseNumber || '',
+          driverLicenseClass: b.employee.driverLicenseClass || '',
+          driverLicenseExpiry: b.employee.driverLicenseExpiry || ''
+      }));
+
+      // Navigate to booking form with state
+      navigate('/booking', { state: { prefill: renewalList } });
+  };
+
   // --- Logic for Employee Bookings Table ---
   const employeeBookingsList = useMemo(() => {
     return bookings.map(b => {
       // Resolve Session Details
-      const session = MOCK_SESSIONS.find(s => s.id === b.sessionId);
+      const session = sessions.find(s => s.id === b.sessionId);
       
       let racName = b.sessionId;
       let sessionDate = '';
@@ -117,7 +152,7 @@ const Dashboard: React.FC<DashboardProps> = ({ bookings, requirements, userRole 
         sessionRoom
       };
     });
-  }, [bookings]);
+  }, [bookings, sessions]);
 
   const filteredEmployeeBookings = employeeBookingsList.filter(item => {
     // Filter by Company
@@ -153,7 +188,11 @@ const Dashboard: React.FC<DashboardProps> = ({ bookings, requirements, userRole 
         </div>
       </div>
 
-      <DashboardStats bookings={filteredBookingsForStats} requirements={filteredRequirements} />
+      <DashboardStats 
+        bookings={filteredBookingsForStats} 
+        requirements={filteredRequirements} 
+        onBookRenewals={handleBookRenewals}
+      />
 
       {/* Main Content Grid: Upcoming Sessions (Left) vs Employee Bookings (Right) */}
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
@@ -165,7 +204,7 @@ const Dashboard: React.FC<DashboardProps> = ({ bookings, requirements, userRole 
                 <Calendar className="text-yellow-600" size={20} />
                 <h3 className="font-bold text-slate-800 text-lg">Upcoming Sessions</h3>
              </div>
-             <button className="text-xs text-blue-600 font-semibold flex items-center hover:underline">
+             <button onClick={() => navigate('/schedule')} className="text-xs text-blue-600 font-semibold flex items-center hover:underline">
                View Schedule <ChevronRight size={14} />
              </button>
           </div>
@@ -288,10 +327,10 @@ const Dashboard: React.FC<DashboardProps> = ({ bookings, requirements, userRole 
                              </span>
                            </td>
                            <td className="px-3 py-2 whitespace-nowrap text-xs text-gray-600">
-                             {String(item.sessionDate || '') || <span className="text-gray-300 italic">--</span>}
+                             {item.sessionDate ? String(item.sessionDate) : <span className="text-gray-300 italic">--</span>}
                            </td>
                            <td className="px-3 py-2 whitespace-nowrap text-xs text-gray-600">
-                             {String(item.sessionRoom || '') || <span className="text-gray-300 italic">--</span>}
+                             {item.sessionRoom ? String(item.sessionRoom) : <span className="text-gray-300 italic">--</span>}
                            </td>
                         </tr>
                       ))

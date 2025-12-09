@@ -1,16 +1,17 @@
 
 import React, { useState, useMemo } from 'react';
-import { Booking, BookingStatus, EmployeeRequirement, Employee } from '../types';
-import { COMPANIES, RAC_KEYS, MOCK_SESSIONS } from '../constants';
+import { Booking, BookingStatus, EmployeeRequirement, Employee, TrainingSession } from '../types';
+import { COMPANIES, RAC_KEYS } from '../constants';
 import { Search, CheckCircle, XCircle, AlertTriangle, Filter, CreditCard, ShieldAlert } from 'lucide-react';
 
 interface DatabasePageProps {
   bookings: Booking[];
   requirements: EmployeeRequirement[];
   updateRequirements: (req: EmployeeRequirement) => void;
+  sessions: TrainingSession[];
 }
 
-const DatabasePage: React.FC<DatabasePageProps> = ({ bookings, requirements, updateRequirements }) => {
+const DatabasePage: React.FC<DatabasePageProps> = ({ bookings, requirements, updateRequirements, sessions }) => {
   const [selectedCompany, setSelectedCompany] = useState<string>('All');
   const [accessStatusFilter, setAccessStatusFilter] = useState<'All' | 'Granted' | 'Blocked'>('All');
   const [searchTerm, setSearchTerm] = useState('');
@@ -54,7 +55,7 @@ const DatabasePage: React.FC<DatabasePageProps> = ({ bookings, requirements, upd
         if (b.status !== BookingStatus.PASSED) return false;
         
         let racCode = '';
-        const session = MOCK_SESSIONS.find(s => s.id === b.sessionId);
+        const session = sessions.find(s => s.id === b.sessionId);
         if (session) {
             racCode = session.racType.split(' - ')[0].replace(' ', '');
         } else {
@@ -156,13 +157,13 @@ const DatabasePage: React.FC<DatabasePageProps> = ({ bookings, requirements, upd
         isDlExpired
       };
     });
-  }, [uniqueEmployees, requirements, bookings, dlEdits]);
+  }, [uniqueEmployees, requirements, bookings, dlEdits, sessions]);
 
 
   // 5. Apply Filters
   const filteredData = processedData.filter(({ emp, accessGranted }) => {
-    const matchSearch = emp.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                        emp.recordId.includes(searchTerm);
+    const matchSearch = String(emp.name || '').toLowerCase().includes(searchTerm.toLowerCase()) || 
+                        String(emp.recordId || '').includes(searchTerm);
     if (!matchSearch) return false;
     if (selectedCompany !== 'All' && emp.company !== selectedCompany) return false;
     if (accessStatusFilter === 'Granted' && !accessGranted) return false;

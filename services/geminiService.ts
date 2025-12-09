@@ -1,19 +1,29 @@
 import { GoogleGenAI } from "@google/genai";
-import { RAC } from '../types';
+import { logger } from '../utils/logger';
 
-// Safely access API key, defaulting to empty string if env is not configured to prevent crashes
-// We check for type of process first to avoid ReferenceError in browser
+// Safely access API key
 const apiKey = (typeof process !== 'undefined' && process.env && process.env.API_KEY) ? process.env.API_KEY : '';
 
-const ai = new GoogleGenAI({ apiKey });
+// Singleton instance logic could be applied here if needed
+let ai: GoogleGenAI | null = null;
+
+try {
+    ai = new GoogleGenAI({ apiKey });
+} catch (e) {
+    logger.error("Failed to initialize Google GenAI client", e);
+}
 
 export const getSafetyAdvice = async (rac: string, query: string): Promise<string> => {
+  if (!ai) return "AI Service Unavailable.";
+  
   try {
     const model = 'gemini-2.5-flash';
     const systemPrompt = `You are an expert Industrial Safety Consultant for 'Vulcan Mining'. 
     Provide concise, actionable safety advice regarding ${rac}. 
     Focus on Critical Activity Requirements (RAC). Keep answers under 100 words.`;
     
+    logger.info(`Gemini Query: ${rac}`);
+
     const response = await ai.models.generateContent({
       model: model,
       contents: query,
@@ -24,12 +34,14 @@ export const getSafetyAdvice = async (rac: string, query: string): Promise<strin
 
     return response.text || "No advice available at this time.";
   } catch (error) {
-    console.error("Gemini API Error:", error);
+    logger.error("Gemini API Error", error);
     return "Unable to connect to Safety Advisor. Please try again later.";
   }
 };
 
 export const generateSafetyReport = async (stats: any, period: string): Promise<string> => {
+  if (!ai) return "AI Service Unavailable.";
+
   try {
     const model = 'gemini-2.5-flash';
     const systemPrompt = `You are a Senior Safety Data Analyst for 'Vulcan Mining'.
@@ -46,6 +58,8 @@ export const generateSafetyReport = async (stats: any, period: string): Promise<
     const prompt = `Report Period: ${period}
     Statistics: ${JSON.stringify(stats, null, 2)}`;
 
+    logger.info(`Generating Safety Report for period: ${period}`);
+
     const response = await ai.models.generateContent({
       model: model,
       contents: prompt,
@@ -56,7 +70,7 @@ export const generateSafetyReport = async (stats: any, period: string): Promise<
 
     return response.text || "Unable to generate report analysis.";
   } catch (error) {
-    console.error("Gemini Report Error:", error);
+    logger.error("Gemini Report Generation Error", error);
     return "Error generating AI report analysis. Please ensure API Key is configured.";
   }
 };

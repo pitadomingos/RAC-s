@@ -1,8 +1,8 @@
-import React, { useRef } from 'react';
+
+import React from 'react';
 import { Booking, BookingStatus, EmployeeRequirement } from '../types';
 import CardTemplate from '../components/CardTemplate';
 import { Printer, AlertCircle } from 'lucide-react';
-import ReactToPrint from 'react-to-print';
 
 interface CardsPageProps {
   bookings: Booking[];
@@ -10,17 +10,18 @@ interface CardsPageProps {
 }
 
 const CardsPage: React.FC<CardsPageProps> = ({ bookings, requirements }) => {
-  const componentRef = useRef<HTMLDivElement>(null);
-
+  
   // Filter eligible bookings (Passed)
-  const eligibleBookings = bookings.filter(b => b && b.status === BookingStatus.PASSED);
+  const eligibleBookings = Array.isArray(bookings) 
+    ? bookings.filter(b => b && b.status === BookingStatus.PASSED && b.employee)
+    : [];
 
   // De-duplicate: 1 card per person
   const uniqueEmployeeBookings: Booking[] = [];
   const seenIds = new Set();
   
   eligibleBookings.forEach(b => {
-      if (!seenIds.has(b.employee.id)) {
+      if (b.employee && !seenIds.has(b.employee.id)) {
           uniqueEmployeeBookings.push(b);
           seenIds.add(b.employee.id);
       }
@@ -38,6 +39,10 @@ const CardsPage: React.FC<CardsPageProps> = ({ bookings, requirements }) => {
   const pages = chunkArray(uniqueEmployeeBookings, 8);
   const getRequirement = (empId: string) => requirements.find(r => r.employeeId === empId);
 
+  const handlePrint = () => {
+    window.print();
+  };
+
   return (
     <div className="flex flex-col h-full">
       {/* Control Bar */}
@@ -45,27 +50,23 @@ const CardsPage: React.FC<CardsPageProps> = ({ bookings, requirements }) => {
         <div>
           <h2 className="text-xl font-bold text-slate-800">Card Generator (CARs)</h2>
           <p className="text-sm text-gray-500">
-            {uniqueEmployeeBookings.length} cards available. Layout: 8 Cards per A4 Landscape Page.
+            {String(uniqueEmployeeBookings.length)} cards available. Layout: 8 Cards per A4 Landscape Page.
           </p>
         </div>
         
         {uniqueEmployeeBookings.length > 0 && (
-          <ReactToPrint
-            trigger={() => (
-              <button className="flex items-center space-x-2 bg-slate-900 text-white px-4 py-2 rounded-lg hover:bg-slate-800 transition shadow-sm">
-                <Printer size={18} />
-                <span>Print Cards</span>
-              </button>
-            )}
-            content={() => componentRef.current}
-            documentTitle="Vulcan_RAC_Cards"
-            pageStyle="@page { size: A4 landscape; margin: 0; } body { -webkit-print-color-adjust: exact; }"
-          />
+          <button 
+            onClick={handlePrint}
+            className="flex items-center space-x-2 bg-slate-900 text-white px-4 py-2 rounded-lg hover:bg-slate-800 transition shadow-sm"
+          >
+            <Printer size={18} />
+            <span>Print Cards</span>
+          </button>
         )}
       </div>
 
       {/* Main Content Area */}
-      <div className="flex-1 bg-gray-200 overflow-auto flex justify-center p-8">
+      <div className="flex-1 bg-gray-200 overflow-auto flex justify-center p-8 print:p-0 print:bg-white print:overflow-visible">
         {uniqueEmployeeBookings.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full text-center text-gray-500 max-w-lg">
             <div className="bg-white p-8 rounded-xl shadow-sm border border-gray-200 w-full">
@@ -76,7 +77,7 @@ const CardsPage: React.FC<CardsPageProps> = ({ bookings, requirements }) => {
           </div>
         ) : (
           /* Printable Container */
-          <div ref={componentRef} className="print:w-full print:h-full">
+          <div className="print:w-full print:h-full">
              {pages.map((pageGroup, pageIndex) => (
                 <div 
                   key={`page-${pageIndex}`} 
@@ -94,7 +95,7 @@ const CardsPage: React.FC<CardsPageProps> = ({ bookings, requirements }) => {
                   }}
                 >
                     {pageGroup.map((booking) => (
-                        <div key={booking.id} className="flex justify-center items-center">
+                        <div key={String(booking.id)} className="flex justify-center items-center">
                             <CardTemplate booking={booking} requirement={getRequirement(booking.employee.id)} />
                         </div>
                     ))}
