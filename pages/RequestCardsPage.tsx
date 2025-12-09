@@ -1,13 +1,17 @@
+
 import React, { useState } from 'react';
-import { Booking, BookingStatus } from '../types';
+import { Booking, BookingStatus, EmployeeRequirement } from '../types';
 import CardTemplate from '../components/CardTemplate';
-import { Mail, AlertCircle, CheckCircle, CheckSquare, Square } from 'lucide-react';
+import { Mail, AlertCircle, CheckCircle, CheckSquare, Square, Printer } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 interface RequestCardsPageProps {
   bookings: Booking[];
+  requirements: EmployeeRequirement[];
 }
 
-const RequestCardsPage: React.FC<RequestCardsPageProps> = ({ bookings }) => {
+const RequestCardsPage: React.FC<RequestCardsPageProps> = ({ bookings, requirements }) => {
+  const navigate = useNavigate();
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [requestSent, setRequestSent] = useState(false);
   const [sentCount, setSentCount] = useState(0);
@@ -48,22 +52,33 @@ const RequestCardsPage: React.FC<RequestCardsPageProps> = ({ bookings }) => {
     }, 4000);
   };
 
+  const getRequirement = (empId: string) => requirements.find(r => r.employeeId === empId);
+
   return (
     <div className="flex flex-col h-full space-y-6">
       
       {/* Header / Instructions */}
       <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
-        <div className="flex justify-between items-start">
+        <div className="flex flex-col md:flex-row justify-between items-start gap-4">
           <div>
-            <h2 className="text-xl font-bold text-slate-800">Request RAC Cards</h2>
+            <h2 className="text-xl font-bold text-slate-800">Request CARs Cards</h2>
             <p className="text-sm text-gray-500 mt-1">
               Select qualified employees below to receive a PDF via email containing their valid RAC cards.
               <br/>The PDF will be formatted with 8 cards per page.
             </p>
           </div>
-          <div className="text-right">
-             <div className="text-2xl font-bold text-slate-800">{selectedIds.size}</div>
-             <div className="text-xs text-gray-500 uppercase font-semibold">Selected</div>
+          <div className="flex flex-col items-end gap-2">
+             <button 
+                onClick={() => navigate('/print-cards')}
+                className="flex items-center space-x-2 bg-slate-100 text-slate-700 px-4 py-2 rounded-lg hover:bg-slate-200 transition shadow-sm text-sm border border-slate-200"
+             >
+                <Printer size={16} />
+                <span>Go to Print View (A4)</span>
+             </button>
+             <div className="text-right">
+                <div className="text-2xl font-bold text-slate-800">{selectedIds.size}</div>
+                <div className="text-xs text-gray-500 uppercase font-semibold">Selected</div>
+             </div>
           </div>
         </div>
       </div>
@@ -80,7 +95,7 @@ const RequestCardsPage: React.FC<RequestCardsPageProps> = ({ bookings }) => {
       )}
 
       {/* Main Content: List of Eligible Cards */}
-      <div className="flex-1 overflow-auto">
+      <div className="flex-1 overflow-auto p-1">
         {eligibleBookings.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-64 text-center text-gray-500 bg-white rounded-xl border border-dashed border-gray-300">
             <AlertCircle size={48} className="text-gray-300 mb-4" />
@@ -90,7 +105,7 @@ const RequestCardsPage: React.FC<RequestCardsPageProps> = ({ bookings }) => {
         ) : (
           <div className="space-y-4">
              {/* Controls */}
-             <div className="flex items-center space-x-4 bg-gray-50 p-3 rounded-lg border border-gray-200">
+             <div className="flex items-center space-x-4 bg-gray-50 p-3 rounded-lg border border-gray-200 sticky top-0 z-20">
                 <button 
                   onClick={toggleAll}
                   className="flex items-center space-x-2 text-sm font-medium text-slate-700 hover:text-slate-900"
@@ -103,7 +118,7 @@ const RequestCardsPage: React.FC<RequestCardsPageProps> = ({ bookings }) => {
              </div>
 
              {/* Grid of Cards */}
-             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 pb-20">
                {eligibleBookings.map(booking => {
                  const isSelected = selectedIds.has(booking.id);
                  return (
@@ -111,36 +126,39 @@ const RequestCardsPage: React.FC<RequestCardsPageProps> = ({ bookings }) => {
                     key={booking.id}
                     onClick={() => toggleSelection(booking.id)}
                     className={`
-                      relative group cursor-pointer transition-all duration-200 border-2 rounded-xl overflow-hidden
-                      ${isSelected ? 'border-yellow-500 ring-2 ring-yellow-200' : 'border-transparent hover:border-gray-300'}
+                      relative group cursor-pointer transition-all duration-200 border-2 rounded-xl overflow-hidden bg-white shadow-sm hover:shadow-md
+                      ${isSelected ? 'border-yellow-500 ring-4 ring-yellow-500/20' : 'border-gray-200 hover:border-gray-300'}
                     `}
                    >
-                     {/* Selection Overlay */}
+                     {/* Selection Overlay Checkmark */}
                      <div className={`
-                       absolute inset-0 bg-slate-900/10 z-10 flex items-center justify-center transition-opacity
-                       ${isSelected ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}
+                       absolute top-2 right-2 z-20 transition-all duration-200
+                       ${isSelected ? 'opacity-100 scale-100' : 'opacity-0 scale-75 group-hover:opacity-50'}
                      `}>
-                        <div className={`
-                          bg-white rounded-full p-2 shadow-lg transform transition-transform
-                          ${isSelected ? 'scale-100' : 'scale-75'}
-                        `}>
-                          {isSelected ? <CheckCircle className="text-green-500" size={32} /> : <div className="w-8 h-8 rounded-full border-2 border-gray-300" />}
+                        <div className="bg-white rounded-full shadow-md">
+                           <CheckCircle className={isSelected ? "text-green-500 fill-white" : "text-gray-300"} size={32} />
                         </div>
                      </div>
 
-                     {/* Card Preview (Scaled Down) */}
-                     <div className="bg-white p-2 pointer-events-none transform scale-100 origin-top-left">
-                        <div className="w-full h-[250px] overflow-hidden border border-gray-200 shadow-sm">
-                           {/* We render the card template but style it to fit the preview container */}
-                           <div className="w-[180%] h-[180%] transform scale-[0.55] origin-top-left">
-                              <CardTemplate booking={booking} />
-                           </div>
+                     {/* Card Preview Container */}
+                     <div className="bg-gray-100 p-4 flex justify-center items-center h-[340px] overflow-hidden relative">
+                        {/* We scale the actual CardTemplate to fit the preview box. 
+                            Card is 54mm (~204px) x 86mm (~325px). 
+                            Container is flex centered. 
+                        */}
+                        <div className="transform scale-[0.85] origin-center shadow-lg bg-white">
+                             <CardTemplate booking={booking} requirement={getRequirement(booking.employee.id)} />
                         </div>
                      </div>
                      
-                     <div className="bg-white px-3 py-2 border-t border-gray-100 flex justify-between items-center">
-                        <span className="text-xs font-bold text-slate-700 truncate">{booking.employee.name}</span>
-                        <span className="text-[10px] text-gray-500">{booking.sessionId.split('-')[0]}</span>
+                     <div className="bg-white px-4 py-3 border-t border-gray-100">
+                        <div className="flex justify-between items-center mb-1">
+                            <span className="text-sm font-bold text-slate-800 truncate">{booking.employee.name}</span>
+                            <span className="text-xs text-gray-500 font-mono bg-gray-100 px-1 rounded">{booking.employee.recordId}</span>
+                        </div>
+                        <div className="text-[10px] text-gray-400 uppercase tracking-wide">
+                            {booking.employee.role}
+                        </div>
                      </div>
                    </div>
                  );
@@ -151,17 +169,17 @@ const RequestCardsPage: React.FC<RequestCardsPageProps> = ({ bookings }) => {
       </div>
 
       {/* Floating Action Button for Mobile / Sticky Footer */}
-      <div className="sticky bottom-0 bg-white p-4 border-t border-slate-200 flex justify-end items-center z-10">
+      <div className="fixed bottom-6 right-6 z-30">
         <button
           onClick={handleSendRequest}
           disabled={selectedIds.size === 0 || requestSent}
           className={`
-            flex items-center space-x-2 px-6 py-3 rounded-lg font-bold text-white shadow-md transition-all
-            ${selectedIds.size === 0 || requestSent ? 'bg-gray-300 cursor-not-allowed' : 'bg-slate-900 hover:bg-slate-800 hover:shadow-lg'}
+            flex items-center space-x-2 px-6 py-3 rounded-full font-bold text-white shadow-xl transition-all transform hover:scale-105
+            ${selectedIds.size === 0 || requestSent ? 'bg-gray-400 cursor-not-allowed' : 'bg-gradient-to-r from-slate-900 to-slate-800'}
           `}
         >
           <Mail size={20} />
-          <span>{requestSent ? 'Sending...' : `Request ${selectedIds.size} Cards via Email`}</span>
+          <span>{requestSent ? 'Sending...' : `Request ${selectedIds.size} Cards`}</span>
         </button>
       </div>
     </div>

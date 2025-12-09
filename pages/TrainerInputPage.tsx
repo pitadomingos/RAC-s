@@ -1,7 +1,8 @@
+
 import React, { useState, useEffect } from 'react';
 import { Booking, BookingStatus, RAC } from '../types';
 import { MOCK_SESSIONS } from '../constants';
-import { Save, AlertCircle, CheckCircle, Lock, Users, ClipboardList } from 'lucide-react';
+import { Save, AlertCircle, CheckCircle, Lock, Users, ClipboardList, ShieldAlert } from 'lucide-react';
 
 interface TrainerInputPageProps {
   bookings: Booking[];
@@ -25,7 +26,8 @@ const TrainerInputPage: React.FC<TrainerInputPageProps> = ({ bookings, updateBoo
         ...b,
         attendance: b.attendance ?? false,
         theoryScore: b.theoryScore ?? 0,
-        practicalScore: b.practicalScore ?? 0
+        practicalScore: b.practicalScore ?? 0,
+        driverLicenseVerified: b.driverLicenseVerified ?? false
       }));
       setSessionBookings(initialized);
     } else {
@@ -37,8 +39,13 @@ const TrainerInputPage: React.FC<TrainerInputPageProps> = ({ bookings, updateBoo
 
   // Helper: Auto-calculate Status based on logic
   const calculateStatus = (booking: Booking, isRac02: boolean): BookingStatus => {
-    // If absent, cannot pass (could be FAILED or PENDING, let's say FAILED if graded)
+    // If absent, cannot pass
     if (!booking.attendance) return BookingStatus.FAILED;
+
+    // RAC 02 Specific Logic: MUST VERIFY DL
+    if (isRac02) {
+      if (!booking.driverLicenseVerified) return BookingStatus.FAILED; // Disqualified if DL not checked
+    }
 
     const theory = booking.theoryScore || 0;
     const practical = booking.practicalScore || 0;
@@ -69,8 +76,6 @@ const TrainerInputPage: React.FC<TrainerInputPageProps> = ({ bookings, updateBoo
       // Specialized Logic for RAC 02 Theory Change
       if (isRac02 && field === 'theoryScore') {
         const score = parseInt(value) || 0;
-        // If Theory < 70, Practical is effectively void/disabled. Reset it? 
-        // User requirement: "If one failed theory, he has no right to proceed to practical."
         if (score < 70) {
           updatedBooking.practicalScore = 0;
         }
@@ -150,6 +155,11 @@ const TrainerInputPage: React.FC<TrainerInputPageProps> = ({ bookings, updateBoo
               <tr>
                 <th className="px-4 py-3 text-left text-xs font-bold text-slate-600 uppercase">Employee</th>
                 <th className="px-4 py-3 text-center text-xs font-bold text-slate-600 uppercase w-24">Attendance</th>
+                {isRac02 && (
+                    <th className="px-4 py-3 text-center text-xs font-bold text-red-600 uppercase w-28 bg-red-50">
+                        DL Check
+                    </th>
+                )}
                 <th className="px-4 py-3 text-center text-xs font-bold text-slate-600 uppercase w-32">Theory (70%+)</th>
                 <th className="px-4 py-3 text-center text-xs font-bold text-slate-600 uppercase w-32">
                   Practical (70%+)
@@ -163,6 +173,9 @@ const TrainerInputPage: React.FC<TrainerInputPageProps> = ({ bookings, updateBoo
                 // Determine if practical is locked for this specific user
                 const theory = booking.theoryScore || 0;
                 const practicalLocked = isRac02 && theory < 70;
+                
+                // If RAC 02 and DL not verified, scores are meaningless (automatic fail)
+                const isDisqualified = isRac02 && !booking.driverLicenseVerified;
 
                 return (
                   <tr key={booking.id} className="hover:bg-slate-50 transition-colors">
@@ -178,12 +191,29 @@ const TrainerInputPage: React.FC<TrainerInputPageProps> = ({ bookings, updateBoo
                         onChange={(e) => handleInputChange(booking.id, 'attendance', e.target.checked)}
                       />
                     </td>
+                    
+                    {/* DL Checkbox for RAC02 */}
+                    {isRac02 && (
+                        <td className="px-4 py-3 text-center bg-red-50/50">
+                            <div className="flex flex-col items-center">
+                                <input 
+                                    type="checkbox" 
+                                    className="h-5 w-5 text-red-600 focus:ring-red-500 border-red-300 rounded cursor-pointer"
+                                    checked={booking.driverLicenseVerified || false}
+                                    onChange={(e) => handleInputChange(booking.id, 'driverLicenseVerified', e.target.checked)}
+                                />
+                                <span className="text-[9px] text-gray-500 mt-1">Verified</span>
+                            </div>
+                        </td>
+                    )}
+
                     <td className="px-4 py-3">
                       <input 
                         type="number" 
                         min="0" max="100"
+                        disabled={isDisqualified}
                         className={`w-full text-center border rounded-md shadow-sm text-sm p-1
-                          ${(booking.theoryScore || 0) < 70 ? 'border-red-300 bg-red-50 text-red-900' : 'border-green-300 bg-green-50 text-green-900'}
+                          ${isDisqualified ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : (booking.theoryScore || 0) < 70 ? 'border-red-300 bg-red-50 text-red-900' : 'border-green-300 bg-green-50 text-green-900'}
                         `}
                         value={booking.theoryScore}
                         onChange={(e) => handleInputChange(booking.id, 'theoryScore', parseInt(e.target.value) || 0)}
@@ -193,9 +223,9 @@ const TrainerInputPage: React.FC<TrainerInputPageProps> = ({ bookings, updateBoo
                       <input 
                         type="number" 
                         min="0" max="100"
-                        disabled={!isRac02 || practicalLocked}
+                        disabled={!isRac02 || practicalLocked || isDisqualified}
                         className={`w-full text-center border rounded-md shadow-sm text-sm p-1
-                          ${!isRac02 ? 'bg-gray-200 text-gray-400 cursor-not-allowed border-gray-300' : 
+                          ${!isRac02 || isDisqualified ? 'bg-gray-200 text-gray-400 cursor-not-allowed border-gray-300' : 
                             practicalLocked ? 'bg-gray-200 text-gray-400 cursor-not-allowed border-gray-300' :
                             (booking.practicalScore || 0) < 70 ? 'border-red-300 bg-red-50 text-red-900' : 'border-green-300 bg-green-50 text-green-900'
                           }
@@ -203,7 +233,7 @@ const TrainerInputPage: React.FC<TrainerInputPageProps> = ({ bookings, updateBoo
                         value={booking.practicalScore}
                         onChange={(e) => handleInputChange(booking.id, 'practicalScore', parseInt(e.target.value) || 0)}
                       />
-                      {practicalLocked && isRac02 && (
+                      {(practicalLocked || !isRac02 || isDisqualified) && (
                         <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-50">
                            <Lock size={12} className="text-gray-500" />
                         </div>
@@ -223,7 +253,13 @@ const TrainerInputPage: React.FC<TrainerInputPageProps> = ({ bookings, updateBoo
             </tbody>
           </table>
           
-          <div className="mt-6 flex justify-end">
+          <div className="mt-6 flex justify-end items-center gap-4">
+             {isRac02 && (
+                 <div className="flex items-center gap-2 text-sm text-red-600 bg-red-50 px-3 py-2 rounded-lg border border-red-200">
+                    <ShieldAlert size={16} />
+                    <span>DL Check is mandatory for RAC 02. Unchecked employees will fail.</span>
+                 </div>
+             )}
              <button 
                onClick={handleSave}
                disabled={!hasUnsavedChanges}

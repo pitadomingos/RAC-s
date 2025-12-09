@@ -27,7 +27,10 @@ export interface Employee {
   company: string;
   department: string;
   role: string;
-  ga: string; // Gerencia de Area (Area Management)
+  // Driver License Details (Specific for RAC 02)
+  driverLicenseNumber?: string;
+  driverLicenseClass?: string;
+  driverLicenseExpiry?: string;
 }
 
 export interface TrainingSession {
@@ -58,6 +61,7 @@ export interface Booking {
   attendance?: boolean;
   theoryScore?: number;
   practicalScore?: number; // Only for RAC 02 typically
+  driverLicenseVerified?: boolean; // New field for Trainer validation
 }
 
 export interface ChartData {
@@ -70,4 +74,13 @@ export interface EmployeeRequirement {
   employeeId: string;
   asoExpiryDate: string; // Medical Exam Expiry
   requiredRacs: Record<string, boolean>; // e.g. { 'RAC01': true, 'RAC02': false }
+}
+
+export interface SystemNotification {
+  id: string;
+  type: 'info' | 'warning' | 'success' | 'alert';
+  title: string;
+  message: string;
+  timestamp: Date;
+  isRead: boolean;
 }

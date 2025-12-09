@@ -1,4 +1,5 @@
 
+
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { 
@@ -14,19 +15,26 @@ import {
   Users,
   CalendarDays,
   Database,
-  FileBarChart
+  FileBarChart,
+  Settings,
+  Bell
 } from 'lucide-react';
-import { UserRole } from '../types';
+import { UserRole, SystemNotification } from '../types';
 
 interface LayoutProps {
   children: React.ReactNode;
   userRole: UserRole;
   setUserRole: (role: UserRole) => void;
+  notifications?: SystemNotification[];
+  clearNotifications?: () => void;
 }
 
-const Layout: React.FC<LayoutProps> = ({ children, userRole, setUserRole }) => {
+const Layout: React.FC<LayoutProps> = ({ children, userRole, setUserRole, notifications = [], clearNotifications }) => {
   const [isSidebarOpen, setSidebarOpen] = useState(false);
+  const [isNotifOpen, setNotifOpen] = useState(false);
   const location = useLocation();
+
+  const unreadCount = notifications.filter(n => !n.isRead).length;
 
   const allNavItems = [
     { 
@@ -75,6 +83,12 @@ const Layout: React.FC<LayoutProps> = ({ children, userRole, setUserRole }) => {
       path: '/schedule', 
       label: 'Schedule Trainings', 
       icon: CalendarDays, 
+      visible: [UserRole.SYSTEM_ADMIN, UserRole.RAC_ADMIN].includes(userRole) 
+    },
+    { 
+      path: '/settings', 
+      label: 'System Settings', 
+      icon: Settings, 
       visible: [UserRole.SYSTEM_ADMIN, UserRole.RAC_ADMIN].includes(userRole) 
     },
     { 
@@ -161,14 +175,65 @@ const Layout: React.FC<LayoutProps> = ({ children, userRole, setUserRole }) => {
 
       {/* Main Content */}
       <div className="flex-1 flex flex-col h-full w-full overflow-hidden">
-        <header className="no-print h-16 bg-white shadow-sm flex items-center justify-between px-4 md:px-6 z-10">
-          <button onClick={() => setSidebarOpen(true)} className="md:hidden text-slate-600">
-            <Menu size={24} />
-          </button>
-          <h1 className="text-xl font-semibold text-slate-800 ml-2 md:ml-0">
-            {pageTitle}
-          </h1>
-          <div className="flex items-center space-x-4">
+        <header className="no-print h-16 bg-white shadow-sm flex items-center justify-between px-4 md:px-6 z-10 relative">
+          <div className="flex items-center">
+             <button onClick={() => setSidebarOpen(true)} className="md:hidden text-slate-600 mr-4">
+                <Menu size={24} />
+             </button>
+             <h1 className="text-xl font-semibold text-slate-800">
+                {pageTitle}
+             </h1>
+          </div>
+          
+          <div className="flex items-center space-x-6">
+            
+            {/* Notification Bell */}
+            <div className="relative">
+                <button 
+                  onClick={() => setNotifOpen(!isNotifOpen)}
+                  className="text-gray-500 hover:text-slate-800 transition-colors relative"
+                >
+                    <Bell size={22} />
+                    {unreadCount > 0 && (
+                        <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] w-4 h-4 flex items-center justify-center rounded-full font-bold">
+                            {unreadCount}
+                        </span>
+                    )}
+                </button>
+
+                {/* Dropdown */}
+                {isNotifOpen && (
+                    <div className="absolute right-0 mt-3 w-80 bg-white rounded-xl shadow-xl border border-gray-100 z-50 overflow-hidden animate-fade-in-up">
+                        <div className="p-3 bg-slate-50 border-b border-gray-100 flex justify-between items-center">
+                            <span className="font-bold text-sm text-slate-700">System Notifications</span>
+                            {clearNotifications && (
+                                <button onClick={clearNotifications} className="text-xs text-blue-600 hover:underline">
+                                    Clear All
+                                </button>
+                            )}
+                        </div>
+                        <div className="max-h-64 overflow-y-auto">
+                            {notifications.length === 0 ? (
+                                <div className="p-6 text-center text-gray-400 text-sm">No new notifications</div>
+                            ) : (
+                                notifications.map(notif => (
+                                    <div key={notif.id} className="p-3 border-b border-gray-50 hover:bg-gray-50 flex gap-3">
+                                        <div className={`w-2 h-2 rounded-full mt-1.5 flex-shrink-0 
+                                            ${notif.type === 'warning' ? 'bg-yellow-500' : notif.type === 'success' ? 'bg-green-500' : 'bg-blue-500'}
+                                        `} />
+                                        <div>
+                                            <p className="text-xs font-bold text-slate-800">{notif.title}</p>
+                                            <p className="text-xs text-gray-600 mt-0.5">{notif.message}</p>
+                                            <p className="text-[10px] text-gray-400 mt-1">{notif.timestamp.toLocaleTimeString()}</p>
+                                        </div>
+                                    </div>
+                                ))
+                            )}
+                        </div>
+                    </div>
+                )}
+            </div>
+
             {/* Quick Link to Proposal for Admin */}
             {userRole === UserRole.SYSTEM_ADMIN && location.pathname !== '/proposal' && (
               <Link to="/proposal" className="hidden md:inline-block text-xs font-bold text-blue-600 hover:underline">
@@ -176,7 +241,7 @@ const Layout: React.FC<LayoutProps> = ({ children, userRole, setUserRole }) => {
               </Link>
             )}
             
-            <div className="flex flex-col items-end mr-2 hidden md:block">
+            <div className="flex flex-col items-end hidden md:block">
               <span className="text-sm font-bold text-slate-800">{userRole}</span>
               <span className="text-xs text-green-600">Active Session</span>
             </div>

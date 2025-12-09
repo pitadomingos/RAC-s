@@ -1,8 +1,9 @@
+
 import React, { useState, useMemo } from 'react';
 import { Booking, BookingStatus } from '../types';
 import { MOCK_SESSIONS, DEPARTMENTS, RAC_KEYS } from '../constants';
 import { generateSafetyReport } from '../services/geminiService';
-import { FileText, Calendar, Filter, Sparkles, BarChart3, Printer } from 'lucide-react';
+import { FileText, Calendar, Sparkles, BarChart3, Printer, UserX, AlertCircle } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 
 interface ReportsPageProps {
@@ -111,6 +112,20 @@ const ReportsPage: React.FC<ReportsPageProps> = ({ bookings }) => {
      };
   }, [filteredBookings]);
 
+  // 3. No Show (Absentee) List
+  const noShowList = useMemo(() => {
+    return filteredBookings
+        .filter(b => !b.attendance)
+        .map(b => ({
+            id: String(b.employee.recordId || ''),
+            name: String(b.employee.name || ''),
+            company: String(b.employee.company || ''),
+            rac: String(getRacCode(b) || ''),
+            date: String(getBookingDate(b) || '')
+        }))
+        .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+  }, [filteredBookings]);
+
   const handleGenerateReport = async () => {
      setIsGenerating(true);
      // Prepare context for AI
@@ -123,6 +138,7 @@ const ReportsPage: React.FC<ReportsPageProps> = ({ bookings }) => {
             totalBookings: stats.total,
             passRate: stats.passRate + '%',
             attendanceRate: stats.attendanceRate + '%',
+            noShowCount: noShowList.length,
             topFailingRacs: stats.failingRacs.map(r => `${r.key} (${r.failRate.toFixed(1)}% fail rate)`),
             racBreakdown: stats.chartData
         }
@@ -217,30 +233,30 @@ const ReportsPage: React.FC<ReportsPageProps> = ({ bookings }) => {
           )}
        </div>
 
-       {/* Report Content */}
-       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+       {/* Report Content Grid */}
+       <div className="grid grid-cols-1 lg:grid-cols-3 xl:grid-cols-4 gap-6">
           
-          {/* Left Column: Stats & Charts */}
-          <div className="lg:col-span-1 space-y-6">
+          {/* Column 1: Stats & Charts */}
+          <div className="lg:col-span-1 xl:col-span-1 space-y-6">
              {/* Summary Cards */}
              <div className="grid grid-cols-2 gap-4">
                 <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
                    <p className="text-xs text-gray-500 uppercase font-bold">Total Trained</p>
-                   <p className="text-2xl font-bold text-slate-800">{stats.total}</p>
+                   <p className="text-2xl font-bold text-slate-800">{String(stats.total)}</p>
                 </div>
                 <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
                    <p className="text-xs text-gray-500 uppercase font-bold">Pass Rate</p>
                    <p className={`text-2xl font-bold ${Number(stats.passRate) >= 70 ? 'text-green-600' : 'text-red-600'}`}>
-                      {stats.passRate}%
+                      {String(stats.passRate)}%
                    </p>
                 </div>
                 <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
                    <p className="text-xs text-gray-500 uppercase font-bold">Attendance</p>
-                   <p className="text-2xl font-bold text-blue-600">{stats.attendanceRate}%</p>
+                   <p className="text-2xl font-bold text-blue-600">{String(stats.attendanceRate)}%</p>
                 </div>
                 <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
-                   <p className="text-xs text-gray-500 uppercase font-bold">Failures</p>
-                   <p className="text-2xl font-bold text-red-600">{stats.failed}</p>
+                   <p className="text-xs text-gray-500 uppercase font-bold">No Shows</p>
+                   <p className="text-2xl font-bold text-red-600">{String(noShowList.length)}</p>
                 </div>
              </div>
 
@@ -264,8 +280,8 @@ const ReportsPage: React.FC<ReportsPageProps> = ({ bookings }) => {
              </div>
           </div>
 
-          {/* Right Column: AI Analysis */}
-          <div className="lg:col-span-2">
+          {/* Column 2 & 3: AI Analysis */}
+          <div className="lg:col-span-2 xl:col-span-2">
              <div className="bg-white rounded-xl border border-slate-200 shadow-sm h-full min-h-[500px] flex flex-col">
                 <div className="p-4 border-b border-gray-100 bg-gradient-to-r from-indigo-50 to-white rounded-t-xl flex justify-between items-center">
                    <div className="flex items-center gap-2">
@@ -278,7 +294,7 @@ const ReportsPage: React.FC<ReportsPageProps> = ({ bookings }) => {
                 <div className="p-8 flex-1 overflow-auto">
                    {aiReport ? (
                       <div className="prose prose-sm max-w-none text-slate-700">
-                         {aiReport.split('\n').map((line, i) => (
+                         {String(aiReport).split('\n').map((line, i) => (
                             <p key={i} className={`
                                ${line.startsWith('##') ? 'text-lg font-bold text-slate-900 mt-4 mb-2' : ''}
                                ${line.startsWith('-') ? 'ml-4' : ''}
@@ -298,9 +314,56 @@ const ReportsPage: React.FC<ReportsPageProps> = ({ bookings }) => {
                 
                 {aiReport && (
                    <div className="p-4 border-t border-gray-100 text-xs text-gray-400 text-center">
-                      Analysis generated by Gemini AI based on {stats.total} records. Verify critical data manually.
+                      Analysis generated by Gemini AI based on {String(stats.total)} records. Verify critical data manually.
                    </div>
                 )}
+             </div>
+          </div>
+
+          {/* Column 4: No Show Table */}
+          <div className="lg:col-span-3 xl:col-span-1">
+             <div className="bg-white rounded-xl border border-slate-200 shadow-sm h-full flex flex-col overflow-hidden">
+                <div className="p-4 border-b border-gray-200 bg-red-50 flex justify-between items-center">
+                    <div className="flex items-center gap-2">
+                        <UserX className="text-red-600" size={20} />
+                        <h3 className="font-bold text-red-900">No Show</h3>
+                    </div>
+                    <span className="text-xs bg-red-100 text-red-700 px-2 py-0.5 rounded-full border border-red-200 font-bold">
+                        {String(noShowList.length)}
+                    </span>
+                </div>
+                
+                <div className="flex-1 overflow-auto">
+                    {noShowList.length === 0 ? (
+                        <div className="flex flex-col items-center justify-center h-48 text-gray-400">
+                            <AlertCircle size={32} className="mb-2 opacity-50" />
+                            <p className="text-sm">No absences in this period.</p>
+                        </div>
+                    ) : (
+                        <table className="min-w-full divide-y divide-gray-100">
+                            <thead className="bg-gray-50">
+                                <tr>
+                                    <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">ID</th>
+                                    <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Name</th>
+                                    <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Company</th>
+                                    <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">RAC</th>
+                                    <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Date</th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-gray-100">
+                                {noShowList.map((item, idx) => (
+                                    <tr key={`${item.id}-${idx}`} className="hover:bg-red-50/30">
+                                        <td className="px-3 py-2 text-xs text-gray-500 font-mono">{String(item.id)}</td>
+                                        <td className="px-3 py-2 text-xs font-bold text-slate-800">{String(item.name)}</td>
+                                        <td className="px-3 py-2 text-xs text-gray-600">{String(item.company)}</td>
+                                        <td className="px-3 py-2 text-[10px] text-slate-500">{String(item.rac)}</td>
+                                        <td className="px-3 py-2 text-[10px] text-gray-400">{String(item.date)}</td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    )}
+                </div>
              </div>
           </div>
 

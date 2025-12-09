@@ -11,9 +11,11 @@
           extend: {
             colors: {
               vulcan: {
-                yellow: '#fbbf24', // Amber-400 equivalent
+                yellow: '#d97706', // Darker Amber for the bar
+                headerYellow: '#f59e0b', // Amber-500 for the top block
+                warning: '#eab308', // Yellow-500 for banner
                 dark: '#1f2937',
-                green: '#059669', // Emerald-600
+                green: '#047857', // Emerald-700
               }
             },
             screens: {
@@ -24,7 +26,7 @@
       }
     </script>
     <style>
-      @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap');
+      @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700;900&display=swap');
       body {
         font-family: 'Roboto', sans-serif;
         background-color: #f3f4f6;
@@ -32,11 +34,13 @@
       /* Print specific overrides */
       @media print {
         @page {
-          size: A4;
-          margin: 0;
+          size: A4 landscape;
+          margin: 0; /* Important for exact positioning */
         }
         body {
           background-color: white;
+          -webkit-print-color-adjust: exact;
+          print-color-adjust: exact;
         }
         .no-print {
           display: none !important;
@@ -44,6 +48,15 @@
         .print-only {
           display: block !important;
         }
+        /* Ensure background colors print */
+        * {
+          -webkit-print-color-adjust: exact !important;
+          print-color-adjust: exact !important;
+        }
+        /* Force background for specific vulcan colors if browser settings override */
+        .bg-vulcan-headerYellow { background-color: #f59e0b !important; }
+        .bg-vulcan-warning { background-color: #eab308 !important; }
+        .bg-vulcan-green { background-color: #047857 !important; }
       }
     </style>
   <script type="importmap">
@@ -52,6 +65,7 @@
     "react/": "https://aistudiocdn.com/react@^19.2.1/",
     "react": "https://aistudiocdn.com/react@^19.2.1",
     "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.1/",
+    "react-dom": "https://aistudiocdn.com/react-dom@^19.2.1",
     "recharts": "https://aistudiocdn.com/recharts@^3.5.1",
     "lucide-react": "https://aistudiocdn.com/lucide-react@^0.556.0",
     "@google/genai": "https://aistudiocdn.com/@google/genai@^1.31.0",

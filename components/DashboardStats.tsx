@@ -150,7 +150,7 @@ const DashboardStats: React.FC<DashboardStatsProps> = ({ bookings, requirements 
               <p className="text-[10px] text-gray-500 uppercase font-bold tracking-wider">Aderência Saúde e Segurança</p>
               <div className="flex items-baseline gap-1">
                  <p className={`text-2xl font-bold ${Number(adherencePercentage) > 85 ? 'text-green-600' : 'text-red-600'}`}>
-                   {adherencePercentage}%
+                   {String(adherencePercentage)}%
                  </p>
                  <span className="text-[10px] text-gray-400">Access Granted</span>
               </div>
@@ -165,7 +165,7 @@ const DashboardStats: React.FC<DashboardStatsProps> = ({ bookings, requirements 
           <div className="flex items-center justify-between">
             <div>
               <p className="text-[10px] text-gray-500 uppercase font-bold tracking-wider">Total Certifications</p>
-              <p className="text-2xl font-bold text-slate-800">{passed}</p>
+              <p className="text-2xl font-bold text-slate-800">{String(passed)}</p>
             </div>
             <div className="p-2 bg-blue-100 text-blue-600 rounded-full">
               <CheckCircle size={20} />
@@ -177,7 +177,7 @@ const DashboardStats: React.FC<DashboardStatsProps> = ({ bookings, requirements 
           <div className="flex items-center justify-between">
             <div>
               <p className="text-[10px] text-gray-500 uppercase font-bold tracking-wider">Pending Grading</p>
-              <p className="text-2xl font-bold text-slate-800">{pending}</p>
+              <p className="text-2xl font-bold text-slate-800">{String(pending)}</p>
             </div>
             <div className="p-2 bg-yellow-100 text-yellow-600 rounded-full">
               <Clock size={20} />
@@ -189,7 +189,7 @@ const DashboardStats: React.FC<DashboardStatsProps> = ({ bookings, requirements 
           <div className="flex items-center justify-between">
             <div>
               <p className="text-[10px] text-gray-500 uppercase font-bold tracking-wider">Expiring (30 Days)</p>
-              <p className="text-2xl font-bold text-red-600">{expiring.length}</p>
+              <p className="text-2xl font-bold text-red-600">{String(expiring.length)}</p>
             </div>
             <div className="p-2 bg-red-100 text-red-600 rounded-full">
               <AlertTriangle size={20} />
@@ -201,7 +201,7 @@ const DashboardStats: React.FC<DashboardStatsProps> = ({ bookings, requirements 
           <div className="flex items-center justify-between">
             <div>
               <p className="text-[10px] text-gray-500 uppercase font-bold tracking-wider">Scheduled Sessions</p>
-              <p className="text-2xl font-bold text-slate-800">{MOCK_SESSIONS.length}</p>
+              <p className="text-2xl font-bold text-slate-800">{String(MOCK_SESSIONS.length)}</p>
             </div>
             <div className="p-2 bg-indigo-100 text-indigo-600 rounded-full">
               <Activity size={20} />
@@ -216,7 +216,7 @@ const DashboardStats: React.FC<DashboardStatsProps> = ({ bookings, requirements 
           <div className="mb-4 md:mb-0">
             <h3 className="text-lg font-bold text-yellow-800">Action Required: Training Renewal</h3>
             <p className="text-sm text-yellow-700">
-              {expiring.length} employees have critical training expiring within 30 days. 
+              {String(expiring.length)} employees have critical training expiring within 30 days. 
             </p>
           </div>
           <button 

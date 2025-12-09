@@ -1,8 +1,10 @@
+
 import React, { useState } from 'react';
 import { Employee, BookingStatus, Booking, UserRole } from '../types';
 import { COMPANIES, DEPARTMENTS, ROLES, MOCK_SESSIONS } from '../constants';
 import { Plus, Trash2, Save, Settings } from 'lucide-react';
 import { v4 as uuidv4 } from 'uuid';
+import { useNavigate } from 'react-router-dom';
 
 interface BookingFormProps {
   addBookings: (newBookings: Booking[]) => void;
@@ -10,19 +12,21 @@ interface BookingFormProps {
 }
 
 const BookingForm: React.FC<BookingFormProps> = ({ addBookings, userRole }) => {
+  const navigate = useNavigate();
   const [selectedSession, setSelectedSession] = useState('');
   
   const canManageSessions = userRole === UserRole.SYSTEM_ADMIN || userRole === UserRole.RAC_ADMIN;
 
-  // Initialize with 10 empty rows as per requirement
-  const initialRows = Array.from({ length: 10 }).map(() => ({
+  const initialRows = Array.from({ length: 5 }).map(() => ({
     id: uuidv4(),
     name: '',
     recordId: '',
     company: COMPANIES[0],
     department: DEPARTMENTS[0],
     role: ROLES[0],
-    ga: ''
+    driverLicenseNumber: '',
+    driverLicenseClass: '',
+    driverLicenseExpiry: ''
   }));
 
   const [rows, setRows] = useState(initialRows);
@@ -43,7 +47,9 @@ const BookingForm: React.FC<BookingFormProps> = ({ addBookings, userRole }) => {
       company: COMPANIES[0],
       department: DEPARTMENTS[0],
       role: ROLES[0],
-      ga: ''
+      driverLicenseNumber: '',
+      driverLicenseClass: '',
+      driverLicenseExpiry: ''
     }]);
   };
 
@@ -62,7 +68,6 @@ const BookingForm: React.FC<BookingFormProps> = ({ addBookings, userRole }) => {
       return;
     }
 
-    // Filter out empty rows (must have Name and ID)
     const validRows = rows.filter(r => r.name.trim() !== '' && r.recordId.trim() !== '');
 
     if (validRows.length === 0) {
@@ -80,20 +85,26 @@ const BookingForm: React.FC<BookingFormProps> = ({ addBookings, userRole }) => {
     addBookings(newBookings);
     setSubmitted(true);
     setTimeout(() => setSubmitted(false), 3000);
-    // Reset form
     setRows(initialRows);
     setSelectedSession('');
   };
+
+  // Check if RAC02 is selected to highlight DL fields
+  const isRac02Selected = MOCK_SESSIONS.find(s => s.id === selectedSession)?.racType.includes('RAC02') || 
+                          MOCK_SESSIONS.find(s => s.id === selectedSession)?.racType.includes('RAC 02');
 
   return (
     <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
       <div className="mb-6 border-b border-slate-100 pb-4 flex justify-between items-start">
         <div>
            <h2 className="text-xl font-bold text-slate-800">Book Training Session</h2>
-           <p className="text-sm text-gray-500">Register employees for upcoming RAC training. Default 10 slots.</p>
+           <p className="text-sm text-gray-500">Register employees for upcoming RAC training. {isRac02Selected && <span className="text-red-500 font-bold">Driver License details required for RAC 02.</span>}</p>
         </div>
         {canManageSessions && (
-            <button className="flex items-center gap-2 text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 py-1.5 rounded-lg border border-slate-300 transition-colors">
+            <button 
+                onClick={() => navigate('/settings')}
+                className="flex items-center gap-2 text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 py-1.5 rounded-lg border border-slate-300 transition-colors"
+            >
                 <Settings size={14} />
                 <span>Manage Schedule</span>
             </button>
@@ -107,7 +118,6 @@ const BookingForm: React.FC<BookingFormProps> = ({ addBookings, userRole }) => {
       )}
 
       <form onSubmit={handleSubmit}>
-        {/* Session Selector */}
         <div className="mb-6 max-w-xl">
           <label className="block text-sm font-medium text-gray-700 mb-1">Select Training Schedule</label>
           <select 
@@ -125,18 +135,23 @@ const BookingForm: React.FC<BookingFormProps> = ({ addBookings, userRole }) => {
           </select>
         </div>
 
-        {/* Dynamic Grid */}
         <div className="overflow-x-auto mb-6">
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
               <tr>
                 <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">No.</th>
-                <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-48">Name</th>
-                <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-32">ID / Company No.</th>
-                <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Company</th>
-                <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Department</th>
-                <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Role</th>
-                <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-24">GA</th>
+                <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider min-w-[150px]">Name & ID</th>
+                <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Details</th>
+                {isRac02Selected && (
+                  <>
+                    <th className="px-3 py-3 text-left text-xs font-medium uppercase tracking-wider text-red-600 font-bold">
+                        DL No. / Class
+                    </th>
+                    <th className="px-3 py-3 text-left text-xs font-medium uppercase tracking-wider text-red-600 font-bold">
+                        DL Expiry
+                    </th>
+                  </>
+                )}
                 <th className="px-3 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Action</th>
               </tr>
             </thead>
@@ -144,7 +159,7 @@ const BookingForm: React.FC<BookingFormProps> = ({ addBookings, userRole }) => {
               {rows.map((row, index) => (
                 <tr key={row.id}>
                   <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-500">{index + 1}</td>
-                  <td className="px-3 py-2">
+                  <td className="px-3 py-2 space-y-2">
                     <input 
                       type="text" 
                       className="w-full border-gray-300 rounded-md shadow-sm focus:ring-yellow-500 focus:border-yellow-500 sm:text-sm border p-1"
@@ -152,8 +167,6 @@ const BookingForm: React.FC<BookingFormProps> = ({ addBookings, userRole }) => {
                       value={row.name}
                       onChange={(e) => handleRowChange(index, 'name', e.target.value)}
                     />
-                  </td>
-                  <td className="px-3 py-2">
                     <input 
                       type="text" 
                       className="w-full border-gray-300 rounded-md shadow-sm focus:ring-yellow-500 focus:border-yellow-500 sm:text-sm border p-1"
@@ -162,7 +175,7 @@ const BookingForm: React.FC<BookingFormProps> = ({ addBookings, userRole }) => {
                       onChange={(e) => handleRowChange(index, 'recordId', e.target.value)}
                     />
                   </td>
-                  <td className="px-3 py-2">
+                  <td className="px-3 py-2 space-y-1">
                      <select 
                       className="w-full border-gray-300 rounded-md shadow-sm sm:text-sm border p-1"
                       value={row.company}
@@ -170,8 +183,6 @@ const BookingForm: React.FC<BookingFormProps> = ({ addBookings, userRole }) => {
                     >
                       {COMPANIES.map(c => <option key={c} value={c}>{c}</option>)}
                     </select>
-                  </td>
-                  <td className="px-3 py-2">
                     <select 
                       className="w-full border-gray-300 rounded-md shadow-sm sm:text-sm border p-1"
                       value={row.department}
@@ -180,24 +191,37 @@ const BookingForm: React.FC<BookingFormProps> = ({ addBookings, userRole }) => {
                       {DEPARTMENTS.map(d => <option key={d} value={d}>{d}</option>)}
                     </select>
                   </td>
-                  <td className="px-3 py-2">
-                     <select 
-                      className="w-full border-gray-300 rounded-md shadow-sm sm:text-sm border p-1"
-                      value={row.role}
-                      onChange={(e) => handleRowChange(index, 'role', e.target.value)}
-                    >
-                      {ROLES.map(r => <option key={r} value={r}>{r}</option>)}
-                    </select>
-                  </td>
-                  <td className="px-3 py-2">
-                    <input 
-                      type="text" 
-                      className="w-full border-gray-300 rounded-md shadow-sm focus:ring-yellow-500 focus:border-yellow-500 sm:text-sm border p-1"
-                      placeholder="Area"
-                      value={row.ga}
-                      onChange={(e) => handleRowChange(index, 'ga', e.target.value)}
-                    />
-                  </td>
+                  
+                  {/* DL Fields - Only visible if RAC 02 */}
+                  {isRac02Selected && (
+                    <>
+                      <td className="px-3 py-2 space-y-1 bg-red-50/50">
+                         <input 
+                            type="text" 
+                            className="w-full border-gray-300 rounded-md shadow-sm focus:ring-yellow-500 focus:border-yellow-500 sm:text-sm border p-1"
+                            placeholder="DL Number"
+                            value={row.driverLicenseNumber}
+                            onChange={(e) => handleRowChange(index, 'driverLicenseNumber', e.target.value)}
+                          />
+                          <input 
+                            type="text" 
+                            className="w-full border-gray-300 rounded-md shadow-sm focus:ring-yellow-500 focus:border-yellow-500 sm:text-sm border p-1"
+                            placeholder="Class (e.g. C+E)"
+                            value={row.driverLicenseClass}
+                            onChange={(e) => handleRowChange(index, 'driverLicenseClass', e.target.value)}
+                          />
+                      </td>
+                      <td className="px-3 py-2 bg-red-50/50">
+                          <input 
+                            type="date" 
+                            className="w-full border-gray-300 rounded-md shadow-sm focus:ring-yellow-500 focus:border-yellow-500 sm:text-sm border p-1"
+                            value={row.driverLicenseExpiry}
+                            onChange={(e) => handleRowChange(index, 'driverLicenseExpiry', e.target.value)}
+                          />
+                      </td>
+                    </>
+                  )}
+
                   <td className="px-3 py-2 text-center">
                     <button 
                       type="button"
