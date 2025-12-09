@@ -6,6 +6,7 @@ import { COMPANIES, RAC_KEYS } from '../constants';
 import { Calendar, Clock, MapPin, ChevronRight, Filter, Timer, User } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { v4 as uuidv4 } from 'uuid';
+import { useLanguage } from '../contexts/LanguageContext';
 
 interface DashboardProps {
   bookings: Booking[];
@@ -16,6 +17,7 @@ interface DashboardProps {
 
 const Dashboard: React.FC<DashboardProps> = ({ bookings, requirements, sessions, userRole }) => {
   const navigate = useNavigate();
+  const { t } = useLanguage();
   const [selectedCompany, setSelectedCompany] = useState<string>('All');
   // Trigger re-render every minute to update countdowns
   const [, setTick] = useState(0);
@@ -172,8 +174,8 @@ const Dashboard: React.FC<DashboardProps> = ({ bookings, requirements, sessions,
       {/* Top Header */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-white p-4 rounded-xl shadow-sm border border-slate-200">
         <div>
-          <h2 className="text-lg font-bold text-slate-800">Operational Overview</h2>
-          <p className="text-sm text-gray-500">Real-time safety training metrics.</p>
+          <h2 className="text-lg font-bold text-slate-800">{t.dashboard.title}</h2>
+          <p className="text-sm text-gray-500">{t.dashboard.subtitle}</p>
         </div>
         <div className="flex items-center gap-2">
           <Filter size={16} className="text-gray-400" />
@@ -202,10 +204,10 @@ const Dashboard: React.FC<DashboardProps> = ({ bookings, requirements, sessions,
           <div className="px-6 py-4 border-b border-slate-200 bg-gray-50 flex justify-between items-center">
              <div className="flex items-center gap-2">
                 <Calendar className="text-yellow-600" size={20} />
-                <h3 className="font-bold text-slate-800 text-lg">Upcoming Sessions</h3>
+                <h3 className="font-bold text-slate-800 text-lg">{t.dashboard.upcoming.title}</h3>
              </div>
              <button onClick={() => navigate('/schedule')} className="text-xs text-blue-600 font-semibold flex items-center hover:underline">
-               View Schedule <ChevronRight size={14} />
+               {t.dashboard.upcoming.viewSchedule} <ChevronRight size={14} />
              </button>
           </div>
           
@@ -213,10 +215,10 @@ const Dashboard: React.FC<DashboardProps> = ({ bookings, requirements, sessions,
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-white">
                  <tr>
-                   <th className="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Date / Time</th>
-                   <th className="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Session Info</th>
-                   <th className="px-4 py-3 text-center text-xs font-bold text-gray-500 uppercase tracking-wider">Capacity</th>
-                   <th className="px-4 py-3 text-center text-xs font-bold text-gray-500 uppercase tracking-wider">Status</th>
+                   <th className="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">{t.dashboard.upcoming.date}</th>
+                   <th className="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">{t.dashboard.upcoming.session}</th>
+                   <th className="px-4 py-3 text-center text-xs font-bold text-gray-500 uppercase tracking-wider">{t.dashboard.upcoming.capacity}</th>
+                   <th className="px-4 py-3 text-center text-xs font-bold text-gray-500 uppercase tracking-wider">{t.dashboard.upcoming.status}</th>
                  </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
@@ -256,7 +258,7 @@ const Dashboard: React.FC<DashboardProps> = ({ bookings, requirements, sessions,
              <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-2">
                    <User className="text-blue-600" size={20} />
-                   <h3 className="font-bold text-slate-800 text-lg">Employees Booked</h3>
+                   <h3 className="font-bold text-slate-800 text-lg">{t.dashboard.booked.title}</h3>
                 </div>
                 <div className="text-xs text-gray-400">
                   {filteredEmployeeBookings.length} records
@@ -298,17 +300,17 @@ const Dashboard: React.FC<DashboardProps> = ({ bookings, requirements, sessions,
                 <thead className="bg-gray-50 sticky top-0 shadow-sm z-10">
                    <tr>
                      <th className="px-3 py-2 text-left text-[10px] font-bold text-gray-500 uppercase tracking-wider">ID</th>
-                     <th className="px-3 py-2 text-left text-[10px] font-bold text-gray-500 uppercase tracking-wider">Employee / Company</th>
-                     <th className="px-3 py-2 text-left text-[10px] font-bold text-gray-500 uppercase tracking-wider">RAC Booked</th>
-                     <th className="px-3 py-2 text-left text-[10px] font-bold text-gray-500 uppercase tracking-wider">Date</th>
-                     <th className="px-3 py-2 text-left text-[10px] font-bold text-gray-500 uppercase tracking-wider">Room</th>
+                     <th className="px-3 py-2 text-left text-[10px] font-bold text-gray-500 uppercase tracking-wider">{t.dashboard.booked.tableEmployee}</th>
+                     <th className="px-3 py-2 text-left text-[10px] font-bold text-gray-500 uppercase tracking-wider">{t.dashboard.booked.tableRac}</th>
+                     <th className="px-3 py-2 text-left text-[10px] font-bold text-gray-500 uppercase tracking-wider">{t.dashboard.booked.tableDate}</th>
+                     <th className="px-3 py-2 text-left text-[10px] font-bold text-gray-500 uppercase tracking-wider">{t.dashboard.booked.tableRoom}</th>
                    </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
                    {filteredEmployeeBookings.length === 0 ? (
                       <tr>
                         <td colSpan={5} className="px-6 py-8 text-center text-gray-400 text-sm">
-                          No bookings matching filters
+                          {t.dashboard.booked.noData}
                         </td>
                       </tr>
                    ) : (

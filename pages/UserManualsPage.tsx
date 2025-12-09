@@ -6,16 +6,18 @@ import {
   Settings, Database, Plus, Save, Upload, Download, 
   CheckCircle, AlertTriangle, Printer, Search, Bell
 } from 'lucide-react';
+import { useLanguage } from '../contexts/LanguageContext';
 
 const UserManualsPage: React.FC = () => {
+  const { t } = useLanguage();
   const [activeRole, setActiveRole] = useState<UserRole>(UserRole.SYSTEM_ADMIN);
 
   const roles = [
-    { id: UserRole.SYSTEM_ADMIN, label: 'System Admin', icon: Monitor, color: 'text-blue-600', bg: 'bg-blue-50' },
-    { id: UserRole.RAC_ADMIN, label: 'RAC Admin', icon: Shield, color: 'text-yellow-600', bg: 'bg-yellow-50' },
-    { id: UserRole.RAC_TRAINER, label: 'RAC Trainer', icon: Briefcase, color: 'text-green-600', bg: 'bg-green-50' },
-    { id: UserRole.DEPT_ADMIN, label: 'Dept. Admin', icon: Users, color: 'text-purple-600', bg: 'bg-purple-50' },
-    { id: UserRole.USER, label: 'Employee / User', icon: UserCog, color: 'text-gray-600', bg: 'bg-gray-50' },
+    { id: UserRole.SYSTEM_ADMIN, label: t.proposal.roles.sysAdmin.title, icon: Monitor, color: 'text-blue-600', bg: 'bg-blue-50' },
+    { id: UserRole.RAC_ADMIN, label: t.proposal.roles.racAdmin.title, icon: Shield, color: 'text-yellow-600', bg: 'bg-yellow-50' },
+    { id: UserRole.RAC_TRAINER, label: t.proposal.roles.racTrainer.title, icon: Briefcase, color: 'text-green-600', bg: 'bg-green-50' },
+    { id: UserRole.DEPT_ADMIN, label: t.proposal.roles.deptAdmin.title, icon: Users, color: 'text-purple-600', bg: 'bg-purple-50' },
+    { id: UserRole.USER, label: t.proposal.roles.user.title, icon: UserCog, color: 'text-gray-600', bg: 'bg-gray-50' },
   ];
 
   return (
@@ -24,8 +26,8 @@ const UserManualsPage: React.FC = () => {
       {/* Sidebar Navigation */}
       <div className="w-full md:w-64 bg-slate-50 border-r border-slate-200 flex flex-col">
         <div className="p-6 border-b border-slate-200">
-           <h2 className="text-lg font-bold text-slate-800">Operational Manuals</h2>
-           <p className="text-xs text-gray-500 mt-1">Select a role to view instructions.</p>
+           <h2 className="text-lg font-bold text-slate-800">{t.manuals.title}</h2>
+           <p className="text-xs text-gray-500 mt-1">{t.manuals.subtitle}</p>
         </div>
         <div className="flex-1 overflow-y-auto p-2 space-y-1">
            {roles.map((role) => {
@@ -56,45 +58,45 @@ const UserManualsPage: React.FC = () => {
          {/* System Admin Manual */}
          {activeRole === UserRole.SYSTEM_ADMIN && (
             <div className="max-w-4xl mx-auto animate-fade-in-up">
-               <Header title="System Administrator Manual" icon={Monitor} color="blue" />
+               <Header title={t.manuals.sysAdmin.title} icon={Monitor} color="blue" />
                
-               <Section title="1. System Configuration">
-                  <p>Navigate to the <span className="font-bold text-slate-800">System Settings</span> page to configure core parameters.</p>
+               <Section title={t.manuals.sysAdmin.sec1}>
+                  <p>{t.manuals.sysAdmin.sec1text}</p>
                   <ul className="step-list">
                      <Step 
                         num="1" 
-                        text="Manage Rooms: Click the 'General' tab to Add or Edit room capacities." 
-                        visual={<div className="btn-mock"><Plus size={12}/> New Room</div>}
+                        text={t.manuals.sysAdmin.step1} 
+                        visual={<div className="btn-mock"><Plus size={12}/> {t.settings.rooms.new}</div>}
                      />
                      <Step 
                         num="2" 
-                        text="Authorize Trainers: Go to 'Trainers' tab. Add new trainers and assign their qualified RACs." 
+                        text={t.manuals.sysAdmin.step2} 
                         visual={<div className="badge-mock">RAC01, RAC05</div>} 
                      />
                      <Step 
                         num="3" 
-                        text="Save Changes: Ensure you click 'Save All Configurations' to persist changes to the database." 
-                        visual={<div className="btn-primary-mock"><Save size={12}/> Save All</div>}
+                        text={t.manuals.sysAdmin.step3} 
+                        visual={<div className="btn-primary-mock"><Save size={12}/> {t.settings.saveAll}</div>}
                      />
                   </ul>
                </Section>
 
-               <Section title="2. Mass Data Import">
-                  <p>Use the <span className="font-bold text-slate-800">Database</span> page to bulk upload historical records.</p>
+               <Section title={t.manuals.sysAdmin.sec2}>
+                  <p>{t.manuals.sysAdmin.sec2text}</p>
                   <ul className="step-list">
                      <Step 
                         num="1" 
-                        text="Download Template: Click the template button to get the correct CSV format." 
-                        visual={<div className="btn-mock">Template</div>}
+                        text={t.manuals.sysAdmin.step4} 
+                        visual={<div className="btn-mock">{t.common.template}</div>}
                      />
                      <Step 
                         num="2" 
-                        text="Prepare Data: Fill the CSV. For RAC 02, ensure DL Number and Class are included." 
+                        text={t.manuals.sysAdmin.step5} 
                      />
                      <Step 
                         num="3" 
-                        text="Upload: Click 'Import Data' and select your file." 
-                        visual={<div className="btn-blue-mock"><Upload size={12}/> Import Data</div>}
+                        text={t.manuals.sysAdmin.step6} 
+                        visual={<div className="btn-blue-mock"><Upload size={12}/> {t.common.import}</div>}
                      />
                   </ul>
                </Section>
@@ -104,37 +106,37 @@ const UserManualsPage: React.FC = () => {
          {/* RAC Admin Manual */}
          {activeRole === UserRole.RAC_ADMIN && (
             <div className="max-w-4xl mx-auto animate-fade-in-up">
-               <Header title="RAC Administrator Manual" icon={Shield} color="yellow" />
+               <Header title={t.manuals.racAdmin.title} icon={Shield} color="yellow" />
                
-               <Section title="1. Scheduling Training">
-                  <p>Plan upcoming sessions via the <span className="font-bold text-slate-800">Schedule Trainings</span> page.</p>
+               <Section title={t.manuals.racAdmin.sec1}>
+                  <p>{t.manuals.racAdmin.sec1text}</p>
                   <ul className="step-list">
                      <Step 
                         num="1" 
-                        text="Create Session: Click 'New Session' button." 
-                        visual={<div className="btn-black-mock"><Plus size={12}/> New Session</div>}
+                        text={t.manuals.racAdmin.step1} 
+                        visual={<div className="btn-black-mock"><Plus size={12}/> {t.schedule.newSession}</div>}
                      />
                      <Step 
                         num="2" 
-                        text="Define Parameters: Select RAC Type, Date, Time, and Room. The system checks capacity." 
+                        text={t.manuals.racAdmin.step2} 
                      />
                   </ul>
                </Section>
 
-               <Section title="2. Monitoring Compliance">
-                  <p>Use the <span className="font-bold text-slate-800">Dashboard</span> to track expiry risks.</p>
+               <Section title={t.manuals.racAdmin.sec2}>
+                  <p>{t.manuals.racAdmin.sec2text}</p>
                   <AlertBox type="warning">
-                      <strong>Automatic Actions:</strong> The system sends warning emails at 30 days and auto-books training at 7 days remaining.
+                      <strong>{t.manuals.racAdmin.alert}</strong>
                   </AlertBox>
                   <ul className="step-list">
                      <Step 
                         num="1" 
-                        text="Review Expiring: Check the 'Expiring (30 Days)' card." 
-                        visual={<div className="flex gap-2"><Bell size={14}/> Action Required</div>}
+                        text={t.manuals.racAdmin.step3} 
+                        visual={<div className="flex gap-2"><Bell size={14}/> {t.dashboard.renewal.title}</div>}
                      />
                      <Step 
                         num="2" 
-                        text="Manual Renewal: Click 'Book Renewals' to auto-fill the booking form with at-risk employees." 
+                        text={t.manuals.racAdmin.step4} 
                      />
                   </ul>
                </Section>
@@ -144,31 +146,31 @@ const UserManualsPage: React.FC = () => {
          {/* RAC Trainer Manual */}
          {activeRole === UserRole.RAC_TRAINER && (
             <div className="max-w-4xl mx-auto animate-fade-in-up">
-               <Header title="RAC Trainer Manual" icon={Briefcase} color="green" />
+               <Header title={t.manuals.racTrainer.title} icon={Briefcase} color="green" />
                
-               <Section title="1. Grading & Verification">
-                  <p>Access the <span className="font-bold text-slate-800">Trainer Input</span> portal to manage live sessions.</p>
+               <Section title={t.manuals.racTrainer.sec1}>
+                  <p>{t.manuals.racTrainer.sec1text}</p>
                   <AlertBox type="error">
-                      <strong>CRITICAL:</strong> For RAC 02, you MUST physically inspect the Driver License.
+                      <strong>{t.manuals.racTrainer.alert}</strong>
                   </AlertBox>
                   <ul className="step-list">
                      <Step 
                         num="1" 
-                        text="Select Session: Choose your active class from the dropdown." 
+                        text={t.manuals.racTrainer.step1} 
                      />
                      <Step 
                         num="2" 
-                        text="Mark Attendance: Check the box for present employees." 
+                        text={t.manuals.racTrainer.step2} 
                         visual={<div className="checkbox-mock checked" />}
                      />
                      <Step 
                         num="3" 
-                        text="RAC 02 DL Check: Verify License Validtity and check the 'Verified' box. If unchecked, the user Fails." 
+                        text={t.manuals.racTrainer.step3} 
                         visual={<div className="checkbox-red-mock checked" />}
                      />
                      <Step 
                         num="4" 
-                        text="Enter Scores: Input Theory (and Practical) scores. Pass mark is 70%." 
+                        text={t.manuals.racTrainer.step4} 
                      />
                   </ul>
                </Section>
@@ -178,34 +180,34 @@ const UserManualsPage: React.FC = () => {
          {/* Dept Admin Manual */}
          {activeRole === UserRole.DEPT_ADMIN && (
             <div className="max-w-4xl mx-auto animate-fade-in-up">
-               <Header title="Departmental Admin Manual" icon={Users} color="purple" />
+               <Header title={t.manuals.deptAdmin.title} icon={Users} color="purple" />
                
-               <Section title="1. Generating Cards">
-                  <p>Go to <span className="font-bold text-slate-800">Request CARs Cards</span>.</p>
+               <Section title={t.manuals.deptAdmin.sec1}>
+                  <p>{t.manuals.deptAdmin.sec1text}</p>
                   <ul className="step-list">
                      <Step 
                         num="1" 
-                        text="Select Employees: Click cards to select them (Green Checkmark appears)." 
+                        text={t.manuals.deptAdmin.step1} 
                         visual={<CheckCircle size={16} className="text-green-500" />}
                      />
                      <Step 
                         num="2" 
-                        text="Generate PDF: Click 'Request Cards' to trigger email delivery or 'Go to Print View' for immediate printing." 
-                        visual={<div className="btn-black-mock"><Printer size={12}/> Print View</div>}
+                        text={t.manuals.deptAdmin.step2} 
+                        visual={<div className="btn-black-mock"><Printer size={12}/> {t.cards.goToPrint}</div>}
                      />
                   </ul>
                </Section>
 
-               <Section title="2. Reports">
-                  <p>Use <span className="font-bold text-slate-800">Reports & Analytics</span> to monitor your team.</p>
+               <Section title={t.manuals.deptAdmin.sec2}>
+                  <p>{t.manuals.deptAdmin.sec2text}</p>
                   <ul className="step-list">
                      <Step 
                         num="1" 
-                        text="Filter Data: Select your Department from the dropdown." 
+                        text={t.manuals.deptAdmin.step3} 
                      />
                      <Step 
                         num="2" 
-                        text="Check Absences: Review the 'No Show' table on the right." 
+                        text={t.manuals.deptAdmin.step4} 
                      />
                   </ul>
                </Section>
@@ -215,22 +217,20 @@ const UserManualsPage: React.FC = () => {
          {/* User Manual */}
          {activeRole === UserRole.USER && (
             <div className="max-w-4xl mx-auto animate-fade-in-up">
-               <Header title="Employee User Manual" icon={UserCog} color="gray" />
+               <Header title={t.manuals.user.title} icon={UserCog} color="gray" />
                
-               <Section title="1. Dashboard Overview">
-                  <p>Your <span className="font-bold text-slate-800">Dashboard</span> shows your live compliance status.</p>
+               <Section title={t.manuals.user.sec1}>
+                  <p>{t.manuals.user.sec1text}</p>
                   <div className="flex gap-4 my-4">
-                     <div className="badge-green-mock">Compliant (Green)</div>
-                     <span className="text-sm text-gray-500">You are safe to work.</span>
+                     <div className="badge-green-mock">{t.manuals.user.compliant}</div>
                   </div>
                   <div className="flex gap-4 mb-4">
-                     <div className="badge-red-mock">Non-Compliant (Red)</div>
-                     <span className="text-sm text-gray-500">Contact your supervisor immediately.</span>
+                     <div className="badge-red-mock">{t.manuals.user.nonCompliant}</div>
                   </div>
                </Section>
 
-               <Section title="2. Digital Card">
-                  <p>Your physical card contains a QR Code. Security can scan this to verify your training in real-time.</p>
+               <Section title={t.manuals.user.sec2}>
+                  <p>{t.manuals.user.sec2text}</p>
                </Section>
             </div>
          )}

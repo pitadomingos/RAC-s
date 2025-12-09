@@ -6,6 +6,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { sanitizeInput } from '../utils/security';
 import { logger } from '../utils/logger';
+import { useLanguage } from '../contexts/LanguageContext';
 
 interface BookingFormProps {
   addBookings: (newBookings: Booking[]) => void;
@@ -16,6 +17,7 @@ interface BookingFormProps {
 const BookingForm: React.FC<BookingFormProps> = ({ addBookings, sessions, userRole }) => {
   const navigate = useNavigate();
   const location = useLocation();
+  const { t } = useLanguage();
   const [selectedSession, setSelectedSession] = useState('');
   
   const canManageSessions = userRole === UserRole.SYSTEM_ADMIN || userRole === UserRole.RAC_ADMIN;
@@ -121,12 +123,12 @@ const BookingForm: React.FC<BookingFormProps> = ({ addBookings, sessions, userRo
     <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
       <div className="mb-6 border-b border-slate-100 pb-4 flex justify-between items-start">
         <div>
-           <h2 className="text-xl font-bold text-slate-800">Book Training Session</h2>
+           <h2 className="text-xl font-bold text-slate-800">{t.booking.title}</h2>
            <p className="text-sm text-gray-500 flex items-center gap-1">
              <ShieldCheck size={14} className="text-green-600" />
-             Secure Data Entry Mode
+             {t.booking.secureMode}
            </p>
-           {isRac02Selected && <p className="text-xs text-red-500 font-bold mt-1">Driver License details required for RAC 02.</p>}
+           {isRac02Selected && <p className="text-xs text-red-500 font-bold mt-1">{t.booking.dlRequired}</p>}
         </div>
         {canManageSessions && (
             <button 
@@ -134,27 +136,27 @@ const BookingForm: React.FC<BookingFormProps> = ({ addBookings, sessions, userRo
                 className="flex items-center gap-2 text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 py-1.5 rounded-lg border border-slate-300 transition-colors"
             >
                 <Settings size={14} />
-                <span>Manage Schedule</span>
+                <span>{t.booking.manageSchedule}</span>
             </button>
         )}
       </div>
 
       {submitted && (
         <div className="mb-4 p-4 bg-green-50 text-green-700 rounded-lg border border-green-200 animate-fade-in-up">
-          Booking submitted successfully!
+          {t.booking.success}
         </div>
       )}
 
       <form onSubmit={handleSubmit}>
         <div className="mb-6 max-w-xl">
-          <label className="block text-sm font-medium text-gray-700 mb-1">Select Training Schedule</label>
+          <label className="block text-sm font-medium text-gray-700 mb-1">{t.booking.selectSession}</label>
           <select 
             value={selectedSession} 
             onChange={(e) => setSelectedSession(e.target.value)}
             className="w-full border-gray-300 rounded-lg shadow-sm focus:border-yellow-500 focus:ring-yellow-500 p-2 border"
             required
           >
-            <option value="">-- Choose a Session --</option>
+            <option value="">{t.booking.chooseSession}</option>
             {sessions.map(session => (
               <option key={session.id} value={session.id}>
                 {session.racType} - {session.date} ({session.location})
@@ -167,20 +169,20 @@ const BookingForm: React.FC<BookingFormProps> = ({ addBookings, sessions, userRo
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
               <tr>
-                <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">No.</th>
-                <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider min-w-[150px]">Name & ID</th>
-                <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Details</th>
+                <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{t.booking.table.no}</th>
+                <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider min-w-[150px]">{t.booking.table.nameId}</th>
+                <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{t.booking.table.details}</th>
                 {isRac02Selected && (
                   <>
                     <th className="px-3 py-3 text-left text-xs font-medium uppercase tracking-wider text-red-600 font-bold">
-                        DL No. / Class
+                        {t.booking.table.dlNoClass}
                     </th>
                     <th className="px-3 py-3 text-left text-xs font-medium uppercase tracking-wider text-red-600 font-bold">
-                        DL Expiry
+                        {t.booking.table.dlExpiry}
                     </th>
                   </>
                 )}
-                <th className="px-3 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Action</th>
+                <th className="px-3 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">{t.booking.table.action}</th>
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
@@ -191,14 +193,14 @@ const BookingForm: React.FC<BookingFormProps> = ({ addBookings, sessions, userRo
                     <input 
                       type="text" 
                       className="w-full border-gray-300 rounded-md shadow-sm focus:ring-yellow-500 focus:border-yellow-500 sm:text-sm border p-1"
-                      placeholder="Full Name"
+                      placeholder={t.common.name}
                       value={row.name}
                       onChange={(e) => handleRowChange(index, 'name', e.target.value)}
                     />
                     <input 
                       type="text" 
                       className="w-full border-gray-300 rounded-md shadow-sm focus:ring-yellow-500 focus:border-yellow-500 sm:text-sm border p-1"
-                      placeholder="Record ID"
+                      placeholder={t.common.id}
                       value={row.recordId}
                       onChange={(e) => handleRowChange(index, 'recordId', e.target.value)}
                     />
@@ -227,14 +229,14 @@ const BookingForm: React.FC<BookingFormProps> = ({ addBookings, sessions, userRo
                          <input 
                             type="text" 
                             className="w-full border-gray-300 rounded-md shadow-sm focus:ring-yellow-500 focus:border-yellow-500 sm:text-sm border p-1"
-                            placeholder="DL Number"
+                            placeholder={t.database.number}
                             value={row.driverLicenseNumber}
                             onChange={(e) => handleRowChange(index, 'driverLicenseNumber', e.target.value)}
                           />
                           <input 
                             type="text" 
                             className="w-full border-gray-300 rounded-md shadow-sm focus:ring-yellow-500 focus:border-yellow-500 sm:text-sm border p-1"
-                            placeholder="Class"
+                            placeholder={t.database.class}
                             value={row.driverLicenseClass}
                             onChange={(e) => handleRowChange(index, 'driverLicenseClass', e.target.value)}
                           />
@@ -272,7 +274,7 @@ const BookingForm: React.FC<BookingFormProps> = ({ addBookings, sessions, userRo
             className="flex items-center space-x-2 text-sm text-blue-600 hover:text-blue-800 font-medium"
           >
             <Plus size={16} />
-            <span>Add Row</span>
+            <span>{t.booking.addRow}</span>
           </button>
 
           <button 
@@ -280,7 +282,7 @@ const BookingForm: React.FC<BookingFormProps> = ({ addBookings, sessions, userRo
             className="flex items-center space-x-2 bg-yellow-500 hover:bg-yellow-600 text-slate-900 px-6 py-2 rounded-lg font-bold shadow-sm transition-colors"
           >
             <Save size={18} />
-            <span>Submit Booking</span>
+            <span>{t.booking.submitBooking}</span>
           </button>
         </div>
       </form>

@@ -3,6 +3,7 @@ import { Settings, Users, Box, Save, Plus, Trash2, Tag, Edit2, Check, X, AlertCi
 import { RAC_KEYS } from '../constants';
 import { v4 as uuidv4 } from 'uuid';
 import { logger } from '../utils/logger';
+import { useLanguage } from '../contexts/LanguageContext';
 
 // Interfaces
 interface Room { id: string; name: string; capacity: number; }
@@ -10,6 +11,7 @@ interface Trainer { id: string; name: string; racs: string[]; }
 interface RacDef { id: string; code: string; name: string; }
 
 const SettingsPage: React.FC = () => {
+  const { t } = useLanguage();
   const [activeTab, setActiveTab] = useState<'General' | 'Trainers' | 'RACs'>('General');
   const [isSaving, setIsSaving] = useState(false);
 
@@ -153,9 +155,9 @@ const SettingsPage: React.FC = () => {
         <div className="p-6 border-b border-gray-200">
             <h2 className="text-xl font-bold text-slate-800 flex items-center gap-2">
                 <Settings size={24} className="text-slate-400" />
-                System Configuration
+                {t.settings.title}
             </h2>
-            <p className="text-sm text-gray-500">Manage Room Capacities, Trainers, and Global Settings.</p>
+            <p className="text-sm text-gray-500">{t.settings.subtitle}</p>
         </div>
 
         <div className="flex flex-1 overflow-hidden">
@@ -166,21 +168,21 @@ const SettingsPage: React.FC = () => {
                     className={`w-full text-left px-4 py-2 rounded-lg text-sm font-medium transition-colors ${activeTab === 'General' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-600 hover:bg-gray-200'}`}
                 >
                     <Box size={16} className="inline mr-2" />
-                    General & Rooms
+                    {t.settings.tabs.general}
                 </button>
                 <button 
                     onClick={() => setActiveTab('Trainers')}
                     className={`w-full text-left px-4 py-2 rounded-lg text-sm font-medium transition-colors ${activeTab === 'Trainers' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-600 hover:bg-gray-200'}`}
                 >
                     <Users size={16} className="inline mr-2" />
-                    Trainers
+                    {t.settings.tabs.trainers}
                 </button>
                  <button 
                     onClick={() => setActiveTab('RACs')}
                     className={`w-full text-left px-4 py-2 rounded-lg text-sm font-medium transition-colors ${activeTab === 'RACs' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-600 hover:bg-gray-200'}`}
                 >
                     <Tag size={16} className="inline mr-2" />
-                    RAC Definitions
+                    {t.settings.tabs.racs}
                 </button>
             </div>
 
@@ -188,7 +190,7 @@ const SettingsPage: React.FC = () => {
             <div className="flex-1 p-8 overflow-y-auto">
                 {activeTab === 'General' && (
                     <div className="max-w-3xl">
-                        <h3 className="text-lg font-bold text-slate-800 mb-4">Room Configurations</h3>
+                        <h3 className="text-lg font-bold text-slate-800 mb-4">{t.settings.rooms.title}</h3>
                         <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6 text-sm text-blue-800 flex items-start gap-2">
                             <AlertCircle size={16} className="mt-0.5" />
                             <span>Setting capacities here will limit the number of bookings allowed per session in the "Book Training" module.</span>
@@ -199,9 +201,9 @@ const SettingsPage: React.FC = () => {
                             <table className="min-w-full divide-y divide-gray-200">
                                 <thead className="bg-gray-50">
                                     <tr>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Room Name</th>
-                                        <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase">Capacity</th>
-                                        <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Actions</th>
+                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">{t.settings.rooms.name}</th>
+                                        <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase">{t.settings.rooms.capacity}</th>
+                                        <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">{t.common.actions}</th>
                                     </tr>
                                 </thead>
                                 <tbody className="bg-white divide-y divide-gray-200">
@@ -252,7 +254,7 @@ const SettingsPage: React.FC = () => {
                         {/* Create Room Form */}
                         <div className="bg-gray-50 p-4 rounded-lg border border-gray-200 flex gap-4 items-end">
                             <div className="flex-1">
-                                <label className="text-xs font-bold text-gray-500 uppercase">New Room Name</label>
+                                <label className="text-xs font-bold text-gray-500 uppercase">{t.settings.rooms.new}</label>
                                 <input 
                                     className="w-full border rounded p-2 text-sm mt-1" 
                                     placeholder="e.g. Training Lab 4"
@@ -261,7 +263,7 @@ const SettingsPage: React.FC = () => {
                                 />
                             </div>
                             <div className="w-32">
-                                <label className="text-xs font-bold text-gray-500 uppercase">Capacity</label>
+                                <label className="text-xs font-bold text-gray-500 uppercase">{t.settings.rooms.capacity}</label>
                                 <input 
                                     type="number"
                                     className="w-full border rounded p-2 text-sm mt-1" 
@@ -282,16 +284,16 @@ const SettingsPage: React.FC = () => {
 
                 {activeTab === 'Trainers' && (
                     <div className="max-w-4xl">
-                         <h3 className="text-lg font-bold text-slate-800 mb-4">Authorized Trainers</h3>
+                         <h3 className="text-lg font-bold text-slate-800 mb-4">{t.settings.trainers.title}</h3>
                          
                          {/* Trainers Table */}
                          <div className="border border-gray-200 rounded-lg overflow-hidden mb-6">
                             <table className="min-w-full divide-y divide-gray-200">
                                 <thead className="bg-gray-50">
                                     <tr>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase w-1/3">Name</th>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Qualified RACs</th>
-                                        <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase w-32">Action</th>
+                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase w-1/3">{t.settings.trainers.name}</th>
+                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">{t.settings.trainers.qualifiedRacs}</th>
+                                        <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase w-32">{t.common.actions}</th>
                                     </tr>
                                 </thead>
                                 <tbody className="bg-white divide-y divide-gray-200">
@@ -346,7 +348,7 @@ const SettingsPage: React.FC = () => {
                          {/* Create Trainer Form */}
                          <div className="bg-gray-50 p-4 rounded-lg border border-gray-200 flex gap-4 items-end">
                             <div className="w-1/3">
-                                <label className="text-xs font-bold text-gray-500 uppercase">New Trainer Name</label>
+                                <label className="text-xs font-bold text-gray-500 uppercase">{t.settings.trainers.new}</label>
                                 <input 
                                     className="w-full border rounded p-2 text-sm mt-1" 
                                     placeholder="Full Name"
@@ -355,7 +357,7 @@ const SettingsPage: React.FC = () => {
                                 />
                             </div>
                             <div className="flex-1">
-                                <label className="text-xs font-bold text-gray-500 uppercase">Qualified RACs</label>
+                                <label className="text-xs font-bold text-gray-500 uppercase">{t.settings.trainers.qualifiedRacs}</label>
                                 <input 
                                     className="w-full border rounded p-2 text-sm mt-1" 
                                     placeholder="e.g. RAC01, RAC02"
@@ -375,16 +377,16 @@ const SettingsPage: React.FC = () => {
 
                 {activeTab === 'RACs' && (
                     <div className="max-w-4xl">
-                        <h3 className="text-lg font-bold text-slate-800 mb-4">RAC Definitions</h3>
+                        <h3 className="text-lg font-bold text-slate-800 mb-4">{t.settings.racs.title}</h3>
                         
                         {/* RACs Table */}
                         <div className="border border-gray-200 rounded-lg overflow-hidden mb-6">
                             <table className="min-w-full divide-y divide-gray-200">
                                 <thead className="bg-gray-50">
                                     <tr>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase w-32">Code</th>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Description</th>
-                                        <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase w-32">Action</th>
+                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase w-32">{t.settings.racs.code}</th>
+                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">{t.settings.racs.description}</th>
+                                        <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase w-32">{t.common.actions}</th>
                                     </tr>
                                 </thead>
                                 <tbody className="bg-white divide-y divide-gray-200">
@@ -434,7 +436,7 @@ const SettingsPage: React.FC = () => {
                         {/* Create RAC Form */}
                         <div className="bg-gray-50 p-4 rounded-lg border border-gray-200 flex gap-4 items-end">
                             <div className="w-32">
-                                <label className="text-xs font-bold text-gray-500 uppercase">RAC Code</label>
+                                <label className="text-xs font-bold text-gray-500 uppercase">{t.settings.racs.new}</label>
                                 <input 
                                     className="w-full border rounded p-2 text-sm mt-1" 
                                     placeholder="RAC11" 
@@ -443,7 +445,7 @@ const SettingsPage: React.FC = () => {
                                 />
                             </div>
                             <div className="flex-1">
-                                <label className="text-xs font-bold text-gray-500 uppercase">Description</label>
+                                <label className="text-xs font-bold text-gray-500 uppercase">{t.settings.racs.description}</label>
                                 <input 
                                     className="w-full border rounded p-2 text-sm mt-1" 
                                     placeholder="Hazard Description" 
@@ -472,7 +474,7 @@ const SettingsPage: React.FC = () => {
                 `}
             >
                 {isSaving ? <div className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full" /> : <Save size={18} />}
-                <span>{isSaving ? 'Saving...' : 'Save All Configurations'}</span>
+                <span>{isSaving ? t.settings.saving : t.settings.saveAll}</span>
             </button>
         </div>
     </div>

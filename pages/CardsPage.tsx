@@ -1,8 +1,8 @@
-
 import React from 'react';
 import { Booking, BookingStatus, EmployeeRequirement } from '../types';
 import CardTemplate from '../components/CardTemplate';
 import { Printer, AlertCircle } from 'lucide-react';
+import { useLanguage } from '../contexts/LanguageContext';
 
 interface CardsPageProps {
   bookings: Booking[];
@@ -10,6 +10,7 @@ interface CardsPageProps {
 }
 
 const CardsPage: React.FC<CardsPageProps> = ({ bookings, requirements }) => {
+  const { t } = useLanguage();
   
   // Filter eligible bookings (Passed)
   const eligibleBookings = Array.isArray(bookings) 
@@ -48,9 +49,9 @@ const CardsPage: React.FC<CardsPageProps> = ({ bookings, requirements }) => {
       {/* Control Bar */}
       <div className="no-print bg-white p-4 rounded-lg shadow-sm mb-6 flex justify-between items-center">
         <div>
-          <h2 className="text-xl font-bold text-slate-800">Card Generator (CARs)</h2>
+          <h2 className="text-xl font-bold text-slate-800">{t.cards.title}</h2>
           <p className="text-sm text-gray-500">
-            {String(uniqueEmployeeBookings.length)} cards available. Layout: 8 Cards per A4 Landscape Page.
+            {String(uniqueEmployeeBookings.length)} {t.cards.showing}
           </p>
         </div>
         
@@ -60,7 +61,7 @@ const CardsPage: React.FC<CardsPageProps> = ({ bookings, requirements }) => {
             className="flex items-center space-x-2 bg-slate-900 text-white px-4 py-2 rounded-lg hover:bg-slate-800 transition shadow-sm"
           >
             <Printer size={18} />
-            <span>Print Cards</span>
+            <span>{t.common.print}</span>
           </button>
         )}
       </div>
@@ -71,8 +72,8 @@ const CardsPage: React.FC<CardsPageProps> = ({ bookings, requirements }) => {
           <div className="flex flex-col items-center justify-center h-full text-center text-gray-500 max-w-lg">
             <div className="bg-white p-8 rounded-xl shadow-sm border border-gray-200 w-full">
               <AlertCircle size={48} className="text-yellow-500 mx-auto mb-4" />
-              <h3 className="text-lg font-bold text-slate-800 mb-2">No Cards Available</h3>
-              <p>No 'Passed' training records available to generate cards.</p>
+              <h3 className="text-lg font-bold text-slate-800 mb-2">{t.cards.noRecords}</h3>
+              <p>{t.cards.noRecordsSub}</p>
             </div>
           </div>
         ) : (

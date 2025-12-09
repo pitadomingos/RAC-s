@@ -1,10 +1,10 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Booking, BookingStatus, UserRole, TrainingSession } from '../types';
-import { Upload, Download, FileSpreadsheet } from 'lucide-react';
+import { Upload, FileSpreadsheet } from 'lucide-react';
 import { v4 as uuidv4 } from 'uuid';
 import { format, addYears } from 'date-fns';
+import { useLanguage } from '../contexts/LanguageContext';
 
 interface ResultsPageProps {
   bookings: Booking[];
@@ -19,6 +19,7 @@ const ResultsPage: React.FC<ResultsPageProps> = ({ bookings, updateBookingStatus
   const initialQuery = searchParams.get('q') || '';
   const [filter, setFilter] = useState(initialQuery);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const { t } = useLanguage();
   
   // Update filter if URL param changes
   useEffect(() => {
@@ -138,8 +139,8 @@ const ResultsPage: React.FC<ResultsPageProps> = ({ bookings, updateBookingStatus
     <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
         <div>
-           <h2 className="text-xl font-bold text-slate-800">Training Records</h2>
-           <p className="text-sm text-gray-500">Historical view of all training activities. Import legacy data below.</p>
+           <h2 className="text-xl font-bold text-slate-800">{t.results.title}</h2>
+           <p className="text-sm text-gray-500">{t.results.subtitle}</p>
         </div>
         
         <div className="flex flex-col md:flex-row gap-3 w-full md:w-auto">
@@ -152,14 +153,14 @@ const ResultsPage: React.FC<ResultsPageProps> = ({ bookings, updateBookingStatus
                     title="Download CSV Template"
                  >
                     <FileSpreadsheet size={16} />
-                    <span className="hidden sm:inline">Template</span>
+                    <span className="hidden sm:inline">{t.common.template}</span>
                  </button>
                  <button 
                     onClick={() => fileInputRef.current?.click()}
                     className="flex items-center gap-1 bg-indigo-50 text-indigo-700 px-3 py-2 rounded-lg text-xs font-bold border border-indigo-100 hover:bg-indigo-100"
                  >
                     <Upload size={16} />
-                    <span className="hidden sm:inline">Import Data</span>
+                    <span className="hidden sm:inline">{t.common.import}</span>
                  </button>
                  <input 
                     type="file" 
@@ -174,7 +175,7 @@ const ResultsPage: React.FC<ResultsPageProps> = ({ bookings, updateBookingStatus
              <div className="w-64">
                 <input 
                     type="text" 
-                    placeholder="Search employee..." 
+                    placeholder={t.results.searchPlaceholder} 
                     className="w-full border rounded-lg px-3 py-2 text-sm focus:ring-yellow-500 focus:border-yellow-500"
                     value={filter}
                     onChange={(e) => setFilter(e.target.value)}
@@ -187,19 +188,19 @@ const ResultsPage: React.FC<ResultsPageProps> = ({ bookings, updateBookingStatus
         <table className="min-w-full divide-y divide-gray-200">
           <thead className="bg-gray-50">
             <tr>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Employee</th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Session</th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Driver License (RAC 02)</th>
-              <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider w-20">Theory</th>
-              <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider w-20">Prac</th>
-              <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider w-24">Status</th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Expiry</th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{t.results.table.employee}</th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{t.results.table.session}</th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{t.results.table.dlRac02}</th>
+              <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider w-20">{t.results.table.theory}</th>
+              <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider w-20">{t.results.table.prac}</th>
+              <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider w-24">{t.results.table.status}</th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{t.results.table.expiry}</th>
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
             {filteredBookings.length === 0 ? (
               <tr>
-                <td colSpan={7} className="px-6 py-8 text-center text-gray-500">No records found matching your search.</td>
+                <td colSpan={7} className="px-6 py-8 text-center text-gray-500">{t.dashboard.booked.noData}</td>
               </tr>
             ) : (
               filteredBookings.map((booking) => {
@@ -226,12 +227,12 @@ const ResultsPage: React.FC<ResultsPageProps> = ({ bookings, updateBookingStatus
                         {isRac02 ? (
                             <div className="flex flex-col text-xs">
                                 <div>
-                                    <span className="font-bold text-gray-500">No:</span> 
+                                    <span className="font-bold text-gray-500">{t.database.number}:</span> 
                                     {booking.employee.driverLicenseNumber ? String(booking.employee.driverLicenseNumber) : <span className="text-red-400 italic">Missing</span>}
                                 </div>
-                                <div><span className="font-bold text-gray-500">Class:</span> {dlClass}</div>
+                                <div><span className="font-bold text-gray-500">{t.database.class}:</span> {dlClass}</div>
                                 <div className={`${isDlExpired ? 'text-red-600 font-bold' : 'text-gray-600'}`}>
-                                    <span className="font-bold text-gray-500">Exp:</span> {dlExpStr}
+                                    <span className="font-bold text-gray-500">{t.database.expired}:</span> {dlExpStr}
                                 </div>
                             </div>
                         ) : (

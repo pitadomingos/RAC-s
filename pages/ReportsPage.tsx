@@ -5,6 +5,7 @@ import { DEPARTMENTS, RAC_KEYS } from '../constants';
 import { generateSafetyReport } from '../services/geminiService';
 import { FileText, Calendar, Sparkles, BarChart3, Printer, UserX, AlertCircle, UserCheck } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
+import { useLanguage } from '../contexts/LanguageContext';
 
 interface ReportsPageProps {
   bookings: Booking[];
@@ -14,6 +15,7 @@ interface ReportsPageProps {
 type ReportPeriod = 'Weekly' | 'Monthly' | 'YTD' | 'Custom';
 
 const ReportsPage: React.FC<ReportsPageProps> = ({ bookings, sessions }) => {
+  const { t, language } = useLanguage();
   const [period, setPeriod] = useState<ReportPeriod>('Monthly');
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
@@ -178,7 +180,7 @@ const ReportsPage: React.FC<ReportsPageProps> = ({ bookings, sessions }) => {
         }
      };
 
-     const result = await generateSafetyReport(context, period);
+     const result = await generateSafetyReport(context, period, language);
      setAiReport(result);
      setIsGenerating(false);
   };
@@ -189,29 +191,29 @@ const ReportsPage: React.FC<ReportsPageProps> = ({ bookings, sessions }) => {
        <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200 no-print">
           <div className="flex justify-between items-start mb-6">
              <div>
-                <h2 className="text-xl font-bold text-slate-800">Safety Reports & Analytics</h2>
-                <p className="text-sm text-gray-500">Generate insights using AI based on training data.</p>
+                <h2 className="text-xl font-bold text-slate-800">{t.reports.title}</h2>
+                <p className="text-sm text-gray-500">{t.reports.subtitle}</p>
              </div>
              <button onClick={() => window.print()} className="flex items-center gap-2 text-gray-600 hover:text-slate-900">
                 <Printer size={18} />
-                <span className="text-sm font-medium">Print Report</span>
+                <span className="text-sm font-medium">{t.reports.printReport}</span>
              </button>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
              {/* Period Selector */}
              <div>
-                <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Period</label>
+                <label className="block text-xs font-bold text-gray-500 uppercase mb-1">{t.reports.filters.period}</label>
                 <div className="relative">
                    <select 
                      value={period} 
                      onChange={(e) => setPeriod(e.target.value as ReportPeriod)}
                      className="w-full border-gray-300 rounded-lg p-2 text-sm focus:ring-yellow-500 focus:border-yellow-500"
                    >
-                      <option value="Weekly">Last 7 Days</option>
-                      <option value="Monthly">Last 30 Days</option>
-                      <option value="YTD">Year to Date</option>
-                      <option value="Custom">Custom Range</option>
+                      <option value="Weekly">{t.reports.periods.weekly}</option>
+                      <option value="Monthly">{t.reports.periods.monthly}</option>
+                      <option value="YTD">{t.reports.periods.ytd}</option>
+                      <option value="Custom">{t.reports.periods.custom}</option>
                    </select>
                    <Calendar className="absolute right-3 top-2.5 text-gray-400" size={16} />
                 </div>
@@ -219,26 +221,26 @@ const ReportsPage: React.FC<ReportsPageProps> = ({ bookings, sessions }) => {
 
              {/* Dept Filter */}
              <div>
-                <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Department</label>
+                <label className="block text-xs font-bold text-gray-500 uppercase mb-1">{t.reports.filters.department}</label>
                 <select 
                      value={selectedDept} 
                      onChange={(e) => setSelectedDept(e.target.value)}
                      className="w-full border-gray-300 rounded-lg p-2 text-sm focus:ring-yellow-500 focus:border-yellow-500"
                    >
-                      <option value="All">All Departments</option>
+                      <option value="All">{t.common.all}</option>
                       {DEPARTMENTS.map(d => <option key={d} value={d}>{d}</option>)}
                 </select>
              </div>
 
              {/* RAC Filter */}
              <div>
-                <label className="block text-xs font-bold text-gray-500 uppercase mb-1">RAC Type</label>
+                <label className="block text-xs font-bold text-gray-500 uppercase mb-1">{t.reports.filters.racType}</label>
                 <select 
                      value={selectedRac} 
                      onChange={(e) => setSelectedRac(e.target.value)}
                      className="w-full border-gray-300 rounded-lg p-2 text-sm focus:ring-yellow-500 focus:border-yellow-500"
                    >
-                      <option value="All">All RACs</option>
+                      <option value="All">{t.common.all}</option>
                       {RAC_KEYS.map(r => <option key={r} value={r}>{r}</option>)}
                 </select>
              </div>
@@ -258,12 +260,12 @@ const ReportsPage: React.FC<ReportsPageProps> = ({ bookings, sessions }) => {
                   ) : (
                      <Sparkles size={18} />
                   )}
-                  <span>{isGenerating ? 'Analyzing...' : 'Generate AI Report'}</span>
+                  <span>{isGenerating ? t.reports.analyzing : t.reports.generate}</span>
                 </button>
              </div>
           </div>
           {stats.total === 0 && (
-             <p className="text-xs text-red-500 mt-2">No data found for the selected criteria.</p>
+             <p className="text-xs text-red-500 mt-2">{t.dashboard.booked.noData}</p>
           )}
        </div>
 
@@ -275,21 +277,21 @@ const ReportsPage: React.FC<ReportsPageProps> = ({ bookings, sessions }) => {
              {/* Summary Cards */}
              <div className="grid grid-cols-2 gap-4">
                 <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
-                   <p className="text-xs text-gray-500 uppercase font-bold">Total Trained</p>
+                   <p className="text-xs text-gray-500 uppercase font-bold">{t.reports.stats.totalTrained}</p>
                    <p className="text-2xl font-bold text-slate-800">{String(stats.total)}</p>
                 </div>
                 <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
-                   <p className="text-xs text-gray-500 uppercase font-bold">Pass Rate</p>
+                   <p className="text-xs text-gray-500 uppercase font-bold">{t.reports.stats.passRate}</p>
                    <p className={`text-2xl font-bold ${Number(stats.passRate) >= 70 ? 'text-green-600' : 'text-red-600'}`}>
                       {String(stats.passRate)}%
                    </p>
                 </div>
                 <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
-                   <p className="text-xs text-gray-500 uppercase font-bold">Attendance</p>
+                   <p className="text-xs text-gray-500 uppercase font-bold">{t.reports.stats.attendance}</p>
                    <p className="text-2xl font-bold text-blue-600">{String(stats.attendanceRate)}%</p>
                 </div>
                 <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
-                   <p className="text-xs text-gray-500 uppercase font-bold">No Shows</p>
+                   <p className="text-xs text-gray-500 uppercase font-bold">{t.reports.stats.noShows}</p>
                    <p className="text-2xl font-bold text-red-600">{String(noShowList.length)}</p>
                 </div>
              </div>
@@ -298,7 +300,7 @@ const ReportsPage: React.FC<ReportsPageProps> = ({ bookings, sessions }) => {
              <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm h-80">
                 <div className="flex items-center gap-2 mb-4">
                    <BarChart3 size={16} className="text-gray-400" />
-                   <h3 className="text-sm font-bold text-slate-700">Performance by RAC</h3>
+                   <h3 className="text-sm font-bold text-slate-700">{t.reports.charts.performance}</h3>
                 </div>
                 <ResponsiveContainer width="100%" height="90%">
                    <BarChart data={stats.chartData}>
@@ -320,7 +322,7 @@ const ReportsPage: React.FC<ReportsPageProps> = ({ bookings, sessions }) => {
                 <div className="p-4 border-b border-gray-100 bg-gradient-to-r from-indigo-50 to-white rounded-t-xl flex justify-between items-center">
                    <div className="flex items-center gap-2">
                       <FileText className="text-indigo-600" size={20} />
-                      <h3 className="font-bold text-slate-800">Executive Analysis</h3>
+                      <h3 className="font-bold text-slate-800">{t.reports.executiveAnalysis}</h3>
                    </div>
                    {!aiReport && <span className="text-xs text-gray-400 italic">Ready to generate</span>}
                 </div>
@@ -360,7 +362,7 @@ const ReportsPage: React.FC<ReportsPageProps> = ({ bookings, sessions }) => {
                 <div className="p-4 border-b border-gray-200 bg-red-50 flex justify-between items-center">
                     <div className="flex items-center gap-2">
                         <UserX className="text-red-600" size={20} />
-                        <h3 className="font-bold text-red-900">No Show</h3>
+                        <h3 className="font-bold text-red-900">{t.reports.stats.noShows}</h3>
                     </div>
                     <span className="text-xs bg-red-100 text-red-700 px-2 py-0.5 rounded-full border border-red-200 font-bold">
                         {String(noShowList.length)}
@@ -371,17 +373,17 @@ const ReportsPage: React.FC<ReportsPageProps> = ({ bookings, sessions }) => {
                     {noShowList.length === 0 ? (
                         <div className="flex flex-col items-center justify-center h-48 text-gray-400">
                             <AlertCircle size={32} className="mb-2 opacity-50" />
-                            <p className="text-sm">No absences in this period.</p>
+                            <p className="text-sm">{t.dashboard.booked.noData}</p>
                         </div>
                     ) : (
                         <table className="min-w-full divide-y divide-gray-100">
                             <thead className="bg-gray-50">
                                 <tr>
-                                    <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">ID</th>
-                                    <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Name</th>
-                                    <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Company</th>
+                                    <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">{t.common.id}</th>
+                                    <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">{t.common.name}</th>
+                                    <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">{t.common.company}</th>
                                     <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">RAC</th>
-                                    <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Date</th>
+                                    <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">{t.common.date}</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-gray-100">
@@ -406,30 +408,30 @@ const ReportsPage: React.FC<ReportsPageProps> = ({ bookings, sessions }) => {
        <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
           <div className="p-4 border-b border-gray-200 bg-gray-50 flex items-center gap-2">
               <UserCheck size={20} className="text-slate-600" />
-              <h3 className="font-bold text-slate-800">Trainer Performance Metrics</h3>
+              <h3 className="font-bold text-slate-800">{t.reports.trainerMetrics.title}</h3>
           </div>
           <div className="overflow-x-auto">
             <table className="min-w-full divide-y divide-gray-200">
                <thead className="bg-gray-50">
                   <tr>
-                    <th className="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Trainer Name</th>
-                    <th className="px-6 py-3 text-center text-xs font-bold text-gray-500 uppercase tracking-wider">Sessions Conducted / Students</th>
-                    <th className="px-6 py-3 text-center text-xs font-bold text-gray-500 uppercase tracking-wider">Pass Rate</th>
-                    <th className="px-6 py-3 text-center text-xs font-bold text-gray-500 uppercase tracking-wider">Avg Theory Score</th>
-                    <th className="px-6 py-3 text-center text-xs font-bold text-gray-500 uppercase tracking-wider">Avg Practical Score</th>
+                    <th className="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">{t.reports.trainerMetrics.name}</th>
+                    <th className="px-6 py-3 text-center text-xs font-bold text-gray-500 uppercase tracking-wider">{t.reports.trainerMetrics.sessions}</th>
+                    <th className="px-6 py-3 text-center text-xs font-bold text-gray-500 uppercase tracking-wider">{t.reports.trainerMetrics.passRate}</th>
+                    <th className="px-6 py-3 text-center text-xs font-bold text-gray-500 uppercase tracking-wider">{t.reports.trainerMetrics.avgTheory}</th>
+                    <th className="px-6 py-3 text-center text-xs font-bold text-gray-500 uppercase tracking-wider">{t.reports.trainerMetrics.avgPrac}</th>
                   </tr>
                </thead>
                <tbody className="bg-white divide-y divide-gray-200">
                   {trainerStats.length === 0 ? (
                      <tr>
-                        <td colSpan={5} className="px-6 py-8 text-center text-gray-400 text-sm">No trainer data available for this period.</td>
+                        <td colSpan={5} className="px-6 py-8 text-center text-gray-400 text-sm">{t.dashboard.booked.noData}</td>
                      </tr>
                   ) : (
                      trainerStats.map((trainer) => (
                         <tr key={trainer.name} className="hover:bg-gray-50">
                            <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-slate-800">{String(trainer.name)}</td>
                            <td className="px-6 py-4 whitespace-nowrap text-center text-sm text-gray-600">
-                              {String(trainer.students)} students
+                              {String(trainer.students)}
                            </td>
                            <td className="px-6 py-4 whitespace-nowrap text-center">
                               <span className={`px-2 py-1 inline-flex text-xs leading-5 font-bold rounded-full 

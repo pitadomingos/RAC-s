@@ -8,6 +8,7 @@ import { Booking, BookingStatus, EmployeeRequirement } from '../types';
 import { MOCK_SESSIONS, RAC_KEYS } from '../constants';
 import { AlertTriangle, Users, CheckCircle, Clock, Activity, ShieldAlert } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { useLanguage } from '../contexts/LanguageContext';
 
 interface DashboardStatsProps {
   bookings: Booking[];
@@ -23,6 +24,7 @@ const STATUS_COLORS = {
 
 const DashboardStats: React.FC<DashboardStatsProps> = ({ bookings, requirements, onBookRenewals }) => {
   const navigate = useNavigate();
+  const { t } = useLanguage();
 
   // 1. Basic Counts
   const passed = bookings.filter(b => b.status === BookingStatus.PASSED).length;
@@ -67,7 +69,6 @@ const DashboardStats: React.FC<DashboardStatsProps> = ({ bookings, requirements,
     };
 
     // Check ASO
-    // We assume ASO is required for every employee in the database
     const isAsoValid = req.asoExpiryDate && req.asoExpiryDate > todayStr;
     if (isAsoValid) {
         asoCompliant++;
@@ -156,7 +157,7 @@ const DashboardStats: React.FC<DashboardStatsProps> = ({ bookings, requirements,
         <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-200 lg:col-span-1">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-[10px] text-gray-500 uppercase font-bold tracking-wider">Aderência Saúde e Segurança</p>
+              <p className="text-[10px] text-gray-500 uppercase font-bold tracking-wider">{t.dashboard.kpi.adherence}</p>
               <div className="flex items-baseline gap-1">
                  <p className={`text-2xl font-bold ${Number(adherencePercentage) > 85 ? 'text-green-600' : 'text-red-600'}`}>
                    {String(adherencePercentage)}%
@@ -173,7 +174,7 @@ const DashboardStats: React.FC<DashboardStatsProps> = ({ bookings, requirements,
         <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-200">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-[10px] text-gray-500 uppercase font-bold tracking-wider">Total Certifications</p>
+              <p className="text-[10px] text-gray-500 uppercase font-bold tracking-wider">{t.dashboard.kpi.certifications}</p>
               <p className="text-2xl font-bold text-slate-800">{String(passed)}</p>
             </div>
             <div className="p-2 bg-blue-100 text-blue-600 rounded-full">
@@ -185,7 +186,7 @@ const DashboardStats: React.FC<DashboardStatsProps> = ({ bookings, requirements,
         <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-200">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-[10px] text-gray-500 uppercase font-bold tracking-wider">Pending Grading</p>
+              <p className="text-[10px] text-gray-500 uppercase font-bold tracking-wider">{t.dashboard.kpi.pending}</p>
               <p className="text-2xl font-bold text-slate-800">{String(pending)}</p>
             </div>
             <div className="p-2 bg-yellow-100 text-yellow-600 rounded-full">
@@ -197,7 +198,7 @@ const DashboardStats: React.FC<DashboardStatsProps> = ({ bookings, requirements,
         <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-200">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-[10px] text-gray-500 uppercase font-bold tracking-wider">Expiring (30 Days)</p>
+              <p className="text-[10px] text-gray-500 uppercase font-bold tracking-wider">{t.dashboard.kpi.expiring}</p>
               <p className="text-2xl font-bold text-red-600">{String(expiring.length)}</p>
             </div>
             <div className="p-2 bg-red-100 text-red-600 rounded-full">
@@ -209,7 +210,7 @@ const DashboardStats: React.FC<DashboardStatsProps> = ({ bookings, requirements,
          <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-200">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-[10px] text-gray-500 uppercase font-bold tracking-wider">Scheduled Sessions</p>
+              <p className="text-[10px] text-gray-500 uppercase font-bold tracking-wider">{t.dashboard.kpi.scheduled}</p>
               <p className="text-2xl font-bold text-slate-800">{String(MOCK_SESSIONS.length)}</p>
             </div>
             <div className="p-2 bg-indigo-100 text-indigo-600 rounded-full">
@@ -224,7 +225,7 @@ const DashboardStats: React.FC<DashboardStatsProps> = ({ bookings, requirements,
         
         {/* Chart 1: Stacked Training vs Requirements */}
         <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
-          <h3 className="text-lg font-bold text-slate-800 mb-4">Training Compliance by RAC & ASO</h3>
+          <h3 className="text-lg font-bold text-slate-800 mb-4">{t.dashboard.charts.complianceTitle}</h3>
           <div className="h-72">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={racStackData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
@@ -233,19 +234,19 @@ const DashboardStats: React.FC<DashboardStatsProps> = ({ bookings, requirements,
                 <YAxis />
                 <Tooltip />
                 <Legend />
-                <Bar dataKey="Compliant" stackId="a" fill="#059669" name="Compliant" />
-                <Bar dataKey="Missing" stackId="a" fill="#ef4444" name="Missing / Expired" />
+                <Bar dataKey="Compliant" stackId="a" fill="#059669" name={t.dashboard.charts.compliant} />
+                <Bar dataKey="Missing" stackId="a" fill="#ef4444" name={t.dashboard.charts.missing} />
               </BarChart>
             </ResponsiveContainer>
           </div>
           <p className="text-xs text-center text-gray-500 mt-2">
-            Shows mandatory status. Green = Required & Valid. Red = Required & Missing/Expired.
+            {t.dashboard.charts.complianceSubtitle}
           </p>
         </div>
 
         {/* Chart 2: Total Compliance Status */}
         <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
-          <h3 className="text-lg font-bold text-slate-800 mb-4">Overall Workforce Access Status</h3>
+          <h3 className="text-lg font-bold text-slate-800 mb-4">{t.dashboard.charts.accessTitle}</h3>
           <div className="h-72">
              <ResponsiveContainer width="100%" height="100%">
               <PieChart>
@@ -269,26 +270,26 @@ const DashboardStats: React.FC<DashboardStatsProps> = ({ bookings, requirements,
             </ResponsiveContainer>
           </div>
           <div className="text-xs text-center text-gray-500 mt-2">
-            <p>"Compliant" = Valid ASO + All Required RACs passed.</p>
-            <p>"Non-Compliant" = Expired ASO or Missing Required RACs.</p>
+            <p>"{t.dashboard.charts.compliant}" = Valid ASO + All Required RACs passed.</p>
+            <p>"{t.dashboard.charts.nonCompliant}" = Expired ASO or Missing Required RACs.</p>
           </div>
         </div>
       </div>
 
-      {/* Expiring Notification - Moved Below Charts */}
+      {/* Expiring Notification - Below Charts */}
       {expiring.length > 0 && (
         <div className="bg-yellow-50 border-l-4 border-yellow-500 p-4 rounded-r-lg flex flex-col md:flex-row justify-between items-start md:items-center animate-fade-in-down">
           <div className="mb-4 md:mb-0">
-            <h3 className="text-lg font-bold text-yellow-800">Action Required: Training Renewal</h3>
+            <h3 className="text-lg font-bold text-yellow-800">{t.dashboard.renewal.title}</h3>
             <p className="text-sm text-yellow-700">
-              {String(expiring.length)} employees have critical training expiring within 30 days. 
+              {String(expiring.length)} {t.dashboard.renewal.message}
             </p>
           </div>
           <button 
             onClick={handleRenewalClick}
             className="bg-yellow-600 text-white px-4 py-2 rounded-md hover:bg-yellow-700 transition shadow-sm text-sm font-medium"
           >
-            Book Renewals
+            {t.dashboard.renewal.button}
           </button>
         </div>
       )}

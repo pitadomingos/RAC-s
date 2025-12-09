@@ -1,7 +1,7 @@
-
 import React, { useState } from 'react';
 import { UserRole, User } from '../types';
 import { Shield, MoreVertical, Plus, X, Trash2, Edit } from 'lucide-react';
+import { useLanguage } from '../contexts/LanguageContext';
 
 interface UserManagementProps {
     users: User[];
@@ -9,6 +9,7 @@ interface UserManagementProps {
 }
 
 const UserManagement: React.FC<UserManagementProps> = ({ users, setUsers }) => {
+  const { t } = useLanguage();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [newUser, setNewUser] = useState<Partial<User>>({
       name: '', email: '', role: UserRole.USER, status: 'Active'
@@ -43,15 +44,15 @@ const UserManagement: React.FC<UserManagementProps> = ({ users, setUsers }) => {
     <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 min-h-[500px]">
       <div className="flex justify-between items-center mb-6">
         <div>
-          <h2 className="text-xl font-bold text-slate-800">User Management</h2>
-          <p className="text-sm text-gray-500">Manage system access and roles.</p>
+          <h2 className="text-xl font-bold text-slate-800">{t.users.title}</h2>
+          <p className="text-sm text-gray-500">{t.users.subtitle}</p>
         </div>
         <button 
             onClick={() => setIsModalOpen(true)}
             className="flex items-center space-x-2 bg-yellow-500 text-slate-900 px-4 py-2 rounded-lg font-bold hover:bg-yellow-600 transition"
         >
           <Plus size={18} />
-          <span>Add User</span>
+          <span>{t.users.addUser}</span>
         </button>
       </div>
 
@@ -59,10 +60,10 @@ const UserManagement: React.FC<UserManagementProps> = ({ users, setUsers }) => {
         <table className="min-w-full divide-y divide-gray-200">
           <thead className="bg-gray-50">
             <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">User</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Role</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-              <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{t.users.table.user}</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{t.users.table.role}</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{t.users.table.status}</th>
+              <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">{t.users.table.actions}</th>
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
@@ -102,13 +103,13 @@ const UserManagement: React.FC<UserManagementProps> = ({ users, setUsers }) => {
                   {openActionId === user.id && (
                       <div className="absolute right-8 top-8 w-32 bg-white border border-gray-200 rounded shadow-lg z-20 text-left">
                           <button className="w-full text-left px-4 py-2 text-xs hover:bg-gray-50 flex items-center gap-2">
-                              <Edit size={12} /> Edit
+                              <Edit size={12} /> {t.common.edit}
                           </button>
                           <button 
                             onClick={() => handleDeleteUser(user.id)}
                             className="w-full text-left px-4 py-2 text-xs hover:bg-red-50 text-red-600 flex items-center gap-2"
                           >
-                              <Trash2 size={12} /> Delete
+                              <Trash2 size={12} /> {t.common.delete}
                           </button>
                       </div>
                   )}
@@ -124,19 +125,19 @@ const UserManagement: React.FC<UserManagementProps> = ({ users, setUsers }) => {
           <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
               <div className="bg-white rounded-xl shadow-xl w-full max-w-sm p-6 animate-fade-in-up">
                    <div className="flex justify-between items-center mb-4">
-                       <h3 className="text-lg font-bold">Add New User</h3>
+                       <h3 className="text-lg font-bold">{t.users.modal.title}</h3>
                        <button onClick={() => setIsModalOpen(false)}><X size={20} className="text-gray-400" /></button>
                    </div>
                    <div className="space-y-3">
                        <input 
                          className="w-full border rounded p-2 text-sm" 
-                         placeholder="Full Name"
+                         placeholder={t.users.modal.name}
                          value={String(newUser.name)}
                          onChange={e => setNewUser({...newUser, name: e.target.value})}
                        />
                        <input 
                          className="w-full border rounded p-2 text-sm" 
-                         placeholder="Email Address"
+                         placeholder={t.users.modal.email}
                          value={String(newUser.email)}
                          onChange={e => setNewUser({...newUser, email: e.target.value})}
                        />
@@ -152,7 +153,7 @@ const UserManagement: React.FC<UserManagementProps> = ({ users, setUsers }) => {
                     onClick={handleAddUser}
                     className="mt-4 w-full bg-slate-900 text-white py-2 rounded-lg font-bold text-sm"
                    >
-                       Create User
+                       {t.users.modal.createUser}
                    </button>
               </div>
           </div>

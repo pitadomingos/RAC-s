@@ -1,8 +1,11 @@
+
 import React, { useState } from 'react';
 import { MessageCircle, X, Send, Sparkles } from 'lucide-react';
 import { getSafetyAdvice } from '../services/geminiService';
+import { useLanguage } from '../contexts/LanguageContext';
 
 const GeminiAdvisor: React.FC = () => {
+  const { t, language } = useLanguage();
   const [isOpen, setIsOpen] = useState(false);
   const [query, setQuery] = useState('');
   const [response, setResponse] = useState<string | null>(null);
@@ -12,7 +15,7 @@ const GeminiAdvisor: React.FC = () => {
     if (!query.trim()) return;
     setLoading(true);
     setResponse(null);
-    const result = await getSafetyAdvice('General Safety', query);
+    const result = await getSafetyAdvice('General Safety', query, language);
     setResponse(result);
     setLoading(false);
   };
@@ -25,7 +28,7 @@ const GeminiAdvisor: React.FC = () => {
           className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white p-4 rounded-full shadow-lg hover:shadow-xl transition-all transform hover:scale-105 flex items-center gap-2"
         >
           <Sparkles size={20} />
-          <span className="font-semibold">Safety Advisor</span>
+          <span className="font-semibold">{t.advisor.button}</span>
         </button>
       )}
 
@@ -34,7 +37,7 @@ const GeminiAdvisor: React.FC = () => {
           <div className="bg-gradient-to-r from-blue-600 to-indigo-600 p-4 flex justify-between items-center text-white">
             <div className="flex items-center gap-2">
               <Sparkles size={18} />
-              <h3 className="font-bold">AI Safety Assistant</h3>
+              <h3 className="font-bold">{t.advisor.title}</h3>
             </div>
             <button onClick={() => setIsOpen(false)} className="hover:bg-white/20 rounded p-1">
               <X size={18} />
@@ -44,12 +47,12 @@ const GeminiAdvisor: React.FC = () => {
           <div className="p-4 h-64 overflow-y-auto bg-gray-50 text-sm">
             {response ? (
               <div className="bg-white p-3 rounded-lg shadow-sm border border-gray-100 text-gray-800">
-                <p className="font-medium text-blue-600 mb-1">Advisor:</p>
+                <p className="font-medium text-blue-600 mb-1">{t.advisor.sender}:</p>
                 {response}
               </div>
             ) : (
               <div className="text-center text-gray-400 mt-10">
-                <p>Ask about RAC protocols, PPE requirements, or general safety guidelines.</p>
+                <p>{t.advisor.emptyState}</p>
               </div>
             )}
             {loading && (
@@ -66,7 +69,7 @@ const GeminiAdvisor: React.FC = () => {
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && handleAsk()}
-                placeholder="Ask about safety..."
+                placeholder={t.advisor.placeholder}
                 className="flex-1 border rounded-full px-3 py-2 text-sm focus:outline-none focus:border-blue-500"
               />
               <button 

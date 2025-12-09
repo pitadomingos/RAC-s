@@ -1,10 +1,10 @@
-
 import React, { useState } from 'react';
 import { TrainingSession } from '../types';
 import { RAC_KEYS } from '../constants';
 import { Calendar, Plus, Settings, X, Save } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { v4 as uuidv4 } from 'uuid';
+import { useLanguage } from '../contexts/LanguageContext';
 
 interface ScheduleTrainingProps {
     sessions: TrainingSession[];
@@ -13,6 +13,7 @@ interface ScheduleTrainingProps {
 
 const ScheduleTraining: React.FC<ScheduleTrainingProps> = ({ sessions, setSessions }) => {
   const navigate = useNavigate();
+  const { t } = useLanguage();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [newSession, setNewSession] = useState<Partial<TrainingSession>>({
       racType: 'RAC01 - Working at Height',
@@ -47,8 +48,8 @@ const ScheduleTraining: React.FC<ScheduleTrainingProps> = ({ sessions, setSessio
     <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
        <div className="flex justify-between items-center mb-6">
         <div>
-          <h2 className="text-xl font-bold text-slate-800">Training Schedule</h2>
-          <p className="text-sm text-gray-500">Upcoming sessions.</p>
+          <h2 className="text-xl font-bold text-slate-800">{t.schedule.title}</h2>
+          <p className="text-sm text-gray-500">{t.schedule.subtitle}</p>
         </div>
         <div className="flex gap-2">
             <button 
@@ -56,14 +57,14 @@ const ScheduleTraining: React.FC<ScheduleTrainingProps> = ({ sessions, setSessio
                 className="flex items-center space-x-2 bg-gray-100 text-slate-700 px-4 py-2 rounded-lg font-bold hover:bg-gray-200 transition"
             >
                 <Settings size={18} />
-                <span>Settings</span>
+                <span>{t.nav.settings}</span>
             </button>
             <button 
                 onClick={() => setIsModalOpen(true)}
                 className="flex items-center space-x-2 bg-slate-900 text-white px-4 py-2 rounded-lg font-bold hover:bg-slate-800 transition"
             >
                 <Plus size={18} />
-                <span>New Session</span>
+                <span>{t.schedule.newSession}</span>
             </button>
         </div>
       </div>
@@ -72,10 +73,10 @@ const ScheduleTraining: React.FC<ScheduleTrainingProps> = ({ sessions, setSessio
           <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">
                   <tr>
-                      <th className="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Date</th>
-                      <th className="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">RAC</th>
-                      <th className="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Room</th>
-                      <th className="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Trainer</th>
+                      <th className="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">{t.schedule.table.date}</th>
+                      <th className="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">{t.schedule.table.rac}</th>
+                      <th className="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">{t.schedule.table.room}</th>
+                      <th className="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">{t.schedule.table.trainer}</th>
                   </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
@@ -108,7 +109,7 @@ const ScheduleTraining: React.FC<ScheduleTrainingProps> = ({ sessions, setSessio
         <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
             <div className="bg-white rounded-xl shadow-xl w-full max-w-md p-6 animate-fade-in-up">
                 <div className="flex justify-between items-center mb-4 border-b border-gray-100 pb-2">
-                    <h3 className="text-lg font-bold text-slate-800">Add New Session</h3>
+                    <h3 className="text-lg font-bold text-slate-800">{t.schedule.modal.title}</h3>
                     <button onClick={() => setIsModalOpen(false)} className="text-gray-400 hover:text-slate-600">
                         <X size={20} />
                     </button>
@@ -116,7 +117,7 @@ const ScheduleTraining: React.FC<ScheduleTrainingProps> = ({ sessions, setSessio
                 
                 <div className="space-y-3">
                     <div>
-                        <label className="block text-xs font-bold text-gray-500 mb-1">RAC Type</label>
+                        <label className="block text-xs font-bold text-gray-500 mb-1">{t.schedule.modal.racType}</label>
                         <select 
                             className="w-full border rounded p-2 text-sm"
                             value={String(newSession.racType)}
@@ -127,7 +128,7 @@ const ScheduleTraining: React.FC<ScheduleTrainingProps> = ({ sessions, setSessio
                     </div>
                     <div className="grid grid-cols-2 gap-3">
                         <div>
-                            <label className="block text-xs font-bold text-gray-500 mb-1">Date</label>
+                            <label className="block text-xs font-bold text-gray-500 mb-1">{t.schedule.modal.date}</label>
                             <input 
                                 type="date" 
                                 className="w-full border rounded p-2 text-sm"
@@ -136,7 +137,7 @@ const ScheduleTraining: React.FC<ScheduleTrainingProps> = ({ sessions, setSessio
                             />
                         </div>
                         <div>
-                            <label className="block text-xs font-bold text-gray-500 mb-1">Start Time</label>
+                            <label className="block text-xs font-bold text-gray-500 mb-1">{t.schedule.modal.startTime}</label>
                             <input 
                                 type="time" 
                                 className="w-full border rounded p-2 text-sm"
@@ -147,7 +148,7 @@ const ScheduleTraining: React.FC<ScheduleTrainingProps> = ({ sessions, setSessio
                     </div>
                     <div className="grid grid-cols-2 gap-3">
                         <div>
-                            <label className="block text-xs font-bold text-gray-500 mb-1">Location</label>
+                            <label className="block text-xs font-bold text-gray-500 mb-1">{t.schedule.modal.location}</label>
                             <input 
                                 type="text" 
                                 className="w-full border rounded p-2 text-sm"
@@ -156,7 +157,7 @@ const ScheduleTraining: React.FC<ScheduleTrainingProps> = ({ sessions, setSessio
                             />
                         </div>
                         <div>
-                             <label className="block text-xs font-bold text-gray-500 mb-1">Capacity</label>
+                             <label className="block text-xs font-bold text-gray-500 mb-1">{t.schedule.modal.capacity}</label>
                             <input 
                                 type="number" 
                                 className="w-full border rounded p-2 text-sm"
@@ -166,7 +167,7 @@ const ScheduleTraining: React.FC<ScheduleTrainingProps> = ({ sessions, setSessio
                         </div>
                     </div>
                      <div>
-                        <label className="block text-xs font-bold text-gray-500 mb-1">Instructor</label>
+                        <label className="block text-xs font-bold text-gray-500 mb-1">{t.schedule.modal.instructor}</label>
                         <input 
                             type="text" 
                             className="w-full border rounded p-2 text-sm"
@@ -181,13 +182,13 @@ const ScheduleTraining: React.FC<ScheduleTrainingProps> = ({ sessions, setSessio
                         onClick={() => setIsModalOpen(false)}
                         className="px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 rounded-lg font-medium"
                     >
-                        Cancel
+                        {t.common.cancel}
                     </button>
                     <button 
                         onClick={handleAddSession}
                         className="px-4 py-2 text-sm bg-slate-900 text-white hover:bg-slate-800 rounded-lg font-medium flex items-center gap-2"
                     >
-                        <Save size={16} /> Save Session
+                        <Save size={16} /> {t.schedule.modal.saveSession}
                     </button>
                 </div>
             </div>

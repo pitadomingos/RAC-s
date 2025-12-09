@@ -1,33 +1,52 @@
 
 import React, { useState } from 'react';
 import { ScrollText, Filter, AlertTriangle, CheckCircle, Info, ShieldAlert, Clock } from 'lucide-react';
+import { useLanguage } from '../contexts/LanguageContext';
 
 type LogLevel = 'INFO' | 'WARN' | 'ERROR' | 'AUDIT';
 
 interface LogEntry {
     id: string;
     level: LogLevel;
-    message: string;
+    messageKey: string; // Key to look up in translation or raw message
+    params?: any; // Params for translation
     user: string;
     timestamp: string;
 }
 
-const MOCK_LOGS: LogEntry[] = [
-    { id: '1', level: 'AUDIT', message: 'User System Admin updated System Configuration (Room Capacity)', user: 'System Admin', timestamp: '2024-05-20 09:30:15' },
-    { id: '2', level: 'INFO', message: 'Auto-booking service ran successfully. 0 bookings created.', user: 'SYSTEM', timestamp: '2024-05-20 08:00:00' },
-    { id: '3', level: 'WARN', message: 'Expiry Notification sent to e.ripley@vulcan.com', user: 'SYSTEM', timestamp: '2024-05-19 14:20:00' },
-    { id: '4', level: 'ERROR', message: 'Failed to generate AI report: API Timeout', user: 'Sarah Connor', timestamp: '2024-05-19 10:15:22' },
-    { id: '5', level: 'AUDIT', message: 'User Sarah Connor manually added 5 bookings', user: 'Sarah Connor', timestamp: '2024-05-19 09:10:05' },
-    { id: '6', level: 'INFO', message: 'User John Doe logged in', user: 'John Doe', timestamp: '2024-05-19 08:05:10' },
-    { id: '7', level: 'AUDIT', message: 'User System Admin deleted User ID 45', user: 'System Admin', timestamp: '2024-05-18 16:45:00' },
+// Mock logs updated to be language agnostic (simulated)
+// In a real app, logs are usually immutable strings, but for this prototype we simulate translation
+const MOCK_LOGS_DATA: LogEntry[] = [
+    { id: '1', level: 'AUDIT', messageKey: 'User System Admin updated System Configuration', user: 'System Admin', timestamp: '2024-05-20 09:30:15' },
+    { id: '2', level: 'INFO', messageKey: 'Auto-booking service ran successfully', user: 'SYSTEM', timestamp: '2024-05-20 08:00:00' },
+    { id: '3', level: 'WARN', messageKey: 'Expiry Notification sent', user: 'SYSTEM', timestamp: '2024-05-19 14:20:00' },
+    { id: '4', level: 'ERROR', messageKey: 'Failed to generate AI report', user: 'Sarah Connor', timestamp: '2024-05-19 10:15:22' },
+    { id: '5', level: 'AUDIT', messageKey: 'User Sarah Connor manually added 5 bookings', user: 'Sarah Connor', timestamp: '2024-05-19 09:10:05' },
+    { id: '6', level: 'INFO', messageKey: 'User John Doe logged in', user: 'John Doe', timestamp: '2024-05-19 08:05:10' },
+    { id: '7', level: 'AUDIT', messageKey: 'User System Admin deleted User ID 45', user: 'System Admin', timestamp: '2024-05-18 16:45:00' },
 ];
 
 const LogsPage: React.FC = () => {
+    const { t, language } = useLanguage();
     const [filterLevel, setFilterLevel] = useState<LogLevel | 'ALL'>('ALL');
 
+    const getTranslatedMessage = (log: LogEntry) => {
+        // Simple mock translation logic for prototype
+        if (language === 'pt') {
+            if (log.messageKey.includes('System Configuration')) return 'Admin do Sistema atualizou Configuração do Sistema';
+            if (log.messageKey.includes('Auto-booking')) return 'Serviço de auto-agendamento executado com sucesso';
+            if (log.messageKey.includes('Expiry Notification')) return 'Notificação de Expiração enviada';
+            if (log.messageKey.includes('AI report')) return 'Falha ao gerar relatório IA';
+            if (log.messageKey.includes('manually added')) return 'Usuário adicionou manualmente 5 agendamentos';
+            if (log.messageKey.includes('logged in')) return 'Usuário fez login';
+            if (log.messageKey.includes('deleted User')) return 'Admin do Sistema excluiu Usuário ID 45';
+        }
+        return log.messageKey;
+    };
+
     const filteredLogs = filterLevel === 'ALL' 
-        ? MOCK_LOGS 
-        : MOCK_LOGS.filter(log => log.level === filterLevel);
+        ? MOCK_LOGS_DATA 
+        : MOCK_LOGS_DATA.filter(log => log.level === filterLevel);
 
     const getIcon = (level: LogLevel) => {
         switch (level) {
@@ -44,9 +63,9 @@ const LogsPage: React.FC = () => {
                 <div>
                     <h2 className="text-xl font-bold text-slate-800 flex items-center gap-2">
                         <ScrollText className="text-slate-500" />
-                        System Logs
+                        {t.logs.title}
                     </h2>
-                    <p className="text-sm text-gray-500">Audit trail and system events.</p>
+                    <p className="text-sm text-gray-500">{t.logs.subtitle}</p>
                 </div>
                 
                 <div className="flex items-center gap-2">
@@ -56,11 +75,11 @@ const LogsPage: React.FC = () => {
                         value={filterLevel}
                         onChange={(e) => setFilterLevel(e.target.value as any)}
                     >
-                        <option value="ALL">All Levels</option>
-                        <option value="INFO">Info</option>
-                        <option value="WARN">Warning</option>
-                        <option value="ERROR">Error</option>
-                        <option value="AUDIT">Audit</option>
+                        <option value="ALL">{t.logs.levels.all}</option>
+                        <option value="INFO">{t.logs.levels.info}</option>
+                        <option value="WARN">{t.logs.levels.warn}</option>
+                        <option value="ERROR">{t.logs.levels.error}</option>
+                        <option value="AUDIT">{t.logs.levels.audit}</option>
                     </select>
                 </div>
             </div>
@@ -69,10 +88,10 @@ const LogsPage: React.FC = () => {
                 <table className="min-w-full divide-y divide-gray-200">
                     <thead className="bg-gray-50 sticky top-0">
                         <tr>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase w-32">Level</th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase w-48">Timestamp</th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase w-48">User</th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Message</th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase w-32">{t.logs.table.level}</th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase w-48">{t.logs.table.timestamp}</th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase w-48">{t.logs.table.user}</th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">{t.logs.table.message}</th>
                         </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200 font-mono text-sm">
@@ -99,7 +118,7 @@ const LogsPage: React.FC = () => {
                                     {log.user}
                                 </td>
                                 <td className="px-6 py-3 text-slate-600">
-                                    {log.message}
+                                    {getTranslatedMessage(log)}
                                 </td>
                             </tr>
                         ))}

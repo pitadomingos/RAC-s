@@ -1,9 +1,9 @@
-
 import React, { useState } from 'react';
 import { Booking, BookingStatus, EmployeeRequirement } from '../types';
 import CardTemplate from '../components/CardTemplate';
 import { Mail, AlertCircle, CheckCircle, CheckSquare, Square, Printer } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { useLanguage } from '../contexts/LanguageContext';
 
 interface RequestCardsPageProps {
   bookings: Booking[];
@@ -12,6 +12,7 @@ interface RequestCardsPageProps {
 
 const RequestCardsPage: React.FC<RequestCardsPageProps> = ({ bookings, requirements }) => {
   const navigate = useNavigate();
+  const { t } = useLanguage();
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [requestSent, setRequestSent] = useState(false);
   const [sentCount, setSentCount] = useState(0);
@@ -67,9 +68,9 @@ const RequestCardsPage: React.FC<RequestCardsPageProps> = ({ bookings, requireme
       <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
         <div className="flex flex-col md:flex-row justify-between items-start gap-4">
           <div>
-            <h2 className="text-xl font-bold text-slate-800">Request CARs Cards</h2>
+            <h2 className="text-xl font-bold text-slate-800">{t.cards.title}</h2>
             <p className="text-sm text-gray-500 mt-1">
-              Select qualified employees below to receive a PDF via email containing their valid RAC cards.
+              {t.cards.subtitle}
               <br/>The PDF will be formatted with 8 cards per page.
             </p>
           </div>
@@ -79,11 +80,11 @@ const RequestCardsPage: React.FC<RequestCardsPageProps> = ({ bookings, requireme
                 className="flex items-center space-x-2 bg-slate-100 text-slate-700 px-4 py-2 rounded-lg hover:bg-slate-200 transition shadow-sm text-sm border border-slate-200"
              >
                 <Printer size={16} />
-                <span>Go to Print View (A4)</span>
+                <span>{t.cards.goToPrint}</span>
              </button>
              <div className="text-right">
                 <div className="text-2xl font-bold text-slate-800">{String(selectedIds.size)}</div>
-                <div className="text-xs text-gray-500 uppercase font-semibold">Selected</div>
+                <div className="text-xs text-gray-500 uppercase font-semibold">{t.cards.selected}</div>
              </div>
           </div>
         </div>
@@ -94,8 +95,8 @@ const RequestCardsPage: React.FC<RequestCardsPageProps> = ({ bookings, requireme
         <div className="bg-green-50 border border-green-200 text-green-800 px-4 py-3 rounded-lg flex items-center space-x-3 shadow-sm animate-fade-in-down">
            <CheckCircle className="flex-shrink-0" size={24} />
            <div>
-             <p className="font-bold">Request Sent Successfully!</p>
-             <p className="text-sm">A PDF containing {String(sentCount)} cards has been sent to your registered email address.</p>
+             <p className="font-bold">{t.cards.successTitle}</p>
+             <p className="text-sm">{t.cards.successMsg}</p>
            </div>
         </div>
       )}
@@ -105,8 +106,8 @@ const RequestCardsPage: React.FC<RequestCardsPageProps> = ({ bookings, requireme
         {eligibleBookings.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-64 text-center text-gray-500 bg-white rounded-xl border border-dashed border-gray-300">
             <AlertCircle size={48} className="text-gray-300 mb-4" />
-            <h3 className="text-lg font-bold text-slate-800 mb-2">No Eligible Records</h3>
-            <p>No 'Passed' training records available to generate cards.</p>
+            <h3 className="text-lg font-bold text-slate-800 mb-2">{t.cards.noRecords}</h3>
+            <p>{t.cards.noRecordsSub}</p>
           </div>
         ) : (
           <div className="space-y-4">
@@ -117,10 +118,10 @@ const RequestCardsPage: React.FC<RequestCardsPageProps> = ({ bookings, requireme
                   className="flex items-center space-x-2 text-sm font-medium text-slate-700 hover:text-slate-900"
                 >
                   {selectedIds.size === eligibleBookings.length && eligibleBookings.length > 0 ? <CheckSquare size={18} /> : <Square size={18} />}
-                  <span>Select All</span>
+                  <span>{t.cards.selectAll}</span>
                 </button>
                 <span className="text-gray-300">|</span>
-                <span className="text-xs text-gray-500">Showing {String(eligibleBookings.length)} eligible records</span>
+                <span className="text-xs text-gray-500">{t.cards.showing} {String(eligibleBookings.length)}</span>
              </div>
 
              {/* Grid of Cards */}
@@ -185,7 +186,7 @@ const RequestCardsPage: React.FC<RequestCardsPageProps> = ({ bookings, requireme
           `}
         >
           <Mail size={20} />
-          <span>{requestSent ? 'Sending...' : `Request ${String(selectedIds.size)} Cards`}</span>
+          <span>{requestSent ? t.cards.sending : `${t.cards.requestButton} (${selectedIds.size})`}</span>
         </button>
       </div>
     </div>

@@ -1,7 +1,7 @@
-
 import React, { useState, useEffect } from 'react';
 import { Booking, BookingStatus, RAC, TrainingSession, UserRole } from '../types';
 import { Save, AlertCircle, CheckCircle, Lock, Users, ClipboardList, ShieldAlert, UserCheck } from 'lucide-react';
+import { useLanguage } from '../contexts/LanguageContext';
 
 interface TrainerInputPageProps {
   bookings: Booking[];
@@ -18,6 +18,7 @@ const TrainerInputPage: React.FC<TrainerInputPageProps> = ({
   userRole = UserRole.SYSTEM_ADMIN,
   currentUserName = ''
 }) => {
+  const { t } = useLanguage();
   const [selectedSessionId, setSelectedSessionId] = useState('');
   const [sessionBookings, setSessionBookings] = useState<Booking[]>([]);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
@@ -108,7 +109,7 @@ const TrainerInputPage: React.FC<TrainerInputPageProps> = ({
   const handleSave = () => {
     updateBookings(sessionBookings);
     setHasUnsavedChanges(false);
-    setSuccessMsg('Results saved successfully!');
+    setSuccessMsg(String(t.booking.success).replace('Booking submitted', 'Results saved'));
     setTimeout(() => setSuccessMsg(''), 3000);
   };
 
@@ -126,8 +127,8 @@ const TrainerInputPage: React.FC<TrainerInputPageProps> = ({
     <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
       <div className="mb-6 flex justify-between items-center border-b border-slate-100 pb-4">
         <div>
-          <h2 className="text-xl font-bold text-slate-800">Trainer Input Portal</h2>
-          <p className="text-sm text-gray-500">Record attendance and exam results. <span className="font-bold text-yellow-600">Pass Mark: 70%</span></p>
+          <h2 className="text-xl font-bold text-slate-800">{t.trainer.title}</h2>
+          <p className="text-sm text-gray-500">{t.trainer.subtitle} <span className="font-bold text-yellow-600">{t.trainer.passMark}</span></p>
         </div>
         <div className="flex flex-col items-end gap-1">
              {successMsg && (
@@ -138,19 +139,19 @@ const TrainerInputPage: React.FC<TrainerInputPageProps> = ({
             )}
             <div className="flex items-center gap-2 text-xs text-gray-400">
                 <UserCheck size={14} />
-                <span>Logged in as: <span className="font-bold text-slate-700">{currentUserName}</span></span>
+                <span>{t.trainer.loggedInAs} <span className="font-bold text-slate-700">{currentUserName}</span></span>
             </div>
         </div>
       </div>
 
       {/* Session Selector */}
       <div className="mb-8 max-w-xl">
-        <label className="block text-sm font-medium text-gray-700 mb-1">Select Active Session</label>
+        <label className="block text-sm font-medium text-gray-700 mb-1">{t.trainer.selectSession}</label>
         
         {availableSessions.length === 0 ? (
             <div className="bg-orange-50 text-orange-800 p-3 rounded-lg text-sm border border-orange-200 flex items-center gap-2">
                 <AlertCircle size={16} />
-                <span>No training sessions are currently assigned to you.</span>
+                <span>{t.trainer.noSessions}</span>
             </div>
         ) : (
             <div className="relative">
@@ -159,7 +160,7 @@ const TrainerInputPage: React.FC<TrainerInputPageProps> = ({
                 onChange={handleSessionChange}
                 className="w-full border-gray-300 rounded-lg shadow-sm focus:border-yellow-500 focus:ring-yellow-500 p-2 border pl-10"
             >
-                <option value="">-- Select a Session to Grade --</option>
+                <option value="">{t.trainer.chooseSession}</option>
                 {availableSessions.map(session => {
                 const { total, pending } = getSessionStats(session.id);
                 return (
@@ -182,19 +183,19 @@ const TrainerInputPage: React.FC<TrainerInputPageProps> = ({
           <table className="min-w-full divide-y divide-gray-200 border border-gray-200 rounded-lg">
             <thead className="bg-slate-50">
               <tr>
-                <th className="px-4 py-3 text-left text-xs font-bold text-slate-600 uppercase">Employee</th>
-                <th className="px-4 py-3 text-center text-xs font-bold text-slate-600 uppercase w-24">Attendance</th>
+                <th className="px-4 py-3 text-left text-xs font-bold text-slate-600 uppercase">{t.trainer.table.employee}</th>
+                <th className="px-4 py-3 text-center text-xs font-bold text-slate-600 uppercase w-24">{t.trainer.table.attendance}</th>
                 {isRac02 && (
                     <th className="px-4 py-3 text-center text-xs font-bold text-red-600 uppercase w-28 bg-red-50">
-                        DL Check
+                        {t.trainer.table.dlCheck}
                     </th>
                 )}
-                <th className="px-4 py-3 text-center text-xs font-bold text-slate-600 uppercase w-32">Theory (70%+)</th>
+                <th className="px-4 py-3 text-center text-xs font-bold text-slate-600 uppercase w-32">{t.trainer.table.theory}</th>
                 <th className="px-4 py-3 text-center text-xs font-bold text-slate-600 uppercase w-32">
-                  Practical (70%+)
-                  {!isRac02 && <span className="block text-[9px] font-normal text-gray-400">(RAC 02 Only)</span>}
+                  {t.trainer.table.practical}
+                  {!isRac02 && <span className="block text-[9px] font-normal text-gray-400">{t.trainer.table.rac02Only}</span>}
                 </th>
-                <th className="px-4 py-3 text-left text-xs font-bold text-slate-600 uppercase w-40">Status</th>
+                <th className="px-4 py-3 text-left text-xs font-bold text-slate-600 uppercase w-40">{t.trainer.table.status}</th>
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
@@ -231,7 +232,7 @@ const TrainerInputPage: React.FC<TrainerInputPageProps> = ({
                                     checked={booking.driverLicenseVerified || false}
                                     onChange={(e) => handleInputChange(booking.id, 'driverLicenseVerified', e.target.checked)}
                                 />
-                                <span className="text-[9px] text-gray-500 mt-1">Verified</span>
+                                <span className="text-[9px] text-gray-500 mt-1">{t.trainer.table.verified}</span>
                             </div>
                         </td>
                     )}
@@ -286,7 +287,7 @@ const TrainerInputPage: React.FC<TrainerInputPageProps> = ({
              {isRac02 && (
                  <div className="flex items-center gap-2 text-sm text-red-600 bg-red-50 px-3 py-2 rounded-lg border border-red-200">
                     <ShieldAlert size={16} />
-                    <span>DL Check is mandatory for RAC 02. Unchecked employees will fail.</span>
+                    <span>{t.trainer.dlWarning}</span>
                  </div>
              )}
              <button 
@@ -297,12 +298,8 @@ const TrainerInputPage: React.FC<TrainerInputPageProps> = ({
                `}
              >
                <Save size={18} />
-               <span>Save Results</span>
+               <span>{t.trainer.saveResults}</span>
              </button>
-          </div>
-          
-          <div className="mt-4 text-xs text-gray-500">
-            <p>Note: Status is auto-calculated. Passing requires 70%+ in Theory (and Practical for RAC 02).</p>
           </div>
 
         </div>
@@ -315,9 +312,6 @@ const TrainerInputPage: React.FC<TrainerInputPageProps> = ({
              <p className="max-w-xs text-center text-sm mb-4">
                There are currently no employees registered for this training session.
              </p>
-             <div className="text-xs bg-blue-50 text-blue-700 px-3 py-1 rounded border border-blue-100">
-               Tip: Go to "Book Training" to add participants.
-             </div>
          </div>
       ) : (
         availableSessions.length > 0 && (

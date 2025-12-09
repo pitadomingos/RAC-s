@@ -15,8 +15,10 @@ import ScheduleTraining from './pages/ScheduleTraining';
 import SettingsPage from './pages/SettingsPage';
 import ReportsPage from './pages/ReportsPage';
 import UserManualsPage from './pages/UserManualsPage';
-import LogsPage from './pages/LogsPage'; // Fixed import path
+import LogsPage from './pages/LogsPage'; 
 import GeminiAdvisor from './components/GeminiAdvisor';
+// REMOVED LanguageProvider import, using hook instead
+import { useLanguage } from './contexts/LanguageContext';
 import { Booking, BookingStatus, UserRole, EmployeeRequirement, SystemNotification, TrainingSession, User } from './types';
 import { format, addYears, differenceInDays } from 'date-fns';
 import { v4 as uuidv4 } from 'uuid';
@@ -54,7 +56,6 @@ const initialBookings: Booking[] = [
     attendance: true,
     driverLicenseVerified: true
   },
-  
   // Global Logistics Employees
   {
     id: 'b3',
@@ -81,7 +82,6 @@ const initialBookings: Booking[] = [
     theoryScore: 88,
     attendance: true
   },
-
   // Safety First Contractors Employees
   {
     id: 'b5',
@@ -181,13 +181,13 @@ const initialRequirements: EmployeeRequirement[] = [
 const initialUsers: User[] = [
     { id: 1, name: 'System Admin', email: 'admin@vulcan.com', role: UserRole.SYSTEM_ADMIN, status: 'Active' },
     { id: 2, name: 'Sarah Connor', email: 'sarah.c@vulcan.com', role: UserRole.RAC_ADMIN, status: 'Active' },
-    // Updated Name to match MOCK_SESSIONS instructor for demo purposes
     { id: 3, name: 'John Doe', email: 'john.d@vulcan.com', role: UserRole.RAC_TRAINER, status: 'Active' },
     { id: 4, name: 'Ellen Ripley', email: 'e.ripley@vulcan.com', role: UserRole.DEPT_ADMIN, status: 'Active' },
     { id: 5, name: 'Regular User', email: 'user@vulcan.com', role: UserRole.USER, status: 'Inactive' },
 ];
 
 const App: React.FC = () => {
+  const { t } = useLanguage();
   const [bookings, setBookings] = useState<Booking[]>(initialBookings);
   const [requirements, setRequirements] = useState<EmployeeRequirement[]>(initialRequirements);
   const [sessions, setSessions] = useState<TrainingSession[]>(MOCK_SESSIONS);
@@ -196,10 +196,8 @@ const App: React.FC = () => {
   const [notifications, setNotifications] = useState<SystemNotification[]>([]);
 
   // Derive current user based on selected role for simulation
-  // In a real app, this would be from auth state
   const currentUser = users.find(u => u.role === userRole) || users[0];
 
-  // System Logic: Run on mount
   useEffect(() => {
     runDailyComplianceCheck();
   }, []);
@@ -215,26 +213,21 @@ const App: React.FC = () => {
     const today = new Date();
     
     let newAutoBookings: Booking[] = [];
-    let alertCount = 0;
 
-    // Iterate through all requirements to find what each employee NEEDS
     requirements.forEach(req => {
         const empId = req.employeeId;
-        const employeeBookingRef = bookings.find(b => b.employee.id === empId); // Just to get name/details
-        if (!employeeBookingRef) return; // Should not happen in real DB
+        const employeeBookingRef = bookings.find(b => b.employee.id === empId); 
+        if (!employeeBookingRef) return;
 
         const employee = employeeBookingRef.employee;
 
-        // Check each required RAC
         RAC_KEYS.forEach(racKey => {
             if (req.requiredRacs[racKey]) {
-                // Find latest PASSED booking for this RAC
                 const relevantBookings = bookings.filter(b => {
                     const sessionRac = getRacKeyFromSessionId(b.sessionId);
                     return b.employee.id === empId && b.status === BookingStatus.PASSED && sessionRac === racKey;
                 });
 
-                // Sort by expiry date descending
                 const latestBooking = relevantBookings.sort((a, b) => 
                     new Date(b.expiryDate || '1970-01-01').getTime() - new Date(a.expiryDate || '1970-01-01').getTime()
                 )[0];
@@ -243,24 +236,22 @@ const App: React.FC = () => {
                     const expiry = new Date(latestBooking.expiryDate);
                     const daysToExpiry = differenceInDays(expiry, today);
 
-                    // Logic 1: 30 Day Warning
                     if (daysToExpiry <= 30 && daysToExpiry > 7) {
-                        // Prevent duplicate notifications in this simplified model
                         const alreadyNotified = notifications.some(n => n.message.includes(employee.name) && n.message.includes('expires in'));
                         if (!alreadyNotified) {
-                            addNotification('warning', 'Expiry Warning Email Sent', 
-                                `Email sent to ${employee.name} & Dept Admin: ${racKey} expires in ${daysToExpiry} days.`
+                            addNotification('warning', t.notifications.expiryTitle, 
+                                t.notifications.expiryMsg
+                                    .replace('{name}', employee.name)
+                                    .replace('{rac}', racKey)
+                                    .replace('{days}', String(daysToExpiry))
                             );
-                            alertCount++;
                         }
                     }
 
-                    // Logic 2: 7 Day Auto-Booking
                     if (daysToExpiry <= 7) {
-                        // Check if already has a PENDING booking in the future
                         const hasPending = bookings.some(b => {
                             const sessionRac = getRacKeyFromSessionId(b.sessionId);
-                            const isFuture = b.resultDate ? new Date(b.resultDate) > today : true; // Rough check
+                            const isFuture = b.resultDate ? new Date(b.resultDate) > today : true; 
                             return b.employee.id === empId && 
                                    b.status === BookingStatus.PENDING && 
                                    sessionRac === racKey &&
@@ -268,13 +259,11 @@ const App: React.FC = () => {
                         });
 
                         if (!hasPending) {
-                            // Find next available session
                             const nextSession = sessions
                                 .filter(s => getRacKeyFromSessionId(s.racType) === racKey && new Date(s.date) > today)
                                 .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())[0];
 
                             if (nextSession) {
-                                // Create Booking
                                 const newBooking: Booking = {
                                     id: uuidv4(),
                                     sessionId: nextSession.id,
@@ -284,15 +273,19 @@ const App: React.FC = () => {
                                     theoryScore: 0
                                 };
                                 newAutoBookings.push(newBooking);
-                                addNotification('success', 'Auto-Booking & Email Sent', 
-                                    `CRITICAL: ${employee.name} expiring in ${daysToExpiry} days. Auto-booked for ${nextSession.date}.`
+                                addNotification('success', t.notifications.autoBookTitle, 
+                                    t.notifications.autoBookMsg
+                                        .replace('{name}', employee.name)
+                                        .replace('{days}', String(daysToExpiry))
+                                        .replace('{date}', nextSession.date)
                                 );
                             } else {
-                                // Don't spam
                                 const alreadyAlerted = notifications.some(n => n.message.includes(employee.name) && n.message.includes('Could not auto-book'));
                                 if (!alreadyAlerted) {
-                                    addNotification('alert', 'Auto-Booking Failed', 
-                                        `Could not auto-book ${employee.name} for ${racKey}. No future sessions available!`
+                                    addNotification('alert', t.notifications.autoBookFailTitle, 
+                                        t.notifications.autoBookFailMsg
+                                            .replace('{name}', employee.name)
+                                            .replace('{rac}', racKey)
                                     );
                                 }
                             }
@@ -308,7 +301,6 @@ const App: React.FC = () => {
     }
   };
 
-  // Helper
   const getRacKeyFromSessionId = (sessionId: string) => {
      if (sessionId.includes('RAC 01') || sessionId.includes('RAC01')) return 'RAC01';
      if (sessionId.includes('RAC 02') || sessionId.includes('RAC02')) return 'RAC02';
@@ -371,6 +363,7 @@ const App: React.FC = () => {
   };
 
   return (
+    // LanguageProvider removed here as it wraps App in index.tsx
     <HashRouter>
       <Layout 
         userRole={userRole} 
