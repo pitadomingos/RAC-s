@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Booking, BookingStatus, EmployeeRequirement } from '../types';
 import CardTemplate from '../components/CardTemplate';
@@ -40,10 +41,6 @@ const CardsPage: React.FC<CardsPageProps> = ({ bookings, requirements }) => {
   const pages = chunkArray(uniqueEmployeeBookings, 8);
   const getRequirement = (empId: string) => requirements.find(r => r.employeeId === empId);
 
-  const handlePrint = () => {
-    window.print();
-  };
-
   return (
     <div className="flex flex-col h-full">
       {/* Control Bar */}
@@ -57,8 +54,9 @@ const CardsPage: React.FC<CardsPageProps> = ({ bookings, requirements }) => {
         
         {uniqueEmployeeBookings.length > 0 && (
           <button 
-            onClick={handlePrint}
-            className="flex items-center space-x-2 bg-slate-900 text-white px-4 py-2 rounded-lg hover:bg-slate-800 transition shadow-sm"
+            type="button"
+            onClick={() => window.print()}
+            className="flex items-center space-x-2 bg-slate-900 text-white px-4 py-2 rounded-lg hover:bg-slate-800 transition shadow-sm cursor-pointer"
           >
             <Printer size={18} />
             <span>{t.common.print}</span>
@@ -97,7 +95,11 @@ const CardsPage: React.FC<CardsPageProps> = ({ bookings, requirements }) => {
                 >
                     {pageGroup.map((booking) => (
                         <div key={String(booking.id)} className="flex justify-center items-center">
-                            <CardTemplate booking={booking} requirement={getRequirement(booking.employee.id)} />
+                            <CardTemplate 
+                              booking={booking} 
+                              requirement={getRequirement(booking.employee.id)}
+                              allBookings={bookings} // Pass all bookings for date lookup
+                            />
                         </div>
                     ))}
                     {/* Fillers to maintain grid structure if page is not full */}

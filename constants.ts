@@ -1,6 +1,5 @@
 
-
-import { RAC } from './types';
+import { RAC, RacDef } from './types';
 
 export const COMPANIES = ['Vulcan Mining', 'Global Logistics', 'Safety First Contractors'];
 export const DEPARTMENTS = ['Mine Operations', 'Plant Maintenance', 'HSE', 'Logistics', 'Administration'];
@@ -13,6 +12,12 @@ export const RAC_KEYS = [
   'RAC01', 'RAC02', 'RAC03', 'RAC04', 'RAC05', 
   'RAC06', 'RAC07', 'RAC08', 'RAC09', 'RAC10'
 ];
+
+export const INITIAL_RAC_DEFINITIONS: RacDef[] = RAC_KEYS.map((k, i) => ({
+    id: String(i),
+    code: k,
+    name: Object.values(RAC)[i] || `${k} Description`
+}));
 
 // Calculate generic future dates for demo purposes
 const getFutureDate = (daysToAdd: number) => {

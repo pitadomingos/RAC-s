@@ -12,6 +12,12 @@ export enum RAC {
   RAC10 = 'RAC 10 - Liquid Metal'
 }
 
+export interface RacDef {
+  id: string;
+  code: string;
+  name: string;
+}
+
 export enum UserRole {
   SYSTEM_ADMIN = 'System Admin',
   RAC_ADMIN = 'RAC Admin',
@@ -26,6 +32,8 @@ export interface User {
     email: string;
     role: UserRole;
     status: 'Active' | 'Inactive';
+    company?: string;
+    jobTitle?: string;
 }
 
 export interface Employee {
@@ -35,6 +43,7 @@ export interface Employee {
   company: string;
   department: string;
   role: string;
+  isActive?: boolean; // New field for Active status
   // Driver License Details (Specific for RAC 02)
   driverLicenseNumber?: string;
   driverLicenseClass?: string;
@@ -70,6 +79,7 @@ export interface Booking {
   theoryScore?: number;
   practicalScore?: number; // Only for RAC 02 typically
   driverLicenseVerified?: boolean; // New field for Trainer validation
+  isAutoBooked?: boolean;
 }
 
 export interface ChartData {

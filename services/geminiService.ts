@@ -6,20 +6,28 @@ import { translations, Language } from '../utils/translations';
 // Safely access API key
 const apiKey = (typeof process !== 'undefined' && process.env && process.env.API_KEY) ? process.env.API_KEY : '';
 
-// Singleton instance logic could be applied here if needed
+// Singleton instance logic
 let ai: GoogleGenAI | null = null;
 
-try {
-    ai = new GoogleGenAI({ apiKey });
-} catch (e) {
-    logger.error("Failed to initialize Google GenAI client", e);
+if (apiKey) {
+    try {
+        ai = new GoogleGenAI({ apiKey });
+    } catch (e) {
+        logger.error("Failed to initialize Google GenAI client", e);
+    }
+} else {
+    logger.warn("Google GenAI API Key is missing. AI features will be disabled.");
 }
 
 export const getSafetyAdvice = async (rac: string, query: string, language: Language = 'en'): Promise<string> => {
-  if (!ai) return "AI Service Unavailable.";
+  if (!ai) return "AI Service Unavailable (Missing API Key).";
   
   try {
     const t = translations[language];
+    if (!t?.ai?.systemPromptAdvice) {
+        return "AI Configuration Error: Missing translations.";
+    }
+
     const model = 'gemini-2.5-flash';
     const langName = language === 'en' ? 'English' : 'Portuguese';
     
@@ -39,24 +47,36 @@ export const getSafetyAdvice = async (rac: string, query: string, language: Lang
     });
 
     return response.text || "No advice available at this time.";
-  } catch (error) {
+  } catch (error: any) {
     logger.error("Gemini API Error", error);
     return "Unable to connect to Safety Advisor. Please try again later.";
   }
 };
 
 export const generateSafetyReport = async (stats: any, period: string, language: Language = 'en'): Promise<string> => {
-  if (!ai) return "AI Service Unavailable.";
+  if (!ai) return "AI Service Unavailable (Missing API Key).";
 
   try {
     const t = translations[language];
+    if (!t?.ai?.systemPromptReport) {
+        return "AI Configuration Error: Missing translations.";
+    }
+
     const model = 'gemini-2.5-flash';
     const langName = language === 'en' ? 'English' : 'Portuguese';
     
     const systemPrompt = t.ai.systemPromptReport.replace('{language}', langName);
     
+    // Ensure stats is stringifiable and not too large
+    let statsStr = "{}";
+    try {
+        statsStr = JSON.stringify(stats, null, 2);
+    } catch (e) {
+        statsStr = "Error parsing statistics.";
+    }
+
     const prompt = `Report Period: ${period}
-    Statistics: ${JSON.stringify(stats, null, 2)}`;
+    Statistics: ${statsStr}`;
 
     logger.info(`Generating Safety Report for period: ${period} [${language}]`);
 
@@ -69,8 +89,9 @@ export const generateSafetyReport = async (stats: any, period: string, language:
     });
 
     return response.text || "Unable to generate report analysis.";
-  } catch (error) {
+  } catch (error: any) {
     logger.error("Gemini Report Generation Error", error);
-    return "Error generating AI report analysis. Please ensure API Key is configured.";
+    // return friendly message
+    return "Error generating AI report analysis. Please ensure API Key is configured and internet connection is stable.";
   }
 };

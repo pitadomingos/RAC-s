@@ -11,13 +11,12 @@
   "dependencies": {
     "react": "^19.2.1",
     "react-dom": "^19.2.1",
-    "recharts": "^3.5.1",
-    "lucide-react": "^0.556.0",
-    "@google/genai": "^1.31.0",
+    "@google/genai": "^1.32.0",
     "react-router-dom": "^7.10.1",
-    "date-fns": "^4.1.0",
+    "recharts": "^3.5.1",
     "uuid": "^13.0.0",
-    "react-to-print": "^3.2.0"
+    "lucide-react": "^0.556.0",
+    "date-fns": "^4.1.0"
   },
   "devDependencies": {
     "@types/node": "^22.14.0",

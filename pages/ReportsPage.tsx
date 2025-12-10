@@ -194,7 +194,11 @@ const ReportsPage: React.FC<ReportsPageProps> = ({ bookings, sessions }) => {
                 <h2 className="text-xl font-bold text-slate-800">{t.reports.title}</h2>
                 <p className="text-sm text-gray-500">{t.reports.subtitle}</p>
              </div>
-             <button onClick={() => window.print()} className="flex items-center gap-2 text-gray-600 hover:text-slate-900">
+             <button 
+                type="button"
+                onClick={() => window.print()}
+                className="flex items-center gap-2 text-gray-600 hover:text-slate-900 cursor-pointer"
+             >
                 <Printer size={18} />
                 <span className="text-sm font-medium">{t.reports.printReport}</span>
              </button>
@@ -218,6 +222,30 @@ const ReportsPage: React.FC<ReportsPageProps> = ({ bookings, sessions }) => {
                    <Calendar className="absolute right-3 top-2.5 text-gray-400" size={16} />
                 </div>
              </div>
+
+             {/* Custom Date Inputs - Visible only when Custom is selected */}
+             {period === 'Custom' && (
+                <>
+                   <div>
+                      <label className="block text-xs font-bold text-gray-500 uppercase mb-1">{t.reports.filters.startDate}</label>
+                      <input 
+                        type="date" 
+                        value={startDate}
+                        onChange={(e) => setStartDate(e.target.value)}
+                        className="w-full border-gray-300 rounded-lg p-2 text-sm focus:ring-yellow-500 focus:border-yellow-500"
+                      />
+                   </div>
+                   <div>
+                      <label className="block text-xs font-bold text-gray-500 uppercase mb-1">{t.reports.filters.endDate}</label>
+                      <input 
+                        type="date" 
+                        value={endDate}
+                        onChange={(e) => setEndDate(e.target.value)}
+                        className="w-full border-gray-300 rounded-lg p-2 text-sm focus:ring-yellow-500 focus:border-yellow-500"
+                      />
+                   </div>
+                </>
+             )}
 
              {/* Dept Filter */}
              <div>

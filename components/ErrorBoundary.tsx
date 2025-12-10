@@ -1,3 +1,4 @@
+
 import React, { Component, ErrorInfo, ReactNode } from 'react';
 import { AlertTriangle, RefreshCcw } from 'lucide-react';
 
@@ -11,13 +12,10 @@ interface State {
 }
 
 export class ErrorBoundary extends Component<Props, State> {
-  constructor(props: Props) {
-    super(props);
-    this.state = {
-      hasError: false,
-      error: null
-    };
-  }
+  public state: State = {
+    hasError: false,
+    error: null
+  };
 
   public static getDerivedStateFromError(error: Error): State {
     return { hasError: true, error };
@@ -30,6 +28,12 @@ export class ErrorBoundary extends Component<Props, State> {
 
   public render() {
     if (this.state.hasError) {
+      const errorMsg = this.state.error instanceof Error 
+        ? this.state.error.toString() 
+        : typeof this.state.error === 'object' 
+            ? JSON.stringify(this.state.error, null, 2) 
+            : String(this.state.error);
+
       return (
         <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center p-4 font-sans">
           <div className="bg-white p-8 rounded-xl shadow-lg max-w-md w-full text-center border border-gray-200">
@@ -44,11 +48,11 @@ export class ErrorBoundary extends Component<Props, State> {
               Our technical team has been automatically notified.
             </p>
             
-            <div className="bg-slate-50 p-4 rounded-lg text-left mb-6 overflow-auto max-h-32 border border-slate-200">
+            <div className="bg-slate-50 p-4 rounded-lg text-left mb-6 overflow-auto max-h-48 border border-slate-200">
               <p className="text-[10px] font-bold text-slate-500 uppercase mb-1">Error Details:</p>
-              <code className="text-xs font-mono text-red-600 block break-words">
-                {this.state.error?.toString()}
-              </code>
+              <pre className="text-xs font-mono text-red-600 block break-words whitespace-pre-wrap">
+                {errorMsg}
+              </pre>
             </div>
 
             <button
@@ -64,6 +68,7 @@ export class ErrorBoundary extends Component<Props, State> {
       );
     }
 
-    return this.props.children;
+    // Cast 'this' to any to bypass potential TS issues with the props property in some environments
+    return (this as any).props.children;
   }
 }

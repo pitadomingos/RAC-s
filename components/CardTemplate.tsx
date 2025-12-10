@@ -1,75 +1,118 @@
 
 import React from 'react';
 import { Booking, EmployeeRequirement } from '../types';
-import { MOCK_SESSIONS } from '../constants';
+import { MOCK_SESSIONS, RAC_KEYS } from '../constants';
 import { Phone } from 'lucide-react';
+import { formatDate } from '../utils/translations';
 
 interface CardTemplateProps {
   booking: Booking;
   requirement?: EmployeeRequirement;
+  allBookings?: Booking[]; // Added to support looking up other RAC dates
 }
 
-const CardTemplate: React.FC<CardTemplateProps> = ({ booking, requirement }) => {
-  // Robust guard clause: returns null if essential data is missing, preventing crashes
-  if (!booking || !booking.employee) {
-    return null;
-  }
+const CardTemplate: React.FC<CardTemplateProps> = ({ booking, requirement, allBookings }) => {
+  if (!booking || !booking.employee) return null;
 
   const { employee } = booking;
   
-  // Safe strings to prevent React Error #130 (Object as child)
   const safeName = String(employee.name || '').toUpperCase();
   const safeRecordId = String(employee.recordId || '');
   const safeRole = String(employee.role || '').toUpperCase();
+  const safeDept = String(employee.department || '').toUpperCase();
+  const safeCompany = String(employee.company || '').toUpperCase();
   
-  // Driver License Data - explicitly cast to string
   const dlNum = String(employee.driverLicenseNumber || '');
   const dlClass = String(employee.driverLicenseClass || '');
-  const dlExp = String(employee.driverLicenseExpiry || '');
+  const dlExp = employee.driverLicenseExpiry ? formatDate(employee.driverLicenseExpiry) : '';
+  const asoDate = requirement?.asoExpiryDate ? formatDate(requirement.asoExpiryDate) : '';
 
   // Logic: Show DL details only if RAC02 is effectively mapped/required.
-  // requirement?.requiredRacs might be undefined, access safely.
   const isRac02Mapped = requirement?.requiredRacs ? !!requirement.requiredRacs['RAC02'] : false;
-  
-  // ASO Date - explicitly cast to string
-  const asoDate = String(requirement?.asoExpiryDate || '');
 
-  // Generate QR Code Link
   const appOrigin = typeof window !== 'undefined' ? window.location.origin : '';
-  const qrUrl = `${appOrigin}/#/results?q=${safeRecordId}`;
+  const qrUrl = `${appOrigin}/#/verify/${safeRecordId}`;
 
-  // Helper to get date for a specific RAC - returns strict string
+  // Company Header Logic
+  const isVulcan = safeCompany.includes('VULCAN');
+  const headerBg = isVulcan ? '#1e3a8a' : '#f59e0b'; // Dark Blue vs Yellow
+  const headerTextColor = isVulcan ? 'white' : 'black';
+  const headerText = isVulcan ? 'VULCAN' : safeCompany;
+
+  // Helper to find date across all bookings if provided, fallback to current booking logic
   const getRacDate = (racKey: string): string => {
-      // 1. Is it mapped?
-      if (!requirement?.requiredRacs || !requirement.requiredRacs[racKey]) return ''; 
+      // 1. If we have access to the full booking list, search for the latest passed record
+      if (allBookings && allBookings.length > 0) {
+          const empId = employee.id;
+          const matches = allBookings.filter(b => {
+              if (b.employee.id !== empId) return false;
+              if (b.status !== 'Passed') return false;
+              if (!b.expiryDate) return false;
 
-      // 2. We need to find the LATEST Passed booking for this RAC for this employee.
-      // FOR PROTOTYPE: We will show the booking date if it matches the current `booking.sessionId` RAC type.
-      
+              // Check if this booking matches the requested RAC Key
+              // Normalize Session ID / Name to Key
+              let bRacKey = '';
+              if (b.sessionId.includes('RAC')) {
+                   // e.g. "RAC01 - Height" or "RAC 01 - Height"
+                   bRacKey = b.sessionId.split(' - ')[0].replace(' ', '');
+              } else {
+                   // Fallback check using inclusion
+                   const normalizedKey = racKey.replace('RAC', 'RAC '); // RAC01 -> RAC 01
+                   if (b.sessionId.includes(normalizedKey)) return true;
+                   if (b.sessionId.includes(racKey)) return true;
+              }
+              return bRacKey === racKey;
+          });
+
+          if (matches.length > 0) {
+               // Sort by expiry date descending (latest expiry first)
+               matches.sort((a, b) => new Date(b.expiryDate!).getTime() - new Date(a.expiryDate!).getTime());
+               return formatDate(matches[0].expiryDate!);
+          }
+          return '';
+      }
+
+      // 2. Fallback: Only check the current booking prop (Limited)
       let currentBookingRac = '';
       if (booking.sessionId && booking.sessionId.includes('RAC')) {
            const parts = booking.sessionId.split(' - ');
            currentBookingRac = parts[0].replace(' ', '');
       } else {
-          // Try to find from mock sessions
           const s = MOCK_SESSIONS.find(session => session.id === booking.sessionId);
           if (s) currentBookingRac = s.racType.split(' - ')[0].replace(' ', '');
       }
 
-      // If this is the RAC for the current passed booking, show its expiry.
       if (currentBookingRac === racKey && booking.status === 'Passed') {
-          return String(booking.expiryDate || '');
+          return formatDate(booking.expiryDate || '');
       }
       
       return ''; 
   };
 
-  // Border style for cells
   const cellBorder = "border-[0.5px] border-black";
-  const labelClass = "font-bold text-[6px] pl-[2px] flex items-center bg-gray-50";
-  const valueClass = "text-[6px] font-bold text-center flex items-center justify-center";
+  const labelClass = "font-bold text-[5px] pl-[2px] flex items-center bg-gray-50 leading-none";
+  const valueClass = "text-[5px] font-bold text-center flex items-center justify-center leading-none";
 
-  // Dimensions: 54mm x 86mm (Vertical ID-1)
+  // Data for Right Column (8 Rows)
+  const rightColData = [
+      { label: 'PTS', val: '12-02-2027' },
+      { label: 'Exec. Cred', val: '-SIM-' },
+      { label: 'Emitente PTS', val: '-SIM-' },
+      { label: 'LOB-OPS', val: '03-01-2027' },
+      { label: 'ART', val: '25-04-2027' },
+      { label: 'Aprovad. ART', val: '-SIM-' },
+      { label: 'LOB-MOV', val: '12-12-2027' },
+      { label: '', val: '' }, // 8th row blank
+  ];
+
+  // Determine Active RACs based on Database Requirements
+  // We filter the master list to get only those marked as True
+  const activeRacs = RAC_KEYS.filter(key => requirement?.requiredRacs?.[key]);
+
+  // We need to render exactly 11 rows in the left column
+  // Fill the start with Active RACs, leave the rest blank
+  const totalLeftRows = 11;
+
   return (
     <div 
       className="bg-white text-slate-900 relative flex flex-col overflow-hidden box-border" 
@@ -83,166 +126,182 @@ const CardTemplate: React.FC<CardTemplateProps> = ({ booking, requirement }) => 
     >
       
       {/* Header */}
-      <div className="flex h-[11mm] border-b-[1px] border-black">
+      <div className="flex h-[11mm] border-b-[1px] border-black relative justify-between items-center px-1">
           {/* Logo Section */}
-          <div className="w-[60%] pl-1 flex flex-col justify-center">
+          <div className="flex flex-col justify-center">
              <div className="flex items-baseline">
                 <span className="text-[12px] font-black italic tracking-tighter text-slate-900">Vulcan</span>
                 <span className="ml-[1px] text-slate-500 text-[6px] align-top">▼</span>
              </div>
           </div>
-          {/* Top Right Box */}
-          <div className="w-[40%] flex flex-col items-end">
-              <span className="text-[5px] font-bold pr-1 pt-[1px]">PAD_V04</span>
-              <div className="w-[15mm] h-[4mm] bg-vulcan-headerYellow mt-auto mr-[2px] mb-[2px]"></div>
+          
+          {/* Centered Company Bar Container */}
+          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+              <div className="flex flex-col items-center justify-center pt-2">
+                  <span className="text-[4px] font-bold self-end mb-[1px] text-gray-500 absolute top-[1px] right-[2px]">PAD_v5e</span>
+                  <div 
+                    className="w-[18mm] h-[4.5mm] flex items-center justify-center text-[5px] font-bold uppercase overflow-hidden whitespace-nowrap shadow-sm border-[0.5px] border-black mt-2"
+                    style={{ backgroundColor: headerBg, color: headerTextColor }}
+                  >
+                     <span className="px-1 truncate w-full text-center">{headerText}</span>
+                  </div>
+              </div>
           </div>
+          
+          {/* Spacer to balance flex layout if needed, or empty */}
+          <div className="w-1"></div>
       </div>
 
       {/* Identity Details */}
-      <div className="px-1 py-[2px] space-y-[1px]">
+      <div className="px-1 py-[1px] space-y-[0.5px]">
           <div className="flex items-baseline">
-              <span className="font-bold w-[13mm] text-[6px]">NOME:</span>
+              <span className="font-bold w-[15mm] text-[6px]">NOME:</span>
               <span className="font-bold text-[7px] uppercase truncate flex-1">{safeName}</span>
           </div>
           <div className="flex items-baseline">
-              <span className="font-bold w-[13mm] text-[6px]">MATRÍCULA:</span>
+              <span className="font-bold w-[15mm] text-[6px]">MATRÍCULA:</span>
               <span className="font-bold text-[7px] uppercase truncate flex-1 bg-gray-200 px-1">{safeRecordId}</span>
           </div>
           <div className="flex items-baseline">
-              <span className="font-bold w-[13mm] text-[6px]">CARGO:</span>
-              <span className="font-bold text-[7px] uppercase truncate flex-1">{safeRole}</span>
+              <span className="font-bold w-[15mm] text-[6px]">CARGO:</span>
+              <span className="font-bold text-[6px] uppercase truncate flex-1">{safeRole}</span>
+          </div>
+          <div className="flex items-baseline">
+              <span className="font-bold w-[15mm] text-[6px]">DEPARTMENT:</span>
+              <span className="font-bold text-[6px] uppercase truncate flex-1">{safeDept}</span>
           </div>
       </div>
 
       {/* Yellow Banner */}
       <div className="bg-vulcan-warning w-full py-[1px] border-y-[1px] border-black text-center mt-[1px]">
-          <p className="text-[6px] font-bold">Matenha os seus treinamentos de segurança válidos</p>
+          <p className="text-[5px] font-bold">Matenha os seus treinamentos de segurança válidos</p>
       </div>
 
-      {/* Driver License Section - Only if RAC 02 */}
-      {isRac02Mapped ? (
-        <div className="border-b-[1px] border-black">
-            <div className={`flex ${cellBorder} border-t-0 border-x-0`}>
-                <div className="w-[30%] text-[5px] font-bold pl-1 bg-gray-50 border-r-[0.5px] border-black">Carta Condução</div>
-                <div className="w-[40%] text-[5px] font-bold text-center border-r-[0.5px] border-black">Número</div>
-                <div className="w-[30%] text-[5px] font-bold text-center">Validade</div>
-            </div>
-            <div className="flex h-[3.5mm]">
-                <div className="w-[30%] text-[6px] font-bold pl-1 border-r-[0.5px] border-black flex items-center">{dlClass}</div>
-                <div className="w-[40%] text-[6px] font-bold text-center border-r-[0.5px] border-black flex items-center justify-center">{dlNum}</div>
-                <div className="w-[30%] text-[6px] font-bold text-center flex items-center justify-center">{dlExp}</div>
-            </div>
-        </div>
-      ) : (
-        // Spacer if no DL
-        <div className="h-[7mm] border-b-[1px] border-black bg-gray-100 flex items-center justify-center text-[5px] text-gray-400">
-            N/A
-        </div>
-      )}
+      {/* Driver License Section */}
+      <div className="border-b-[1px] border-black h-[6.5mm] flex flex-col">
+           <div className="flex h-1/2">
+                <div className="w-[25%] border-r-[0.5px] border-black text-[5px] font-bold pl-1 flex items-center bg-gray-50">Carta Condução</div>
+                <div className="w-[40%] border-r-[0.5px] border-black text-[5px] font-bold text-center flex items-center justify-center">Número</div>
+                <div className="w-[35%] text-[5px] font-bold text-center flex items-center justify-center">Validade</div>
+           </div>
+           {isRac02Mapped ? (
+               <div className="flex h-1/2 border-t-[0.5px] border-black">
+                    <div className="w-[25%] border-r-[0.5px] border-black text-[6px] font-bold pl-1 flex items-center">{dlClass}</div>
+                    <div className="w-[40%] border-r-[0.5px] border-black text-[6px] font-bold text-center flex items-center justify-center underline">{dlNum}</div>
+                    <div className="w-[35%] text-[6px] font-bold text-center flex items-center justify-center">{dlExp}</div>
+               </div>
+           ) : (
+               <div className="flex h-1/2 border-t-[0.5px] border-black bg-gray-100 items-center justify-center text-[5px]">N/A</div>
+           )}
+      </div>
 
       {/* ASO Section */}
-      <div className="bg-vulcan-green text-white text-[7px] font-bold px-1 py-[0.5px] border-b-[0.5px] border-black">
-          VALIDADE ASO:
-      </div>
-      
-      <div className="flex h-[8mm] border-b-[1px] border-black">
-           {/* Left Block for Date */}
-           <div className="w-1/2 border-r-[0.5px] border-black p-1">
-               <div className="w-full h-full border-[0.5px] border-black flex items-center justify-center font-bold text-[8px]">
-                  {asoDate}
-               </div>
-           </div>
-           {/* Right Block Blank */}
-           <div className="w-1/2 p-1">
-              <div className="w-full h-full border-[0.5px] border-black"></div>
-           </div>
+      <div className="bg-vulcan-green text-white h-[3.5mm] flex items-center justify-between px-1 border-b-[1px] border-black">
+          <span className="text-[6px] font-bold">VALIDADE ASO:</span>
+          <span className="text-[6px] font-bold">{asoDate}</span>
       </div>
 
       {/* RAC Grid */}
-      <div className="flex-1 flex text-[5px]">
-          {/* Column 1 (RAC 01 - 05) */}
-          <div className="w-1/2 border-r-[0.5px] border-black">
-              {[1, 2, 3, 4, 5].map(num => {
-                  const key = `RAC${String(num).padStart(2, '0')}`;
-                  const isMapped = requirement?.requiredRacs ? !!requirement.requiredRacs[key] : false;
+      <div className="flex-1 flex text-[5px] border-b-[1px] border-black">
+          {/* Left Column - 11 Rows - Dynamic Ordering */}
+          <div className="w-1/2 border-r-[1px] border-black">
+              {Array.from({ length: totalLeftRows }).map((_, idx) => {
+                  // Get the RAC key for this slot if available
+                  const racKey = activeRacs[idx];
                   
+                  // Label formatting: RAC01 -> RAC 01
+                  const label = racKey ? racKey.replace('RAC', 'RAC ') : '';
+                  const dateVal = racKey ? getRacDate(racKey) : '';
+
                   return (
-                    <div key={key} className={`flex h-[4mm] border-b-[0.5px] border-black last:border-b-0`}>
-                        <div className={`w-[10mm] ${labelClass} border-r-[0.5px] border-black`}>
-                           {isMapped ? `RAC ${String(num).padStart(2, '0')}` : ''}
+                    <div key={`left-${idx}`} className="flex h-[3.5mm] border-b-[0.5px] border-black last:border-b-0">
+                        <div className={`w-[12mm] ${labelClass} border-r-[0.5px] border-black`}>
+                           {label}
                         </div>
                         <div className={`flex-1 ${valueClass}`}>
-                           {isMapped ? getRacDate(key) : ''}
+                           {dateVal}
                         </div>
                     </div>
                   );
               })}
           </div>
           
-          {/* Column 2 (RAC 06 - 10) */}
-          <div className="w-1/2">
-               {[6, 7, 8, 9, 10].map(num => {
-                  const key = `RAC${String(num).padStart(2, '0')}`;
-                  const isMapped = requirement?.requiredRacs ? !!requirement.requiredRacs[key] : false;
-
-                  return (
-                    <div key={key} className={`flex h-[4mm] border-b-[0.5px] border-black last:border-b-0`}>
-                        <div className={`w-[10mm] ${labelClass} border-r-[0.5px] border-black`}>
-                           {isMapped ? `RAC ${String(num).padStart(2, '0')}` : ''}
+          {/* Right Column - 8 Rows + QR */}
+          <div className="w-1/2 flex flex-col">
+               {/* 8 Data Rows */}
+               <div>
+                   {rightColData.map((row, idx) => (
+                        <div key={`right-${idx}`} className="flex h-[3.5mm] border-b-[0.5px] border-black">
+                            <div className={`w-[16mm] ${labelClass} border-r-[0.5px] border-black`}>
+                               {row.label}
+                            </div>
+                            <div className={`flex-1 ${valueClass}`}>
+                               {row.val}
+                            </div>
                         </div>
-                        <div className={`flex-1 ${valueClass}`}>
-                           {isMapped ? getRacDate(key) : ''}
-                        </div>
-                    </div>
-                  );
-              })}
+                   ))}
+               </div>
+               
+               {/* QR Container takes remaining space */}
+               <div className="flex-1 flex items-center justify-start pl-1 relative">
+                   <img 
+                       src={`https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=${encodeURIComponent(qrUrl)}`} 
+                       alt="QR" 
+                       className="w-[10mm] h-[10mm]"
+                   />
+               </div>
           </div>
       </div>
 
-      {/* Footer */}
-      <div className="px-1 pt-[1px] relative text-[5px]">
-           <div className="font-bold">EMISSÃO: <span className="font-normal">{new Date().toLocaleDateString()}</span></div>
-           <div className="mt-[2px] font-bold">ASSINATURA E CARIMBO:</div>
-           {/* Adjusted box width to allow space for QR code */}
-           <div className="h-[4mm] w-[28mm] border-[0.5px] border-black mb-[1px]"></div>
-           <div className="flex items-end mb-[2px]">
-               <span className="font-bold mr-1">Liberado por:</span>
-               <div className="border-b-[1px] border-dotted border-black w-[18mm]"></div>
+      {/* Footer / Signature */}
+      <div className="h-[9mm] px-1 relative flex flex-col justify-start pt-[1px]">
+           <div className="text-[5px] flex items-center gap-1">
+               <span className="font-bold">EMISSÃO:</span>
+               <span>{new Date().toLocaleString('en-GB')}</span>
+           </div>
+           
+           <div className="text-[5px] flex items-end gap-1 mb-[2px]">
+               <span className="font-bold">Riquisitado por:</span>
+               <span>{safeName.split(' ')[0]}</span>
            </div>
 
-           {/* Shield Logo Graphic (SVG) */}
-           <div className="absolute right-[2px] bottom-[2px] w-[12mm] h-[14mm] z-10">
-                <svg viewBox="0 0 100 120" className="w-full h-full drop-shadow-sm">
-                     <path d="M50 0 L100 25 V50 C100 85 50 120 50 120 C50 120 0 85 0 50 V25 Z" fill="#fff" stroke="#d97706" strokeWidth="4"/>
-                     <path d="M50 10 L90 30 V50 C90 80 50 110 50 110 C50 110 10 80 10 50 V30 Z" fill="#78350f" /> 
-                     <path d="M50 10 L90 30 V50 C90 80 50 110 50 110 C50 110 50 80 50 50 Z" fill="#92400e" opacity="0.5" />
-                     <text x="50" y="55" fontSize="24" textAnchor="middle" fill="white" fontWeight="bold" fontFamily="Arial">10</text>
-                     <text x="50" y="70" fontSize="10" textAnchor="middle" fill="white" fontFamily="Arial">Regras</text>
-                     <text x="50" y="80" fontSize="10" textAnchor="middle" fill="white" fontFamily="Arial">de Ouro</text>
-                </svg>
+           {/* 10 Golden Rules Shield - Bottom Right Overlay */}
+           {/* Anchored bottom right */}
+           <div className="absolute -right-[1px] -bottom-[6mm] w-[14mm] h-[16mm] z-20">
+               {/* Vector representation of 10 Golden Rules Shield */}
+               <svg viewBox="0 0 100 120" className="w-full h-full filter drop-shadow-md">
+                   {/* Main Shield Shape */}
+                   <path d="M50 5 L95 25 V50 C95 85 50 115 50 115 C50 115 5 85 5 50 V25 Z" fill="#4B5563" stroke="#fff" strokeWidth="2"/>
+                   
+                   {/* Colored Sections */}
+                   <path d="M50 5 L95 25 V45 H50 V5 Z" fill="#F59E0B" /> {/* Yellow Top */}
+                   <path d="M95 45 V50 C95 70 80 90 50 115 V80 H95" fill="#DC2626" /> {/* Red Right */}
+                   <path d="M5 45 V50 C5 70 20 90 50 115 V80 H5" fill="#2563EB" /> {/* Blue Left */}
+                   
+                   {/* Center Text Area */}
+                   <path d="M50 25 L80 35 V50 C80 75 50 100 50 100 C50 100 20 75 20 50 V35 Z" fill="#374151" opacity="0.9"/>
+                   
+                   <text x="50" y="55" fontSize="22" textAnchor="middle" fill="white" fontWeight="bold" fontFamily="Arial">10</text>
+                   <text x="50" y="68" fontSize="8" textAnchor="middle" fill="white" fontFamily="Arial">Regras</text>
+                   <text x="50" y="76" fontSize="8" textAnchor="middle" fill="white" fontFamily="Arial">de Ouro</text>
+               </svg>
            </div>
+      </div>
 
-           {/* QR Code - Linking to employee record */}
-           <div className="absolute right-[14mm] bottom-[2px] w-[10mm] h-[10mm] z-10 bg-white p-[0.5mm]">
-               <img 
-                   src={`https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=${encodeURIComponent(qrUrl)}`} 
-                   alt="QR" 
-                   className="w-full h-full object-contain"
-               />
-           </div>
+      {/* Valid Until Strip - Green */}
+      <div className="bg-vulcan-green text-white text-[7px] font-bold text-center py-[1px]">
+          VALIDO ATÉ {asoDate ? asoDate : '16-02-2026'}
       </div>
 
       {/* Emergency Strip */}
-      <div className="h-[5mm] bg-vulcan-green flex items-center pl-1 relative">
-          <div className="w-[3.5mm] h-[3.5mm] bg-yellow-400 rounded-full flex items-center justify-center border-[1px] border-white z-20">
-             <Phone size={6} className="text-white fill-white" />
+      <div className="h-[6mm] bg-[#65a30d] flex items-center pl-1 relative border-t-[1px] border-white">
+          <div className="w-[4mm] h-[4mm] bg-orange-500 rounded-full flex items-center justify-center border-[1px] border-white z-20 shadow-sm">
+             <Phone size={8} className="text-white fill-white" />
           </div>
-          <div className="text-center text-white leading-none ml-2 flex flex-col items-start">
-              <div className="text-[4px] font-bold uppercase">EM CASO DE EMERGÊNCIA LIGUE</div>
-              <div className="text-[6px] font-black tracking-widest bg-vulcan-green pl-1">822030 / 842030</div>
+          <div className="text-center text-slate-900 leading-none ml-2 flex flex-col items-center flex-1 pr-[12mm]">
+              <div className="text-[5px] font-bold">EM CASO DE EMERGÊNCIA LIGUE</div>
+              <div className="text-[7px] font-black tracking-widest">822030 / 842030</div>
           </div>
-          {/* Dashed line effect */}
-          <div className="absolute bottom-[2px] left-0 w-full border-b-[1px] border-dotted border-white opacity-30"></div>
       </div>
 
     </div>

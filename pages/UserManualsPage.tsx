@@ -1,4 +1,6 @@
 
+
+
 import React, { useState } from 'react';
 import { UserRole } from '../types';
 import { 
@@ -11,6 +13,11 @@ import { useLanguage } from '../contexts/LanguageContext';
 const UserManualsPage: React.FC = () => {
   const { t } = useLanguage();
   const [activeRole, setActiveRole] = useState<UserRole>(UserRole.SYSTEM_ADMIN);
+
+  // Safety check to prevent crash if translations are not yet loaded or missing
+  if (!t || !t.manuals || !t.proposal) {
+      return <div className="p-8 text-center text-gray-500">Loading manuals...</div>;
+  }
 
   const roles = [
     { id: UserRole.SYSTEM_ADMIN, label: t.proposal.roles.sysAdmin.title, icon: Monitor, color: 'text-blue-600', bg: 'bg-blue-50' },

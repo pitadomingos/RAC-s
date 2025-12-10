@@ -1,28 +1,35 @@
 
-import React, { useState, useEffect } from 'react';
+
+
+import React, { useState, useEffect, Suspense } from 'react';
 import { HashRouter, Routes, Route, Navigate } from 'react-router-dom';
 import Layout from './components/Layout';
 import Dashboard from './pages/Dashboard';
-import DatabasePage from './pages/DatabasePage';
-import BookingForm from './pages/BookingForm';
-import ResultsPage from './pages/ResultsPage';
-import CardsPage from './pages/CardsPage'; // Print View
-import RequestCardsPage from './pages/RequestCardsPage'; // Request View
-import ProjectProposal from './pages/ProjectProposal';
-import TrainerInputPage from './pages/TrainerInputPage';
-import UserManagement from './pages/UserManagement';
-import ScheduleTraining from './pages/ScheduleTraining';
-import SettingsPage from './pages/SettingsPage';
-import ReportsPage from './pages/ReportsPage';
-import UserManualsPage from './pages/UserManualsPage';
-import LogsPage from './pages/LogsPage'; 
 import GeminiAdvisor from './components/GeminiAdvisor';
 // REMOVED LanguageProvider import, using hook instead
 import { useLanguage } from './contexts/LanguageContext';
-import { Booking, BookingStatus, UserRole, EmployeeRequirement, SystemNotification, TrainingSession, User } from './types';
+import { Booking, BookingStatus, UserRole, EmployeeRequirement, SystemNotification, TrainingSession, User, Employee, RacDef } from './types';
 import { format, addYears, differenceInDays } from 'date-fns';
 import { v4 as uuidv4 } from 'uuid';
-import { MOCK_SESSIONS, RAC_KEYS } from './constants';
+import { MOCK_SESSIONS, RAC_KEYS, INITIAL_RAC_DEFINITIONS } from './constants';
+
+// Lazy load pages to optimize bundle size
+const DatabasePage = React.lazy(() => import('./pages/DatabasePage'));
+const BookingForm = React.lazy(() => import('./pages/BookingForm'));
+const ResultsPage = React.lazy(() => import('./pages/ResultsPage'));
+const CardsPage = React.lazy(() => import('./pages/CardsPage'));
+const RequestCardsPage = React.lazy(() => import('./pages/RequestCardsPage'));
+const ProjectProposal = React.lazy(() => import('./pages/ProjectProposal'));
+const PresentationPage = React.lazy(() => import('./pages/PresentationPage'));
+const TrainerInputPage = React.lazy(() => import('./pages/TrainerInputPage'));
+const UserManagement = React.lazy(() => import('./pages/UserManagement'));
+const ScheduleTraining = React.lazy(() => import('./pages/ScheduleTraining'));
+const SettingsPage = React.lazy(() => import('./pages/SettingsPage'));
+const ReportsPage = React.lazy(() => import('./pages/ReportsPage'));
+const UserManualsPage = React.lazy(() => import('./pages/UserManualsPage'));
+const LogsPage = React.lazy(() => import('./pages/LogsPage'));
+const AlcoholIntegration = React.lazy(() => import('./pages/AlcoholIntegration'));
+const VerificationPage = React.lazy(() => import('./pages/VerificationPage'));
 
 // Initial Mock Data Loading with 3 distinct companies
 const initialBookings: Booking[] = [
@@ -179,11 +186,11 @@ const initialRequirements: EmployeeRequirement[] = [
 ];
 
 const initialUsers: User[] = [
-    { id: 1, name: 'System Admin', email: 'admin@vulcan.com', role: UserRole.SYSTEM_ADMIN, status: 'Active' },
-    { id: 2, name: 'Sarah Connor', email: 'sarah.c@vulcan.com', role: UserRole.RAC_ADMIN, status: 'Active' },
-    { id: 3, name: 'John Doe', email: 'john.d@vulcan.com', role: UserRole.RAC_TRAINER, status: 'Active' },
-    { id: 4, name: 'Ellen Ripley', email: 'e.ripley@vulcan.com', role: UserRole.DEPT_ADMIN, status: 'Active' },
-    { id: 5, name: 'Regular User', email: 'user@vulcan.com', role: UserRole.USER, status: 'Inactive' },
+    { id: 1, name: 'System Admin', email: 'admin@vulcan.com', role: UserRole.SYSTEM_ADMIN, status: 'Active', company: 'Vulcan Mining', jobTitle: 'IT Director' },
+    { id: 2, name: 'Sarah Connor', email: 'sarah.c@vulcan.com', role: UserRole.RAC_ADMIN, status: 'Active', company: 'Vulcan Mining', jobTitle: 'Safety Lead' },
+    { id: 3, name: 'John Doe', email: 'john.d@vulcan.com', role: UserRole.RAC_TRAINER, status: 'Active', company: 'Vulcan Mining', jobTitle: 'Senior Trainer' },
+    { id: 4, name: 'Ellen Ripley', email: 'e.ripley@vulcan.com', role: UserRole.DEPT_ADMIN, status: 'Active', company: 'Global Logistics', jobTitle: 'Ops Manager' },
+    { id: 5, name: 'Regular User', email: 'user@vulcan.com', role: UserRole.USER, status: 'Inactive', company: 'Safety First Contractors', jobTitle: 'Technician' },
 ];
 
 const App: React.FC = () => {
@@ -194,6 +201,7 @@ const App: React.FC = () => {
   const [users, setUsers] = useState<User[]>(initialUsers);
   const [userRole, setUserRole] = useState<UserRole>(UserRole.SYSTEM_ADMIN);
   const [notifications, setNotifications] = useState<SystemNotification[]>([]);
+  const [racDefinitions, setRacDefinitions] = useState<RacDef[]>(INITIAL_RAC_DEFINITIONS);
 
   // Derive current user based on selected role for simulation
   const currentUser = users.find(u => u.role === userRole) || users[0];
@@ -270,7 +278,8 @@ const App: React.FC = () => {
                                     employee: { ...employee },
                                     status: BookingStatus.PENDING,
                                     attendance: false,
-                                    theoryScore: 0
+                                    theoryScore: 0,
+                                    isAutoBooked: true
                                 };
                                 newAutoBookings.push(newBooking);
                                 addNotification('success', t.notifications.autoBookTitle, 
@@ -362,6 +371,39 @@ const App: React.FC = () => {
     });
   };
 
+  const handleUpdateEmployee = (employeeId: string, updates: Partial<Employee>) => {
+     setBookings(prev => prev.map(b => {
+         if (b.employee.id === employeeId) {
+             return {
+                 ...b,
+                 employee: { ...b.employee, ...updates }
+             };
+         }
+         return b;
+     }));
+  };
+  
+  const handleDeleteEmployee = (employeeId: string) => {
+      setBookings(prev => prev.filter(b => b.employee.id !== employeeId));
+      setRequirements(prev => prev.filter(r => r.employeeId !== employeeId));
+  };
+  
+  // Auto-Booking Approval Handlers
+  const handleApproveAutoBooking = (bookingId: string) => {
+      setBookings(prev => prev.map(b => 
+          b.id === bookingId ? { ...b, isAutoBooked: false } : b
+      ));
+  };
+
+  const handleRejectAutoBooking = (bookingId: string) => {
+      setBookings(prev => prev.filter(b => b.id !== bookingId));
+  };
+
+  const handleUpdateRacDefinitions = (newDefs: RacDef[]) => {
+      setRacDefinitions(newDefs);
+  };
+
+
   return (
     // LanguageProvider removed here as it wraps App in index.tsx
     <HashRouter>
@@ -371,30 +413,49 @@ const App: React.FC = () => {
         notifications={notifications}
         clearNotifications={() => setNotifications([])}
       >
-        <Routes>
-          <Route path="/" element={<Dashboard bookings={bookings} requirements={requirements} sessions={sessions} userRole={userRole} />} />
-          <Route path="/database" element={<DatabasePage bookings={bookings} requirements={requirements} updateRequirements={handleUpdateRequirement} sessions={sessions} />} />
-          <Route path="/proposal" element={userRole === UserRole.SYSTEM_ADMIN ? <ProjectProposal /> : <Navigate to="/" replace />} />
-          <Route path="/booking" element={<BookingForm addBookings={handleAddBookings} sessions={sessions} userRole={userRole} />} />
-          <Route path="/trainer-input" element={
-              [UserRole.SYSTEM_ADMIN, UserRole.RAC_ADMIN, UserRole.RAC_TRAINER].includes(userRole) 
-              ? <TrainerInputPage bookings={bookings} updateBookings={handleBulkUpdate} sessions={sessions} userRole={userRole} currentUserName={currentUser.name} /> 
-              : <Navigate to="/" replace />
-            } 
-          />
-          <Route path="/results" element={<ResultsPage bookings={bookings} updateBookingStatus={handleUpdateStatus} importBookings={handleAddBookings} userRole={userRole} sessions={sessions} />} />
-          <Route path="/reports" element={[UserRole.SYSTEM_ADMIN, UserRole.RAC_ADMIN, UserRole.RAC_TRAINER, UserRole.DEPT_ADMIN].includes(userRole) ? <ReportsPage bookings={bookings} sessions={sessions} /> : <Navigate to="/" replace />} />
-          
-          <Route path="/request-cards" element={[UserRole.SYSTEM_ADMIN, UserRole.DEPT_ADMIN, UserRole.RAC_ADMIN, UserRole.USER].includes(userRole) ? <RequestCardsPage bookings={bookings} requirements={requirements} /> : <Navigate to="/" replace />} />
-          <Route path="/print-cards" element={[UserRole.SYSTEM_ADMIN, UserRole.DEPT_ADMIN, UserRole.RAC_ADMIN, UserRole.USER].includes(userRole) ? <CardsPage bookings={bookings} requirements={requirements} /> : <Navigate to="/" replace />} />
-          
-          <Route path="/users" element={userRole === UserRole.SYSTEM_ADMIN ? <UserManagement users={users} setUsers={setUsers} /> : <Navigate to="/" replace />} />
-          <Route path="/schedule" element={[UserRole.SYSTEM_ADMIN, UserRole.RAC_ADMIN].includes(userRole) ? <ScheduleTraining sessions={sessions} setSessions={setSessions} /> : <Navigate to="/" replace />} />
-          <Route path="/settings" element={[UserRole.SYSTEM_ADMIN, UserRole.RAC_ADMIN].includes(userRole) ? <SettingsPage /> : <Navigate to="/" replace />} />
-          <Route path="/manuals" element={<UserManualsPage />} />
-          <Route path="/logs" element={[UserRole.SYSTEM_ADMIN, UserRole.RAC_ADMIN].includes(userRole) ? <LogsPage /> : <Navigate to="/" replace />} />
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
+        <Suspense fallback={
+            <div className="flex items-center justify-center h-full min-h-[400px]">
+                <div className="flex flex-col items-center gap-3">
+                    <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-yellow-500"></div>
+                    <span className="text-sm text-gray-500 font-medium">Loading Module...</span>
+                </div>
+            </div>
+        }>
+            <Routes>
+              {/* Ensure Dashboard is strictly the default route */}
+              <Route path="/" element={<Dashboard bookings={bookings} requirements={requirements} sessions={sessions} userRole={userRole} onApproveAutoBooking={handleApproveAutoBooking} onRejectAutoBooking={handleRejectAutoBooking} />} />
+              
+              <Route path="/database" element={<DatabasePage bookings={bookings} requirements={requirements} updateRequirements={handleUpdateRequirement} sessions={sessions} onUpdateEmployee={handleUpdateEmployee} onDeleteEmployee={handleDeleteEmployee} racDefinitions={racDefinitions} />} />
+              <Route path="/proposal" element={userRole === UserRole.SYSTEM_ADMIN ? <ProjectProposal /> : <Navigate to="/" replace />} />
+              <Route path="/presentation" element={userRole === UserRole.SYSTEM_ADMIN ? <PresentationPage /> : <Navigate to="/" replace />} />
+              <Route path="/booking" element={<BookingForm addBookings={handleAddBookings} sessions={sessions} userRole={userRole} />} />
+              <Route path="/trainer-input" element={
+                  [UserRole.SYSTEM_ADMIN, UserRole.RAC_ADMIN, UserRole.RAC_TRAINER].includes(userRole) 
+                  ? <TrainerInputPage bookings={bookings} updateBookings={handleBulkUpdate} sessions={sessions} userRole={userRole} currentUserName={currentUser.name} /> 
+                  : <Navigate to="/" replace />
+                } 
+              />
+              <Route path="/results" element={<ResultsPage bookings={bookings} updateBookingStatus={handleUpdateStatus} importBookings={handleAddBookings} userRole={userRole} sessions={sessions} />} />
+              <Route path="/reports" element={[UserRole.SYSTEM_ADMIN, UserRole.RAC_ADMIN, UserRole.RAC_TRAINER, UserRole.DEPT_ADMIN].includes(userRole) ? <ReportsPage bookings={bookings} sessions={sessions} /> : <Navigate to="/" replace />} />
+              
+              <Route path="/request-cards" element={[UserRole.SYSTEM_ADMIN, UserRole.DEPT_ADMIN, UserRole.RAC_ADMIN, UserRole.USER].includes(userRole) ? <RequestCardsPage bookings={bookings} requirements={requirements} /> : <Navigate to="/" replace />} />
+              <Route path="/print-cards" element={[UserRole.SYSTEM_ADMIN, UserRole.DEPT_ADMIN, UserRole.RAC_ADMIN, UserRole.USER].includes(userRole) ? <CardsPage bookings={bookings} requirements={requirements} /> : <Navigate to="/" replace />} />
+              
+              <Route path="/users" element={userRole === UserRole.SYSTEM_ADMIN ? <UserManagement users={users} setUsers={setUsers} /> : <Navigate to="/" replace />} />
+              <Route path="/schedule" element={[UserRole.SYSTEM_ADMIN, UserRole.RAC_ADMIN].includes(userRole) ? <ScheduleTraining sessions={sessions} setSessions={setSessions} /> : <Navigate to="/" replace />} />
+              <Route path="/settings" element={[UserRole.SYSTEM_ADMIN, UserRole.RAC_ADMIN].includes(userRole) ? <SettingsPage racDefinitions={racDefinitions} onUpdateRacs={handleUpdateRacDefinitions} /> : <Navigate to="/" replace />} />
+              <Route path="/manuals" element={<UserManualsPage />} />
+              <Route path="/logs" element={[UserRole.SYSTEM_ADMIN, UserRole.RAC_ADMIN].includes(userRole) ? <LogsPage /> : <Navigate to="/" replace />} />
+              
+              {/* New Alcohol Control Module */}
+              <Route path="/alcohol-control" element={[UserRole.SYSTEM_ADMIN, UserRole.RAC_ADMIN].includes(userRole) ? <AlcoholIntegration /> : <Navigate to="/" replace />} />
+              
+              {/* Public Verification Route */}
+              <Route path="/verify/:recordId" element={<VerificationPage bookings={bookings} requirements={requirements} />} />
+
+              <Route path="*" element={<Navigate to="/" replace />} />
+            </Routes>
+        </Suspense>
         <GeminiAdvisor />
       </Layout>
     </HashRouter>

@@ -1,7 +1,10 @@
+
+
 import React, { useState } from 'react';
 import { UserRole, User } from '../types';
 import { Shield, MoreVertical, Plus, X, Trash2, Edit } from 'lucide-react';
 import { useLanguage } from '../contexts/LanguageContext';
+import { COMPANIES } from '../constants';
 
 interface UserManagementProps {
     users: User[];
@@ -12,7 +15,7 @@ const UserManagement: React.FC<UserManagementProps> = ({ users, setUsers }) => {
   const { t } = useLanguage();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [newUser, setNewUser] = useState<Partial<User>>({
-      name: '', email: '', role: UserRole.USER, status: 'Active'
+      name: '', email: '', role: UserRole.USER, status: 'Active', company: COMPANIES[0], jobTitle: ''
   });
   const [openActionId, setOpenActionId] = useState<number | null>(null);
 
@@ -26,11 +29,13 @@ const UserManagement: React.FC<UserManagementProps> = ({ users, setUsers }) => {
           name: newUser.name,
           email: newUser.email,
           role: newUser.role || UserRole.USER,
-          status: newUser.status || 'Active'
+          status: newUser.status || 'Active',
+          company: newUser.company || 'Unknown',
+          jobTitle: newUser.jobTitle || 'N/A'
       };
       setUsers([...users, userToAdd]);
       setIsModalOpen(false);
-      setNewUser({ name: '', email: '', role: UserRole.USER, status: 'Active' });
+      setNewUser({ name: '', email: '', role: UserRole.USER, status: 'Active', company: COMPANIES[0], jobTitle: '' });
   };
 
   const handleDeleteUser = (id: number) => {
@@ -61,6 +66,8 @@ const UserManagement: React.FC<UserManagementProps> = ({ users, setUsers }) => {
           <thead className="bg-gray-50">
             <tr>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{t.users.table.user}</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{t.common.company}</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{t.common.jobTitle}</th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{t.users.table.role}</th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{t.users.table.status}</th>
               <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">{t.users.table.actions}</th>
@@ -79,6 +86,12 @@ const UserManagement: React.FC<UserManagementProps> = ({ users, setUsers }) => {
                       <div className="text-sm text-gray-500">{String(user.email)}</div>
                     </div>
                   </div>
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                   {String(user.company || '-')}
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                   {String(user.jobTitle || '-')}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
                   <div className="flex items-center text-sm text-gray-700">
@@ -141,17 +154,44 @@ const UserManagement: React.FC<UserManagementProps> = ({ users, setUsers }) => {
                          value={String(newUser.email)}
                          onChange={e => setNewUser({...newUser, email: e.target.value})}
                        />
-                       <select 
-                         className="w-full border rounded p-2 text-sm"
-                         value={String(newUser.role)}
-                         onChange={e => setNewUser({...newUser, role: e.target.value as UserRole})}
-                       >
-                           {Object.values(UserRole).map(r => <option key={String(r)} value={String(r)}>{String(r)}</option>)}
-                       </select>
+                       
+                       <div className="grid grid-cols-2 gap-2">
+                           <div>
+                               <label className="text-xs text-gray-500 font-bold mb-1 block">{t.common.company}</label>
+                               <select 
+                                   className="w-full border rounded p-2 text-sm"
+                                   value={String(newUser.company)}
+                                   onChange={e => setNewUser({...newUser, company: e.target.value})}
+                               >
+                                   {COMPANIES.map(c => <option key={c} value={c}>{c}</option>)}
+                               </select>
+                           </div>
+                           <div>
+                               <label className="text-xs text-gray-500 font-bold mb-1 block">{t.common.role}</label>
+                               <select 
+                                    className="w-full border rounded p-2 text-sm"
+                                    value={String(newUser.role)}
+                                    onChange={e => setNewUser({...newUser, role: e.target.value as UserRole})}
+                                >
+                                    {Object.values(UserRole).map(r => <option key={String(r)} value={String(r)}>{String(r)}</option>)}
+                                </select>
+                           </div>
+                       </div>
+
+                       <div>
+                           <label className="text-xs text-gray-500 font-bold mb-1 block">{t.common.jobTitle}</label>
+                           <input 
+                                className="w-full border rounded p-2 text-sm"
+                                placeholder={t.common.jobTitle}
+                                value={String(newUser.jobTitle)}
+                                onChange={e => setNewUser({...newUser, jobTitle: e.target.value})}
+                            />
+                       </div>
+
                    </div>
                    <button 
                     onClick={handleAddUser}
-                    className="mt-4 w-full bg-slate-900 text-white py-2 rounded-lg font-bold text-sm"
+                    className="mt-6 w-full bg-slate-900 text-white py-2 rounded-lg font-bold text-sm"
                    >
                        {t.users.modal.createUser}
                    </button>

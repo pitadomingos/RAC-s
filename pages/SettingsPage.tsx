@@ -1,6 +1,7 @@
+
 import React, { useState } from 'react';
 import { Settings, Users, Box, Save, Plus, Trash2, Tag, Edit2, Check, X, AlertCircle } from 'lucide-react';
-import { RAC_KEYS } from '../constants';
+import { RacDef } from '../types';
 import { v4 as uuidv4 } from 'uuid';
 import { logger } from '../utils/logger';
 import { useLanguage } from '../contexts/LanguageContext';
@@ -8,9 +9,13 @@ import { useLanguage } from '../contexts/LanguageContext';
 // Interfaces
 interface Room { id: string; name: string; capacity: number; }
 interface Trainer { id: string; name: string; racs: string[]; }
-interface RacDef { id: string; code: string; name: string; }
 
-const SettingsPage: React.FC = () => {
+interface SettingsPageProps {
+    racDefinitions: RacDef[];
+    onUpdateRacs: (newDefs: RacDef[]) => void;
+}
+
+const SettingsPage: React.FC<SettingsPageProps> = ({ racDefinitions, onUpdateRacs }) => {
   const { t } = useLanguage();
   const [activeTab, setActiveTab] = useState<'General' | 'Trainers' | 'RACs'>('General');
   const [isSaving, setIsSaving] = useState(false);
@@ -98,10 +103,7 @@ const SettingsPage: React.FC = () => {
   };
 
 
-  // --- RACS STATE & CRUD ---
-  const [racs, setRacs] = useState<RacDef[]>(
-      RAC_KEYS.map((k, i) => ({ id: String(i), code: k, name: `Description for ${k}` }))
-  );
+  // --- RACS STATE & CRUD (Now using Props) ---
   const [newRac, setNewRac] = useState({ code: '', name: '' });
   const [editingRacId, setEditingRacId] = useState<string | null>(null);
   const [editRacData, setEditRacData] = useState<Partial<RacDef>>({});
@@ -113,7 +115,7 @@ const SettingsPage: React.FC = () => {
           code: newRac.code,
           name: newRac.name
       };
-      setRacs([...racs, rac]);
+      onUpdateRacs([...racDefinitions, rac]);
       setNewRac({ code: '', name: '' });
   };
 
@@ -124,14 +126,14 @@ const SettingsPage: React.FC = () => {
 
   const saveRac = () => {
       if (editingRacId && editRacData.code) {
-          setRacs(racs.map(r => r.id === editingRacId ? { ...r, ...editRacData } as RacDef : r));
+          onUpdateRacs(racDefinitions.map(r => r.id === editingRacId ? { ...r, ...editRacData } as RacDef : r));
           setEditingRacId(null);
       }
   };
 
   const deleteRac = (id: string) => {
-      if (confirm('Delete this RAC Definition?')) {
-          setRacs(racs.filter(r => r.id !== id));
+      if (confirm('Delete this RAC Definition? This will affect columns in the database.')) {
+          onUpdateRacs(racDefinitions.filter(r => r.id !== id));
       }
   };
   
@@ -141,7 +143,7 @@ const SettingsPage: React.FC = () => {
       logger.audit('System Configuration Updated', 'Current Admin User', {
           roomsCount: rooms.length,
           trainersCount: trainers.length,
-          racsCount: racs.length
+          racsCount: racDefinitions.length
       });
       
       setTimeout(() => {
@@ -378,6 +380,7 @@ const SettingsPage: React.FC = () => {
                 {activeTab === 'RACs' && (
                     <div className="max-w-4xl">
                         <h3 className="text-lg font-bold text-slate-800 mb-4">{t.settings.racs.title}</h3>
+                        <p className="text-sm text-gray-500 mb-4">Add, remove or edit RAC modules here. These changes will reflect in the Database Matrix.</p>
                         
                         {/* RACs Table */}
                         <div className="border border-gray-200 rounded-lg overflow-hidden mb-6">
@@ -390,7 +393,7 @@ const SettingsPage: React.FC = () => {
                                     </tr>
                                 </thead>
                                 <tbody className="bg-white divide-y divide-gray-200">
-                                    {racs.map(rac => (
+                                    {racDefinitions.map(rac => (
                                         <tr key={String(rac.id)}>
                                             <td className="px-6 py-4">
                                                  {editingRacId === rac.id ? (
