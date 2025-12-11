@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Booking, EmployeeRequirement, RacDef } from '../types';
+import { Booking, EmployeeRequirement, RacDef, TrainingSession } from '../types';
 import { OPS_KEYS, PERMISSION_KEYS, INITIAL_RAC_DEFINITIONS } from '../constants';
 import { Phone } from 'lucide-react';
 import { formatDate } from '../utils/translations';
@@ -10,13 +10,15 @@ interface CardTemplateProps {
   requirement?: EmployeeRequirement;
   allBookings?: Booking[];
   racDefinitions?: RacDef[]; 
+  sessions?: TrainingSession[];
 }
 
 const CardTemplate: React.FC<CardTemplateProps> = ({ 
   booking, 
   requirement, 
   allBookings,
-  racDefinitions = INITIAL_RAC_DEFINITIONS 
+  racDefinitions = INITIAL_RAC_DEFINITIONS,
+  sessions = []
 }) => {
   if (!booking || !booking.employee) return null;
 
@@ -48,7 +50,6 @@ const CardTemplate: React.FC<CardTemplateProps> = ({
   const today = new Date().toISOString().split('T')[0];
 
   // --- Date Calculation State ---
-  // "MUST be the max datevalue on that particular date"
   let maxValidDate = requirement?.asoExpiryDate || '';
   
   const checkDateForMax = (date: string) => {
@@ -69,14 +70,24 @@ const CardTemplate: React.FC<CardTemplateProps> = ({
 
               // Check if this booking matches the requested RAC Key
               let bRacKey = '';
-              if (b.sessionId.includes('RAC')) {
-                   bRacKey = b.sessionId.split(' - ')[0].replace(' ', '');
+              // 1. Try Session Object (Most Reliable)
+              const session = sessions.find(s => s.id === b.sessionId);
+              if (session) {
+                  bRacKey = session.racType.split(' - ')[0].replace(' ', '');
               } else {
-                   const normalizedKey = racKey.replace('RAC', 'RAC '); 
-                   if (b.sessionId.includes(normalizedKey)) return true;
-                   if (b.sessionId.includes(racKey)) return true;
+                  // 2. Fallback to String Parsing
+                  const normalizedKey = racKey.replace('RAC', 'RAC '); 
+                  if (b.sessionId.includes(normalizedKey)) return true; // Direct match
+                  if (b.sessionId.includes(racKey)) return true; // Direct match
+                  if (b.sessionId.includes('RAC')) {
+                       bRacKey = b.sessionId.split(' - ')[0].replace(' ', '');
+                  }
               }
-              return bRacKey === racKey;
+              
+              // If we resolved a code, compare it
+              if (bRacKey) return bRacKey === racKey;
+              
+              return false;
           });
 
           if (matches.length > 0) {
@@ -164,13 +175,14 @@ const CardTemplate: React.FC<CardTemplateProps> = ({
       
       {/* Header - FLUSH TO TOP EDGE */}
       <div className="flex h-[11mm] border-b-[1px] border-black relative justify-between items-center px-1 overflow-hidden">
-          {/* Logo Section */}
+          {/* Logo Section - Relative Path */}
           <div className="flex flex-col justify-center h-full w-[15mm] relative">
              <img 
                 src="assets/vulcan.png" 
                 alt="Vulcan" 
                 className="max-h-[10mm] object-contain"
                 style={{ display: 'block' }}
+                onError={(e) => console.error("Failed to load Vulcan logo", e.currentTarget.src)}
              />
           </div>
           
@@ -300,7 +312,7 @@ const CardTemplate: React.FC<CardTemplateProps> = ({
                    <span>{safeName.split(' ')[0]}</span>
                </div>
                <div className="text-[4px] text-gray-500 font-mono leading-none">
-                   (RAC MANAGER)
+                   System: RAC MANAGER
                </div>
            </div>
       </div>
@@ -321,13 +333,14 @@ const CardTemplate: React.FC<CardTemplateProps> = ({
           </div>
       </div>
 
-      {/* 10 Golden Rules Shield - IMAGE ASSET */}
+      {/* 10 Golden Rules Shield - IMAGE ASSET - Relative Path */}
       <div className="absolute -right-[1px] bottom-[8.5mm] w-[13mm] h-[15mm] z-30">
            <img 
               src="assets/Golden_Rules.png" 
               alt="Golden Rules"
               className="w-full h-full object-contain filter drop-shadow-sm"
               style={{ display: 'block' }}
+              onError={(e) => console.error("Failed to load Golden Rules", e.currentTarget.src)}
            />
       </div>
 

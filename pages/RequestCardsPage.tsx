@@ -1,8 +1,8 @@
 
 import React, { useState, useMemo } from 'react';
-import { Booking, BookingStatus, EmployeeRequirement, RacDef } from '../types';
+import { Booking, BookingStatus, EmployeeRequirement, RacDef, TrainingSession } from '../types';
 import CardTemplate from '../components/CardTemplate';
-import { Mail, AlertCircle, CheckCircle, Printer, Search, X, ZoomIn, UserPlus, Trash2, Filter } from 'lucide-react';
+import { Mail, AlertCircle, CheckCircle, Printer, Search, X, ZoomIn, Filter, Trash2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useLanguage } from '../contexts/LanguageContext';
 
@@ -10,9 +10,10 @@ interface RequestCardsPageProps {
   bookings: Booking[];
   requirements: EmployeeRequirement[];
   racDefinitions: RacDef[];
+  sessions: TrainingSession[];
 }
 
-const RequestCardsPage: React.FC<RequestCardsPageProps> = ({ bookings, requirements, racDefinitions }) => {
+const RequestCardsPage: React.FC<RequestCardsPageProps> = ({ bookings, requirements, racDefinitions, sessions }) => {
   const navigate = useNavigate();
   const { t } = useLanguage();
   const [requestSent, setRequestSent] = useState(false);
@@ -23,7 +24,7 @@ const RequestCardsPage: React.FC<RequestCardsPageProps> = ({ bookings, requireme
 
   const safeBookings = Array.isArray(bookings) ? bookings : [];
   
-  // Function to check strict compliance using DYNAMIC RAC definitions
+  // Function to check strict compliance using DYNAMIC RAC definitions AND Sessions lookup
   const isEmployeeCompliant = (empId: string): boolean => {
       const req = requirements.find(r => r.employeeId === empId);
       if (!req) return false;
@@ -48,10 +49,18 @@ const RequestCardsPage: React.FC<RequestCardsPageProps> = ({ bookings, requireme
                  if (b.status !== BookingStatus.PASSED) return false;
                  
                  let racCode = '';
-                 if (b.sessionId.includes('RAC')) {
-                     racCode = b.sessionId.split(' - ')[0].replace(' ', '');
+                 // Try to resolve from Session Object first (Reliable)
+                 const session = sessions.find(s => s.id === b.sessionId);
+                 if (session) {
+                     racCode = session.racType.split(' - ')[0].replace(' ', '');
                  } else {
-                     if (b.sessionId.includes(key)) racCode = key;
+                     // Fallback to string parsing
+                     if (b.sessionId.includes('RAC')) {
+                         racCode = b.sessionId.split(' - ')[0].replace(' ', '');
+                     } else {
+                         // Direct Key match (e.g. "PTS")
+                         if (b.sessionId.includes(key)) racCode = key;
+                     }
                  }
                  return racCode === key;
              });
@@ -86,16 +95,18 @@ const RequestCardsPage: React.FC<RequestCardsPageProps> = ({ bookings, requireme
          }
      });
      return Array.from(uniqueMap.values()).filter(b => isEmployeeCompliant(b.employee.id));
-  }, [safeBookings, requirements, racDefinitions]);
+  }, [safeBookings, requirements, racDefinitions, sessions]);
 
   const slots = useMemo(() => {
       return slotInputs.map(input => {
           if (!input.trim()) return null;
           const lower = input.toLowerCase();
+          // Flexible Search: ID or Name
           return allEligibleBookings.find(b => 
               b.employee.recordId.toLowerCase() === lower ||
               b.employee.name.toLowerCase() === lower || 
-              b.employee.recordId.toLowerCase().includes(lower) 
+              b.employee.recordId.toLowerCase().includes(lower) ||
+              b.employee.name.toLowerCase().includes(lower)
           ) || null;
       });
   }, [slotInputs, allEligibleBookings]);
@@ -124,6 +135,7 @@ const RequestCardsPage: React.FC<RequestCardsPageProps> = ({ bookings, requireme
   };
 
   const handleGoToPrint = () => {
+      // ONLY send selected slots
       const selectedBookings = slots.filter(b => b !== null) as Booking[];
       if (selectedBookings.length > 0) {
           navigate('/print-cards', { state: { selectedBookings } });
@@ -229,7 +241,6 @@ const RequestCardsPage: React.FC<RequestCardsPageProps> = ({ bookings, requireme
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 p-6">
                {slots.map((booking, idx) => {
-                   // If nothing matched in this slot, DO NOT RENDER A PLACEHOLDER. 
                    if (!booking) return null;
 
                    return (
@@ -266,6 +277,7 @@ const RequestCardsPage: React.FC<RequestCardsPageProps> = ({ bookings, requireme
                                requirement={getRequirement(booking.employee.id)} 
                                allBookings={bookings}
                                racDefinitions={racDefinitions}
+                               sessions={sessions}
                              />
                         </div>
                      </div>
@@ -313,6 +325,7 @@ const RequestCardsPage: React.FC<RequestCardsPageProps> = ({ bookings, requireme
                         requirement={getRequirement(zoomedBooking.employee.id)} 
                         allBookings={bookings}
                         racDefinitions={racDefinitions}
+                        sessions={sessions}
                       />
                   </div>
               </div>

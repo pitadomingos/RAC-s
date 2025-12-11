@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Booking, BookingStatus, EmployeeRequirement, RacDef } from '../types';
+import { Booking, BookingStatus, EmployeeRequirement, RacDef, TrainingSession } from '../types';
 import CardTemplate from '../components/CardTemplate';
 import { Printer, AlertCircle, ArrowLeft } from 'lucide-react';
 import { useLanguage } from '../contexts/LanguageContext';
@@ -10,9 +10,10 @@ interface CardsPageProps {
   bookings: Booking[];
   requirements: EmployeeRequirement[];
   racDefinitions: RacDef[];
+  sessions: TrainingSession[];
 }
 
-const CardsPage: React.FC<CardsPageProps> = ({ bookings, requirements, racDefinitions }) => {
+const CardsPage: React.FC<CardsPageProps> = ({ bookings, requirements, racDefinitions, sessions }) => {
   const { t } = useLanguage();
   const location = useLocation();
   const navigate = useNavigate();
@@ -120,6 +121,7 @@ const CardsPage: React.FC<CardsPageProps> = ({ bookings, requirements, racDefini
                               requirement={getRequirement(booking.employee.id)}
                               allBookings={bookings} 
                               racDefinitions={racDefinitions}
+                              sessions={sessions}
                             />
                         </div>
                     ))}
@@ -134,6 +136,7 @@ const CardsPage: React.FC<CardsPageProps> = ({ bookings, requirements, racDefini
                             requirement={getRequirement(b.employee.id)} 
                             allBookings={bookings}
                             racDefinitions={racDefinitions}
+                            sessions={sessions}
                         />
                     </div>
                 ))}
