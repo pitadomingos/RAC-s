@@ -221,9 +221,9 @@ const DashboardStats: React.FC<DashboardStatsProps> = ({ bookings, requirements,
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         
         {/* Chart 1: Stacked Training vs Requirements */}
-        <div className="bg-white dark:bg-slate-800 p-6 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 transition-colors">
+        <div className="bg-white dark:bg-slate-800 p-6 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 transition-colors flex flex-col">
           <h3 className="text-lg font-bold text-slate-800 dark:text-white mb-4">{t.dashboard.charts.complianceTitle}</h3>
-          <div className="h-72">
+          <div className="flex-1 w-full min-h-[300px]" style={{ minWidth: 0 }}>
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={racStackData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
                 <CartesianGrid strokeDasharray="3 3" className="stroke-gray-300 dark:stroke-gray-700" />
@@ -245,9 +245,9 @@ const DashboardStats: React.FC<DashboardStatsProps> = ({ bookings, requirements,
         </div>
 
         {/* Chart 2: Total Compliance Status */}
-        <div className="bg-white dark:bg-slate-800 p-6 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 transition-colors">
+        <div className="bg-white dark:bg-slate-800 p-6 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 transition-colors flex flex-col">
           <h3 className="text-lg font-bold text-slate-800 dark:text-white mb-4">{t.dashboard.charts.accessTitle}</h3>
-          <div className="h-72">
+          <div className="flex-1 w-full min-h-[300px]" style={{ minWidth: 0 }}>
              <ResponsiveContainer width="100%" height="100%">
               <PieChart>
                 <Pie

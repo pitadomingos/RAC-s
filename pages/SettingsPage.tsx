@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { Settings, Users, Box, Save, Plus, Trash2, Tag, Edit2, Check, X, AlertCircle } from 'lucide-react';
+import { Settings, Users, Box, Save, Plus, Trash2, Tag, Edit2, Check, X, AlertCircle, Sliders } from 'lucide-react';
 import { RacDef } from '../types';
 import { v4 as uuidv4 } from 'uuid';
 import { logger } from '../utils/logger';
@@ -153,332 +153,349 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ racDefinitions, onUpdateRac
   };
 
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-slate-200 flex flex-col h-[calc(100vh-120px)] overflow-hidden">
-        <div className="p-6 border-b border-gray-200">
-            <h2 className="text-xl font-bold text-slate-800 flex items-center gap-2">
-                <Settings size={24} className="text-slate-400" />
-                {t.settings.title}
-            </h2>
-            <p className="text-sm text-gray-500">{t.settings.subtitle}</p>
+    <div className="space-y-6 pb-20 animate-fade-in-up">
+        {/* Header */}
+        <div className="bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 rounded-2xl shadow-xl p-8 text-white relative overflow-hidden">
+            <div className="absolute top-0 right-0 opacity-5 pointer-events-none">
+                <Sliders size={200} />
+            </div>
+            <div className="relative z-10">
+                <h2 className="text-3xl font-black tracking-tight flex items-center gap-3">
+                    <Settings size={32} className="text-blue-400" />
+                    {t.settings.title}
+                </h2>
+                <p className="text-slate-400 mt-2 text-sm max-w-xl">
+                    {t.settings.subtitle}
+                </p>
+            </div>
         </div>
 
-        <div className="flex flex-1 overflow-hidden">
+        <div className="flex flex-col lg:flex-row gap-6 h-[calc(100vh-250px)]">
             {/* Sidebar Tabs */}
-            <div className="w-64 bg-gray-50 border-r border-gray-200 p-4 space-y-2">
+            <div className="w-full lg:w-72 bg-white rounded-xl shadow-lg border border-slate-100 p-4 space-y-2 h-fit">
                 <button 
                     onClick={() => setActiveTab('General')}
-                    className={`w-full text-left px-4 py-2 rounded-lg text-sm font-medium transition-colors ${activeTab === 'General' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-600 hover:bg-gray-200'}`}
+                    className={`w-full text-left px-4 py-3 rounded-xl text-sm font-bold transition-all flex items-center gap-3
+                        ${activeTab === 'General' ? 'bg-slate-900 text-white shadow-md' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'}
+                    `}
                 >
-                    <Box size={16} className="inline mr-2" />
+                    <Box size={18} />
                     {t.settings.tabs.general}
                 </button>
                 <button 
                     onClick={() => setActiveTab('Trainers')}
-                    className={`w-full text-left px-4 py-2 rounded-lg text-sm font-medium transition-colors ${activeTab === 'Trainers' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-600 hover:bg-gray-200'}`}
+                    className={`w-full text-left px-4 py-3 rounded-xl text-sm font-bold transition-all flex items-center gap-3
+                        ${activeTab === 'Trainers' ? 'bg-slate-900 text-white shadow-md' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'}
+                    `}
                 >
-                    <Users size={16} className="inline mr-2" />
+                    <Users size={18} />
                     {t.settings.tabs.trainers}
                 </button>
                  <button 
                     onClick={() => setActiveTab('RACs')}
-                    className={`w-full text-left px-4 py-2 rounded-lg text-sm font-medium transition-colors ${activeTab === 'RACs' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-600 hover:bg-gray-200'}`}
+                    className={`w-full text-left px-4 py-3 rounded-xl text-sm font-bold transition-all flex items-center gap-3
+                        ${activeTab === 'RACs' ? 'bg-slate-900 text-white shadow-md' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'}
+                    `}
                 >
-                    <Tag size={16} className="inline mr-2" />
+                    <Tag size={18} />
                     {t.settings.tabs.racs}
                 </button>
             </div>
 
             {/* Content Area */}
-            <div className="flex-1 p-8 overflow-y-auto">
-                {activeTab === 'General' && (
-                    <div className="max-w-3xl">
-                        <h3 className="text-lg font-bold text-slate-800 mb-4">{t.settings.rooms.title}</h3>
-                        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6 text-sm text-blue-800 flex items-start gap-2">
-                            <AlertCircle size={16} className="mt-0.5" />
-                            <span>Setting capacities here will limit the number of bookings allowed per session in the "Book Training" module.</span>
-                        </div>
+            <div className="flex-1 bg-white rounded-xl shadow-lg border border-slate-100 flex flex-col overflow-hidden">
+                <div className="flex-1 overflow-y-auto p-8">
+                    {activeTab === 'General' && (
+                        <div className="max-w-3xl">
+                            <h3 className="text-xl font-bold text-slate-900 mb-4">{t.settings.rooms.title}</h3>
+                            <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-6 text-sm text-blue-900 flex items-start gap-3">
+                                <AlertCircle size={20} className="mt-0.5 flex-shrink-0" />
+                                <span>Setting capacities here will limit the number of bookings allowed per session in the "Book Training" module.</span>
+                            </div>
 
-                        {/* Rooms Table */}
-                        <div className="border border-gray-200 rounded-lg overflow-hidden mb-6">
-                            <table className="min-w-full divide-y divide-gray-200">
-                                <thead className="bg-gray-50">
-                                    <tr>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">{t.settings.rooms.name}</th>
-                                        <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase">{t.settings.rooms.capacity}</th>
-                                        <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">{t.common.actions}</th>
-                                    </tr>
-                                </thead>
-                                <tbody className="bg-white divide-y divide-gray-200">
-                                    {rooms.map(room => (
-                                        <tr key={String(room.id)}>
-                                            <td className="px-6 py-4">
-                                                {editingRoomId === room.id ? (
-                                                    <input 
-                                                        className="border rounded px-2 py-1 text-sm w-full"
-                                                        value={String(editRoomData.name)}
-                                                        onChange={(e) => setEditRoomData({...editRoomData, name: e.target.value})}
-                                                    />
-                                                ) : (
-                                                    <div className="font-bold text-slate-700">{String(room.name)}</div>
-                                                )}
-                                            </td>
-                                            <td className="px-6 py-4 text-center">
-                                                {editingRoomId === room.id ? (
-                                                    <input 
-                                                        type="number"
-                                                        className="border rounded px-2 py-1 text-sm w-20 text-center"
-                                                        value={String(editRoomData.capacity)}
-                                                        onChange={(e) => setEditRoomData({...editRoomData, capacity: parseInt(e.target.value) || 0})}
-                                                    />
-                                                ) : (
-                                                    <span className="text-sm font-mono bg-gray-100 px-2 py-1 rounded">{String(room.capacity)}</span>
-                                                )}
-                                            </td>
-                                            <td className="px-6 py-4 text-right">
-                                                {editingRoomId === room.id ? (
-                                                    <div className="flex justify-end gap-2">
-                                                        <button onClick={saveRoom} className="text-green-600 hover:bg-green-50 p-1 rounded"><Check size={18} /></button>
-                                                        <button onClick={() => setEditingRoomId(null)} className="text-gray-400 hover:bg-gray-50 p-1 rounded"><X size={18} /></button>
-                                                    </div>
-                                                ) : (
-                                                    <div className="flex justify-end gap-2">
-                                                        <button onClick={() => startEditRoom(room)} className="text-blue-600 hover:bg-blue-50 p-1 rounded"><Edit2 size={16} /></button>
-                                                        <button onClick={() => deleteRoom(room.id)} className="text-red-400 hover:bg-red-50 p-1 rounded"><Trash2 size={16} /></button>
-                                                    </div>
-                                                )}
-                                            </td>
+                            {/* Rooms Table */}
+                            <div className="border border-slate-200 rounded-xl overflow-hidden mb-6">
+                                <table className="min-w-full divide-y divide-slate-200">
+                                    <thead className="bg-slate-50">
+                                        <tr>
+                                            <th className="px-6 py-4 text-left text-xs font-bold text-slate-900 uppercase">{t.settings.rooms.name}</th>
+                                            <th className="px-6 py-4 text-center text-xs font-bold text-slate-900 uppercase">{t.settings.rooms.capacity}</th>
+                                            <th className="px-6 py-4 text-right text-xs font-bold text-slate-900 uppercase">{t.common.actions}</th>
                                         </tr>
-                                    ))}
-                                </tbody>
-                            </table>
-                        </div>
-
-                        {/* Create Room Form */}
-                        <div className="bg-gray-50 p-4 rounded-lg border border-gray-200 flex gap-4 items-end">
-                            <div className="flex-1">
-                                <label className="text-xs font-bold text-gray-500 uppercase">{t.settings.rooms.new}</label>
-                                <input 
-                                    className="w-full border rounded p-2 text-sm mt-1" 
-                                    placeholder="e.g. Training Lab 4"
-                                    value={newRoom.name}
-                                    onChange={(e) => setNewRoom({...newRoom, name: e.target.value})}
-                                />
+                                    </thead>
+                                    <tbody className="bg-white divide-y divide-slate-200">
+                                        {rooms.map(room => (
+                                            <tr key={String(room.id)}>
+                                                <td className="px-6 py-4">
+                                                    {editingRoomId === room.id ? (
+                                                        <input 
+                                                            className="border rounded px-2 py-1 text-sm w-full outline-none focus:ring-2 focus:ring-blue-500 text-black"
+                                                            value={String(editRoomData.name)}
+                                                            onChange={(e) => setEditRoomData({...editRoomData, name: e.target.value})}
+                                                        />
+                                                    ) : (
+                                                        <div className="font-bold text-slate-900">{String(room.name)}</div>
+                                                    )}
+                                                </td>
+                                                <td className="px-6 py-4 text-center">
+                                                    {editingRoomId === room.id ? (
+                                                        <input 
+                                                            type="number"
+                                                            className="border rounded px-2 py-1 text-sm w-20 text-center outline-none focus:ring-2 focus:ring-blue-500 text-black"
+                                                            value={String(editRoomData.capacity)}
+                                                            onChange={(e) => setEditRoomData({...editRoomData, capacity: parseInt(e.target.value) || 0})}
+                                                        />
+                                                    ) : (
+                                                        <span className="text-sm font-bold bg-slate-100 text-slate-900 px-3 py-1 rounded-full">{String(room.capacity)}</span>
+                                                    )}
+                                                </td>
+                                                <td className="px-6 py-4 text-right">
+                                                    {editingRoomId === room.id ? (
+                                                        <div className="flex justify-end gap-2">
+                                                            <button onClick={saveRoom} className="text-green-600 hover:bg-green-50 p-2 rounded-full"><Check size={18} /></button>
+                                                            <button onClick={() => setEditingRoomId(null)} className="text-slate-400 hover:bg-slate-50 p-2 rounded-full"><X size={18} /></button>
+                                                        </div>
+                                                    ) : (
+                                                        <div className="flex justify-end gap-2">
+                                                            <button onClick={() => startEditRoom(room)} className="text-blue-600 hover:bg-blue-50 p-2 rounded-full"><Edit2 size={16} /></button>
+                                                            <button onClick={() => deleteRoom(room.id)} className="text-red-400 hover:bg-red-50 p-2 rounded-full"><Trash2 size={16} /></button>
+                                                        </div>
+                                                    )}
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
                             </div>
-                            <div className="w-32">
-                                <label className="text-xs font-bold text-gray-500 uppercase">{t.settings.rooms.capacity}</label>
-                                <input 
-                                    type="number"
-                                    className="w-full border rounded p-2 text-sm mt-1" 
-                                    placeholder="20"
-                                    value={newRoom.capacity || ''}
-                                    onChange={(e) => setNewRoom({...newRoom, capacity: parseInt(e.target.value) || 0})}
-                                />
-                            </div>
-                            <button 
-                                onClick={handleAddRoom}
-                                className="bg-slate-900 text-white p-2 rounded-lg hover:bg-slate-800 h-[38px] w-[38px] flex items-center justify-center"
-                            >
-                                <Plus size={20} />
-                            </button>
-                        </div>
-                    </div>
-                )}
 
-                {activeTab === 'Trainers' && (
-                    <div className="max-w-4xl">
-                         <h3 className="text-lg font-bold text-slate-800 mb-4">{t.settings.trainers.title}</h3>
-                         
-                         {/* Trainers Table */}
-                         <div className="border border-gray-200 rounded-lg overflow-hidden mb-6">
-                            <table className="min-w-full divide-y divide-gray-200">
-                                <thead className="bg-gray-50">
-                                    <tr>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase w-1/3">{t.settings.trainers.name}</th>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">{t.settings.trainers.qualifiedRacs}</th>
-                                        <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase w-32">{t.common.actions}</th>
-                                    </tr>
-                                </thead>
-                                <tbody className="bg-white divide-y divide-gray-200">
-                                    {trainers.map(trainer => (
-                                        <tr key={String(trainer.id)}>
-                                            <td className="px-6 py-4">
-                                                {editingTrainerId === trainer.id ? (
-                                                    <input 
-                                                        className="border rounded px-2 py-1 text-sm w-full"
-                                                        value={String(editTrainerData.name)}
-                                                        onChange={(e) => setEditTrainerData({...editTrainerData, name: e.target.value})}
-                                                    />
-                                                ) : (
-                                                    <div className="text-sm font-bold text-slate-700">{String(trainer.name)}</div>
-                                                )}
-                                            </td>
-                                            <td className="px-6 py-4">
-                                                {editingTrainerId === trainer.id ? (
-                                                    <input 
-                                                        className="border rounded px-2 py-1 text-sm w-full"
-                                                        placeholder="RAC01, RAC02 (comma separated)"
-                                                        value={String(editTrainerData.racs)}
-                                                        onChange={(e) => setEditTrainerData({...editTrainerData, racs: e.target.value})}
-                                                    />
-                                                ) : (
-                                                    <div className="flex flex-wrap gap-1">
-                                                        {trainer.racs.map(r => (
-                                                            <span key={String(r)} className="bg-gray-100 px-2 py-0.5 rounded text-xs border border-gray-200">{String(r)}</span>
-                                                        ))}
-                                                    </div>
-                                                )}
-                                            </td>
-                                            <td className="px-6 py-4 text-right">
-                                                {editingTrainerId === trainer.id ? (
-                                                    <div className="flex justify-end gap-2">
-                                                        <button onClick={saveTrainer} className="text-green-600 hover:bg-green-50 p-1 rounded"><Check size={18} /></button>
-                                                        <button onClick={() => setEditingTrainerId(null)} className="text-gray-400 hover:bg-gray-50 p-1 rounded"><X size={18} /></button>
-                                                    </div>
-                                                ) : (
-                                                    <div className="flex justify-end gap-2">
-                                                        <button onClick={() => startEditTrainer(trainer)} className="text-blue-600 hover:bg-blue-50 p-1 rounded"><Edit2 size={16} /></button>
-                                                        <button onClick={() => deleteTrainer(trainer.id)} className="text-red-400 hover:bg-red-50 p-1 rounded"><Trash2 size={16} /></button>
-                                                    </div>
-                                                )}
-                                            </td>
+                            {/* Create Room Form */}
+                            <div className="bg-slate-50 p-6 rounded-xl border border-slate-200 flex gap-4 items-end">
+                                <div className="flex-1">
+                                    <label className="text-xs font-bold text-slate-700 uppercase tracking-wider">{t.settings.rooms.new}</label>
+                                    <input 
+                                        className="w-full border border-slate-300 rounded-lg p-2.5 text-sm mt-1 focus:ring-2 focus:ring-blue-500 outline-none text-black" 
+                                        placeholder="e.g. Training Lab 4"
+                                        value={newRoom.name}
+                                        onChange={(e) => setNewRoom({...newRoom, name: e.target.value})}
+                                    />
+                                </div>
+                                <div className="w-32">
+                                    <label className="text-xs font-bold text-slate-700 uppercase tracking-wider">{t.settings.rooms.capacity}</label>
+                                    <input 
+                                        type="number"
+                                        className="w-full border border-slate-300 rounded-lg p-2.5 text-sm mt-1 focus:ring-2 focus:ring-blue-500 outline-none text-black" 
+                                        placeholder="20"
+                                        value={newRoom.capacity || ''}
+                                        onChange={(e) => setNewRoom({...newRoom, capacity: parseInt(e.target.value) || 0})}
+                                    />
+                                </div>
+                                <button 
+                                    onClick={handleAddRoom}
+                                    className="bg-slate-900 text-white p-2.5 rounded-lg hover:bg-slate-800 transition-colors"
+                                >
+                                    <Plus size={20} />
+                                </button>
+                            </div>
+                        </div>
+                    )}
+
+                    {activeTab === 'Trainers' && (
+                        <div className="max-w-4xl">
+                             <h3 className="text-xl font-bold text-slate-900 mb-4">{t.settings.trainers.title}</h3>
+                             
+                             {/* Trainers Table */}
+                             <div className="border border-slate-200 rounded-xl overflow-hidden mb-6">
+                                <table className="min-w-full divide-y divide-slate-200">
+                                    <thead className="bg-slate-50">
+                                        <tr>
+                                            <th className="px-6 py-4 text-left text-xs font-bold text-slate-900 uppercase w-1/3">{t.settings.trainers.name}</th>
+                                            <th className="px-6 py-4 text-left text-xs font-bold text-slate-900 uppercase">{t.settings.trainers.qualifiedRacs}</th>
+                                            <th className="px-6 py-4 text-right text-xs font-bold text-slate-900 uppercase w-32">{t.common.actions}</th>
                                         </tr>
-                                    ))}
-                                </tbody>
-                            </table>
-                         </div>
+                                    </thead>
+                                    <tbody className="bg-white divide-y divide-slate-200">
+                                        {trainers.map(trainer => (
+                                            <tr key={String(trainer.id)}>
+                                                <td className="px-6 py-4">
+                                                    {editingTrainerId === trainer.id ? (
+                                                        <input 
+                                                            className="border rounded px-2 py-1 text-sm w-full outline-none focus:ring-2 focus:ring-blue-500 text-black"
+                                                            value={String(editTrainerData.name)}
+                                                            onChange={(e) => setEditTrainerData({...editTrainerData, name: e.target.value})}
+                                                        />
+                                                    ) : (
+                                                        <div className="text-sm font-bold text-slate-900">{String(trainer.name)}</div>
+                                                    )}
+                                                </td>
+                                                <td className="px-6 py-4">
+                                                    {editingTrainerId === trainer.id ? (
+                                                        <input 
+                                                            className="border rounded px-2 py-1 text-sm w-full outline-none focus:ring-2 focus:ring-blue-500 text-black"
+                                                            placeholder="RAC01, RAC02 (comma separated)"
+                                                            value={String(editTrainerData.racs)}
+                                                            onChange={(e) => setEditTrainerData({...editTrainerData, racs: e.target.value})}
+                                                        />
+                                                    ) : (
+                                                        <div className="flex flex-wrap gap-1">
+                                                            {trainer.racs.map(r => (
+                                                                <span key={String(r)} className="bg-blue-50 text-blue-700 px-2 py-0.5 rounded text-xs border border-blue-100 font-medium">{String(r)}</span>
+                                                            ))}
+                                                        </div>
+                                                    )}
+                                                </td>
+                                                <td className="px-6 py-4 text-right">
+                                                    {editingTrainerId === trainer.id ? (
+                                                        <div className="flex justify-end gap-2">
+                                                            <button onClick={saveTrainer} className="text-green-600 hover:bg-green-50 p-2 rounded-full"><Check size={18} /></button>
+                                                            <button onClick={() => setEditingTrainerId(null)} className="text-slate-400 hover:bg-slate-50 p-2 rounded-full"><X size={18} /></button>
+                                                        </div>
+                                                    ) : (
+                                                        <div className="flex justify-end gap-2">
+                                                            <button onClick={() => startEditTrainer(trainer)} className="text-blue-600 hover:bg-blue-50 p-2 rounded-full"><Edit2 size={16} /></button>
+                                                            <button onClick={() => deleteTrainer(trainer.id)} className="text-red-400 hover:bg-red-50 p-2 rounded-full"><Trash2 size={16} /></button>
+                                                        </div>
+                                                    )}
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                             </div>
 
-                         {/* Create Trainer Form */}
-                         <div className="bg-gray-50 p-4 rounded-lg border border-gray-200 flex gap-4 items-end">
-                            <div className="w-1/3">
-                                <label className="text-xs font-bold text-gray-500 uppercase">{t.settings.trainers.new}</label>
-                                <input 
-                                    className="w-full border rounded p-2 text-sm mt-1" 
-                                    placeholder="Full Name"
-                                    value={newTrainer.name}
-                                    onChange={(e) => setNewTrainer({...newTrainer, name: e.target.value})}
-                                />
+                             {/* Create Trainer Form */}
+                             <div className="bg-slate-50 p-6 rounded-xl border border-slate-200 flex gap-4 items-end">
+                                <div className="w-1/3">
+                                    <label className="text-xs font-bold text-slate-700 uppercase tracking-wider">{t.settings.trainers.new}</label>
+                                    <input 
+                                        className="w-full border border-slate-300 rounded-lg p-2.5 text-sm mt-1 focus:ring-2 focus:ring-blue-500 outline-none text-black" 
+                                        placeholder="Full Name"
+                                        value={newTrainer.name}
+                                        onChange={(e) => setNewTrainer({...newTrainer, name: e.target.value})}
+                                    />
+                                </div>
+                                <div className="flex-1">
+                                    <label className="text-xs font-bold text-slate-700 uppercase tracking-wider">{t.settings.trainers.qualifiedRacs}</label>
+                                    <input 
+                                        className="w-full border border-slate-300 rounded-lg p-2.5 text-sm mt-1 focus:ring-2 focus:ring-blue-500 outline-none text-black" 
+                                        placeholder="e.g. RAC01, RAC02"
+                                        value={newTrainer.racs}
+                                        onChange={(e) => setNewTrainer({...newTrainer, racs: e.target.value})}
+                                    />
+                                </div>
+                                <button 
+                                    onClick={handleAddTrainer}
+                                    className="bg-slate-900 text-white p-2.5 rounded-lg hover:bg-slate-800 transition-colors"
+                                >
+                                    <Plus size={20} />
+                                </button>
                             </div>
-                            <div className="flex-1">
-                                <label className="text-xs font-bold text-gray-500 uppercase">{t.settings.trainers.qualifiedRacs}</label>
-                                <input 
-                                    className="w-full border rounded p-2 text-sm mt-1" 
-                                    placeholder="e.g. RAC01, RAC02"
-                                    value={newTrainer.racs}
-                                    onChange={(e) => setNewTrainer({...newTrainer, racs: e.target.value})}
-                                />
-                            </div>
-                            <button 
-                                onClick={handleAddTrainer}
-                                className="bg-slate-900 text-white p-2 rounded-lg hover:bg-slate-800 h-[38px] w-[38px] flex items-center justify-center"
-                            >
-                                <Plus size={20} />
-                            </button>
                         </div>
-                    </div>
-                )}
+                    )}
 
-                {activeTab === 'RACs' && (
-                    <div className="max-w-4xl">
-                        <h3 className="text-lg font-bold text-slate-800 mb-4">{t.settings.racs.title}</h3>
-                        <p className="text-sm text-gray-500 mb-4">Add, remove or edit RAC modules here. These changes will reflect in the Database Matrix.</p>
-                        
-                        {/* RACs Table */}
-                        <div className="border border-gray-200 rounded-lg overflow-hidden mb-6">
-                            <table className="min-w-full divide-y divide-gray-200">
-                                <thead className="bg-gray-50">
-                                    <tr>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase w-32">{t.settings.racs.code}</th>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">{t.settings.racs.description}</th>
-                                        <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase w-32">{t.common.actions}</th>
-                                    </tr>
-                                </thead>
-                                <tbody className="bg-white divide-y divide-gray-200">
-                                    {racDefinitions.map(rac => (
-                                        <tr key={String(rac.id)}>
-                                            <td className="px-6 py-4">
-                                                 {editingRacId === rac.id ? (
-                                                    <input 
-                                                        className="border rounded px-2 py-1 text-sm w-full font-mono"
-                                                        value={String(editRacData.code)}
-                                                        onChange={(e) => setEditRacData({...editRacData, code: e.target.value})}
-                                                    />
-                                                ) : (
-                                                    <span className="font-mono font-bold text-xs bg-yellow-100 text-yellow-800 px-2 py-1 rounded">{String(rac.code)}</span>
-                                                )}
-                                            </td>
-                                            <td className="px-6 py-4">
-                                                {editingRacId === rac.id ? (
-                                                    <input 
-                                                        className="border rounded px-2 py-1 text-sm w-full"
-                                                        value={String(editRacData.name)}
-                                                        onChange={(e) => setEditRacData({...editRacData, name: e.target.value})}
-                                                    />
-                                                ) : (
-                                                    <div className="text-sm text-gray-600">{String(rac.name)}</div>
-                                                )}
-                                            </td>
-                                            <td className="px-6 py-4 text-right">
-                                                {editingRacId === rac.id ? (
-                                                    <div className="flex justify-end gap-2">
-                                                        <button onClick={saveRac} className="text-green-600 hover:bg-green-50 p-1 rounded"><Check size={18} /></button>
-                                                        <button onClick={() => setEditingRacId(null)} className="text-gray-400 hover:bg-gray-50 p-1 rounded"><X size={18} /></button>
-                                                    </div>
-                                                ) : (
-                                                    <div className="flex justify-end gap-2">
-                                                        <button onClick={() => startEditRac(rac)} className="text-blue-600 hover:bg-blue-50 p-1 rounded"><Edit2 size={16} /></button>
-                                                        <button onClick={() => deleteRac(rac.id)} className="text-red-400 hover:bg-red-50 p-1 rounded"><Trash2 size={16} /></button>
-                                                    </div>
-                                                )}
-                                            </td>
+                    {activeTab === 'RACs' && (
+                        <div className="max-w-4xl">
+                            <h3 className="text-xl font-bold text-slate-900 mb-2">{t.settings.racs.title}</h3>
+                            <p className="text-sm text-slate-600 mb-6">Add, remove or edit RAC modules here. These changes will reflect in the Database Matrix.</p>
+                            
+                            {/* RACs Table */}
+                            <div className="border border-slate-200 rounded-xl overflow-hidden mb-6">
+                                <table className="min-w-full divide-y divide-slate-200">
+                                    <thead className="bg-slate-50">
+                                        <tr>
+                                            <th className="px-6 py-4 text-left text-xs font-bold text-slate-900 uppercase w-32">{t.settings.racs.code}</th>
+                                            <th className="px-6 py-4 text-left text-xs font-bold text-slate-900 uppercase">{t.settings.racs.description}</th>
+                                            <th className="px-6 py-4 text-right text-xs font-bold text-slate-900 uppercase w-32">{t.common.actions}</th>
                                         </tr>
-                                    ))}
-                                </tbody>
-                            </table>
-                         </div>
+                                    </thead>
+                                    <tbody className="bg-white divide-y divide-slate-200">
+                                        {racDefinitions.map(rac => (
+                                            <tr key={String(rac.id)}>
+                                                <td className="px-6 py-4">
+                                                     {editingRacId === rac.id ? (
+                                                        <input 
+                                                            className="border rounded px-2 py-1 text-sm w-full font-mono outline-none focus:ring-2 focus:ring-blue-500 text-black"
+                                                            value={String(editRacData.code)}
+                                                            onChange={(e) => setEditRacData({...editRacData, code: e.target.value})}
+                                                        />
+                                                    ) : (
+                                                        <span className="font-mono font-bold text-xs bg-yellow-100 text-yellow-800 px-2 py-1 rounded border border-yellow-200">{String(rac.code)}</span>
+                                                    )}
+                                                </td>
+                                                <td className="px-6 py-4">
+                                                    {editingRacId === rac.id ? (
+                                                        <input 
+                                                            className="border rounded px-2 py-1 text-sm w-full outline-none focus:ring-2 focus:ring-blue-500 text-black"
+                                                            value={String(editRacData.name)}
+                                                            onChange={(e) => setEditRacData({...editRacData, name: e.target.value})}
+                                                        />
+                                                    ) : (
+                                                        <div className="text-sm text-slate-900 font-medium">{String(rac.name)}</div>
+                                                    )}
+                                                </td>
+                                                <td className="px-6 py-4 text-right">
+                                                    {editingRacId === rac.id ? (
+                                                        <div className="flex justify-end gap-2">
+                                                            <button onClick={saveRac} className="text-green-600 hover:bg-green-50 p-2 rounded-full"><Check size={18} /></button>
+                                                            <button onClick={() => setEditingRacId(null)} className="text-slate-400 hover:bg-slate-50 p-2 rounded-full"><X size={18} /></button>
+                                                        </div>
+                                                    ) : (
+                                                        <div className="flex justify-end gap-2">
+                                                            <button onClick={() => startEditRac(rac)} className="text-blue-600 hover:bg-blue-50 p-2 rounded-full"><Edit2 size={16} /></button>
+                                                            <button onClick={() => deleteRac(rac.id)} className="text-red-400 hover:bg-red-50 p-2 rounded-full"><Trash2 size={16} /></button>
+                                                        </div>
+                                                    )}
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                             </div>
 
-                        {/* Create RAC Form */}
-                        <div className="bg-gray-50 p-4 rounded-lg border border-gray-200 flex gap-4 items-end">
-                            <div className="w-32">
-                                <label className="text-xs font-bold text-gray-500 uppercase">{t.settings.racs.new}</label>
-                                <input 
-                                    className="w-full border rounded p-2 text-sm mt-1" 
-                                    placeholder="RAC11" 
-                                    value={newRac.code}
-                                    onChange={(e) => setNewRac({...newRac, code: e.target.value})}
-                                />
+                            {/* Create RAC Form */}
+                            <div className="bg-slate-50 p-6 rounded-xl border border-slate-200 flex gap-4 items-end">
+                                <div className="w-32">
+                                    <label className="text-xs font-bold text-slate-700 uppercase tracking-wider">{t.settings.racs.new}</label>
+                                    <input 
+                                        className="w-full border border-slate-300 rounded-lg p-2.5 text-sm mt-1 focus:ring-2 focus:ring-blue-500 outline-none text-black" 
+                                        placeholder="RAC11" 
+                                        value={newRac.code}
+                                        onChange={(e) => setNewRac({...newRac, code: e.target.value})}
+                                    />
+                                </div>
+                                <div className="flex-1">
+                                    <label className="text-xs font-bold text-slate-700 uppercase tracking-wider">{t.settings.racs.description}</label>
+                                    <input 
+                                        className="w-full border border-slate-300 rounded-lg p-2.5 text-sm mt-1 focus:ring-2 focus:ring-blue-500 outline-none text-black" 
+                                        placeholder="Hazard Description" 
+                                        value={newRac.name}
+                                        onChange={(e) => setNewRac({...newRac, name: e.target.value})}
+                                    />
+                                </div>
+                                <button 
+                                    onClick={handleAddRac}
+                                    className="bg-slate-900 text-white p-2.5 rounded-lg hover:bg-slate-800 transition-colors"
+                                >
+                                    <Plus size={20} />
+                                </button>
                             </div>
-                            <div className="flex-1">
-                                <label className="text-xs font-bold text-gray-500 uppercase">{t.settings.racs.description}</label>
-                                <input 
-                                    className="w-full border rounded p-2 text-sm mt-1" 
-                                    placeholder="Hazard Description" 
-                                    value={newRac.name}
-                                    onChange={(e) => setNewRac({...newRac, name: e.target.value})}
-                                />
-                            </div>
-                            <button 
-                                onClick={handleAddRac}
-                                className="bg-slate-900 text-white p-2 rounded-lg hover:bg-slate-800 h-[38px] w-[38px] flex items-center justify-center"
-                            >
-                                <Plus size={20} />
-                            </button>
                         </div>
-                    </div>
-                )}
+                    )}
+                </div>
+                
+                {/* Global Save */}
+                <div className="p-4 border-t border-slate-200 flex justify-end bg-slate-50">
+                    <button 
+                        onClick={handleGlobalSave}
+                        disabled={isSaving}
+                        className={`flex items-center gap-2 bg-green-600 text-white px-8 py-3 rounded-xl font-bold shadow-lg transition-all transform hover:-translate-y-0.5
+                          ${isSaving ? 'opacity-70 cursor-wait' : 'hover:bg-green-500'}
+                        `}
+                    >
+                        {isSaving ? <div className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full" /> : <Save size={18} />}
+                        <span>{isSaving ? t.settings.saving : t.settings.saveAll}</span>
+                    </button>
+                </div>
             </div>
-        </div>
-        
-        <div className="p-4 border-t border-gray-200 flex justify-end bg-gray-50">
-            <button 
-                onClick={handleGlobalSave}
-                disabled={isSaving}
-                className={`flex items-center gap-2 bg-green-600 text-white px-6 py-2 rounded-lg font-bold shadow-sm transition-all
-                  ${isSaving ? 'opacity-70 cursor-wait' : 'hover:bg-green-700'}
-                `}
-            >
-                {isSaving ? <div className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full" /> : <Save size={18} />}
-                <span>{isSaving ? t.settings.saving : t.settings.saveAll}</span>
-            </button>
         </div>
     </div>
   );

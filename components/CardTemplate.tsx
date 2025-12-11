@@ -1,17 +1,23 @@
 
 import React from 'react';
-import { Booking, EmployeeRequirement } from '../types';
-import { MOCK_SESSIONS, RAC_KEYS } from '../constants';
+import { Booking, EmployeeRequirement, RacDef } from '../types';
+import { OPS_KEYS, PERMISSION_KEYS, INITIAL_RAC_DEFINITIONS } from '../constants';
 import { Phone } from 'lucide-react';
 import { formatDate } from '../utils/translations';
 
 interface CardTemplateProps {
   booking: Booking;
   requirement?: EmployeeRequirement;
-  allBookings?: Booking[]; // Added to support looking up other RAC dates
+  allBookings?: Booking[];
+  racDefinitions?: RacDef[]; 
 }
 
-const CardTemplate: React.FC<CardTemplateProps> = ({ booking, requirement, allBookings }) => {
+const CardTemplate: React.FC<CardTemplateProps> = ({ 
+  booking, 
+  requirement, 
+  allBookings,
+  racDefinitions = INITIAL_RAC_DEFINITIONS 
+}) => {
   if (!booking || !booking.employee) return null;
 
   const { employee } = booking;
@@ -39,9 +45,21 @@ const CardTemplate: React.FC<CardTemplateProps> = ({ booking, requirement, allBo
   const headerTextColor = isVulcan ? 'white' : 'black';
   const headerText = isVulcan ? 'VULCAN' : safeCompany;
 
-  // Helper to find date across all bookings if provided, fallback to current booking logic
-  const getRacDate = (racKey: string): string => {
-      // 1. If we have access to the full booking list, search for the latest passed record
+  const today = new Date().toISOString().split('T')[0];
+
+  // --- Date Calculation State ---
+  // "MUST be the max datevalue on that particular date"
+  let maxValidDate = requirement?.asoExpiryDate || '';
+  
+  const checkDateForMax = (date: string) => {
+      if (!date) return;
+      if (!maxValidDate || date > maxValidDate) {
+          maxValidDate = date;
+      }
+  };
+
+  // Helper to find date across all bookings if provided
+  const getRacDateInfo = (racKey: string): { dateStr: string, rawDate: string } | null => {
       if (allBookings && allBookings.length > 0) {
           const empId = employee.id;
           const matches = allBookings.filter(b => {
@@ -50,14 +68,11 @@ const CardTemplate: React.FC<CardTemplateProps> = ({ booking, requirement, allBo
               if (!b.expiryDate) return false;
 
               // Check if this booking matches the requested RAC Key
-              // Normalize Session ID / Name to Key
               let bRacKey = '';
               if (b.sessionId.includes('RAC')) {
-                   // e.g. "RAC01 - Height" or "RAC 01 - Height"
                    bRacKey = b.sessionId.split(' - ')[0].replace(' ', '');
               } else {
-                   // Fallback check using inclusion
-                   const normalizedKey = racKey.replace('RAC', 'RAC '); // RAC01 -> RAC 01
+                   const normalizedKey = racKey.replace('RAC', 'RAC '); 
                    if (b.sessionId.includes(normalizedKey)) return true;
                    if (b.sessionId.includes(racKey)) return true;
               }
@@ -65,53 +80,75 @@ const CardTemplate: React.FC<CardTemplateProps> = ({ booking, requirement, allBo
           });
 
           if (matches.length > 0) {
-               // Sort by expiry date descending (latest expiry first)
                matches.sort((a, b) => new Date(b.expiryDate!).getTime() - new Date(a.expiryDate!).getTime());
-               return formatDate(matches[0].expiryDate!);
+               const best = matches[0];
+               if (best.expiryDate && best.expiryDate > today) {
+                   return { dateStr: formatDate(best.expiryDate), rawDate: best.expiryDate };
+               }
           }
-          return '';
       }
-
-      // 2. Fallback: Only check the current booking prop (Limited)
-      let currentBookingRac = '';
-      if (booking.sessionId && booking.sessionId.includes('RAC')) {
-           const parts = booking.sessionId.split(' - ');
-           currentBookingRac = parts[0].replace(' ', '');
-      } else {
-          const s = MOCK_SESSIONS.find(session => session.id === booking.sessionId);
-          if (s) currentBookingRac = s.racType.split(' - ')[0].replace(' ', '');
-      }
-
-      if (currentBookingRac === racKey && booking.status === 'Passed') {
-          return formatDate(booking.expiryDate || '');
-      }
-      
-      return ''; 
+      return null; 
   };
 
-  const cellBorder = "border-[0.5px] border-black";
   const labelClass = "font-bold text-[5px] pl-[2px] flex items-center bg-gray-50 leading-none";
   const valueClass = "text-[5px] font-bold text-center flex items-center justify-center leading-none";
 
-  // Data for Right Column (8 Rows)
-  const rightColData = [
-      { label: 'PTS', val: '12-02-2027' },
-      { label: 'Exec. Cred', val: '-SIM-' },
-      { label: 'Emitente PTS', val: '-SIM-' },
-      { label: 'LOB-OPS', val: '03-01-2027' },
-      { label: 'ART', val: '25-04-2027' },
-      { label: 'Aprovad. ART', val: '-SIM-' },
-      { label: 'LOB-MOV', val: '12-12-2027' },
-      { label: '', val: '' }, // 8th row blank
-  ];
+  // Data for Right Column (8 Rows - Mapped from OPS_KEYS)
+  const rightColData = Array.from({ length: 8 }).map((_, idx) => {
+      const key = OPS_KEYS[idx];
+      if (!key) return { label: '', val: '' };
 
-  // Determine Active RACs based on Database Requirements
-  // We filter the master list to get only those marked as True
-  const activeRacs = RAC_KEYS.filter(key => requirement?.requiredRacs?.[key]);
+      const isRequired = requirement?.requiredRacs?.[key];
+      
+      // Strict Visibility: If not mapped, show nothing
+      if (!isRequired) return { label: '', val: '' };
 
-  // We need to render exactly 11 rows in the left column
-  // Fill the start with Active RACs, leave the rest blank
+      let val = '';
+      if (PERMISSION_KEYS.includes(key)) {
+          val = '-SIM-';
+      } else {
+          const info = getRacDateInfo(key);
+          if (info) {
+              val = info.dateStr;
+              checkDateForMax(info.rawDate);
+          } else {
+              // Mapped but Invalid/Expired -> Show Nothing (empty cell)
+              return { label: '', val: '' };
+          }
+      }
+
+      let displayLabel = key;
+      if (key === 'EXEC_CRED') displayLabel = 'Exec. Cred';
+      if (key === 'EMIT_PTS') displayLabel = 'Emitente PTS';
+      if (key === 'APR_ART') displayLabel = 'Aprovad. ART';
+
+      return { label: displayLabel, val };
+  });
+
+  // Data for Left Column
   const totalLeftRows = 11;
+  const leftColData = Array.from({ length: totalLeftRows }).map((_, idx) => {
+      const racDef = racDefinitions[idx];
+      if (!racDef) return { label: '', val: '' };
+      
+      const key = racDef.code;
+      const isRequired = requirement?.requiredRacs?.[key];
+      const label = key.replace('RAC', 'RAC ');
+      
+      // Strict Visibility
+      if (!isRequired) return { label: '', val: '' };
+
+      const info = getRacDateInfo(key);
+      if (info) {
+          checkDateForMax(info.rawDate);
+          return { label, val: info.dateStr };
+      }
+      
+      // Required but not valid -> Empty
+      return { label: '', val: '' };
+  });
+
+  const validUntilStr = maxValidDate ? formatDate(maxValidDate) : '';
 
   return (
     <div 
@@ -125,35 +162,41 @@ const CardTemplate: React.FC<CardTemplateProps> = ({ booking, requirement, allBo
       }}
     >
       
-      {/* Header */}
-      <div className="flex h-[11mm] border-b-[1px] border-black relative justify-between items-center px-1">
+      {/* Header - FLUSH TO TOP EDGE */}
+      <div className="flex h-[11mm] border-b-[1px] border-black relative justify-between items-center px-1 overflow-hidden">
           {/* Logo Section */}
-          <div className="flex flex-col justify-center">
-             <div className="flex items-baseline">
-                <span className="text-[12px] font-black italic tracking-tighter text-slate-900">Vulcan</span>
-                <span className="ml-[1px] text-slate-500 text-[6px] align-top">▼</span>
-             </div>
+          <div className="flex flex-col justify-center h-full w-[15mm] relative">
+             <img 
+                src="assets/vulcan.png" 
+                alt="Vulcan" 
+                className="max-h-[10mm] object-contain"
+                style={{ display: 'block' }}
+             />
           </div>
           
-          {/* Centered Company Bar Container */}
-          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-              <div className="flex flex-col items-center justify-center pt-2">
-                  <span className="text-[4px] font-bold self-end mb-[1px] text-gray-500 absolute top-[1px] right-[2px]">PAD_v5e</span>
+          {/* Centered Company Bar Container - STARTS AT TOP EDGE (top-0) */}
+          <div className="absolute inset-x-0 top-0 flex justify-center pointer-events-none">
+              <div className="flex flex-col items-center justify-start w-full">
+                  <span className="text-[4px] font-bold text-gray-500 absolute top-[1px] right-[2px] z-20">PAD_v5e</span>
+                  
+                  {/* The Bar */}
                   <div 
-                    className="w-[18mm] h-[4.5mm] flex items-center justify-center text-[5px] font-bold uppercase overflow-hidden whitespace-nowrap shadow-sm border-[0.5px] border-black mt-2"
+                    className="w-[24mm] min-h-[6mm] flex items-center justify-center text-[5px] font-bold uppercase overflow-hidden shadow-sm border-b-[0.5px] border-x-[0.5px] border-black leading-tight"
                     style={{ backgroundColor: headerBg, color: headerTextColor }}
                   >
-                     <span className="px-1 truncate w-full text-center">{headerText}</span>
+                     {/* Text Wrapping Enabled */}
+                     <span className="px-1 text-center whitespace-normal break-words w-full">
+                        {headerText}
+                     </span>
                   </div>
               </div>
           </div>
           
-          {/* Spacer to balance flex layout if needed, or empty */}
           <div className="w-1"></div>
       </div>
 
       {/* Identity Details */}
-      <div className="px-1 py-[1px] space-y-[0.5px]">
+      <div className="px-1 py-[1px] space-y-[0.5px] mt-[1px]">
           <div className="flex items-baseline">
               <span className="font-bold w-[15mm] text-[6px]">NOME:</span>
               <span className="font-bold text-[7px] uppercase truncate flex-1">{safeName}</span>
@@ -203,27 +246,18 @@ const CardTemplate: React.FC<CardTemplateProps> = ({ booking, requirement, allBo
 
       {/* RAC Grid */}
       <div className="flex-1 flex text-[5px] border-b-[1px] border-black">
-          {/* Left Column - 11 Rows - Dynamic Ordering */}
+          {/* Left Column - 11 Rows */}
           <div className="w-1/2 border-r-[1px] border-black">
-              {Array.from({ length: totalLeftRows }).map((_, idx) => {
-                  // Get the RAC key for this slot if available
-                  const racKey = activeRacs[idx];
-                  
-                  // Label formatting: RAC01 -> RAC 01
-                  const label = racKey ? racKey.replace('RAC', 'RAC ') : '';
-                  const dateVal = racKey ? getRacDate(racKey) : '';
-
-                  return (
+              {leftColData.map((row, idx) => (
                     <div key={`left-${idx}`} className="flex h-[3.5mm] border-b-[0.5px] border-black last:border-b-0">
                         <div className={`w-[12mm] ${labelClass} border-r-[0.5px] border-black`}>
-                           {label}
+                           {row.label}
                         </div>
                         <div className={`flex-1 ${valueClass}`}>
-                           {dateVal}
+                           {row.val}
                         </div>
                     </div>
-                  );
-              })}
+              ))}
           </div>
           
           {/* Right Column - 8 Rows + QR */}
@@ -242,8 +276,8 @@ const CardTemplate: React.FC<CardTemplateProps> = ({ booking, requirement, allBo
                    ))}
                </div>
                
-               {/* QR Container takes remaining space */}
-               <div className="flex-1 flex items-center justify-start pl-1 relative">
+               {/* QR Container */}
+               <div className="flex-1 flex items-center justify-start pl-[2px] relative overflow-hidden">
                    <img 
                        src={`https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=${encodeURIComponent(qrUrl)}`} 
                        alt="QR" 
@@ -260,37 +294,20 @@ const CardTemplate: React.FC<CardTemplateProps> = ({ booking, requirement, allBo
                <span>{new Date().toLocaleString('en-GB')}</span>
            </div>
            
-           <div className="text-[5px] flex items-end gap-1 mb-[2px]">
-               <span className="font-bold">Riquisitado por:</span>
-               <span>{safeName.split(' ')[0]}</span>
-           </div>
-
-           {/* 10 Golden Rules Shield - Bottom Right Overlay */}
-           {/* Anchored bottom right */}
-           <div className="absolute -right-[1px] -bottom-[6mm] w-[14mm] h-[16mm] z-20">
-               {/* Vector representation of 10 Golden Rules Shield */}
-               <svg viewBox="0 0 100 120" className="w-full h-full filter drop-shadow-md">
-                   {/* Main Shield Shape */}
-                   <path d="M50 5 L95 25 V50 C95 85 50 115 50 115 C50 115 5 85 5 50 V25 Z" fill="#4B5563" stroke="#fff" strokeWidth="2"/>
-                   
-                   {/* Colored Sections */}
-                   <path d="M50 5 L95 25 V45 H50 V5 Z" fill="#F59E0B" /> {/* Yellow Top */}
-                   <path d="M95 45 V50 C95 70 80 90 50 115 V80 H95" fill="#DC2626" /> {/* Red Right */}
-                   <path d="M5 45 V50 C5 70 20 90 50 115 V80 H5" fill="#2563EB" /> {/* Blue Left */}
-                   
-                   {/* Center Text Area */}
-                   <path d="M50 25 L80 35 V50 C80 75 50 100 50 100 C50 100 20 75 20 50 V35 Z" fill="#374151" opacity="0.9"/>
-                   
-                   <text x="50" y="55" fontSize="22" textAnchor="middle" fill="white" fontWeight="bold" fontFamily="Arial">10</text>
-                   <text x="50" y="68" fontSize="8" textAnchor="middle" fill="white" fontFamily="Arial">Regras</text>
-                   <text x="50" y="76" fontSize="8" textAnchor="middle" fill="white" fontFamily="Arial">de Ouro</text>
-               </svg>
+           <div className="flex flex-col mb-[2px]">
+               <div className="text-[5px] flex items-end gap-1">
+                   <span className="font-bold">Riquisitado por:</span>
+                   <span>{safeName.split(' ')[0]}</span>
+               </div>
+               <div className="text-[4px] text-gray-500 font-mono leading-none">
+                   (RAC MANAGER)
+               </div>
            </div>
       </div>
 
-      {/* Valid Until Strip - Green */}
+      {/* Valid Until Strip - Green (Calculated MAX date) */}
       <div className="bg-vulcan-green text-white text-[7px] font-bold text-center py-[1px]">
-          VALIDO ATÉ {asoDate ? asoDate : '16-02-2026'}
+          VALIDO ATÉ {validUntilStr}
       </div>
 
       {/* Emergency Strip */}
@@ -302,6 +319,16 @@ const CardTemplate: React.FC<CardTemplateProps> = ({ booking, requirement, allBo
               <div className="text-[5px] font-bold">EM CASO DE EMERGÊNCIA LIGUE</div>
               <div className="text-[7px] font-black tracking-widest">822030 / 842030</div>
           </div>
+      </div>
+
+      {/* 10 Golden Rules Shield - IMAGE ASSET */}
+      <div className="absolute -right-[1px] bottom-[8.5mm] w-[13mm] h-[15mm] z-30">
+           <img 
+              src="assets/Golden_Rules.png" 
+              alt="Golden Rules"
+              className="w-full h-full object-contain filter drop-shadow-sm"
+              style={{ display: 'block' }}
+           />
       </div>
 
     </div>

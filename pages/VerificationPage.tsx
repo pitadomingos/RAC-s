@@ -1,28 +1,29 @@
 
 import React, { useMemo } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { Booking, BookingStatus, EmployeeRequirement, Employee } from '../types';
-import { RAC_KEYS } from '../constants';
+import { Booking, BookingStatus, EmployeeRequirement, Employee, RacDef } from '../types';
+import { INITIAL_RAC_DEFINITIONS } from '../constants';
 import { useLanguage } from '../contexts/LanguageContext';
 import { CheckCircle, XCircle, ShieldCheck, User, Calendar, CreditCard, Activity, ArrowLeft } from 'lucide-react';
 
 interface VerificationPageProps {
   bookings: Booking[];
   requirements: EmployeeRequirement[];
+  racDefinitions?: RacDef[];
 }
 
-const VerificationPage: React.FC<VerificationPageProps> = ({ bookings, requirements }) => {
+const VerificationPage: React.FC<VerificationPageProps> = ({ 
+    bookings, 
+    requirements, 
+    racDefinitions = INITIAL_RAC_DEFINITIONS 
+}) => {
   const { recordId } = useParams<{ recordId: string }>();
   const { t } = useLanguage();
 
-  // Find Employee Data based on recordId (National ID or Company ID)
-  // We look through bookings to find the employee info
   const foundBooking = bookings.find(b => b.employee.recordId === recordId);
   const employee: Employee | undefined = foundBooking?.employee;
-
   const employeeId = employee?.id;
   
-  // Compliance Logic
   const complianceStatus = useMemo(() => {
     if (!employee || !employeeId) return 'NotFound';
 
@@ -36,15 +37,15 @@ const VerificationPage: React.FC<VerificationPageProps> = ({ bookings, requireme
     const isDlExpired = !!(dlExpiry && dlExpiry <= today);
     const isActive = employee.isActive ?? true;
 
-    // Check RACs
+    // Check RACs (Dynamic)
     let allRacsMet = true;
     let hasRac02Req = false;
 
-    RAC_KEYS.forEach(key => {
+    racDefinitions.forEach(def => {
+        const key = def.code;
         if (req.requiredRacs[key]) {
             if (key === 'RAC02') hasRac02Req = true;
             
-            // Find passed booking
             const passedBooking = bookings.find(b => {
                  if (b.employee.id !== employeeId) return false;
                  if (b.status !== BookingStatus.PASSED) return false;
@@ -52,7 +53,9 @@ const VerificationPage: React.FC<VerificationPageProps> = ({ bookings, requireme
                  let racCode = '';
                  if (b.sessionId.includes('RAC')) {
                      racCode = b.sessionId.split(' - ')[0].replace(' ', '');
-                 } 
+                 } else {
+                     if (b.sessionId.includes(key)) racCode = key;
+                 }
                  return racCode === key;
             });
 
@@ -69,22 +72,23 @@ const VerificationPage: React.FC<VerificationPageProps> = ({ bookings, requireme
     
     return 'Compliant';
 
-  }, [employee, employeeId, requirements, bookings]);
+  }, [employee, employeeId, requirements, bookings, racDefinitions]);
 
-  // Derive Data for UI
   const req = requirements.find(r => r.employeeId === employeeId);
+  
   const activeCertifications = useMemo(() => {
       if (!employeeId) return [];
       const certs: { rac: string, expiry: string }[] = [];
       const today = new Date().toISOString().split('T')[0];
 
-      RAC_KEYS.forEach(key => {
-         // Only show if required AND passed
+      racDefinitions.forEach(def => {
+         const key = def.code;
          if (req?.requiredRacs[key]) {
              const passedBooking = bookings.find(b => {
                  if (b.employee.id !== employeeId) return false;
                  if (b.status !== BookingStatus.PASSED) return false;
                  let racCode = b.sessionId.includes('RAC') ? b.sessionId.split(' - ')[0].replace(' ', '') : '';
+                 if (!racCode && b.sessionId.includes(key)) racCode = key;
                  return racCode === key;
              });
 
@@ -94,7 +98,7 @@ const VerificationPage: React.FC<VerificationPageProps> = ({ bookings, requireme
          }
       });
       return certs;
-  }, [employeeId, bookings, req]);
+  }, [employeeId, bookings, req, racDefinitions]);
 
 
   if (!employee) {

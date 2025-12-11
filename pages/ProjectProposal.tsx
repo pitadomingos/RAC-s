@@ -1,22 +1,15 @@
 
-
-
-
-
-
-
-
-import React, { useState } from 'react';
+import React from 'react';
 import { 
-  CheckCircle, Download, Rocket, CreditCard, Upload, Sparkles, 
-  Lock, Server, Mail, Users, Briefcase, Wrench, FileText, 
-  Shield, UserCog, Monitor, Database, Key, Target, Calendar, Code, CheckSquare, Zap, AlertTriangle, HardHat, Wifi, Smartphone, CalendarClock
+  CheckCircle, Download, Rocket, Lock, Server, Mail, Briefcase, Wrench, 
+  Monitor, Database, Key, Target, Calendar, Code, CheckSquare, Zap, AlertTriangle, 
+  HardHat, Wifi, Smartphone, CalendarClock, DollarSign, FileSpreadsheet, ScrollText,
+  Shield, Sparkles, UserCog, FileText
 } from 'lucide-react';
-import { UserRole } from '../types';
 import { useLanguage } from '../contexts/LanguageContext';
 
 const ProjectProposal: React.FC = () => {
-  const { t, language } = useLanguage();
+  const { t } = useLanguage();
 
   // Safety check for translations
   if (!t || !t.proposal || !t.proposal.financials || !t.proposal.financials.items) {
@@ -364,35 +357,52 @@ const ProjectProposal: React.FC = () => {
         <div className="print:break-after-page break-after-page">
             {/* 7. Financials */}
             <section className="mb-12 print:mb-8 break-inside-avoid">
-                <h2 className="text-xl font-bold border-l-4 border-yellow-500 pl-4 mb-6 uppercase tracking-wide text-slate-900">
-                    {t.proposal.financials.title}
-                </h2>
-                <div className="overflow-hidden border border-slate-200 rounded-lg shadow-sm">
-                <table className="min-w-full divide-y divide-slate-200">
-                    <thead className="bg-slate-900">
-                    <tr>
-                        <th className="px-6 py-4 text-left text-xs font-bold uppercase tracking-wider text-white">{t.proposal.financials.item}</th>
-                        <th className="px-6 py-4 text-center text-xs font-bold uppercase tracking-wider text-white">{t.proposal.financials.type}</th>
-                        <th className="px-6 py-4 text-right text-xs font-bold uppercase tracking-wider text-white">{t.proposal.financials.cost}</th>
-                    </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-200 bg-white">
-                    {costItems.map((item, index) => (
-                        <tr key={index} className={index % 2 === 0 ? 'bg-white' : 'bg-slate-50'}>
-                        <td className="px-6 py-4 text-sm font-medium text-slate-900">{item.name}</td>
-                        <td className="px-6 py-4 text-sm text-center text-slate-900">{item.type}</td>
-                        <td className="px-6 py-4 text-sm text-right font-mono text-slate-900 font-bold">{item.cost}</td>
-                        </tr>
-                    ))}
-                    <tr className="bg-slate-100 font-bold border-t-2 border-slate-300">
-                        <td className="px-6 py-4 text-slate-900">{t.proposal.financials.total}</td>
-                        <td className="px-6 py-4 text-center text-slate-500">-</td>
-                        <td className="px-6 py-4 text-right text-slate-900 font-mono text-lg">$17,500.00</td>
-                    </tr>
-                    </tbody>
-                </table>
+                <div className="flex items-center justify-between mb-6">
+                    <h2 className="text-xl font-bold border-l-4 border-yellow-500 pl-4 uppercase tracking-wide text-slate-900">
+                        {t.proposal.financials.title}
+                    </h2>
+                    {/* Summary Badge */}
+                    <div className="bg-slate-900 text-yellow-400 px-4 py-2 rounded-lg border border-yellow-500/30 flex items-center gap-2 shadow-sm print:border-black">
+                        <DollarSign size={18} />
+                        <span className="font-mono font-bold text-lg">$17,500.00</span>
+                    </div>
                 </div>
-                <p className="text-xs text-gray-500 mt-2 italic text-right">* All prices exclude VAT.</p>
+
+                <div className="overflow-hidden border border-slate-200 rounded-xl shadow-md">
+                    <table className="min-w-full divide-y divide-slate-200">
+                        <thead className="bg-slate-900">
+                        <tr>
+                            <th className="px-6 py-5 text-left text-xs font-bold uppercase tracking-wider text-white w-2/3">{t.proposal.financials.item}</th>
+                            <th className="px-6 py-5 text-center text-xs font-bold uppercase tracking-wider text-white">{t.proposal.financials.type}</th>
+                            <th className="px-6 py-5 text-right text-xs font-bold uppercase tracking-wider text-white">{t.proposal.financials.cost}</th>
+                        </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100 bg-white">
+                        {costItems.map((item, index) => (
+                            <tr key={index} className="hover:bg-slate-50 transition-colors">
+                                <td className="px-6 py-4 text-sm font-medium text-slate-900">{item.name}</td>
+                                <td className="px-6 py-4 text-sm text-center text-slate-500">
+                                    <span className="bg-slate-100 text-slate-600 px-2 py-1 rounded text-xs font-bold">{item.type}</span>
+                                </td>
+                                <td className="px-6 py-4 text-sm text-right font-mono text-slate-900 font-bold">{item.cost}</td>
+                            </tr>
+                        ))}
+                        {/* Enhanced Total Row with Vulcan Branding */}
+                        <tr className="bg-yellow-500 text-slate-900 border-t-2 border-slate-900">
+                            <td className="px-6 py-5 text-base font-black uppercase tracking-wider">
+                                {t.proposal.financials.total}
+                            </td>
+                            <td className="px-6 py-5 text-center text-slate-900 font-bold opacity-75">-</td>
+                            <td className="px-6 py-5 text-right font-mono text-xl font-black tracking-tight">
+                                $17,500.00
+                            </td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div className="mt-3 flex justify-end">
+                    <p className="text-xs text-gray-500 italic bg-gray-50 px-2 py-1 rounded border border-gray-100">* All prices exclude VAT.</p>
+                </div>
             </section>
 
             {/* 8. Roadmap */}
@@ -565,6 +575,44 @@ const ProjectProposal: React.FC = () => {
                          </p>
                          <ul className="space-y-2">
                             {t.proposal.enhancedCaps.autoBooking.features.map((feat: string, i: number) => (
+                                <li key={i} className="text-xs text-slate-700 flex items-start gap-2">
+                                <CheckCircle size={14} className="text-green-500 mt-0.5 flex-shrink-0" />
+                                {feat}
+                                </li>
+                            ))}
+                         </ul>
+                    </div>
+
+                    {/* Mass Data */}
+                    <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm print:shadow-none">
+                         <div className="flex items-center gap-3 mb-4 text-green-600">
+                                <FileSpreadsheet size={24} />
+                                <h3 className="font-bold text-slate-800">{t.proposal.enhancedCaps.massData.title}</h3>
+                         </div>
+                         <p className="text-xs text-gray-600 mb-4 leading-relaxed">
+                            {t.proposal.enhancedCaps.massData.desc}
+                         </p>
+                         <ul className="space-y-2">
+                            {t.proposal.enhancedCaps.massData.features.map((feat: string, i: number) => (
+                                <li key={i} className="text-xs text-slate-700 flex items-start gap-2">
+                                <CheckCircle size={14} className="text-green-500 mt-0.5 flex-shrink-0" />
+                                {feat}
+                                </li>
+                            ))}
+                         </ul>
+                    </div>
+
+                    {/* Audit Logs */}
+                    <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm print:shadow-none">
+                         <div className="flex items-center gap-3 mb-4 text-orange-600">
+                                <ScrollText size={24} />
+                                <h3 className="font-bold text-slate-800">{t.proposal.enhancedCaps.auditLogs.title}</h3>
+                         </div>
+                         <p className="text-xs text-gray-600 mb-4 leading-relaxed">
+                            {t.proposal.enhancedCaps.auditLogs.desc}
+                         </p>
+                         <ul className="space-y-2">
+                            {t.proposal.enhancedCaps.auditLogs.features.map((feat: string, i: number) => (
                                 <li key={i} className="text-xs text-slate-700 flex items-start gap-2">
                                 <CheckCircle size={14} className="text-green-500 mt-0.5 flex-shrink-0" />
                                 {feat}

@@ -203,14 +203,14 @@ const Dashboard: React.FC<DashboardProps> = ({
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-white dark:bg-slate-800 p-4 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 transition-colors">
         <div>
           <h2 className="text-lg font-bold text-slate-800 dark:text-white">{t.dashboard.title}</h2>
-          <p className="text-sm text-gray-500 dark:text-gray-400">{t.dashboard.subtitle}</p>
+          <p className="text-sm text-slate-700 dark:text-gray-400">{t.dashboard.subtitle}</p>
         </div>
         <div className="flex items-center gap-2">
           <Filter size={16} className="text-gray-400" />
           <select 
             value={selectedCompany} 
             onChange={(e) => setSelectedCompany(e.target.value)}
-            className="border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white rounded-lg text-sm border p-2 focus:ring-yellow-500 focus:border-yellow-500"
+            className="border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white text-black rounded-lg text-sm border p-2 focus:ring-yellow-500 focus:border-yellow-500"
           >
             <option value="All">All Companies</option>
             {COMPANIES.map(c => <option key={c} value={c}>{c}</option>)}
@@ -269,10 +269,10 @@ const Dashboard: React.FC<DashboardProps> = ({
                  <table className="min-w-full divide-y divide-orange-100 dark:divide-orange-900/30">
                      <thead className="bg-white dark:bg-slate-800">
                          <tr>
-                             <th className="px-4 py-3 text-left text-xs font-bold text-gray-500 dark:text-gray-400 uppercase">Employee</th>
-                             <th className="px-4 py-3 text-left text-xs font-bold text-gray-500 dark:text-gray-400 uppercase">Session / RAC</th>
-                             <th className="px-4 py-3 text-left text-xs font-bold text-gray-500 dark:text-gray-400 uppercase">Scheduled Date</th>
-                             <th className="px-4 py-3 text-right text-xs font-bold text-gray-500 dark:text-gray-400 uppercase">Action</th>
+                             <th className="px-4 py-3 text-left text-xs font-bold text-black dark:text-gray-400 uppercase">Employee</th>
+                             <th className="px-4 py-3 text-left text-xs font-bold text-black dark:text-gray-400 uppercase">Session / RAC</th>
+                             <th className="px-4 py-3 text-left text-xs font-bold text-black dark:text-gray-400 uppercase">Scheduled Date</th>
+                             <th className="px-4 py-3 text-right text-xs font-bold text-black dark:text-gray-400 uppercase">Action</th>
                          </tr>
                      </thead>
                      <tbody className="bg-white dark:bg-slate-800 divide-y divide-gray-50 dark:divide-slate-700">
@@ -281,19 +281,19 @@ const Dashboard: React.FC<DashboardProps> = ({
                              return (
                                  <tr key={booking.id} className="hover:bg-orange-50/50 dark:hover:bg-orange-900/10 transition-colors">
                                      <td className="px-4 py-2">
-                                         <div className="text-sm font-bold text-slate-700 dark:text-slate-200">{booking.employee.name}</div>
-                                         <div className="text-xs text-gray-400">{booking.employee.company}</div>
+                                         <div className="text-sm font-bold text-slate-900 dark:text-slate-200">{booking.employee.name}</div>
+                                         <div className="text-xs text-slate-500 dark:text-gray-400">{booking.employee.company}</div>
                                      </td>
                                      <td className="px-4 py-2">
-                                         <div className="text-sm text-slate-600 dark:text-slate-300">
+                                         <div className="text-sm text-slate-700 dark:text-slate-300">
                                             {session ? session.racType : booking.sessionId}
                                          </div>
                                      </td>
                                      <td className="px-4 py-2">
-                                         <div className="text-sm font-mono text-slate-600 dark:text-slate-300">
+                                         <div className="text-sm font-mono text-slate-700 dark:text-slate-300">
                                             {session ? session.date : 'TBD'}
                                          </div>
-                                         <div className="text-xs text-gray-400">
+                                         <div className="text-xs text-slate-500 dark:text-gray-400">
                                             {session ? session.startTime : ''}
                                          </div>
                                      </td>
@@ -345,10 +345,10 @@ const Dashboard: React.FC<DashboardProps> = ({
             <table className="min-w-full divide-y divide-gray-200 dark:divide-slate-700">
               <thead className="bg-white dark:bg-slate-800">
                  <tr>
-                   <th className="px-4 py-3 text-left text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">{t.dashboard.upcoming.date}</th>
-                   <th className="px-4 py-3 text-left text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">{t.dashboard.upcoming.session}</th>
-                   <th className="px-4 py-3 text-center text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">{t.dashboard.upcoming.capacity}</th>
-                   <th className="px-4 py-3 text-center text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">{t.dashboard.upcoming.status}</th>
+                   <th className="px-4 py-3 text-left text-xs font-bold text-black dark:text-gray-400 uppercase tracking-wider">{t.dashboard.upcoming.date}</th>
+                   <th className="px-4 py-3 text-left text-xs font-bold text-black dark:text-gray-400 uppercase tracking-wider">{t.dashboard.upcoming.session}</th>
+                   <th className="px-4 py-3 text-center text-xs font-bold text-black dark:text-gray-400 uppercase tracking-wider">{t.dashboard.upcoming.capacity}</th>
+                   <th className="px-4 py-3 text-center text-xs font-bold text-black dark:text-gray-400 uppercase tracking-wider">{t.dashboard.upcoming.status}</th>
                  </tr>
               </thead>
               <tbody className="bg-white dark:bg-slate-800 divide-y divide-gray-200 dark:divide-slate-700">
@@ -356,13 +356,13 @@ const Dashboard: React.FC<DashboardProps> = ({
                   <tr key={session.id} className="hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors">
                     <td className="px-4 py-3 whitespace-nowrap">
                       <div className="text-sm font-medium text-slate-900 dark:text-white">{String(session.date)}</div>
-                      <div className="text-xs text-gray-500 dark:text-gray-400 flex items-center gap-1 mt-1">
+                      <div className="text-xs text-slate-600 dark:text-gray-400 flex items-center gap-1 mt-1">
                          <Clock size={12} /> {String(session.startTime)}
                       </div>
                     </td>
                     <td className="px-4 py-3">
-                      <div className="text-sm font-bold text-slate-700 dark:text-slate-200">{String(session.racType)}</div>
-                      <div className="flex items-center gap-3 text-xs text-gray-500 dark:text-gray-400 mt-1">
+                      <div className="text-sm font-bold text-slate-800 dark:text-slate-200">{String(session.racType)}</div>
+                      <div className="flex items-center gap-3 text-xs text-slate-600 dark:text-gray-400 mt-1">
                         <span className="flex items-center gap-1"><MapPin size={12} /> {String(session.location)}</span>
                         <span className="flex items-center gap-1"><User size={12} /> {String(session.instructor)}</span>
                       </div>
@@ -400,7 +400,7 @@ const Dashboard: React.FC<DashboardProps> = ({
                 <select 
                    value={empFilterCompany}
                    onChange={(e) => setEmpFilterCompany(e.target.value)}
-                   className="text-xs border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white rounded focus:ring-blue-500 focus:border-blue-500 py-1"
+                   className="text-xs border-gray-300 dark:border-slate-600 dark:bg-slate-700 text-black dark:text-white rounded focus:ring-blue-500 focus:border-blue-500 py-1"
                 >
                    <option value="All">All Companies</option>
                    {COMPANIES.map(c => <option key={c} value={c}>{c}</option>)}
@@ -409,7 +409,7 @@ const Dashboard: React.FC<DashboardProps> = ({
                 <select 
                    value={empFilterRac}
                    onChange={(e) => setEmpFilterRac(e.target.value)}
-                   className="text-xs border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white rounded focus:ring-blue-500 focus:border-blue-500 py-1"
+                   className="text-xs border-gray-300 dark:border-slate-600 dark:bg-slate-700 text-black dark:text-white rounded focus:ring-blue-500 focus:border-blue-500 py-1"
                 >
                    <option value="All">All RACs</option>
                    {RAC_KEYS.map(r => <option key={r} value={r}>{r}</option>)}
@@ -419,7 +419,7 @@ const Dashboard: React.FC<DashboardProps> = ({
                    type="date"
                    value={empFilterDate}
                    onChange={(e) => setEmpFilterDate(e.target.value)}
-                   className="text-xs border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white rounded focus:ring-blue-500 focus:border-blue-500 py-1"
+                   className="text-xs border-gray-300 dark:border-slate-600 dark:bg-slate-700 text-black dark:text-white rounded focus:ring-blue-500 focus:border-blue-500 py-1"
                    placeholder="Filter Date"
                 />
              </div>
@@ -429,11 +429,11 @@ const Dashboard: React.FC<DashboardProps> = ({
               <table className="min-w-full divide-y divide-gray-200 dark:divide-slate-700">
                 <thead className="bg-gray-50 dark:bg-slate-800 sticky top-0 shadow-sm z-10">
                    <tr>
-                     <th className="px-3 py-2 text-left text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">ID</th>
-                     <th className="px-3 py-2 text-left text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">{t.dashboard.booked.tableEmployee}</th>
-                     <th className="px-3 py-2 text-left text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">{t.dashboard.booked.tableRac}</th>
-                     <th className="px-3 py-2 text-left text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">{t.dashboard.booked.tableDate}</th>
-                     <th className="px-3 py-2 text-left text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">{t.dashboard.booked.tableRoom}</th>
+                     <th className="px-3 py-2 text-left text-[10px] font-bold text-black dark:text-gray-400 uppercase tracking-wider">ID</th>
+                     <th className="px-3 py-2 text-left text-[10px] font-bold text-black dark:text-gray-400 uppercase tracking-wider">{t.dashboard.booked.tableEmployee}</th>
+                     <th className="px-3 py-2 text-left text-[10px] font-bold text-black dark:text-gray-400 uppercase tracking-wider">{t.dashboard.booked.tableRac}</th>
+                     <th className="px-3 py-2 text-left text-[10px] font-bold text-black dark:text-gray-400 uppercase tracking-wider">{t.dashboard.booked.tableDate}</th>
+                     <th className="px-3 py-2 text-left text-[10px] font-bold text-black dark:text-gray-400 uppercase tracking-wider">{t.dashboard.booked.tableRoom}</th>
                    </tr>
                 </thead>
                 <tbody className="bg-white dark:bg-slate-800 divide-y divide-gray-200 dark:divide-slate-700">
@@ -446,22 +446,22 @@ const Dashboard: React.FC<DashboardProps> = ({
                    ) : (
                       filteredEmployeeBookings.map((item) => (
                         <tr key={item.id} className="hover:bg-slate-50 dark:hover:bg-slate-700/50">
-                           <td className="px-3 py-2 whitespace-nowrap text-xs font-mono text-gray-500 dark:text-gray-400">
+                           <td className="px-3 py-2 whitespace-nowrap text-xs font-mono text-black dark:text-gray-400">
                              {String(item.employee.recordId)}
                            </td>
                            <td className="px-3 py-2 whitespace-nowrap">
-                             <div className="text-xs font-bold text-slate-800 dark:text-white">{String(item.employee.name)}</div>
-                             <div className="text-[10px] text-gray-500 dark:text-gray-400 truncate max-w-[120px]" title={item.employee.company}>{String(item.employee.company)}</div>
+                             <div className="text-xs font-bold text-slate-900 dark:text-white">{String(item.employee.name)}</div>
+                             <div className="text-[10px] text-slate-500 dark:text-gray-400 truncate max-w-[120px]" title={item.employee.company}>{String(item.employee.company)}</div>
                            </td>
                            <td className="px-3 py-2 whitespace-nowrap">
                              <span className="text-xs font-medium text-blue-700 dark:text-blue-300 bg-blue-50 dark:bg-blue-900/30 px-1.5 py-0.5 rounded border border-blue-100 dark:border-blue-800">
                                {String(item.racCode)}
                              </span>
                            </td>
-                           <td className="px-3 py-2 whitespace-nowrap text-xs text-gray-600 dark:text-gray-400">
+                           <td className="px-3 py-2 whitespace-nowrap text-xs text-slate-800 dark:text-gray-400">
                              {item.sessionDate ? String(item.sessionDate) : <span className="text-gray-300 italic">--</span>}
                            </td>
-                           <td className="px-3 py-2 whitespace-nowrap text-xs text-gray-600 dark:text-gray-400">
+                           <td className="px-3 py-2 whitespace-nowrap text-xs text-slate-800 dark:text-gray-400">
                              {item.sessionRoom ? String(item.sessionRoom) : <span className="text-gray-300 italic">--</span>}
                            </td>
                         </tr>

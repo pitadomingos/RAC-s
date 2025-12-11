@@ -1,16 +1,11 @@
 
-
-
-
-
-
 import React from 'react';
 import { useLanguage } from '../contexts/LanguageContext';
 import { 
   Wine, Zap, Lock, Activity, Thermometer, 
   Bluetooth, Smartphone, ShieldCheck, AlertOctagon,
   AlertTriangle, HardHat, ServerOff, ScanFace,
-  Wifi, Database, UserX
+  Wifi, Database, UserX, Clock, UserMinus, RotateCcw
 } from 'lucide-react';
 
 const AlcoholIntegration: React.FC = () => {
@@ -92,6 +87,45 @@ const AlcoholIntegration: React.FC = () => {
                      <p className="text-sm text-gray-600 leading-relaxed">{t.alcohol.features.complianceDesc}</p>
                   </div>
                </div>
+            </div>
+
+            {/* NEW SECTION: Business Logic / Protocol */}
+            <div className="bg-slate-900 rounded-xl p-8 text-white relative overflow-hidden">
+                <div className="absolute right-0 top-0 opacity-10">
+                    <Clock size={200} />
+                </div>
+                <h3 className="text-xl font-bold mb-6 flex items-center gap-2 relative z-10">
+                    <RotateCcw className="text-yellow-400" />
+                    {t.alcohol.protocol.title}
+                </h3>
+                
+                <div className="flex flex-col md:flex-row items-center gap-8 relative z-10">
+                    {/* Step 1 */}
+                    <div className="flex-1 bg-slate-800/50 p-6 rounded-lg border border-slate-700 w-full">
+                        <div className="flex items-center gap-4 mb-3">
+                            <div className="bg-red-600 p-2 rounded-lg"><UserMinus size={24} /></div>
+                            <h4 className="font-bold text-lg text-red-400">{t.alcohol.protocol.positiveTitle}</h4>
+                        </div>
+                        <p className="text-sm text-slate-300 leading-relaxed">
+                            {t.alcohol.protocol.positiveDesc}
+                        </p>
+                    </div>
+
+                    <div className="hidden md:block">
+                        <RotateCcw className="text-slate-600" size={32} />
+                    </div>
+
+                    {/* Step 2 */}
+                    <div className="flex-1 bg-slate-800/50 p-6 rounded-lg border border-slate-700 w-full">
+                        <div className="flex items-center gap-4 mb-3">
+                            <div className="bg-green-600 p-2 rounded-lg"><Clock size={24} /></div>
+                            <h4 className="font-bold text-lg text-green-400">{t.alcohol.protocol.resetTitle}</h4>
+                        </div>
+                        <p className="text-sm text-slate-300 leading-relaxed">
+                            {t.alcohol.protocol.resetDesc}
+                        </p>
+                    </div>
+                </div>
             </div>
 
 

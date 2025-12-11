@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from 'react';
+
+import React, { useState, useMemo } from 'react';
 import { Booking, BookingStatus, RAC, TrainingSession, UserRole } from '../types';
-import { Save, AlertCircle, CheckCircle, Lock, Users, ClipboardList, ShieldAlert, UserCheck } from 'lucide-react';
+import { Save, AlertCircle, CheckCircle, Lock, Users, ClipboardList, ShieldAlert, UserCheck, GraduationCap, CheckCircle2, Search, CheckSquare, X } from 'lucide-react';
 import { useLanguage } from '../contexts/LanguageContext';
 
 interface TrainerInputPageProps {
@@ -23,10 +24,9 @@ const TrainerInputPage: React.FC<TrainerInputPageProps> = ({
   const [sessionBookings, setSessionBookings] = useState<Booking[]>([]);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [successMsg, setSuccessMsg] = useState('');
+  const [studentSearch, setStudentSearch] = useState('');
 
   // --- SECURITY FILTER ---
-  // If user is a RAC_TRAINER, only show sessions where they are the instructor.
-  // Admins see everything.
   const availableSessions = (userRole === UserRole.RAC_TRAINER) 
     ? sessions.filter(s => s.instructor === currentUserName)
     : sessions;
@@ -37,7 +37,6 @@ const TrainerInputPage: React.FC<TrainerInputPageProps> = ({
     setSelectedSessionId(sId);
     if (sId) {
       const filtered = bookings.filter(b => b.sessionId === sId);
-      // Initialize scores if undefined
       const initialized = filtered.map(b => ({
         ...b,
         attendance: b.attendance ?? false,
@@ -51,31 +50,23 @@ const TrainerInputPage: React.FC<TrainerInputPageProps> = ({
     }
     setHasUnsavedChanges(false);
     setSuccessMsg('');
+    setStudentSearch('');
   };
 
-  // Helper: Auto-calculate Status based on logic
+  // Helper: Auto-calculate Status
   const calculateStatus = (booking: Booking, isRac02: boolean): BookingStatus => {
-    // If absent, cannot pass
     if (!booking.attendance) return BookingStatus.FAILED;
-
-    // RAC 02 Specific Logic: MUST VERIFY DL
     if (isRac02) {
-      if (!booking.driverLicenseVerified) return BookingStatus.FAILED; // Disqualified if DL not checked
+      if (!booking.driverLicenseVerified) return BookingStatus.FAILED;
     }
-
     const theory = booking.theoryScore || 0;
     const practical = booking.practicalScore || 0;
 
-    // RAC 02 Specific Logic
     if (isRac02) {
-      // Must pass theory (70) to even be considered for practical
       if (theory < 70) return BookingStatus.FAILED;
-      // Must pass practical (70) as well
       if (practical < 70) return BookingStatus.FAILED;
       return BookingStatus.PASSED;
     }
-
-    // Standard Logic (Theory only)
     if (theory >= 70) return BookingStatus.PASSED;
     return BookingStatus.FAILED;
   };
@@ -86,24 +77,30 @@ const TrainerInputPage: React.FC<TrainerInputPageProps> = ({
 
     setSessionBookings(prev => prev.map(b => {
       if (b.id !== id) return b;
-
       const updatedBooking = { ...b, [field]: value };
-
-      // Specialized Logic for RAC 02 Theory Change
+      
+      // Auto-logic for RAC02: If Theory fail, Practical is 0/Locked visually
       if (isRac02 && field === 'theoryScore') {
         const score = parseInt(value) || 0;
-        if (score < 70) {
-          updatedBooking.practicalScore = 0;
-        }
+        if (score < 70) updatedBooking.practicalScore = 0;
       }
-
-      // Auto-calculate Status
+      
       updatedBooking.status = calculateStatus(updatedBooking, isRac02);
-
       return updatedBooking;
     }));
-    
     setHasUnsavedChanges(true);
+  };
+
+  const handleBulkAttendance = () => {
+      const selectedSession = sessions.find(s => s.id === selectedSessionId);
+      const isRac02 = selectedSession?.racType.includes('RAC 02') || selectedSession?.racType.includes('RAC02') || false;
+
+      setSessionBookings(prev => prev.map(b => {
+          const updated = { ...b, attendance: true };
+          updated.status = calculateStatus(updated, isRac02);
+          return updated;
+      }));
+      setHasUnsavedChanges(true);
   };
 
   const handleSave = () => {
@@ -113,214 +110,231 @@ const TrainerInputPage: React.FC<TrainerInputPageProps> = ({
     setTimeout(() => setSuccessMsg(''), 3000);
   };
 
-  const getSessionStats = (sessionId: string) => {
-    const sessionList = bookings.filter(b => b.sessionId === sessionId);
-    const total = sessionList.length;
-    const pending = sessionList.filter(b => b.status === BookingStatus.PENDING).length;
-    return { total, pending };
-  };
-
   const selectedSessionDetails = sessions.find(s => s.id === selectedSessionId);
   const isRac02 = selectedSessionDetails?.racType.includes('RAC 02') || selectedSessionDetails?.racType.includes('RAC02');
 
+  const filteredStudents = useMemo(() => {
+      if (!studentSearch) return sessionBookings;
+      return sessionBookings.filter(b => 
+          b.employee.name.toLowerCase().includes(studentSearch.toLowerCase()) ||
+          b.employee.recordId.toLowerCase().includes(studentSearch.toLowerCase())
+      );
+  }, [sessionBookings, studentSearch]);
+
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
-      <div className="mb-6 flex justify-between items-center border-b border-slate-100 pb-4">
-        <div>
-          <h2 className="text-xl font-bold text-slate-800">{t.trainer.title}</h2>
-          <p className="text-sm text-gray-500">{t.trainer.subtitle} <span className="font-bold text-yellow-600">{t.trainer.passMark}</span></p>
-        </div>
-        <div className="flex flex-col items-end gap-1">
-             {successMsg && (
-                <div className="flex items-center gap-2 text-green-600 bg-green-50 px-3 py-1 rounded-lg text-sm font-medium animate-pulse">
-                    <CheckCircle size={16} />
-                    {successMsg}
+    <div className="space-y-6 pb-20 animate-fade-in-up">
+      
+      {/* Header Command Center */}
+      <div className="bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 rounded-2xl shadow-xl p-8 text-white relative overflow-hidden border border-slate-700">
+         <div className="absolute top-0 right-0 opacity-10 pointer-events-none">
+            <GraduationCap size={200} />
+         </div>
+         <div className="relative z-10">
+            <div className="flex flex-col md:flex-row justify-between items-start gap-6">
+                <div>
+                    <h2 className="text-3xl font-black tracking-tight flex items-center gap-3">
+                        <ClipboardList size={32} className="text-yellow-500" />
+                        {t.trainer.title}
+                    </h2>
+                    <p className="text-slate-400 mt-2 text-sm flex items-center gap-2">
+                        <UserCheck size={16} />
+                        {t.trainer.loggedInAs} <span className="text-white font-bold">{currentUserName || 'Admin'}</span>
+                    </p>
+                </div>
+                
+                {selectedSessionId && (
+                    <div className="flex gap-4">
+                        <div className="bg-white/10 p-3 rounded-xl border border-white/10 backdrop-blur-sm text-center min-w-[100px]">
+                            <div className="text-2xl font-bold">{sessionBookings.length}</div>
+                            <div className="text-[10px] uppercase text-slate-400 font-bold">Attendees</div>
+                        </div>
+                        <div className="bg-green-500/20 p-3 rounded-xl border border-green-500/30 backdrop-blur-sm text-center min-w-[100px]">
+                            <div className="text-2xl font-bold text-green-400">{sessionBookings.filter(b => b.status === 'Passed').length}</div>
+                            <div className="text-[10px] uppercase text-green-300 font-bold">Passed</div>
+                        </div>
+                    </div>
+                )}
+            </div>
+         </div>
+      </div>
+
+      <div className="bg-white dark:bg-slate-800 rounded-xl shadow-lg border border-slate-100 dark:border-slate-700 overflow-hidden p-6 md:p-8">
+          {/* Session Selector */}
+          <div className="mb-8 max-w-2xl mx-auto">
+            <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2 text-center">{t.trainer.selectSession}</label>
+            {availableSessions.length === 0 ? (
+                <div className="bg-orange-50 text-orange-800 p-4 rounded-xl text-sm border border-orange-200 flex items-center justify-center gap-2">
+                    <AlertCircle size={16} />
+                    <span>{t.trainer.noSessions}</span>
+                </div>
+            ) : (
+                <div className="relative group">
+                    <select 
+                        value={selectedSessionId} 
+                        onChange={handleSessionChange}
+                        className="w-full bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 text-slate-900 dark:text-white rounded-xl shadow-sm focus:border-yellow-500 focus:ring-yellow-500 p-4 pl-12 text-lg font-medium appearance-none cursor-pointer transition-colors hover:bg-slate-100 dark:hover:bg-slate-600"
+                    >
+                        <option value="">{t.trainer.chooseSession}</option>
+                        {availableSessions.map(session => (
+                            <option key={session.id} value={session.id}>
+                            {session.racType} • {session.date} • {session.location}
+                            </option>
+                        ))}
+                    </select>
+                    <ClipboardList className="absolute left-4 top-4.5 text-slate-400 group-hover:text-yellow-500 transition-colors" size={24} />
                 </div>
             )}
-            <div className="flex items-center gap-2 text-xs text-gray-400">
-                <UserCheck size={14} />
-                <span>{t.trainer.loggedInAs} <span className="font-bold text-slate-700">{currentUserName}</span></span>
-            </div>
-        </div>
-      </div>
-
-      {/* Session Selector */}
-      <div className="mb-8 max-w-xl">
-        <label className="block text-sm font-medium text-gray-700 mb-1">{t.trainer.selectSession}</label>
-        
-        {availableSessions.length === 0 ? (
-            <div className="bg-orange-50 text-orange-800 p-3 rounded-lg text-sm border border-orange-200 flex items-center gap-2">
-                <AlertCircle size={16} />
-                <span>{t.trainer.noSessions}</span>
-            </div>
-        ) : (
-            <div className="relative">
-            <select 
-                value={selectedSessionId} 
-                onChange={handleSessionChange}
-                className="w-full border-gray-300 rounded-lg shadow-sm focus:border-yellow-500 focus:ring-yellow-500 p-2 border pl-10"
-            >
-                <option value="">{t.trainer.chooseSession}</option>
-                {availableSessions.map(session => {
-                const { total, pending } = getSessionStats(session.id);
-                return (
-                    <option key={session.id} value={session.id}>
-                    {session.racType} - {session.date} • {total} Attendees {pending > 0 ? `(${pending} Pending)` : ''}
-                    </option>
-                );
-                })}
-            </select>
-            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
-                <ClipboardList size={18} />
-            </div>
-            </div>
-        )}
-      </div>
-
-      {/* Grading Table */}
-      {selectedSessionId && sessionBookings.length > 0 ? (
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200 border border-gray-200 rounded-lg">
-            <thead className="bg-slate-50">
-              <tr>
-                <th className="px-4 py-3 text-left text-xs font-bold text-slate-600 uppercase">{t.trainer.table.employee}</th>
-                <th className="px-4 py-3 text-center text-xs font-bold text-slate-600 uppercase w-24">{t.trainer.table.attendance}</th>
-                {isRac02 && (
-                    <th className="px-4 py-3 text-center text-xs font-bold text-red-600 uppercase w-28 bg-red-50">
-                        {t.trainer.table.dlCheck}
-                    </th>
-                )}
-                <th className="px-4 py-3 text-center text-xs font-bold text-slate-600 uppercase w-32">{t.trainer.table.theory}</th>
-                <th className="px-4 py-3 text-center text-xs font-bold text-slate-600 uppercase w-32">
-                  {t.trainer.table.practical}
-                  {!isRac02 && <span className="block text-[9px] font-normal text-gray-400">{t.trainer.table.rac02Only}</span>}
-                </th>
-                <th className="px-4 py-3 text-left text-xs font-bold text-slate-600 uppercase w-40">{t.trainer.table.status}</th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {sessionBookings.map((booking) => {
-                // Determine if practical is locked for this specific user
-                const theory = booking.theoryScore || 0;
-                const practicalLocked = isRac02 && theory < 70;
-                
-                // If RAC 02 and DL not verified, scores are meaningless (automatic fail)
-                const isDisqualified = isRac02 && !booking.driverLicenseVerified;
-
-                return (
-                  <tr key={booking.id} className="hover:bg-slate-50 transition-colors">
-                    <td className="px-4 py-3">
-                      <div className="text-sm font-medium text-slate-900">{booking.employee.name}</div>
-                      <div className="text-xs text-slate-500">ID: {booking.employee.recordId}</div>
-                    </td>
-                    <td className="px-4 py-3 text-center">
-                      <input 
-                        type="checkbox" 
-                        className="h-5 w-5 text-yellow-600 focus:ring-yellow-500 border-gray-300 rounded cursor-pointer"
-                        checked={booking.attendance || false}
-                        onChange={(e) => handleInputChange(booking.id, 'attendance', e.target.checked)}
-                      />
-                    </td>
-                    
-                    {/* DL Checkbox for RAC02 */}
-                    {isRac02 && (
-                        <td className="px-4 py-3 text-center bg-red-50/50">
-                            <div className="flex flex-col items-center">
-                                <input 
-                                    type="checkbox" 
-                                    className="h-5 w-5 text-red-600 focus:ring-red-500 border-red-300 rounded cursor-pointer"
-                                    checked={booking.driverLicenseVerified || false}
-                                    onChange={(e) => handleInputChange(booking.id, 'driverLicenseVerified', e.target.checked)}
-                                />
-                                <span className="text-[9px] text-gray-500 mt-1">{t.trainer.table.verified}</span>
-                            </div>
-                        </td>
-                    )}
-
-                    <td className="px-4 py-3">
-                      <input 
-                        type="number" 
-                        min="0" max="100"
-                        disabled={isDisqualified}
-                        className={`w-full text-center border rounded-md shadow-sm text-sm p-1
-                          ${isDisqualified ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : (booking.theoryScore || 0) < 70 ? 'border-red-300 bg-red-50 text-red-900' : 'border-green-300 bg-green-50 text-green-900'}
-                        `}
-                        value={booking.theoryScore}
-                        onChange={(e) => handleInputChange(booking.id, 'theoryScore', parseInt(e.target.value) || 0)}
-                      />
-                    </td>
-                    <td className="px-4 py-3 bg-gray-50 relative">
-                      <input 
-                        type="number" 
-                        min="0" max="100"
-                        disabled={!isRac02 || practicalLocked || isDisqualified}
-                        className={`w-full text-center border rounded-md shadow-sm text-sm p-1
-                          ${!isRac02 || isDisqualified ? 'bg-gray-200 text-gray-400 cursor-not-allowed border-gray-300' : 
-                            practicalLocked ? 'bg-gray-200 text-gray-400 cursor-not-allowed border-gray-300' :
-                            (booking.practicalScore || 0) < 70 ? 'border-red-300 bg-red-50 text-red-900' : 'border-green-300 bg-green-50 text-green-900'
-                          }
-                        `}
-                        value={booking.practicalScore}
-                        onChange={(e) => handleInputChange(booking.id, 'practicalScore', parseInt(e.target.value) || 0)}
-                      />
-                      {(practicalLocked || !isRac02 || isDisqualified) && (
-                        <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-50">
-                           <Lock size={12} className="text-gray-500" />
-                        </div>
-                      )}
-                    </td>
-                    <td className="px-4 py-3">
-                       <span className={`px-2 py-1 inline-flex text-xs leading-5 font-bold rounded-full 
-                          ${booking.status === BookingStatus.PASSED ? 'bg-green-100 text-green-800' : 
-                            booking.status === BookingStatus.FAILED ? 'bg-red-100 text-red-800' : 
-                            'bg-gray-100 text-gray-800'}`}>
-                          {booking.status.toUpperCase()}
-                       </span>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-          
-          <div className="mt-6 flex justify-end items-center gap-4">
-             {isRac02 && (
-                 <div className="flex items-center gap-2 text-sm text-red-600 bg-red-50 px-3 py-2 rounded-lg border border-red-200">
-                    <ShieldAlert size={16} />
-                    <span>{t.trainer.dlWarning}</span>
-                 </div>
-             )}
-             <button 
-               onClick={handleSave}
-               disabled={!hasUnsavedChanges}
-               className={`flex items-center space-x-2 px-6 py-2 rounded-lg font-bold shadow-sm transition-all
-                 ${hasUnsavedChanges ? 'bg-yellow-500 hover:bg-yellow-600 text-slate-900' : 'bg-gray-300 text-gray-500 cursor-not-allowed'}
-               `}
-             >
-               <Save size={18} />
-               <span>{t.trainer.saveResults}</span>
-             </button>
           </div>
 
-        </div>
-      ) : selectedSessionId ? (
-         <div className="flex flex-col items-center justify-center py-16 text-gray-400 border-2 border-dashed border-gray-300 rounded-lg bg-gray-50 animate-fade-in-up">
-             <div className="bg-white p-4 rounded-full shadow-sm mb-4">
-                <Users size={48} className="text-yellow-500" />
-             </div>
-             <h3 className="text-lg font-bold text-slate-800 mb-1">No Bookings Found</h3>
-             <p className="max-w-xs text-center text-sm mb-4">
-               There are currently no employees registered for this training session.
-             </p>
-         </div>
-      ) : (
-        availableSessions.length > 0 && (
-            <div className="flex flex-col items-center justify-center py-12 text-gray-400 border border-dashed rounded-lg bg-gray-50">
-                <ClipboardList size={48} className="text-gray-300 mb-3" />
-                <p>Please select a session from the dropdown above to begin grading.</p>
+          {selectedSessionId && sessionBookings.length > 0 ? (
+            <div className="space-y-4">
+                {/* Classroom Toolbar */}
+                <div className="flex flex-col md:flex-row justify-between items-center gap-4 bg-slate-50 dark:bg-slate-700/50 p-3 rounded-xl border border-slate-200 dark:border-slate-600">
+                    <div className="relative w-full md:w-64">
+                        <Search className="absolute left-3 top-2.5 text-slate-400" size={16} />
+                        <input 
+                            type="text" 
+                            placeholder="Find student..." 
+                            className="w-full pl-9 pr-4 py-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none text-black dark:text-white"
+                            value={studentSearch}
+                            onChange={(e) => setStudentSearch(e.target.value)}
+                        />
+                    </div>
+                    
+                    <button 
+                        onClick={handleBulkAttendance}
+                        className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded-lg text-xs font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 hover:text-blue-600 dark:hover:text-blue-400 transition-colors shadow-sm"
+                    >
+                        <CheckSquare size={16} />
+                        Mark All Present
+                    </button>
+                </div>
+
+                <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-700">
+                <table className="min-w-full divide-y divide-slate-200 dark:divide-slate-700">
+                    <thead className="bg-slate-50 dark:bg-slate-700">
+                    <tr>
+                        <th className="px-4 py-4 text-left text-xs font-bold text-black dark:text-slate-400 uppercase tracking-wider">{t.trainer.table.employee}</th>
+                        <th className="px-4 py-4 text-center text-xs font-bold text-black dark:text-slate-400 uppercase tracking-wider w-24">{t.trainer.table.attendance}</th>
+                        {isRac02 && <th className="px-4 py-4 text-center text-xs font-bold text-red-600 dark:text-red-400 uppercase tracking-wider w-28 bg-red-50 dark:bg-red-900/20">{t.trainer.table.dlCheck}</th>}
+                        <th className="px-4 py-4 text-center text-xs font-bold text-black dark:text-slate-400 uppercase tracking-wider w-32">{t.trainer.table.theory}</th>
+                        <th className="px-4 py-4 text-center text-xs font-bold text-black dark:text-slate-400 uppercase tracking-wider w-32">{t.trainer.table.practical}</th>
+                        <th className="px-4 py-4 text-left text-xs font-bold text-black dark:text-slate-400 uppercase tracking-wider w-40">{t.trainer.table.status}</th>
+                    </tr>
+                    </thead>
+                    <tbody className="bg-white dark:bg-slate-800 divide-y divide-slate-100 dark:divide-slate-700">
+                    {filteredStudents.map((booking) => {
+                        const theory = booking.theoryScore || 0;
+                        const practicalLocked = isRac02 && theory < 70;
+                        const isDisqualified = isRac02 && !booking.driverLicenseVerified;
+
+                        return (
+                        <tr key={booking.id} className="hover:bg-blue-50/50 dark:hover:bg-slate-700/50 transition-colors group">
+                            <td className="px-4 py-4">
+                            <div className="text-sm font-bold text-slate-900 dark:text-white">{booking.employee.name}</div>
+                            <div className="text-xs text-slate-500 font-mono">{booking.employee.recordId}</div>
+                            </td>
+                            <td className="px-4 py-4 text-center">
+                            <label className="relative inline-flex items-center cursor-pointer">
+                                <input type="checkbox" className="sr-only peer" checked={booking.attendance || false} onChange={(e) => handleInputChange(booking.id, 'attendance', e.target.checked)} />
+                                <div className="w-11 h-6 bg-slate-200 dark:bg-slate-600 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                            </label>
+                            </td>
+                            
+                            {isRac02 && (
+                                <td className="px-4 py-4 text-center bg-red-50/30 dark:bg-red-900/10">
+                                    <input 
+                                        type="checkbox" 
+                                        className="h-5 w-5 text-red-600 focus:ring-red-500 border-red-300 rounded cursor-pointer"
+                                        checked={booking.driverLicenseVerified || false}
+                                        onChange={(e) => handleInputChange(booking.id, 'driverLicenseVerified', e.target.checked)}
+                                    />
+                                </td>
+                            )}
+
+                            <td className="px-4 py-4">
+                            <input 
+                                type="number" 
+                                min="0" max="100"
+                                disabled={isDisqualified}
+                                className={`w-full text-center border-2 rounded-lg shadow-sm text-lg font-bold p-2 outline-none focus:ring-2 focus:ring-offset-1 transition-all
+                                ${isDisqualified 
+                                    ? 'bg-slate-100 dark:bg-slate-700 text-slate-400 border-slate-200 dark:border-slate-600' 
+                                    : (booking.theoryScore || 0) < 70 
+                                        ? 'border-red-300 bg-red-50 dark:bg-red-900/20 text-red-700 focus:ring-red-500' 
+                                        : 'border-green-300 bg-green-50 dark:bg-green-900/20 text-green-700 focus:ring-green-500'
+                                }
+                                `}
+                                value={booking.theoryScore}
+                                onChange={(e) => handleInputChange(booking.id, 'theoryScore', parseInt(e.target.value) || 0)}
+                            />
+                            </td>
+                            <td className="px-4 py-4 relative">
+                            <input 
+                                type="number" 
+                                min="0" max="100"
+                                disabled={!isRac02 || practicalLocked || isDisqualified}
+                                className={`w-full text-center border-2 rounded-lg shadow-sm text-lg font-bold p-2 outline-none focus:ring-2 focus:ring-offset-1 transition-all
+                                ${!isRac02 
+                                    ? 'bg-slate-50 dark:bg-slate-700 text-slate-300 dark:text-slate-500 border-slate-200 dark:border-slate-600' 
+                                    : practicalLocked 
+                                        ? 'bg-slate-100 dark:bg-slate-700 text-slate-400 cursor-not-allowed border-slate-200' 
+                                        : (booking.practicalScore || 0) < 70 
+                                            ? 'border-red-300 bg-red-50 dark:bg-red-900/20 text-red-700 focus:ring-red-500' 
+                                            : 'border-green-300 bg-green-50 dark:bg-green-900/20 text-green-700 focus:ring-green-500'
+                                }
+                                `}
+                                value={booking.practicalScore}
+                                onChange={(e) => handleInputChange(booking.id, 'practicalScore', parseInt(e.target.value) || 0)}
+                            />
+                            {(practicalLocked || (!isRac02 && !booking.practicalScore)) && isRac02 && (
+                                <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-40">
+                                <Lock size={14} className="text-slate-500" />
+                                </div>
+                            )}
+                            </td>
+                            <td className="px-4 py-4">
+                            <span className={`px-3 py-1.5 inline-flex text-xs leading-5 font-black rounded-full shadow-sm border
+                                ${booking.status === BookingStatus.PASSED ? 'bg-green-100 text-green-800 border-green-200 dark:bg-green-900/30 dark:text-green-400 dark:border-green-800' : 
+                                    booking.status === BookingStatus.FAILED ? 'bg-red-100 text-red-800 border-red-200 dark:bg-red-900/30 dark:text-red-400 dark:border-red-800' : 
+                                    'bg-slate-100 text-slate-500 border-slate-200 dark:bg-slate-700 dark:text-slate-400 dark:border-slate-600'}`}>
+                                {booking.status.toUpperCase()}
+                            </span>
+                            </td>
+                        </tr>
+                        );
+                    })}
+                    </tbody>
+                </table>
+                </div>
+              
+              <div className="p-6 bg-slate-50 dark:bg-slate-800 border-t border-slate-200 dark:border-slate-700 flex justify-end items-center gap-4 sticky bottom-0 z-10">
+                 {successMsg && (
+                    <span className="text-green-600 font-bold text-sm animate-pulse flex items-center gap-2">
+                        <CheckCircle2 size={16} /> {successMsg}
+                    </span>
+                 )}
+                 <button 
+                   onClick={handleSave}
+                   disabled={!hasUnsavedChanges}
+                   className={`flex items-center space-x-2 px-8 py-3 rounded-xl font-bold shadow-lg transition-all transform hover:scale-105
+                     ${hasUnsavedChanges ? 'bg-yellow-500 hover:bg-yellow-400 text-slate-900' : 'bg-slate-200 dark:bg-slate-700 text-slate-400 cursor-not-allowed shadow-none'}
+                   `}
+                 >
+                   <Save size={20} />
+                   <span>{t.trainer.saveResults}</span>
+                 </button>
+              </div>
             </div>
-        )
-      )}
+          ) : (
+             <div className="text-center py-20 text-slate-400">
+                 <div className="bg-slate-50 dark:bg-slate-700 w-24 h-24 rounded-full flex items-center justify-center mx-auto mb-4 border border-slate-200 dark:border-slate-600">
+                    <ClipboardList size={40} className="text-slate-300 dark:text-slate-500" />
+                 </div>
+                 <p className="font-medium">Select a session to begin grading</p>
+             </div>
+          )}
+      </div>
     </div>
   );
 };

@@ -13,6 +13,20 @@ export const RAC_KEYS = [
   'RAC06', 'RAC07', 'RAC08', 'RAC09', 'RAC10'
 ];
 
+// New Operational Keys for the Right Side of the Card
+export const OPS_KEYS = [
+    'PTS',          // Date
+    'EXEC_CRED',    // Permission (SIM)
+    'EMIT_PTS',     // Permission (SIM)
+    'LOB_OPS',      // Date
+    'ART',          // Date
+    'APR_ART',      // Permission (SIM)
+    'LOB_MOV'       // Date
+];
+
+// Keys that are boolean permissions (Manager Designated) -> Display "-SIM-"
+export const PERMISSION_KEYS = ['EXEC_CRED', 'EMIT_PTS', 'APR_ART'];
+
 export const INITIAL_RAC_DEFINITIONS: RacDef[] = RAC_KEYS.map((k, i) => ({
     id: String(i),
     code: k,
