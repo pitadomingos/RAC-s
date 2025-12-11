@@ -62,19 +62,24 @@ const DatabasePage: React.FC<DatabasePageProps> = ({ bookings, requirements, upd
         if (b.status !== BookingStatus.PASSED) return false;
         
         let racCode = '';
-        if (b.sessionId.includes('RAC')) {
-             racCode = b.sessionId.split(' - ')[0].replace(' ', '');
+        // 1. Try Session Object (Most Reliable)
+        const session = sessions.find(s => s.id === b.sessionId);
+        if (session) {
+            // e.g. "RAC 01 - Height" -> "RAC01"
+            racCode = session.racType.split(' - ')[0].replace(/\s+/g, '');
         } else {
-            const session = sessions.find(s => s.id === b.sessionId);
-            if (session) racCode = session.racType.split(' - ')[0].replace(' ', '');
-            // Handle Operational Keys (PTS, ART) if they are stored as session types or direct IDs
-            if (!racCode && b.sessionId.includes(racKey)) racCode = racKey;
+            // 2. Fallback to String Parsing (if imported/legacy)
+            // Remove spaces to match: "RAC 01" -> "RAC01", "RAC01" -> "RAC01"
+            racCode = b.sessionId.split(' - ')[0].replace(/\s+/g, '');
         }
         return racCode === racKey;
     });
 
+    // STRICT SORT: Latest expiry date first
     relevantBookings.sort((a, b) => {
-        return new Date(b.expiryDate || '1970-01-01').getTime() - new Date(a.expiryDate || '1970-01-01').getTime();
+        const dateA = new Date(a.expiryDate || '1970-01-01').getTime();
+        const dateB = new Date(b.expiryDate || '1970-01-01').getTime();
+        return dateB - dateA; // Descending (Newest first)
     });
 
     return relevantBookings.length > 0 ? relevantBookings[0].expiryDate || null : null;

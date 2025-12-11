@@ -182,7 +182,7 @@ const CardTemplate: React.FC<CardTemplateProps> = ({
                 alt="Vulcan" 
                 className="max-h-[10mm] object-contain"
                 style={{ display: 'block' }}
-                onError={(e) => console.error("Failed to load Vulcan logo", e.currentTarget.src)}
+                onError={(e) => { e.currentTarget.style.display = 'none'; }}
              />
           </div>
           
@@ -340,7 +340,7 @@ const CardTemplate: React.FC<CardTemplateProps> = ({
               alt="Golden Rules"
               className="w-full h-full object-contain filter drop-shadow-sm"
               style={{ display: 'block' }}
-              onError={(e) => console.error("Failed to load Golden Rules", e.currentTarget.src)}
+              onError={(e) => { e.currentTarget.style.display = 'none'; }}
            />
       </div>
 

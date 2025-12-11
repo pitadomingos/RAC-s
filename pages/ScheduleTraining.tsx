@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { TrainingSession } from '../types';
 import { RAC_KEYS } from '../constants';
-import { Calendar, Plus, Settings, X, Save, Clock, MapPin, User, CalendarDays, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Calendar, Plus, Settings, X, Save, Clock, MapPin, User, CalendarDays, ChevronLeft, ChevronRight, Globe, Trash2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { v4 as uuidv4 } from 'uuid';
 import { useLanguage } from '../contexts/LanguageContext';
@@ -22,7 +22,8 @@ const ScheduleTraining: React.FC<ScheduleTrainingProps> = ({ sessions, setSessio
       startTime: '08:00',
       location: 'Room A',
       instructor: 'John Doe',
-      capacity: 20
+      capacity: 20,
+      sessionLanguage: 'Portuguese'
   });
 
   // Pagination State
@@ -42,11 +43,18 @@ const ScheduleTraining: React.FC<ScheduleTrainingProps> = ({ sessions, setSessio
           startTime: newSession.startTime || '08:00',
           location: newSession.location || 'TBD',
           instructor: newSession.instructor || 'TBD',
-          capacity: newSession.capacity || 20
+          capacity: newSession.capacity || 20,
+          sessionLanguage: newSession.sessionLanguage || 'Portuguese'
       };
 
       setSessions(prev => [...prev, sessionToAdd]);
       setIsModalOpen(false);
+  };
+
+  const handleDeleteSession = (id: string) => {
+      if (confirm('Are you sure you want to delete this session? This will cancel the session and remove it from the schedule.')) {
+          setSessions(prev => prev.filter(s => s.id !== id));
+      }
   };
 
   // Sort sessions by date
@@ -103,28 +111,46 @@ const ScheduleTraining: React.FC<ScheduleTrainingProps> = ({ sessions, setSessio
        <div className="grid gap-4">
           {paginatedSessions.map((session) => (
               <div key={session.id} className="bg-white rounded-xl shadow-sm border border-slate-100 p-5 flex flex-col md:flex-row items-start md:items-center justify-between hover:shadow-md transition-shadow group">
-                  <div className="flex items-center gap-6">
-                      <div className="flex flex-col items-center justify-center bg-blue-50 text-blue-700 w-16 h-16 rounded-xl border border-blue-100">
+                  <div className="flex flex-col md:flex-row md:items-center gap-6 flex-1">
+                      <div className="flex flex-col items-center justify-center bg-blue-50 text-blue-700 w-16 h-16 rounded-xl border border-blue-100 shrink-0">
                           <span className="text-xs font-bold uppercase">{new Date(session.date).toLocaleString('default', { month: 'short' })}</span>
                           <span className="text-2xl font-black">{new Date(session.date).getDate()}</span>
                       </div>
-                      <div>
-                          <h3 className="text-lg font-bold text-slate-900 group-hover:text-blue-600 transition-colors">{session.racType}</h3>
-                          <div className="flex items-center gap-4 text-sm text-slate-600 mt-1">
+                      
+                      <div className="flex-1">
+                          <div className="flex items-center gap-2">
+                              <h3 className="text-lg font-bold text-slate-900 group-hover:text-blue-600 transition-colors">{session.racType}</h3>
+                          </div>
+                          <div className="flex items-center gap-4 text-sm text-slate-600 mt-1 flex-wrap">
                               <span className="flex items-center gap-1"><Clock size={14}/> {session.startTime}</span>
                               <span className="flex items-center gap-1"><MapPin size={14}/> {session.location}</span>
                               <span className="flex items-center gap-1"><User size={14}/> {session.instructor}</span>
                           </div>
                       </div>
+
+                      {/* Language Column */}
+                      <div className="hidden md:flex flex-col items-center justify-center min-w-[80px] px-4 border-l border-slate-100 h-12">
+                          <span className="text-[10px] text-slate-400 font-bold uppercase mb-1">Language</span>
+                          {session.sessionLanguage && (
+                              <span className={`text-xs font-bold px-2 py-1 rounded-md border flex items-center gap-1 ${session.sessionLanguage === 'English' ? 'bg-indigo-50 text-indigo-700 border-indigo-200' : 'bg-green-50 text-green-700 border-green-200'}`}>
+                                  <Globe size={10} />
+                                  {session.sessionLanguage === 'English' ? 'Eng' : 'Port'}
+                              </span>
+                          )}
+                      </div>
                   </div>
-                  <div className="mt-4 md:mt-0 flex items-center gap-4">
+
+                  <div className="mt-4 md:mt-0 flex items-center gap-4 border-t md:border-t-0 md:border-l border-slate-100 pt-4 md:pt-0 md:pl-6">
                       <div className="text-right">
                           <div className="text-xs text-slate-500 font-bold uppercase">Capacity</div>
                           <div className="text-lg font-bold text-slate-900">{session.capacity}</div>
                       </div>
-                      <div className="h-10 w-1 bg-slate-100 rounded-full mx-2 hidden md:block"></div>
-                      <button className="text-slate-400 hover:text-red-500 transition-colors p-2 hover:bg-red-50 rounded-lg">
-                          <X size={20} />
+                      <button 
+                        onClick={() => handleDeleteSession(session.id)}
+                        className="text-slate-400 hover:text-red-500 transition-colors p-2 hover:bg-red-50 rounded-lg group/delete"
+                        title="Delete Session"
+                      >
+                          <X size={20} className="group-hover/delete:scale-110 transition-transform" />
                       </button>
                   </div>
               </div>
@@ -234,15 +260,32 @@ const ScheduleTraining: React.FC<ScheduleTrainingProps> = ({ sessions, setSessio
                             />
                         </div>
                     </div>
-                     <div>
-                        <label className="block text-xs font-bold text-slate-700 uppercase mb-2">{t.schedule.modal.instructor}</label>
-                        <input 
-                            type="text" 
-                            className="w-full border border-slate-300 rounded-xl p-3 text-sm font-medium focus:ring-2 focus:ring-blue-500 outline-none text-black"
-                            placeholder="Full Name"
-                            value={String(newSession.instructor)}
-                            onChange={e => setNewSession({...newSession, instructor: e.target.value})}
-                        />
+                    
+                    <div className="grid grid-cols-2 gap-4">
+                        <div>
+                            <label className="block text-xs font-bold text-slate-700 uppercase mb-2">{t.schedule.modal.instructor}</label>
+                            <input 
+                                type="text" 
+                                className="w-full border border-slate-300 rounded-xl p-3 text-sm font-medium focus:ring-2 focus:ring-blue-500 outline-none text-black"
+                                placeholder="Full Name"
+                                value={String(newSession.instructor)}
+                                onChange={e => setNewSession({...newSession, instructor: e.target.value})}
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-xs font-bold text-slate-700 uppercase mb-2">{t.schedule.modal.language}</label>
+                            <div className="relative">
+                                <select 
+                                    className="w-full border border-slate-300 rounded-xl p-3 text-sm font-medium focus:ring-2 focus:ring-blue-500 outline-none text-black appearance-none"
+                                    value={String(newSession.sessionLanguage)}
+                                    onChange={e => setNewSession({...newSession, sessionLanguage: e.target.value as any})}
+                                >
+                                    <option value="Portuguese">{t.schedule.modal.portuguese}</option>
+                                    <option value="English">{t.schedule.modal.english}</option>
+                                </select>
+                                <Globe size={16} className="absolute right-3 top-3.5 text-slate-400 pointer-events-none" />
+                            </div>
+                        </div>
                     </div>
                 </div>
 

@@ -1,7 +1,6 @@
-
 import React, { useMemo } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { Booking, BookingStatus, EmployeeRequirement, Employee, RacDef } from '../types';
+import { Booking, BookingStatus, EmployeeRequirement, Employee, RacDef, TrainingSession } from '../types';
 import { INITIAL_RAC_DEFINITIONS } from '../constants';
 import { useLanguage } from '../contexts/LanguageContext';
 import { CheckCircle, XCircle, ShieldCheck, User, Calendar, CreditCard, Activity, ArrowLeft } from 'lucide-react';
@@ -10,12 +9,14 @@ interface VerificationPageProps {
   bookings: Booking[];
   requirements: EmployeeRequirement[];
   racDefinitions?: RacDef[];
+  sessions: TrainingSession[];
 }
 
 const VerificationPage: React.FC<VerificationPageProps> = ({ 
     bookings, 
     requirements, 
-    racDefinitions = INITIAL_RAC_DEFINITIONS 
+    racDefinitions = INITIAL_RAC_DEFINITIONS,
+    sessions
 }) => {
   const { recordId } = useParams<{ recordId: string }>();
   const { t } = useLanguage();
@@ -24,6 +25,19 @@ const VerificationPage: React.FC<VerificationPageProps> = ({
   const employee: Employee | undefined = foundBooking?.employee;
   const employeeId = employee?.id;
   
+  // Helper to extract RAC key from booking
+  const getRacKeyFromBooking = (booking: Booking): string => {
+      // 1. Try to find via Session Object (Most Reliable)
+      const session = sessions.find(s => s.id === booking.sessionId);
+      if (session) {
+          // "RAC 01 - Working at Height" -> "RAC01"
+          return session.racType.split(' - ')[0].replace(/\s+/g, '');
+      }
+      // 2. Fallback to direct string parsing if legacy or direct code
+      // "RAC 01 - ..." -> "RAC01"
+      return booking.sessionId.split(' - ')[0].replace(/\s+/g, '');
+  };
+
   const complianceStatus = useMemo(() => {
     if (!employee || !employeeId) return 'NotFound';
 
@@ -42,24 +56,31 @@ const VerificationPage: React.FC<VerificationPageProps> = ({
     let hasRac02Req = false;
 
     racDefinitions.forEach(def => {
-        const key = def.code;
+        const key = def.code; // e.g. "RAC01"
         if (req.requiredRacs[key]) {
             if (key === 'RAC02') hasRac02Req = true;
             
-            const passedBooking = bookings.find(b => {
+            // --- STRICT LATEST RECORD LOGIC ---
+            // 1. Find all PASSED bookings for this RAC
+            const passedBookings = bookings.filter(b => {
                  if (b.employee.id !== employeeId) return false;
                  if (b.status !== BookingStatus.PASSED) return false;
                  
-                 let racCode = '';
-                 if (b.sessionId.includes('RAC')) {
-                     racCode = b.sessionId.split(' - ')[0].replace(' ', '');
-                 } else {
-                     if (b.sessionId.includes(key)) racCode = key;
-                 }
-                 return racCode === key;
+                 const code = getRacKeyFromBooking(b);
+                 return code === key;
             });
 
-            const expiry = passedBooking?.expiryDate || '';
+            // 2. Sort by Expiry Date Descending (Newest Expiry First)
+            passedBookings.sort((a, b) => {
+                const dateA = new Date(a.expiryDate || '1970-01-01').getTime();
+                const dateB = new Date(b.expiryDate || '1970-01-01').getTime();
+                return dateB - dateA; 
+            });
+
+            // 3. Pick the latest record
+            const latestBooking = passedBookings[0];
+
+            const expiry = latestBooking?.expiryDate || '';
             if (!expiry || expiry <= today) {
                 allRacsMet = false;
             }
@@ -72,7 +93,7 @@ const VerificationPage: React.FC<VerificationPageProps> = ({
     
     return 'Compliant';
 
-  }, [employee, employeeId, requirements, bookings, racDefinitions]);
+  }, [employee, employeeId, requirements, bookings, racDefinitions, sessions]);
 
   const req = requirements.find(r => r.employeeId === employeeId);
   
@@ -84,21 +105,29 @@ const VerificationPage: React.FC<VerificationPageProps> = ({
       racDefinitions.forEach(def => {
          const key = def.code;
          if (req?.requiredRacs[key]) {
-             const passedBooking = bookings.find(b => {
+             // --- STRICT LATEST RECORD LOGIC FOR DISPLAY ---
+             const passedBookings = bookings.filter(b => {
                  if (b.employee.id !== employeeId) return false;
                  if (b.status !== BookingStatus.PASSED) return false;
-                 let racCode = b.sessionId.includes('RAC') ? b.sessionId.split(' - ')[0].replace(' ', '') : '';
-                 if (!racCode && b.sessionId.includes(key)) racCode = key;
-                 return racCode === key;
+                 const code = getRacKeyFromBooking(b);
+                 return code === key;
              });
 
-             if (passedBooking && passedBooking.expiryDate && passedBooking.expiryDate > today) {
-                 certs.push({ rac: key, expiry: passedBooking.expiryDate });
+             passedBookings.sort((a, b) => {
+                const dateA = new Date(a.expiryDate || '1970-01-01').getTime();
+                const dateB = new Date(b.expiryDate || '1970-01-01').getTime();
+                return dateB - dateA; 
+             });
+
+             const latest = passedBookings[0];
+
+             if (latest && latest.expiryDate && latest.expiryDate > today) {
+                 certs.push({ rac: key, expiry: latest.expiryDate });
              }
          }
       });
       return certs;
-  }, [employeeId, bookings, req, racDefinitions]);
+  }, [employeeId, bookings, req, racDefinitions, sessions]);
 
 
   if (!employee) {

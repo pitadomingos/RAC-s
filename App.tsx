@@ -237,8 +237,8 @@ const App: React.FC = () => {
               {/* New Alcohol Control Module */}
               <Route path="/alcohol-control" element={[UserRole.SYSTEM_ADMIN, UserRole.RAC_ADMIN].includes(userRole) ? <AlcoholIntegration /> : <Navigate to="/" replace />} />
               
-              {/* Public Verification Route */}
-              <Route path="/verify/:recordId" element={<VerificationPage bookings={bookings} requirements={requirements} racDefinitions={racDefinitions} />} />
+              {/* Public Verification Route - Updated to accept sessions and racDefinitions */}
+              <Route path="/verify/:recordId" element={<VerificationPage bookings={bookings} requirements={requirements} racDefinitions={racDefinitions} sessions={sessions} />} />
 
               <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>

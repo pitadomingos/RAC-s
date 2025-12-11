@@ -341,9 +341,12 @@ const BookingForm: React.FC<BookingFormProps> = ({ addBookings, sessions, userRo
                       {sessions.map(session => {
                         const count = existingBookings.filter(b => b.sessionId === session.id).length;
                         const isFull = count >= session.capacity;
+                        const langLabel = session.sessionLanguage === 'English' ? 'Eng' : 'Port';
+                        const displayLang = session.sessionLanguage ? `[${langLabel}]` : '';
+                        
                         return (
                             <option key={session.id} value={session.id} disabled={isFull && false} className={isFull ? 'text-red-500' : ''}>
-                            {session.racType} • {session.date} • {session.location} • (Cap: {count}/{session.capacity}) {isFull ? '(FULL)' : ''}
+                            {session.racType} {displayLang} • {session.date} • {session.location} • (Cap: {count}/{session.capacity}) {isFull ? '(FULL)' : ''}
                             </option>
                         );
                       })}

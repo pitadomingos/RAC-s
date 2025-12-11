@@ -3,6 +3,7 @@ import React, { useState, useMemo } from 'react';
 import { Booking, BookingStatus, RAC, TrainingSession, UserRole } from '../types';
 import { Save, AlertCircle, CheckCircle, Lock, Users, ClipboardList, ShieldAlert, UserCheck, GraduationCap, CheckCircle2, Search, CheckSquare, X } from 'lucide-react';
 import { useLanguage } from '../contexts/LanguageContext';
+import { addYears, format } from 'date-fns';
 
 interface TrainerInputPageProps {
   bookings: Booking[];
@@ -104,7 +105,32 @@ const TrainerInputPage: React.FC<TrainerInputPageProps> = ({
   };
 
   const handleSave = () => {
-    updateBookings(sessionBookings);
+    // Inject Expiry Dates for Passed Records
+    const selectedSession = sessions.find(s => s.id === selectedSessionId);
+    const sessionDateStr = selectedSession?.date || new Date().toISOString().split('T')[0];
+    
+    // Calculate Expiry Date (Session Date + 2 Years)
+    let expiryDateStr = '';
+    try {
+        const d = new Date(sessionDateStr);
+        expiryDateStr = format(addYears(d, 2), 'yyyy-MM-dd');
+    } catch(e) {
+        expiryDateStr = sessionDateStr; // Fallback
+    }
+
+    const bookingsToSave = sessionBookings.map(b => {
+        if (b.status === BookingStatus.PASSED) {
+            return { 
+                ...b, 
+                resultDate: sessionDateStr, 
+                expiryDate: expiryDateStr 
+            };
+        }
+        return b;
+    });
+
+    updateBookings(bookingsToSave);
+    setSessionBookings(bookingsToSave); // Update local state with new dates
     setHasUnsavedChanges(false);
     setSuccessMsg(String(t.booking.success).replace('Booking submitted', 'Results saved'));
     setTimeout(() => setSuccessMsg(''), 3000);

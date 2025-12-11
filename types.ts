@@ -58,6 +58,7 @@ export interface TrainingSession {
   location: string;
   instructor: string;
   capacity: number;
+  sessionLanguage: 'English' | 'Portuguese';
 }
 
 export enum BookingStatus {
