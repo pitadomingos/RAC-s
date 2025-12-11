@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Employee, BookingStatus, Booking, UserRole, TrainingSession, SystemNotification } from '../types';
 import { COMPANIES, DEPARTMENTS, ROLES } from '../constants';
-import { Plus, Trash2, Save, Settings, ShieldCheck, Calendar, UserPlus, FileSignature, CheckCircle2, AlertCircle, Search, UserCheck } from 'lucide-react';
+import { Plus, Trash2, Save, Settings, ShieldCheck, Calendar, UserPlus, FileSignature, CheckCircle2, AlertCircle, Search, UserCheck, RefreshCw } from 'lucide-react';
 import { v4 as uuidv4 } from 'uuid';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { sanitizeInput } from '../utils/security';
@@ -17,11 +17,20 @@ interface BookingFormProps {
   addNotification?: (notification: SystemNotification) => void; 
 }
 
+interface RenewalBatch {
+    racType: string;
+    employees: Employee[];
+}
+
 const BookingForm: React.FC<BookingFormProps> = ({ addBookings, sessions, userRole, existingBookings = [], addNotification }) => {
   const navigate = useNavigate();
   const location = useLocation();
   const { t } = useLanguage();
   const [selectedSession, setSelectedSession] = useState('');
+  
+  // -- QUEUE STATE --
+  const [targetRac, setTargetRac] = useState<string>('');
+  const [renewalQueue, setRenewalQueue] = useState<RenewalBatch[]>([]);
   
   const canManageSessions = userRole === UserRole.SYSTEM_ADMIN || userRole === UserRole.RAC_ADMIN;
 
@@ -55,14 +64,23 @@ const BookingForm: React.FC<BookingFormProps> = ({ addBookings, sessions, userRo
   }, [existingBookings]);
 
   useEffect(() => {
-    if (location.state && location.state.prefill) {
-        setRows(location.state.prefill);
+    if (location.state) {
+        if (location.state.prefill) {
+            setRows(location.state.prefill);
+        }
+        if (location.state.targetRac) {
+            setTargetRac(location.state.targetRac);
+        }
+        if (location.state.remainingBatches) {
+            setRenewalQueue(location.state.remainingBatches);
+        }
+        // Clear state to prevent loop on refresh, but we keep local state
         window.history.replaceState({}, document.title);
     }
   }, [location]);
 
   const sessionData = sessions.find(s => s.id === selectedSession);
-  const isRac02Selected = sessionData?.racType.includes('RAC02') || sessionData?.racType.includes('RAC 02');
+  const isRac02Selected = sessionData?.racType.includes('RAC02') || sessionData?.racType.includes('RAC 02') || (targetRac && targetRac.includes('RAC02'));
 
   const handleRowChange = (index: number, field: keyof Employee, value: string) => {
     const safeValue = (field === 'name' || field === 'recordId' || field === 'driverLicenseNumber' || field === 'driverLicenseClass') 
@@ -116,6 +134,19 @@ const BookingForm: React.FC<BookingFormProps> = ({ addBookings, sessions, userRo
       newRows.splice(index, 1);
       setRows(newRows);
     }
+  };
+
+  const loadNextBatch = () => {
+      if (renewalQueue.length === 0) return;
+      const nextBatch = renewalQueue[0];
+      const newQueue = renewalQueue.slice(1);
+
+      setRows(nextBatch.employees);
+      setTargetRac(nextBatch.racType);
+      setRenewalQueue(newQueue);
+      setSelectedSession(''); // Force user to pick new session
+      
+      alert(`Batch Saved! Loading renewals for: ${nextBatch.racType}`);
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -263,9 +294,19 @@ const BookingForm: React.FC<BookingFormProps> = ({ addBookings, sessions, userRo
                 });
             }
 
-            setTimeout(() => setSubmitted(false), 3000);
-            setRows(initialRows);
-            setSelectedSession('');
+            setTimeout(() => {
+                setSubmitted(false);
+                // IF QUEUE EXISTS, LOAD NEXT
+                if (renewalQueue.length > 0) {
+                    loadNextBatch();
+                } else {
+                    // Reset to blank
+                    setRows(initialRows);
+                    setSelectedSession('');
+                    setTargetRac('');
+                }
+            }, 1500);
+
         } catch (err) {
             logger.error('Error submitting booking', err);
             alert('An error occurred while processing the booking.');
@@ -311,6 +352,26 @@ const BookingForm: React.FC<BookingFormProps> = ({ addBookings, sessions, userRo
          </div>
       </div>
 
+      {/* Renewal Batch Indicator */}
+      {targetRac && (
+          <div className="bg-blue-50 dark:bg-blue-900/20 border-l-4 border-blue-500 p-4 rounded-r-xl shadow-sm animate-fade-in-down">
+              <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                      <RefreshCw size={24} className="text-blue-600 dark:text-blue-400 animate-spin-slow" />
+                      <div>
+                          <h3 className="font-bold text-blue-900 dark:text-blue-300 text-lg">Booking Renewals for: {targetRac}</h3>
+                          <p className="text-blue-700 dark:text-blue-400 text-sm">
+                              {renewalQueue.length > 0 ? `${renewalQueue.length} more batches remaining in queue.` : "Final batch in renewal queue."}
+                          </p>
+                      </div>
+                  </div>
+                  <div className="bg-blue-100 dark:bg-blue-800 text-blue-800 dark:text-blue-200 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider">
+                      Batch Processing Active
+                  </div>
+              </div>
+          </div>
+      )}
+
       {/* Success Notification */}
       {submitted && (
         <div className="bg-green-500 text-white p-4 rounded-xl shadow-lg shadow-green-500/20 flex items-center justify-center gap-3 animate-bounce-in">
@@ -334,7 +395,9 @@ const BookingForm: React.FC<BookingFormProps> = ({ addBookings, sessions, userRo
                    <select 
                       value={selectedSession} 
                       onChange={(e) => setSelectedSession(e.target.value)}
-                      className="w-full bg-white dark:bg-slate-700 border-2 border-slate-200 dark:border-slate-600 text-slate-900 dark:text-white rounded-2xl shadow-sm focus:border-yellow-500 focus:ring-4 focus:ring-yellow-500/20 p-4 pl-5 text-xl font-bold transition-all appearance-none cursor-pointer hover:border-slate-300 dark:hover:border-slate-500"
+                      className={`w-full bg-white dark:bg-slate-700 border-2 text-slate-900 dark:text-white rounded-2xl shadow-sm p-4 pl-5 text-xl font-bold transition-all appearance-none cursor-pointer hover:border-slate-300 dark:hover:border-slate-500
+                        ${targetRac ? 'border-blue-300 ring-2 ring-blue-500/20' : 'border-slate-200 dark:border-slate-600 focus:border-yellow-500 focus:ring-4 focus:ring-yellow-500/20'}
+                      `}
                       required
                     >
                       <option value="">-- {t.booking.chooseSession} --</option>
@@ -344,9 +407,17 @@ const BookingForm: React.FC<BookingFormProps> = ({ addBookings, sessions, userRo
                         const langLabel = session.sessionLanguage === 'English' ? 'Eng' : 'Port';
                         const displayLang = session.sessionLanguage ? `[${langLabel}]` : '';
                         
+                        // Highlight matching RACs
+                        const isMatch = targetRac && session.racType.includes(targetRac);
+                        
                         return (
-                            <option key={session.id} value={session.id} disabled={isFull && false} className={isFull ? 'text-red-500' : ''}>
-                            {session.racType} {displayLang} • {session.date} • {session.location} • (Cap: {count}/{session.capacity}) {isFull ? '(FULL)' : ''}
+                            <option 
+                                key={session.id} 
+                                value={session.id} 
+                                disabled={isFull && false} 
+                                className={`${isFull ? 'text-red-500' : ''} ${isMatch ? 'bg-blue-100 font-black' : ''}`}
+                            >
+                            {isMatch ? '★ ' : ''}{session.racType} {displayLang} • {session.date} • {session.location} • (Cap: {count}/{session.capacity}) {isFull ? '(FULL)' : ''}
                             </option>
                         );
                       })}

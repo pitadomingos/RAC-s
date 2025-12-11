@@ -130,21 +130,64 @@ const Dashboard: React.FC<DashboardProps> = ({
   const totalAbPages = Math.ceil(autoBookings.length / AB_ROWS_PER_PAGE);
 
   const handleBookRenewals = () => {
-      // Create new booking templates from expiring employees
-      const renewalList = expiringBookings.map(b => ({
-          id: uuidv4(),
-          name: b.employee.name,
-          recordId: b.employee.recordId,
-          company: b.employee.company,
-          department: b.employee.department,
-          role: b.employee.role,
-          driverLicenseNumber: b.employee.driverLicenseNumber || '',
-          driverLicenseClass: b.employee.driverLicenseClass || '',
-          driverLicenseExpiry: b.employee.driverLicenseExpiry || ''
+      if (expiringBookings.length === 0) return;
+
+      // Group expiring bookings by RAC Type (Session Name)
+      // This ensures we book one RAC type at a time (e.g. Batch 1: RAC01, Batch 2: RAC02)
+      const groupedBatch: Record<string, any[]> = {};
+
+      expiringBookings.forEach(b => {
+          // Resolve the Training Type Name
+          let racType = 'Unknown Training';
+          const session = sessions.find(s => s.id === b.sessionId);
+          
+          if (session) {
+              racType = session.racType;
+          } else if (b.sessionId.includes('RAC')) {
+              // Fallback for older records or strings like 'RAC01'
+              const parts = b.sessionId.split(' - ');
+              racType = parts[0]; // e.g. "RAC01" or "RAC 01"
+          } else {
+              racType = b.sessionId; // Raw ID
+          }
+
+          if (!groupedBatch[racType]) {
+              groupedBatch[racType] = [];
+          }
+
+          // Create the form-compatible employee row object
+          groupedBatch[racType].push({
+              id: uuidv4(),
+              name: b.employee.name,
+              recordId: b.employee.recordId,
+              company: b.employee.company,
+              department: b.employee.department,
+              role: b.employee.role,
+              driverLicenseNumber: b.employee.driverLicenseNumber || '',
+              driverLicenseClass: b.employee.driverLicenseClass || '',
+              driverLicenseExpiry: b.employee.driverLicenseExpiry || ''
+          });
+      });
+
+      // Convert grouped object to array of batches
+      const batchQueue = Object.entries(groupedBatch).map(([racType, employees]) => ({
+          racType,
+          employees
       }));
 
-      // Navigate to booking form with state
-      navigate('/booking', { state: { prefill: renewalList } });
+      if (batchQueue.length > 0) {
+          const firstBatch = batchQueue[0];
+          const remainingBatches = batchQueue.slice(1);
+
+          // Navigate to booking with the queue
+          navigate('/booking', { 
+              state: { 
+                  prefill: firstBatch.employees,
+                  targetRac: firstBatch.racType,
+                  remainingBatches: remainingBatches
+              } 
+          });
+      }
   };
 
   // --- Logic for Employee Bookings Table ---
