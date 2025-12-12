@@ -164,6 +164,49 @@ const DatabasePage: React.FC<DatabasePageProps> = ({ bookings, requirements, upd
 
   // --- CSV Logic Implementation ---
   
+  const handleExportDatabase = () => {
+      // Dynamic Header Construction for Export
+      const baseHeaders = [
+          "Full Name", "Record ID", "Company", "Department", "Role", "Active", "Access Status",
+          "ASO Expiry", "DL Number", "DL Class", "DL Expiry"
+      ];
+      
+      const racHeaders = racDefinitions.map(r => r.code); // RAC01, RAC02...
+      const opsHeaders = OPS_KEYS; // PTS, ART...
+      
+      const headers = [...baseHeaders, ...racHeaders, ...opsHeaders];
+      
+      const rows = processedData.map(({ emp, req, status }) => {
+          const racValues = racDefinitions.map(r => req.requiredRacs[r.code] ? 'TRUE' : 'FALSE');
+          const opsValues = OPS_KEYS.map(k => req.requiredRacs[k] ? 'TRUE' : 'FALSE');
+          
+          return [
+              `"${emp.name}"`,
+              emp.recordId,
+              emp.company,
+              emp.department,
+              emp.role,
+              emp.isActive ? 'TRUE' : 'FALSE',
+              status,
+              req.asoExpiryDate || '',
+              emp.driverLicenseNumber || '',
+              emp.driverLicenseClass || '',
+              emp.driverLicenseExpiry || '',
+              ...racValues,
+              ...opsValues
+          ];
+      });
+
+      const csvContent = "data:text/csv;charset=utf-8," + [headers.join(','), ...rows.map(r => r.join(','))].join("\n");
+      const encodedUri = encodeURI(csvContent);
+      const link = document.createElement("a");
+      link.setAttribute("href", encodedUri);
+      link.setAttribute("download", `vulcan_database_export_${new Date().toISOString().split('T')[0]}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+  };
+
   const handleDownloadTemplate = () => {
     // Dynamic Header Construction
     const baseHeaders = [
@@ -390,6 +433,12 @@ const DatabasePage: React.FC<DatabasePageProps> = ({ bookings, requirements, upd
                  
                  {onImportEmployees && (
                      <>
+                        <button 
+                            onClick={handleExportDatabase}
+                            className="flex items-center gap-1 bg-emerald-600 text-white px-3 py-1.5 rounded-md text-xs font-bold hover:bg-emerald-500 shadow-sm"
+                        >
+                            <Download size={14} /> Export DB
+                        </button>
                         <button 
                             onClick={handleDownloadTemplate}
                             className="flex items-center gap-1 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 px-3 py-1.5 rounded-md text-xs font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-50"

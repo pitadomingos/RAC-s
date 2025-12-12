@@ -113,6 +113,43 @@ const ResultsPage: React.FC<ResultsPageProps> = ({ bookings, updateBookingStatus
   }, [filteredBookings]);
 
   // -- ACTIONS --
+  const handleExportData = () => {
+      const headers = [
+          'ID', 'Name', 'Company', 'Department', 'Role', 
+          'Training', 'Date', 'Trainer', 'Status', 'Score', 'Expiry'
+      ];
+      
+      const rows = filteredBookings.map(b => {
+          const session = sessions.find(s => s.id === b.sessionId);
+          const rac = session ? session.racType : b.sessionId;
+          const date = session ? session.date : (b.resultDate || '');
+          const trainer = session ? session.instructor : 'Unknown';
+          
+          return [
+              b.employee.recordId,
+              `"${b.employee.name}"`, // Quote name to handle commas
+              b.employee.company,
+              b.employee.department,
+              b.employee.role,
+              rac,
+              date,
+              trainer,
+              b.status,
+              String(b.theoryScore || 0),
+              b.expiryDate || ''
+          ];
+      });
+
+      const csvContent = "data:text/csv;charset=utf-8," + [headers.join(','), ...rows.map(r => r.join(','))].join("\n");
+      const encodedUri = encodeURI(csvContent);
+      const link = document.createElement("a");
+      link.setAttribute("href", encodedUri);
+      link.setAttribute("download", `training_records_${new Date().toISOString().split('T')[0]}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+  };
+
   const handleDownloadTemplate = () => {
     const headers = [
       'Full Name', 'Record ID', 'Company', 'Department', 'Job Title', // Added Job Title
@@ -251,6 +288,7 @@ const ResultsPage: React.FC<ResultsPageProps> = ({ bookings, updateBookingStatus
                     {/* Admin Actions */}
                     {userRole === UserRole.SYSTEM_ADMIN && (
                         <div className="flex gap-3">
+                            <button onClick={handleExportData} className="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2.5 rounded-lg text-sm font-bold shadow-lg shadow-emerald-500/20 flex items-center gap-2 transition-all transform hover:-translate-y-0.5"><Download size={16} /> Export Records</button>
                             <button onClick={handleDownloadTemplate} className="bg-white/10 hover:bg-white/20 text-white px-4 py-2.5 rounded-lg text-sm font-bold backdrop-blur-sm border border-white/10 flex items-center gap-2 transition-all"><FileSpreadsheet size={16} />{t.common.template}</button>
                             <button onClick={() => fileInputRef.current?.click()} className="bg-yellow-500 hover:bg-yellow-400 text-slate-900 px-4 py-2.5 rounded-lg text-sm font-bold shadow-lg shadow-yellow-500/20 flex items-center gap-2 transition-all transform hover:-translate-y-0.5"><Upload size={16} />{t.common.import}</button>
                             <input type="file" ref={fileInputRef} className="hidden" accept=".csv" onChange={handleFileUpload} />

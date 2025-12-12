@@ -3,7 +3,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import DashboardStats from '../components/DashboardStats';
 import { Booking, UserRole, EmployeeRequirement, TrainingSession, BookingStatus, RacDef } from '../types';
 import { COMPANIES, DEPARTMENTS, OPS_KEYS, RAC_KEYS } from '../constants';
-import { Calendar, Clock, MapPin, ChevronRight, Filter, Timer, User, CheckCircle, XCircle, ChevronLeft, Zap, Layers, Briefcase } from 'lucide-react';
+import { Calendar, Clock, MapPin, ChevronRight, Filter, Timer, User, CheckCircle, XCircle, ChevronLeft, Zap, Layers, Briefcase, Printer } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { v4 as uuidv4 } from 'uuid';
 import { useLanguage } from '../contexts/LanguageContext';
@@ -286,10 +286,24 @@ const Dashboard: React.FC<DashboardProps> = ({
   const canManageAutoBookings = userRole === UserRole.SYSTEM_ADMIN || userRole === UserRole.RAC_ADMIN;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 pb-20">
       
+      {/* Print-specific Styles */}
+      <style>{`
+        @media print {
+          @page { size: landscape; margin: 10mm; }
+          body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+          .no-print, .sticky { display: none !important; }
+          .overflow-hidden { overflow: visible !important; }
+          .overflow-auto { overflow: visible !important; height: auto !important; }
+          .h-\[500px\] { height: auto !important; }
+          /* Charts often don't print well, maybe hide or adjust */
+          .recharts-responsive-container { width: 100% !important; min-height: 300px !important; }
+        }
+      `}</style>
+
       {/* --- FILTER CONTROL BAR --- */}
-      <div className="md:sticky md:top-0 z-20 bg-white dark:bg-slate-800 p-4 rounded-xl shadow-md border border-slate-200 dark:border-slate-700 transition-colors backdrop-blur-sm bg-opacity-95 dark:bg-opacity-95 flex flex-col xl:flex-row justify-between items-start xl:items-center gap-4">
+      <div className="md:sticky md:top-0 z-20 bg-white dark:bg-slate-800 p-4 rounded-xl shadow-md border border-slate-200 dark:border-slate-700 transition-colors backdrop-blur-sm bg-opacity-95 dark:bg-opacity-95 flex flex-col xl:flex-row justify-between items-start xl:items-center gap-4 no-print">
         <div>
           <h2 className="text-lg font-bold text-slate-800 dark:text-white">{t.dashboard.title}</h2>
           <p className="text-sm text-slate-700 dark:text-gray-400">{t.dashboard.subtitle}</p>
@@ -333,14 +347,24 @@ const Dashboard: React.FC<DashboardProps> = ({
                     <option value="Blocked">Blocked Only</option>
                 </select>
             </div>
+
+            <button 
+                onClick={() => window.print()}
+                className="p-2 bg-slate-100 dark:bg-slate-700 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors text-slate-600 dark:text-slate-300"
+                title="Print Dashboard"
+            >
+                <Printer size={20} />
+            </button>
         </div>
       </div>
 
-      <DashboardStats 
-        bookings={filteredBookingsForStats} 
-        requirements={filteredRequirements} 
-        onBookRenewals={handleBookRenewals}
-      />
+      <div className="print:block">
+        <DashboardStats 
+            bookings={filteredBookingsForStats} 
+            requirements={filteredRequirements} 
+            onBookRenewals={handleBookRenewals}
+        />
+      </div>
 
       {/* --- OPERATIONAL MATRIX BREAKDOWN --- */}
       <div className="bg-slate-100 dark:bg-slate-800/50 p-4 rounded-xl border border-slate-200 dark:border-slate-700">
@@ -366,7 +390,7 @@ const Dashboard: React.FC<DashboardProps> = ({
 
        {/* Auto-Booking Approval Table (Paginated) */}
        {canManageAutoBookings && autoBookings.length > 0 && onApproveAutoBooking && onRejectAutoBooking && (
-          <div className="bg-white dark:bg-slate-800 rounded-xl shadow-lg border-2 border-orange-300 dark:border-orange-700 overflow-hidden ring-4 ring-orange-100 dark:ring-orange-900/20 animate-pulse-slow">
+          <div className="bg-white dark:bg-slate-800 rounded-xl shadow-lg border-2 border-orange-300 dark:border-orange-700 overflow-hidden ring-4 ring-orange-100 dark:ring-orange-900/20 animate-pulse-slow no-print">
              <div className="p-4 bg-gradient-to-r from-orange-50 to-amber-50 dark:from-orange-900/40 dark:to-amber-900/40 border-b border-orange-200 dark:border-orange-800 flex justify-between items-center">
                  <div>
                      <div className="flex items-center gap-2 text-orange-700 dark:text-orange-400">
@@ -466,7 +490,7 @@ const Dashboard: React.FC<DashboardProps> = ({
        )}
 
       {/* Main Content Grid: Upcoming Sessions (Left) vs Employee Bookings (Right) */}
-      <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 print:grid-cols-1">
         
         {/* Left Column: Upcoming Sessions (Session Centric) */}
         <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden flex flex-col transition-colors h-[500px]">
@@ -475,7 +499,7 @@ const Dashboard: React.FC<DashboardProps> = ({
                 <Calendar className="text-yellow-600 dark:text-yellow-500" size={20} />
                 <h3 className="font-bold text-slate-800 dark:text-white text-lg">{t.dashboard.upcoming.title}</h3>
              </div>
-             <button onClick={() => navigate('/schedule')} className="text-xs text-blue-600 dark:text-blue-400 font-semibold flex items-center hover:underline">
+             <button onClick={() => navigate('/schedule')} className="text-xs text-blue-600 dark:text-blue-400 font-semibold flex items-center hover:underline no-print">
                {t.dashboard.upcoming.viewSchedule} <ChevronRight size={14} />
              </button>
           </div>
@@ -535,7 +559,7 @@ const Dashboard: React.FC<DashboardProps> = ({
              </div>
              
              {/* Filters for Employee Table */}
-             <div className="flex flex-wrap gap-2">
+             <div className="flex flex-wrap gap-2 no-print">
                 <select 
                    value={empFilterCompany}
                    onChange={(e) => setEmpFilterCompany(e.target.value)}
