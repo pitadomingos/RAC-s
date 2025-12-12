@@ -1,6 +1,4 @@
 
-
-
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { 
@@ -32,7 +30,8 @@ import {
   Monitor,
   Maximize,
   Minimize,
-  Presentation
+  Presentation,
+  FileCode
 } from 'lucide-react';
 import { UserRole, SystemNotification } from '../types';
 import { useLanguage } from '../contexts/LanguageContext';
@@ -101,25 +100,25 @@ const Layout: React.FC<LayoutProps> = ({ children, userRole, setUserRole, notifi
       path: '/', 
       label: t.nav.dashboard, 
       icon: LayoutDashboard, 
-      visible: true 
+      visible: userRole !== UserRole.USER // HIDDEN FOR GENERAL USER
     },
     {
       path: '/database',
       label: t.nav.database,
       icon: Database,
-      visible: true 
+      visible: userRole !== UserRole.USER && userRole !== UserRole.RAC_TRAINER // HIDDEN FOR GENERAL USER AND TRAINER
     },
     { 
       path: '/reports', 
       label: t.nav.reports, 
       icon: FileBarChart, 
-      visible: [UserRole.SYSTEM_ADMIN, UserRole.RAC_ADMIN, UserRole.RAC_TRAINER, UserRole.DEPT_ADMIN].includes(userRole) 
+      visible: [UserRole.SYSTEM_ADMIN, UserRole.RAC_ADMIN, UserRole.DEPT_ADMIN].includes(userRole) 
     },
     { 
       path: '/booking', 
       label: t.nav.booking, 
       icon: CalendarPlus, 
-      visible: true 
+      visible: userRole !== UserRole.RAC_TRAINER // HIDDEN FOR TRAINER
     },
     { 
       path: '/trainer-input', 
@@ -131,7 +130,7 @@ const Layout: React.FC<LayoutProps> = ({ children, userRole, setUserRole, notifi
       path: '/results', 
       label: t.nav.records, 
       icon: ClipboardList, 
-      visible: true 
+      visible: userRole !== UserRole.RAC_TRAINER // HIDDEN FOR TRAINER
     },
     {
       path: '/alcohol-control',
@@ -170,6 +169,12 @@ const Layout: React.FC<LayoutProps> = ({ children, userRole, setUserRole, notifi
       visible: true
     },
     {
+      path: '/tech-docs',
+      label: 'Technical Docs', // Hardcoded as it's dev-only
+      icon: FileCode,
+      visible: userRole === UserRole.SYSTEM_ADMIN
+    },
+    {
       path: '/logs',
       label: t.nav.logs,
       icon: ScrollText,
@@ -194,11 +199,9 @@ const Layout: React.FC<LayoutProps> = ({ children, userRole, setUserRole, notifi
     pageTitle = String(t.nav.proposal);
   } else if (location.pathname === '/presentation') {
     pageTitle = String(t.nav.presentation);
+  } else if (location.pathname === '/tech-docs') {
+    pageTitle = 'Technical Documentation';
   }
-
-  // If we are in presentation mode, we might want to skip rendering the layout wrapper entirely,
-  // but since Layout wraps routes, we handle it by CSS z-index in the page itself OR simple conditional here.
-  // The PresentationPage has z-index 100 and fixed positioning, so it will overlay this layout.
 
   return (
     <div className="flex h-screen bg-gray-100 dark:bg-gray-900 overflow-hidden transition-colors duration-200">
@@ -299,118 +302,112 @@ const Layout: React.FC<LayoutProps> = ({ children, userRole, setUserRole, notifi
              </button>
              
              {/* Navigation Controls */}
-             <div className="hidden md:flex items-center gap-2 mr-4 border-r border-gray-200 dark:border-slate-600 pr-4">
-                <button onClick={() => navigate(-1)} className="p-1.5 hover:bg-gray-100 dark:hover:bg-slate-700 rounded text-gray-500 dark:text-gray-400" title="Back">
-                    <ArrowLeft size={18} />
-                </button>
-                <button onClick={() => navigate(1)} className="p-1.5 hover:bg-gray-100 dark:hover:bg-slate-700 rounded text-gray-500 dark:text-gray-400" title="Forward">
-                    <ArrowRight size={18} />
-                </button>
+             <div className="hidden md:flex items-center gap-2 mr-4 border-r border-gray-200 dark:border-slate-700 pr-4">
+                 <button onClick={() => navigate(-1)} className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-slate-700 text-slate-500 dark:text-slate-400" title="Back">
+                     <ArrowLeft size={18} />
+                 </button>
+                 <button onClick={() => navigate(1)} className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-slate-700 text-slate-500 dark:text-slate-400" title="Forward">
+                     <ArrowRight size={18} />
+                 </button>
              </div>
 
-             <h1 className="text-xl font-semibold text-slate-800 dark:text-white transition-colors">
-                {String(pageTitle)}
-             </h1>
+             <h1 className="text-xl font-bold text-slate-800 dark:text-white truncate">{pageTitle}</h1>
           </div>
-          
-          <div className="flex items-center space-x-4">
+
+          <div className="flex items-center space-x-2 md:space-x-4">
             
-            {/* Full Screen Toggle */}
+            {/* Language Toggle */}
             <button 
-                onClick={toggleFullScreen}
-                className="flex items-center justify-center p-2 rounded-full bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors"
-                title={isFullscreen ? t.common.exitFullScreen : t.common.fullScreen}
+                onClick={toggleLanguage}
+                className="p-2 rounded-full text-slate-500 dark:text-slate-400 hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors border border-transparent hover:border-gray-200 dark:hover:border-slate-600 flex items-center gap-1"
+                title="Switch Language"
             >
-                {isFullscreen ? <Minimize size={18} /> : <Maximize size={18} />}
+                <Globe size={18} />
+                <span className="text-xs font-bold uppercase">{language}</span>
             </button>
 
-            {/* Theme Switcher */}
+            {/* Theme Toggle */}
             <button 
                 onClick={cycleTheme}
-                className="flex items-center justify-center p-2 rounded-full bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors"
+                className="p-2 rounded-full text-slate-500 dark:text-slate-400 hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors"
                 title={`Theme: ${theme}`}
             >
                 {getThemeIcon()}
             </button>
 
-            {/* Language Switcher */}
+            {/* Fullscreen Toggle */}
             <button 
-                onClick={toggleLanguage}
-                className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 text-xs font-bold transition-colors"
-                title="Switch Language"
+                onClick={toggleFullScreen}
+                className="hidden md:block p-2 rounded-full text-slate-500 dark:text-slate-400 hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors"
+                title={isFullscreen ? t.common.exitFullScreen : t.common.fullScreen}
             >
-                <Globe size={16} />
-                <span>{language === 'en' ? 'EN' : 'PT'}</span>
+                {isFullscreen ? <Minimize size={18} /> : <Maximize size={18} />}
             </button>
 
-            {/* Notification Bell */}
             <div className="relative">
-                <button 
-                  onClick={() => setNotifOpen(!isNotifOpen)}
-                  className="text-gray-500 dark:text-gray-400 hover:text-slate-800 dark:hover:text-white transition-colors relative mt-1"
-                >
-                    <Bell size={22} />
-                    {unreadCount > 0 && (
-                        <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] w-4 h-4 flex items-center justify-center rounded-full font-bold">
-                            {String(unreadCount)}
-                        </span>
-                    )}
-                </button>
-
-                {/* Dropdown */}
-                {isNotifOpen && (
-                    <div className="absolute right-0 mt-3 w-80 bg-white dark:bg-slate-800 rounded-xl shadow-xl border border-gray-100 dark:border-slate-700 z-50 overflow-hidden animate-fade-in-up">
-                        <div className="p-3 bg-slate-50 dark:bg-slate-700 border-b border-gray-100 dark:border-slate-600 flex justify-between items-center">
-                            <span className="font-bold text-sm text-slate-700 dark:text-slate-200">{t.common.notifications}</span>
-                            {clearNotifications && (
-                                <button onClick={clearNotifications} className="text-xs text-blue-600 dark:text-blue-400 hover:underline">
-                                    {t.common.clearAll}
-                                </button>
-                            )}
-                        </div>
-                        <div className="max-h-64 overflow-y-auto">
-                            {notifications.length === 0 ? (
-                                <div className="p-6 text-center text-gray-400 dark:text-gray-500 text-sm">{t.common.noNotifications}</div>
-                            ) : (
-                                notifications.map(notif => (
-                                    <div key={String(notif.id)} className="p-3 border-b border-gray-50 dark:border-slate-700 hover:bg-gray-50 dark:hover:bg-slate-700/50 flex gap-3">
-                                        <div className={`w-2 h-2 rounded-full mt-1.5 flex-shrink-0 
-                                            ${notif.type === 'warning' ? 'bg-yellow-500' : notif.type === 'success' ? 'bg-green-500' : 'bg-blue-500'}
-                                        `} />
-                                        <div>
-                                            <p className="text-xs font-bold text-slate-800 dark:text-slate-200">{String(notif.title)}</p>
-                                            <p className="text-xs text-gray-600 dark:text-gray-400 mt-0.5">{String(notif.message)}</p>
-                                            <p className="text-[10px] text-gray-400 dark:text-gray-500 mt-1">
-                                                {notif.timestamp ? new Date(notif.timestamp).toLocaleTimeString() : ''}
-                                            </p>
-                                        </div>
-                                    </div>
-                                ))
-                            )}
-                        </div>
-                    </div>
+              <button 
+                onClick={() => setNotifOpen(!isNotifOpen)}
+                className="p-2 rounded-full text-slate-500 dark:text-slate-400 hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors relative"
+              >
+                <Bell size={20} />
+                {unreadCount > 0 && (
+                  <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full border border-white dark:border-slate-800"></span>
                 )}
+              </button>
+              
+              {/* Notifications Dropdown */}
+              {isNotifOpen && (
+                <div className="absolute right-0 mt-2 w-80 bg-white dark:bg-slate-800 rounded-xl shadow-xl border border-gray-200 dark:border-slate-700 z-50 overflow-hidden animate-fade-in-up">
+                   <div className="p-4 border-b border-gray-200 dark:border-slate-700 flex justify-between items-center bg-gray-50 dark:bg-slate-800/50">
+                       <h3 className="font-bold text-sm text-slate-800 dark:text-white">{t.common.notifications}</h3>
+                       {unreadCount > 0 && (
+                           <button onClick={clearNotifications} className="text-xs text-blue-600 dark:text-blue-400 hover:underline">{t.common.clearAll}</button>
+                       )}
+                   </div>
+                   <div className="max-h-64 overflow-y-auto">
+                       {notifications.length === 0 ? (
+                           <div className="p-8 text-center text-gray-400 text-sm">
+                               {t.common.noNotifications}
+                           </div>
+                       ) : (
+                           <div className="divide-y divide-gray-100 dark:divide-slate-700">
+                               {notifications.map(n => (
+                                   <div key={n.id} className={`p-4 hover:bg-gray-50 dark:hover:bg-slate-700/50 transition-colors ${!n.isRead ? 'bg-blue-50/50 dark:bg-blue-900/10' : ''}`}>
+                                       <div className="flex gap-3">
+                                           <div className={`mt-1 w-2 h-2 rounded-full flex-shrink-0 ${n.type === 'alert' ? 'bg-red-500' : n.type === 'warning' ? 'bg-orange-500' : n.type === 'success' ? 'bg-green-500' : 'bg-blue-500'}`} />
+                                           <div>
+                                               <p className="text-xs font-bold text-slate-800 dark:text-slate-200">{n.title}</p>
+                                               <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 leading-relaxed">{n.message}</p>
+                                               <p className="text-[10px] text-gray-400 mt-2">{n.timestamp.toLocaleTimeString()}</p>
+                                           </div>
+                                       </div>
+                                   </div>
+                               ))}
+                           </div>
+                       )}
+                   </div>
+                </div>
+              )}
             </div>
-
-            {/* Quick Link to Proposal for Admin */}
-            {userRole === UserRole.SYSTEM_ADMIN && location.pathname !== '/proposal' && location.pathname !== '/presentation' && (
-              <Link to="/proposal" className="hidden md:inline-block text-xs font-bold text-blue-600 dark:text-blue-400 hover:underline">
-                {t.common.viewProposal}
-              </Link>
-            )}
             
-            <div className="flex flex-col items-end hidden md:block">
-              <span className="text-sm font-bold text-slate-800 dark:text-white transition-colors">{String(userRole)}</span>
-              <span className="text-xs text-green-600 dark:text-green-400">{t.common.activeSession}</span>
-            </div>
-            <div className="h-8 w-8 rounded-full bg-yellow-500 flex items-center justify-center font-bold text-slate-900">
-              VS
+            <div className="flex items-center space-x-2 border-l border-gray-200 dark:border-slate-700 pl-4">
+               <div className="w-8 h-8 rounded-full bg-yellow-500 flex items-center justify-center text-white font-bold shadow-md">
+                  {userRole === UserRole.SYSTEM_ADMIN ? 'A' : userRole === UserRole.USER ? 'U' : 'S'}
+               </div>
+               <div className="hidden lg:block text-right">
+                  <div className="text-xs font-bold text-slate-800 dark:text-white">
+                      {userRole === UserRole.USER ? 'Safe Worker 1' : userRole}
+                  </div>
+                  <div className="text-[10px] text-gray-500 dark:text-gray-400">
+                      {userRole === UserRole.SYSTEM_ADMIN ? 'System Admin' : 'Active Session'}
+                  </div>
+               </div>
             </div>
           </div>
         </header>
 
-        <main className="flex-1 overflow-y-auto p-4 md:p-6 pb-20 print:p-0 print:overflow-visible">
-          {children}
+        <main className="flex-1 overflow-y-auto p-4 md:p-6 bg-gray-100 dark:bg-gray-900 relative scroll-smooth">
+           {children}
         </main>
       </div>
     </div>

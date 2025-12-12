@@ -123,6 +123,7 @@ export const translations = {
         tableRac: 'RAC Booked',
         tableDate: 'Date',
         tableRoom: 'Room',
+        tableTrainer: 'Trainer',
         noData: 'No bookings matching filters'
       },
       renewal: {
@@ -155,12 +156,13 @@ export const translations = {
       },
       ops: {
           PTS: 'PTS',
-          EXEC_CRED: 'Exec. Cred',
-          EMIT_PTS: 'Emitente PTS',
-          LOB_OPS: 'LOB-OPS',
           ART: 'ART',
-          APR_ART: 'Aprovad. ART',
-          LOB_MOV: 'LOB-MOV'
+          LIB_OPS: 'LIB-OPS',
+          LIB_MOV: 'LIB-MOV',
+          EMI_PTS: 'Emi-PTS',
+          APR_ART: 'Apr-ART',
+          DONO_AREA_PTS: 'Dono-AreaPTS',
+          EXEC: 'Exec'
       }
     },
     booking: {
@@ -204,7 +206,64 @@ export const translations = {
     schedule: { title: 'Training Schedule', subtitle: 'Manage sessions.', newSession: 'New Session', table: { date: 'Date/Time', rac: 'RAC', room: 'Location', trainer: 'Instructor' }, modal: { title: 'Schedule', racType: 'RAC', date: 'Date', startTime: 'Start', location: 'Loc', capacity: 'Cap', instructor: 'Instr', saveSession: 'Save', language: 'Language', english: 'English', portuguese: 'Portuguese' } },
     settings: { title: 'Settings', subtitle: 'Config.', saveAll: 'Save', saving: 'Saving...', tabs: { general: 'General', trainers: 'Trainers', racs: 'RACs' }, rooms: { title: 'Rooms', name: 'Name', capacity: 'Cap', new: 'New Room' }, trainers: { title: 'Trainers', name: 'Name', qualifiedRacs: 'RACs', new: 'New Trainer' }, racs: { title: 'RACs', code: 'Code', description: 'Desc', new: 'New RAC' } },
     reports: { title: 'Reports', subtitle: 'Analytics.', printReport: 'Print', filters: { period: 'Period', department: 'Dept', racType: 'RAC', startDate: 'Start', endDate: 'End' }, periods: { weekly: 'Weekly', monthly: 'Monthly', ytd: 'YTD', custom: 'Custom' }, generate: 'Generate AI', analyzing: 'Analyzing...', stats: { totalTrained: 'Total', passRate: 'Pass Rate', attendance: 'Attendance', noShows: 'No Shows' }, charts: { performance: 'Performance' }, executiveAnalysis: 'Executive AI Analysis', trainerMetrics: { title: 'Trainer Metrics', name: 'Trainer', sessions: 'Sessions', passRate: 'Pass Rate', avgTheory: 'Theory', avgPrac: 'Prac' } },
-    manuals: { title: 'Manuals', subtitle: 'Docs', sysAdmin: { title: 'Sys Admin', sec1: 'Setup', sec1text: '...', step1: 'Settings', step2: 'Trainers', step3: 'RACs', sec2: 'Import', sec2text: '...', step4: 'Template', step5: 'CSV', step6: 'Upload' }, racAdmin: { title: 'RAC Admin', sec1: 'Schedule', sec1text: '...', step1: 'Sched', step2: 'New', sec2: 'Monitor', sec2text: '...', alert: 'Alert', step3: 'Check', step4: 'Renew' }, racTrainer: { title: 'Trainer', sec1: 'Grading', sec1text: '...', alert: 'DL Check', step1: 'Login', step2: 'Select', step3: 'Grade', step4: 'Save' }, deptAdmin: { title: 'Dept Admin', sec1: 'Print', sec1text: '...', step1: 'Request', step2: 'Print', sec2: 'Reports', sec2text: '...', step3: 'Reports', step4: 'Filter' }, user: { title: 'User', sec1: 'Status', sec1text: '...', compliant: 'Green', nonCompliant: 'Red', sec2: 'Request', sec2text: '...' } },
+    manuals: { 
+        title: 'User Manuals', 
+        subtitle: 'Role-based documentation',
+        sysAdmin: { 
+            title: 'System Administrator Manual',
+            subtitle: 'Global Configuration & Data',
+            configTitle: '1. Global Configuration (Settings)',
+            configDesc: 'The Settings page controls system-wide dropdowns.',
+            rooms: 'Managing Rooms: Define locations and their capacity. This limits bookings in the "Book Training" module to prevent overcrowding.',
+            trainers: 'Managing Trainers: Add instructors and assign their qualified RACs. This populates the instructor dropdown in the Schedule.',
+            racs: 'Defining RACs: Define the core training modules. Warning: Deleting a RAC here removes its column from the Database Matrix.',
+            dbTitle: '2. Database & CSV Import',
+            dbDesc: 'The Database is the master record for compliance.',
+            csv: 'CSV Import: Use the "Download Template" button. The matrix columns (RAC01, etc.) expect "1" or "TRUE" for required training.',
+            active: 'Active Status: Unchecking "Active" triggers a deletion prompt to keep the database clean.'
+        },
+        racAdmin: { 
+            title: 'RAC Administrator Manual',
+            subtitle: 'Scheduling & Compliance',
+            schedTitle: '1. Scheduling Training',
+            schedDesc: 'Create the calendar slots for employees.',
+            create: 'Create Session: Go to "Schedule Trainings". Select RAC Type, Date, Time, and Room. Capacity is auto-filled from Settings.',
+            lang: 'Language: Specify if the session is English or Portuguese.',
+            autoTitle: '2. Auto-Booking Management',
+            autoDesc: 'The system auto-books employees expiring in <7 days.',
+            approve: 'Approval Queue: On the Dashboard, review the orange "Pending Auto-Bookings" table. Click Approve to confirm or Reject to cancel.',
+            renewTitle: '3. Bulk Renewals',
+            renewDesc: 'Use the Dashboard "Book Renewals" button to load a batch queue of expiring employees into the Booking Form.'
+        },
+        racTrainer: { 
+            title: 'Trainer Portal Manual',
+            subtitle: 'Grading & Attendance',
+            inputTitle: '1. Inputting Results',
+            inputDesc: 'Navigate to "Trainer Input". You will only see sessions assigned to you.',
+            grading: 'Grading Logic: Pass mark is 70%. If Theory is <70, Practical is locked. Attendance must be checked.',
+            rac02: 'RAC 02 Special Rule: You must verify the Driver License physically and check the "DL Verified" box. If unchecked, the student fails automatically regardless of score.',
+            save: 'Saving: Clicking "Save Results" updates the main database and sets the expiry date to 2 years from the session date.'
+        },
+        deptAdmin: { 
+            title: 'Department Admin Manual',
+            subtitle: 'Reporting & Card Requests',
+            reqTitle: '1. Requesting Cards',
+            reqDesc: 'Build a print batch for your team.',
+            search: 'Search Slots: Use the 8 search slots. Green Check = Eligible (Passed + Valid ASO). Red Alert = Ineligible.',
+            print: 'Print View: Click "Go to Print View" to see the 8-up grid. Ensure printer is set to "Landscape" and "Background Graphics" is ON.',
+            repTitle: '2. Compliance Reports',
+            repDesc: 'Use the Reports page to filter by your Department and check Pass Rates and expiring certifications.'
+        },
+        user: { 
+            title: 'General User Manual',
+            subtitle: 'My Status',
+            statusTitle: '1. Compliance Status',
+            statusDesc: 'Your site access depends on your status.',
+            green: 'Compliant: Valid ASO + All Required RACs passed.',
+            red: 'Non-Compliant: Expired ASO, Missing RAC, or Expired Driver License (if RAC 02 holder).',
+            qr: 'Digital Passport: Scanning your card QR code reveals your real-time status from the database.'
+        }
+    },
     alcohol: { title: 'Alcohol Control', subtitle: 'Roadmap', banner: { title: 'Coming Soon', desc: 'IoT Integration', status: 'Dev' }, features: { title: 'Vision', iotTitle: 'IoT', iotDesc: 'Direct integration with industrial breathalyzers to capture results in real-time.', accessTitle: 'Automated Lockout', accessDesc: 'Automatically block turnstile access if alcohol is detected or training is expired.', complianceTitle: 'Compliance Reporting', complianceDesc: 'Unified logs for both safety training and fitness-for-duty checks.' }, protocol: { title: 'Protocol', positiveTitle: 'Positive Test Protocol', positiveDesc: 'If a positive test (>0.00%) is detected, the turnstile locks immediately. The employee is marked as "Blocked" in the database.', resetTitle: '02:00 AM Reset Rule', resetDesc: 'The system automatically unlocks the employee at exactly 02:00:00 hrs the following day, allowing re-entry if sober.' }, challenges: { title: 'Current Challenges', oemIssue: 'Current breathalyzers send data to an external OEM Cloud. This poses data sovereignty risks.', gateSetup: 'Main gate physical layout requires modification.' }, proposal: { title: 'Proposed Solution', faceCap: 'Purchase models with Face Capture.', integration: 'Develop middleware to intercept data.', projectScope: 'Independent project involving Civil & Electrical.' } },
     logs: { title: 'Audit Logs', subtitle: 'Tracking.', levels: { all: 'All', info: 'Info', warn: 'Warn', error: 'Error', audit: 'Audit' }, table: { level: 'Level', timestamp: 'Time', user: 'User', message: 'Msg' } },
     proposal: {
@@ -346,7 +405,7 @@ export const translations = {
                 desc: 'Physical installation and hardware required at the main gate. Treated as a separate contract.',
                 feat1: 'Civil Works (Turnstile modification)',
                 feat2: 'Electrical & Cabling (Cat6/Power)',
-                feat3: 'Face-ID Breathalyzer Hardware Procurement'
+                feat3: 'Aquisição de Hardware de Bafômetro com Face-ID'
             }
         },
         enhancedCaps: {
@@ -371,6 +430,11 @@ export const translations = {
                 title: 'System Audit Trails',
                 desc: 'Comprehensive logging of all system activities ensures accountability and security.',
                 features: ['User Action Tracking', 'Security Event Monitoring', 'Timestamped Change Logs']
+            },
+            smartBatching: {
+                title: 'Smart Batch Processing',
+                desc: 'To handle high-volume sites, the system includes a dedicated batch processor. It groups expiring certifications by training type (RAC) and creates a guided, sequential booking queue for the administrator.',
+                features: ['Sequential Renewal Queue', 'Visual Card Batch Builder', 'Conflict-Free Session Allocation']
             }
         },
         conclusion: {
@@ -501,6 +565,7 @@ export const translations = {
         tableRac: 'RAC',
         tableDate: 'Data',
         tableRoom: 'Sala',
+        tableTrainer: 'Instrutor',
         noData: 'Sem dados'
       },
       renewal: {
@@ -527,7 +592,16 @@ export const translations = {
       downloadTemplate: 'Modelo',
       opsMatrix: 'Matriz Operacional',
       transfer: { title: 'Transferir', subtitle: '...', update: 'Atualizar' },
-      ops: { PTS: 'PTS', EXEC_CRED: 'Exec. Cred', EMIT_PTS: 'Emitente PTS', LOB_OPS: 'LOB-OPS', ART: 'ART', APR_ART: 'Aprov. ART', LOB_MOV: 'LOB-MOV' }
+      ops: {
+          PTS: 'PTS',
+          ART: 'ART',
+          LIB_OPS: 'LIB-OPS',
+          LIB_MOV: 'LIB-MOV',
+          EMI_PTS: 'Emi-PTS',
+          APR_ART: 'Apr-ART',
+          DONO_AREA_PTS: 'Dono-AreaPTS',
+          EXEC: 'Exec'
+      }
     },
     booking: {
       title: 'Agendar Treino',
@@ -549,7 +623,64 @@ export const translations = {
     schedule: { title: 'Cronograma', subtitle: 'Gerenciar.', newSession: 'Nova Sessão', table: { date: 'Data', rac: 'RAC', room: 'Local', trainer: 'Instrutor' }, modal: { title: 'Agendar', racType: 'RAC', date: 'Data', startTime: 'Início', location: 'Local', capacity: 'Cap', instructor: 'Instr', saveSession: 'Salvar', language: 'Idioma', english: 'Inglês', portuguese: 'Português' } },
     settings: { title: 'Configurações', subtitle: 'Global.', saveAll: 'Salvar', saving: 'Salvando...', tabs: { general: 'Geral', trainers: 'Instrutores', racs: 'RACs' }, rooms: { title: 'Salas', name: 'Nome', capacity: 'Cap', new: 'Nova' }, trainers: { title: 'Instrutores', name: 'Nome', qualifiedRacs: 'RACs', new: 'Novo' }, racs: { title: 'RACs', code: 'Código', description: 'Desc', new: 'Novo' } },
     reports: { title: 'Relatórios', subtitle: 'Análises.', printReport: 'Imprimir', filters: { period: 'Período', department: 'Depto', racType: 'RAC', startDate: 'Início', endDate: 'Fim' }, periods: { weekly: 'Semanal', monthly: 'Mensal', ytd: 'Ano', custom: 'Personalizado' }, generate: 'Gerar IA', analyzing: 'Analisando...', stats: { totalTrained: 'Total', passRate: 'Aprovação', attendance: 'Presença', noShows: 'Ausências' }, charts: { performance: 'Desempenho' }, executiveAnalysis: 'Análise Executiva', trainerMetrics: { title: 'Métricas', name: 'Instrutor', sessions: 'Sessões', passRate: 'Aprov.', avgTheory: 'Teoria', avgPrac: 'Prática' } },
-    manuals: { title: 'Manuais', subtitle: 'Docs', sysAdmin: { title: 'Admin', sec1: 'Config', sec1text: '...', step1: '...', step2: '...', step3: '...', sec2: 'Import', sec2text: '...', step4: '...', step5: '...', step6: '...' }, racAdmin: { title: 'RAC Admin', sec1: '...', sec1text: '...', step1: '...', step2: '...', sec2: '...', sec2text: '...', alert: '...', step3: '...', step4: '...' }, racTrainer: { title: 'Instrutor', sec1: '...', sec1text: '...', alert: '...', step1: '...', step2: '...', step3: '...', step4: '...' }, deptAdmin: { title: 'Dept Admin', sec1: '...', sec1text: '...', step1: '...', step2: '...', sec2: '...', sec2text: '...', step3: '...', step4: '...' }, user: { title: 'Geral', sec1: '...', sec1text: '...', compliant: '...', nonCompliant: '...', sec2: '...', sec2text: '...' } },
+    manuals: { 
+        title: 'Manuais do Usuário', 
+        subtitle: 'Documentação por Função',
+        sysAdmin: { 
+            title: 'Manual do Administrador do Sistema',
+            subtitle: 'Configuração Global & Dados',
+            configTitle: '1. Configuração Global (Configurações)',
+            configDesc: 'A página Configurações controla os menus do sistema.',
+            rooms: 'Gerir Salas: Defina locais e capacidade. Isso limita as reservas no módulo "Agendar Treino" para evitar superlotação.',
+            trainers: 'Gerir Formadores: Adicione instrutores e atribua seus RACs qualificados. Isso preenche o menu de instrutores no Cronograma.',
+            racs: 'Definir RACs: Defina os módulos principais. Aviso: Excluir um RAC aqui remove sua coluna da Matriz da Base de Dados.',
+            dbTitle: '2. Base de Dados & Importação CSV',
+            dbDesc: 'A Base de Dados é o registro mestre de conformidade.',
+            csv: 'Importação CSV: Use o botão "Modelo". As colunas da matriz (RAC01, etc.) esperam "1" ou "TRUE" para treinamento obrigatório.',
+            active: 'Status Ativo: Desmarcar "Ativo" aciona um aviso de exclusão para manter o banco de dados limpo.'
+        },
+        racAdmin: { 
+            title: 'Manual do Administrador RAC',
+            subtitle: 'Agendamento & Conformidade',
+            schedTitle: '1. Agendamento de Treinamento',
+            schedDesc: 'Crie o calendário de vagas para funcionários.',
+            create: 'Criar Sessão: Vá para "Cronograma". Selecione Tipo RAC, Data, Hora e Sala. A capacidade é preenchida automaticamente.',
+            lang: 'Idioma: Especifique se a sessão é em Inglês ou Português.',
+            autoTitle: '2. Gestão de Auto-Agendamento',
+            autoDesc: 'O sistema agenda automaticamente funcionários expirando em <7 dias.',
+            approve: 'Fila de Aprovação: No Painel, revise a tabela laranja "Auto-Agendamentos Pendentes". Clique em Aprovar ou Rejeitar.',
+            renewTitle: '3. Renovações em Massa',
+            renewDesc: 'Use o botão "Agendar Renovações" no Painel para carregar uma fila de funcionários expirando no Formulário de Agendamento.'
+        },
+        racTrainer: { 
+            title: 'Manual do Portal do Instrutor',
+            subtitle: 'Avaliação & Presença',
+            inputTitle: '1. Inserção de Resultados',
+            inputDesc: 'Navegue para "Entrada do Instrutor". Você verá apenas sessões atribuídas a você.',
+            grading: 'Lógica de Avaliação: Aprovação é 70%. Se Teoria <70, Prática bloqueada. Presença obrigatória.',
+            rac02: 'Regra Especial RAC 02: Você deve verificar fisicamente a Carta de Condução e marcar "Verif. Carta". Se desmarcado, o aluno reprova automaticamente.',
+            save: 'Salvar: Clicar em "Salvar" atualiza o banco de dados principal e define a validade para 2 anos a partir da data da sessão.'
+        },
+        deptAdmin: { 
+            title: 'Manual do Admin de Departamento',
+            subtitle: 'Relatórios & Solicitação de Cartões',
+            reqTitle: '1. Solicitação de Cartões',
+            reqDesc: 'Monte um lote de impressão para sua equipe.',
+            search: 'Slots de Busca: Use os 8 slots. Verde = Elegível (Aprovado + ASO Válido). Vermelho = Inelegível.',
+            print: 'Visualização de Impressão: Clique em "Ir para Impressão" para ver a grade de 8 cartões. Configure a impressora para "Paisagem" e "Gráficos de Fundo".',
+            repTitle: '2. Relatórios de Conformidade',
+            repDesc: 'Use a página Relatórios para filtrar pelo seu Departamento e verificar Taxas de Aprovação e certificações expirando.'
+        },
+        user: { 
+            title: 'Manual do Usuário Geral',
+            subtitle: 'Meu Status',
+            statusTitle: '1. Status de Conformidade',
+            statusDesc: 'Seu acesso ao local depende do seu status.',
+            green: 'Conforme: ASO Válido + Todos RACs Obrigatórios aprovados.',
+            red: 'Não Conforme: ASO Expirado, RAC Ausente ou Carta de Condução Expirada (se RAC 02).',
+            qr: 'Passaporte Digital: Escanear o código QR do seu cartão revela seu status em tempo real do banco de dados.'
+        }
+    },
     alcohol: { title: 'Álcool', subtitle: 'Roteiro', banner: { title: 'Em Breve', desc: 'IoT', status: 'Dev' }, features: { title: 'Visão', iotTitle: 'IoT', iotDesc: 'Integração direta com bafômetros industriais para capturar resultados em tempo real.', accessTitle: 'Bloqueio', accessDesc: 'Bloqueia automaticamente o acesso ao torniquete se álcool for detectado.', complianceTitle: 'Relatório', complianceDesc: 'Logs unificados para treinamento de segurança e verificações.' }, protocol: { title: 'Protocolo', positiveTitle: 'Protocolo de Teste Positivo', positiveDesc: 'Se positivo (>0,00%), o torniquete bloqueia imediatamente. O funcionário é marcado como "Bloqueado".', resetTitle: 'Regra 02:00 AM', resetDesc: 'O sistema desbloqueia automaticamente às 02:00:00 do dia seguinte.' }, challenges: { title: 'Desafios', oemIssue: 'Os bafômetros atuais usam nuvem OEM externa (Risco de Dados).', gateSetup: 'O layout do portão requer modificação física.' }, proposal: { title: 'Proposta', faceCap: 'Captura Facial', integration: 'API Direta', projectScope: 'Engenharia Civil/Elétrica' } },
     logs: { title: 'Logs', subtitle: 'Auditoria.', levels: { all: 'Todos', info: 'Info', warn: 'Aviso', error: 'Erro', audit: 'Auditoria' }, table: { level: 'Nível', timestamp: 'Data', user: 'Usuário', message: 'Msg' } },
     proposal: {
@@ -561,7 +692,7 @@ export const translations = {
             preferred: 'Pita Domingos',
             role: 'Gestor de Contratos (Jachris - Obra Mota Engil)',
             cert: 'Profissional de Ciência de Dados Certificado pela IBM',
-            bio: 'Minha jornada em ciência de dados começou com Excel e Power BI, evoluindo para Python, NodeJS e ReactJS. Desenvolvi várias soluções de software, notadamente EduDesk e H365, which are comprehensive SaaS applications featuring tiered subscription models. Meu portfólio também inclui SwiftPOS, MicroFin e JacTrac (Rastreamento de Mangueiras Hidráulicas).',
+            bio: 'Minha jornada em ciência de dados começou com Excel e Power BI, evoluindo para Python, NodeJS e ReactJS. Desenvolvi várias soluções de software, notadamente EduDesk e H365, which are comprehensive SaaS applications featuring tiered subscription models. Meu portfólio também inclui SwiftPOS, MicroFin, and JacTrac (Rastreamento de Mangueiras Hidráulicas).',
             portfolio: 'Portfólio: EduDesk (SaaS), H365 (SaaS), SwiftPOS, MicroFin, JacTrac'
         },
         thankYou: {
@@ -716,6 +847,11 @@ export const translations = {
                 title: 'Trilhas de Auditoria do Sistema',
                 desc: 'Registro abrangente de todas as atividades do sistema garante responsabilidade e segurança.',
                 features: ['Rastreamento de Ação do Usuário', 'Monitoramento de Eventos de Segurança', 'Logs de Alteração com Carimbo de Tempo']
+            },
+            smartBatching: {
+                title: 'Processamento em Lote Inteligente',
+                desc: 'Para lidar com locais de grande volume, o sistema inclui um processador de lote dedicado. Ele agrupa certificações expirando por tipo de treinamento (RAC) e cria uma fila de agendamento sequencial e guiada.',
+                features: ['Fila de Renovação Sequencial', 'Construtor Visual de Lotes de Cartões', 'Alocação de Sessão sem Conflitos']
             }
         },
         conclusion: {

@@ -1,10 +1,11 @@
+
 import React, { useState, Suspense, lazy, useEffect } from 'react';
 import { HashRouter, Routes, Route, Navigate } from 'react-router-dom';
 import Layout from './components/Layout';
 import GeminiAdvisor from './components/GeminiAdvisor';
 import { 
   UserRole, Booking, EmployeeRequirement, TrainingSession, User, RacDef, 
-  BookingStatus, Employee, SystemNotification 
+  BookingStatus, Employee, SystemNotification, Room, Trainer
 } from './types';
 import { MOCK_SESSIONS, INITIAL_RAC_DEFINITIONS, COMPANIES, DEPARTMENTS, ROLES, RAC_KEYS } from './constants';
 import { v4 as uuidv4 } from 'uuid';
@@ -27,15 +28,31 @@ const ProjectProposal = lazy(() => import('./pages/ProjectProposal'));
 const PresentationPage = lazy(() => import('./pages/PresentationPage'));
 const AlcoholIntegration = lazy(() => import('./pages/AlcoholIntegration'));
 const VerificationPage = lazy(() => import('./pages/VerificationPage'));
+const TechnicalDocs = lazy(() => import('./pages/TechnicalDocs'));
 
 const App: React.FC = () => {
   // --- State Management ---
   const [userRole, setUserRole] = useState<UserRole>(UserRole.SYSTEM_ADMIN);
   const [notifications, setNotifications] = useState<SystemNotification[]>([]);
   
+  // Simulated logged-in user for self-service
+  const currentEmployeeId = 'emp-1';
+
   // Data
   const [sessions, setSessions] = useState<TrainingSession[]>(MOCK_SESSIONS);
   const [racDefinitions, setRacDefinitions] = useState<RacDef[]>(INITIAL_RAC_DEFINITIONS);
+  const [rooms, setRooms] = useState<Room[]>([
+      { id: '1', name: 'Room A', capacity: 20 },
+      { id: '2', name: 'Room B', capacity: 30 },
+      { id: '3', name: 'Field Training Area', capacity: 15 },
+      { id: '4', name: 'Computer Lab', capacity: 12 },
+  ]);
+  const [trainers, setTrainers] = useState<Trainer[]>([
+      { id: '1', name: 'John Doe', racs: ['RAC01', 'RAC05'] },
+      { id: '2', name: 'Jane Smith', racs: ['RAC02', 'RAC04'] },
+      { id: '3', name: 'Mike Brown', racs: ['RAC08', 'RAC10'] },
+      { id: '4', name: 'Sarah Connor', racs: ['RAC08'] },
+  ]);
   
   // Users
   const [users, setUsers] = useState<User[]>([
@@ -50,30 +67,162 @@ const App: React.FC = () => {
   // Initialize some mock data if empty
   useEffect(() => {
     if (bookings.length === 0) {
-        // ... (Mock Generation Code logic remains identical to previous successful state, omitted for brevity but preserved in principle)
-        // Re-injecting the exact "Perfect Batch" logic from previous context to ensure no data loss:
         const generatedBookings: Booking[] = [];
         const generatedRequirements: EmployeeRequirement[] = [];
-        const createEmp = (i: number): Employee => ({
-            id: `emp-${i}`, name: `Employee ${i}`, recordId: `VUL-${1000 + i}`,
-            company: COMPANIES[i % COMPANIES.length], department: DEPARTMENTS[i % DEPARTMENTS.length], role: ROLES[i % ROLES.length],
-            driverLicenseNumber: i <= 8 ? `DL-${1000+i}` : undefined, driverLicenseClass: i <= 8 ? 'C1' : undefined, driverLicenseExpiry: i <= 8 ? '2026-01-01' : undefined, isActive: true
-        });
-        for (let i = 1; i <= 20; i++) {
-            const emp = createEmp(i);
-            const isPerfectBatch = i <= 8;
-            if (isPerfectBatch) {
-                generatedBookings.push({ id: uuidv4(), sessionId: 'S001', employee: emp, status: BookingStatus.PASSED, attendance: true, theoryScore: 90 + i, resultDate: '2023-11-01', expiryDate: '2025-11-01' });
-                generatedBookings.push({ id: uuidv4(), sessionId: 'S002', employee: emp, status: BookingStatus.PASSED, attendance: true, theoryScore: 88, practicalScore: 92, driverLicenseVerified: true, resultDate: '2023-11-05', expiryDate: '2025-11-05' });
-                generatedBookings.push({ id: uuidv4(), sessionId: 'PTS - Operational Training', employee: emp, status: BookingStatus.PASSED, attendance: true, resultDate: '2024-01-10', expiryDate: '2026-01-10' });
-                generatedBookings.push({ id: uuidv4(), sessionId: 'ART - Analysis Training', employee: emp, status: BookingStatus.PASSED, attendance: true, resultDate: '2024-02-15', expiryDate: '2026-02-15' });
-                generatedRequirements.push({ employeeId: emp.id, asoExpiryDate: '2026-06-01', requiredRacs: { 'RAC01': true, 'RAC02': true, 'PTS': true, 'ART': true, 'EXEC_CRED': true, 'EMIT_PTS': i % 2 === 0 } });
-            } else {
-                const session = sessions[i % sessions.length];
-                generatedBookings.push({ id: uuidv4(), sessionId: session.id, employee: emp, status: i % 5 === 0 ? BookingStatus.PENDING : BookingStatus.PASSED, attendance: i % 5 !== 0, theoryScore: i % 5 !== 0 ? 85 : undefined, resultDate: '2023-11-01', expiryDate: '2025-11-01' });
-                generatedRequirements.push({ employeeId: emp.id, asoExpiryDate: '2025-06-01', requiredRacs: { 'RAC01': true } });
+        
+        // 1. Create 8 FULLY GRANTED Employees (Perfect Batch)
+        for (let i = 1; i <= 8; i++) {
+            const empId = `emp-${i}`;
+            const employee: Employee = {
+                id: empId,
+                name: `Safe Worker ${i}`,
+                recordId: `VUL-${1000 + i}`,
+                company: COMPANIES[i % COMPANIES.length],
+                department: DEPARTMENTS[i % DEPARTMENTS.length],
+                role: ROLES[i % ROLES.length],
+                driverLicenseNumber: `DL-${202400 + i}`,
+                driverLicenseClass: 'C1',
+                driverLicenseExpiry: '2030-01-01', // Future Date
+                isActive: true
+            };
+
+            // Requirements: Standard RACs + New Operational Trainings (treated as RACs)
+            generatedRequirements.push({
+                employeeId: empId,
+                asoExpiryDate: '2030-06-01', // Valid ASO
+                requiredRacs: { 
+                    'RAC01': true, 
+                    'RAC02': true,
+                    'PTS': true,     // Critical Ops Training
+                    'ART': true,     // Critical Ops Training
+                    'LIB_OPS': true, // Critical Ops Training
+                    'LIB_MOV': true  // Critical Ops Training
+                }
+            });
+
+            // Booking 1: RAC 01 (Passed, Valid)
+            generatedBookings.push({
+                id: uuidv4(),
+                sessionId: 'S001', // Mapped to RAC01 in constants
+                employee: { ...employee },
+                status: BookingStatus.PASSED,
+                attendance: true,
+                theoryScore: 95,
+                resultDate: '2024-01-15',
+                expiryDate: '2026-01-15'
+            });
+
+            // Booking 2: RAC 02 (Passed, Valid, DL Verified)
+            generatedBookings.push({
+                id: uuidv4(),
+                sessionId: 'S002', // Mapped to RAC02 in constants
+                employee: { ...employee },
+                status: BookingStatus.PASSED,
+                attendance: true,
+                theoryScore: 90,
+                practicalScore: 95,
+                driverLicenseVerified: true,
+                resultDate: '2024-02-20',
+                expiryDate: '2026-02-20'
+            });
+
+            // Booking 3: PTS (Ops) - Valid 2 Years
+            generatedBookings.push({
+                id: uuidv4(),
+                sessionId: 'PTS - Permit To Work',
+                employee: { ...employee },
+                status: BookingStatus.PASSED,
+                attendance: true,
+                resultDate: '2024-03-01',
+                expiryDate: '2026-03-01'
+            });
+
+            // Booking 4: ART (Ops) - Valid 2 Years
+            generatedBookings.push({
+                id: uuidv4(),
+                sessionId: 'ART - Análise de Risco',
+                employee: { ...employee },
+                status: BookingStatus.PASSED,
+                attendance: true,
+                resultDate: '2024-03-05',
+                expiryDate: '2026-03-05'
+            });
+
+            // Booking 5: LIB_OPS (Ops) - Valid 2 Years
+            generatedBookings.push({
+                id: uuidv4(),
+                sessionId: 'LIB_OPS - Liberação Operacional',
+                employee: { ...employee },
+                status: BookingStatus.PASSED,
+                attendance: true,
+                resultDate: '2024-03-10',
+                expiryDate: '2026-03-10'
+            });
+
+            // Booking 6: LIB_MOV (Ops) - Valid 2 Years
+            generatedBookings.push({
+                id: uuidv4(),
+                sessionId: 'LIB_MOV - Liberação de Movimentação',
+                employee: { ...employee },
+                status: BookingStatus.PASSED,
+                attendance: true,
+                resultDate: '2024-03-12',
+                expiryDate: '2026-03-12'
+            });
+        }
+
+        // 2. Create Mixed/Expired Employees
+        for (let i = 9; i <= 20; i++) {
+            const empId = `emp-${i}`;
+            const employee: Employee = {
+                id: empId,
+                name: `Employee ${i}`,
+                recordId: `VUL-${1000 + i}`,
+                company: COMPANIES[i % COMPANIES.length],
+                department: DEPARTMENTS[i % DEPARTMENTS.length],
+                role: ROLES[i % ROLES.length],
+                isActive: true
+            };
+
+            const isExpiredAso = i % 3 === 0;
+            
+            generatedRequirements.push({
+                employeeId: empId,
+                asoExpiryDate: isExpiredAso ? '2023-01-01' : '2030-01-01',
+                requiredRacs: { 'RAC01': true }
+            });
+
+            // Booking: Either Pending or Expired
+            generatedBookings.push({
+                id: uuidv4(),
+                sessionId: 'S006', // RAC01
+                employee: { ...employee },
+                status: i % 2 === 0 ? BookingStatus.PENDING : BookingStatus.PASSED,
+                attendance: i % 2 !== 0,
+                theoryScore: i % 2 !== 0 ? 80 : undefined,
+                resultDate: '2022-01-01',
+                expiryDate: '2023-01-01' // Expired
+            });
+
+            // DEMO SPECIFIC: Add a Pending RAC02 Booking for Employee 9 to test DL Verification
+            if (i === 9) {
+                generatedBookings.push({
+                    id: uuidv4(),
+                    sessionId: 'S012', // RAC02 - Jane Smith (Pending)
+                    employee: { ...employee, driverLicenseNumber: 'DL-TEST-999', driverLicenseClass: 'C', driverLicenseExpiry: '2026-01-01' },
+                    status: BookingStatus.PENDING,
+                    attendance: false,
+                    driverLicenseVerified: false
+                });
+                
+                // Update requirement to require RAC02
+                const reqIdx = generatedRequirements.findIndex(r => r.employeeId === empId);
+                if (reqIdx >= 0) {
+                    generatedRequirements[reqIdx].requiredRacs['RAC02'] = true;
+                }
             }
         }
+
         setBookings(generatedBookings);
         setRequirements(generatedRequirements);
     }
@@ -216,22 +365,56 @@ const App: React.FC = () => {
       <Layout userRole={userRole} setUserRole={setUserRole} notifications={notifications} clearNotifications={clearNotifications}>
         <Suspense fallback={<div className="flex items-center justify-center h-full text-slate-500">Loading...</div>}>
             <Routes>
-              <Route path="/" element={<Dashboard bookings={bookings} requirements={requirements} sessions={sessions} userRole={userRole} onApproveAutoBooking={onApproveAutoBooking} onRejectAutoBooking={onRejectAutoBooking} />} />
-              <Route path="/database" element={<DatabasePage bookings={bookings} requirements={requirements} updateRequirements={updateRequirements} sessions={sessions} onUpdateEmployee={onUpdateEmployee} onDeleteEmployee={onDeleteEmployee} onImportEmployees={onImportEmployees} racDefinitions={racDefinitions} />} />
-              <Route path="/reports" element={[UserRole.SYSTEM_ADMIN, UserRole.RAC_ADMIN, UserRole.RAC_TRAINER, UserRole.DEPT_ADMIN].includes(userRole) ? <ReportsPage bookings={bookings} sessions={sessions} /> : <Navigate to="/" replace />} />
-              <Route path="/booking" element={<BookingForm addBookings={addBookings} sessions={sessions} userRole={userRole} existingBookings={bookings} addNotification={addNotification} />} />
-              <Route path="/trainer-input" element={[UserRole.SYSTEM_ADMIN, UserRole.RAC_ADMIN, UserRole.RAC_TRAINER].includes(userRole) ? <TrainerInputPage bookings={bookings} updateBookings={updateBookings} sessions={sessions} userRole={userRole} /> : <Navigate to="/" replace />} />
-              <Route path="/results" element={<ResultsPage bookings={bookings} updateBookingStatus={updateBookingStatus} importBookings={importBookings} userRole={userRole} sessions={sessions} />} />
+              {/* Dashboard is RESTRICTED for General User */}
+              <Route path="/" element={
+                  userRole === UserRole.USER 
+                    ? <Navigate to="/manuals" replace /> 
+                    : <Dashboard bookings={bookings} requirements={requirements} sessions={sessions} userRole={userRole} onApproveAutoBooking={onApproveAutoBooking} onRejectAutoBooking={onRejectAutoBooking} />
+              } />
+              
+              {/* Database is RESTRICTED for General User and RAC Trainer */}
+              <Route path="/database" element={
+                  (userRole === UserRole.USER || userRole === UserRole.RAC_TRAINER)
+                    ? <Navigate to="/manuals" replace />
+                    : <DatabasePage bookings={bookings} requirements={requirements} updateRequirements={updateRequirements} sessions={sessions} onUpdateEmployee={onUpdateEmployee} onDeleteEmployee={onDeleteEmployee} onImportEmployees={onImportEmployees} racDefinitions={racDefinitions} />
+              } />
+              
+              {/* Reports is RESTRICTED for RAC Trainer */}
+              <Route path="/reports" element={[UserRole.SYSTEM_ADMIN, UserRole.RAC_ADMIN, UserRole.DEPT_ADMIN].includes(userRole) ? <ReportsPage bookings={bookings} sessions={sessions} /> : <Navigate to="/" replace />} />
+              
+              {/* Booking is RESTRICTED for RAC Trainer */}
+              <Route path="/booking" element={userRole === UserRole.RAC_TRAINER ? <Navigate to="/" replace /> : <BookingForm addBookings={addBookings} sessions={sessions} userRole={userRole} existingBookings={bookings} addNotification={addNotification} currentEmployeeId={currentEmployeeId} />} />
+              
+              <Route path="/trainer-input" element={
+                  [UserRole.SYSTEM_ADMIN, UserRole.RAC_ADMIN, UserRole.RAC_TRAINER].includes(userRole) 
+                  ? <TrainerInputPage 
+                      bookings={bookings} 
+                      updateBookings={updateBookings} 
+                      sessions={sessions} 
+                      userRole={userRole} 
+                      currentUserName={userRole === UserRole.RAC_TRAINER ? 'John Doe' : 'System Admin'} 
+                    /> 
+                  : <Navigate to="/" replace />
+              } />
+              
+              {/* Results is RESTRICTED for RAC Trainer. Pass currentEmployeeId to limit view for USER. */}
+              <Route path="/results" element={userRole === UserRole.RAC_TRAINER ? <Navigate to="/" replace /> : <ResultsPage bookings={bookings} updateBookingStatus={updateBookingStatus} importBookings={importBookings} userRole={userRole} sessions={sessions} currentEmployeeId={currentEmployeeId} />} />
+              
               <Route path="/proposal" element={userRole === UserRole.SYSTEM_ADMIN ? <ProjectProposal /> : <Navigate to="/" replace />} />
               <Route path="/presentation" element={userRole === UserRole.SYSTEM_ADMIN ? <PresentationPage /> : <Navigate to="/" replace />} />
               
-              <Route path="/request-cards" element={[UserRole.SYSTEM_ADMIN, UserRole.DEPT_ADMIN, UserRole.RAC_ADMIN, UserRole.USER].includes(userRole) ? <RequestCardsPage bookings={bookings} requirements={requirements} racDefinitions={racDefinitions} sessions={sessions} /> : <Navigate to="/" replace />} />
+              {/* Technical Docs: System Admin Only */}
+              <Route path="/tech-docs" element={userRole === UserRole.SYSTEM_ADMIN ? <TechnicalDocs /> : <Navigate to="/" replace />} />
+              
+              {/* Pass currentEmployeeId for Self-Service */}
+              <Route path="/request-cards" element={[UserRole.SYSTEM_ADMIN, UserRole.DEPT_ADMIN, UserRole.RAC_ADMIN, UserRole.USER].includes(userRole) ? <RequestCardsPage bookings={bookings} requirements={requirements} racDefinitions={racDefinitions} sessions={sessions} userRole={userRole} currentEmployeeId={currentEmployeeId} /> : <Navigate to="/" replace />} />
+              
               <Route path="/print-cards" element={[UserRole.SYSTEM_ADMIN, UserRole.DEPT_ADMIN, UserRole.RAC_ADMIN, UserRole.USER].includes(userRole) ? <CardsPage bookings={bookings} requirements={requirements} racDefinitions={racDefinitions} sessions={sessions} /> : <Navigate to="/" replace />} />
               
               <Route path="/users" element={userRole === UserRole.SYSTEM_ADMIN ? <UserManagement users={users} setUsers={setUsers} /> : <Navigate to="/" replace />} />
-              <Route path="/schedule" element={[UserRole.SYSTEM_ADMIN, UserRole.RAC_ADMIN].includes(userRole) ? <ScheduleTraining sessions={sessions} setSessions={setSessions} /> : <Navigate to="/" replace />} />
-              <Route path="/settings" element={[UserRole.SYSTEM_ADMIN, UserRole.RAC_ADMIN].includes(userRole) ? <SettingsPage racDefinitions={racDefinitions} onUpdateRacs={handleUpdateRacDefinitions} /> : <Navigate to="/" replace />} />
-              <Route path="/manuals" element={<UserManualsPage />} />
+              <Route path="/schedule" element={[UserRole.SYSTEM_ADMIN, UserRole.RAC_ADMIN].includes(userRole) ? <ScheduleTraining sessions={sessions} setSessions={setSessions} rooms={rooms} trainers={trainers} /> : <Navigate to="/" replace />} />
+              <Route path="/settings" element={[UserRole.SYSTEM_ADMIN, UserRole.RAC_ADMIN].includes(userRole) ? <SettingsPage racDefinitions={racDefinitions} onUpdateRacs={handleUpdateRacDefinitions} rooms={rooms} onUpdateRooms={setRooms} trainers={trainers} onUpdateTrainers={setTrainers} /> : <Navigate to="/" replace />} />
+              <Route path="/manuals" element={<UserManualsPage userRole={userRole} />} />
               <Route path="/logs" element={[UserRole.SYSTEM_ADMIN, UserRole.RAC_ADMIN].includes(userRole) ? <LogsPage /> : <Navigate to="/" replace />} />
               
               {/* New Alcohol Control Module */}

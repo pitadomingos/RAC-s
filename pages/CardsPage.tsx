@@ -20,6 +20,7 @@ const CardsPage: React.FC<CardsPageProps> = ({ bookings, requirements, racDefini
 
   // Check if we have specific selection from Request Page
   const stateSelectedBookings = location.state?.selectedBookings as Booking[] | undefined;
+  const savedInputs = location.state?.savedInputs as string[] | undefined;
 
   // STRICT mode: Only show what was passed. If nothing passed, show empty.
   const bookingsToShow = stateSelectedBookings || [];
@@ -47,12 +48,21 @@ const CardsPage: React.FC<CardsPageProps> = ({ bookings, requirements, racDefini
   const pages = chunkArray(uniqueEmployeeBookings, 8);
   const getRequirement = (empId: string) => requirements.find(r => r.employeeId === empId);
 
+  const handleBack = () => {
+      if (savedInputs) {
+          // Use replace to avoid stacking history and ensure cleaner state restoration
+          navigate('/request-cards', { state: { savedInputs }, replace: true });
+      } else {
+          navigate(-1);
+      }
+  };
+
   return (
     <div className="flex flex-col h-full">
       {/* Control Bar */}
       <div className="no-print bg-white p-4 rounded-lg shadow-sm mb-6 flex justify-between items-center">
         <div className="flex items-center gap-4">
-            <button onClick={() => navigate(-1)} className="p-2 hover:bg-gray-100 rounded-full text-slate-500">
+            <button onClick={handleBack} className="p-2 hover:bg-gray-100 rounded-full text-slate-500">
                 <ArrowLeft size={20} />
             </button>
             <div>

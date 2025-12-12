@@ -6,7 +6,7 @@ import {
   Target, Zap, HardHat, Smartphone, CalendarClock,
   Database, Monitor, Lock, Server, Key, Mail,
   Rocket, Code, CheckCircle, BarChart3, FileSpreadsheet, ScrollText,
-  User, Award, Briefcase, HeartHandshake, FileText, Phone, GraduationCap, Activity, CreditCard, Wallet, Wrench
+  User, Award, Briefcase, HeartHandshake, FileText, Phone, GraduationCap, Activity, CreditCard, Wallet, Wrench, Layers
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
@@ -442,7 +442,7 @@ const PresentationPage: React.FC = () => {
       <div className="flex flex-col justify-center h-full max-w-7xl mx-auto animate-fade-in px-4 md:px-0">
           <h2 className="text-3xl md:text-5xl font-bold text-yellow-500 mb-8 md:mb-12">{t.proposal.enhancedCaps.title}</h2>
           
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-8">
               <div className="bg-slate-800 p-6 rounded-2xl border border-slate-700">
                   <h3 className="text-xl md:text-2xl font-bold text-purple-400 mb-3 flex items-center gap-2">
                       <Smartphone size={24} /> {t.proposal.enhancedCaps.mobileVerify.title}
@@ -476,6 +476,16 @@ const PresentationPage: React.FC = () => {
                   </h3>
                   <p className="text-sm md:text-lg text-slate-300 leading-relaxed">
                       {t.proposal.enhancedCaps.auditLogs.desc}
+                  </p>
+              </div>
+
+              {/* NEW CARD */}
+              <div className="bg-slate-800 p-6 rounded-2xl border border-slate-700 md:col-span-2">
+                  <h3 className="text-xl md:text-2xl font-bold text-indigo-400 mb-3 flex items-center gap-2">
+                      <Layers size={24} /> {t.proposal.enhancedCaps.smartBatching.title}
+                  </h3>
+                  <p className="text-sm md:text-lg text-slate-300 leading-relaxed">
+                      {t.proposal.enhancedCaps.smartBatching.desc}
                   </p>
               </div>
           </div>

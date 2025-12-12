@@ -4,7 +4,7 @@ import {
   CheckCircle, Download, Rocket, Lock, Server, Mail, Briefcase, Wrench, 
   Monitor, Database, Key, Target, Calendar, Code, CheckSquare, Zap, AlertTriangle, 
   HardHat, Wifi, Smartphone, CalendarClock, DollarSign, FileSpreadsheet, ScrollText,
-  Shield, Sparkles, UserCog, FileText
+  Shield, Sparkles, UserCog, FileText, Layers
 } from 'lucide-react';
 import { useLanguage } from '../contexts/LanguageContext';
 
@@ -613,6 +613,25 @@ const ProjectProposal: React.FC = () => {
                          </p>
                          <ul className="space-y-2">
                             {t.proposal.enhancedCaps.auditLogs.features.map((feat: string, i: number) => (
+                                <li key={i} className="text-xs text-slate-700 flex items-start gap-2">
+                                <CheckCircle size={14} className="text-green-500 mt-0.5 flex-shrink-0" />
+                                {feat}
+                                </li>
+                            ))}
+                         </ul>
+                    </div>
+
+                    {/* Smart Batch Processing (NEW) */}
+                    <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm print:shadow-none md:col-span-2">
+                         <div className="flex items-center gap-3 mb-4 text-indigo-600">
+                                <Layers size={24} />
+                                <h3 className="font-bold text-slate-800">{t.proposal.enhancedCaps.smartBatching.title}</h3>
+                         </div>
+                         <p className="text-xs text-gray-600 mb-4 leading-relaxed">
+                            {t.proposal.enhancedCaps.smartBatching.desc}
+                         </p>
+                         <ul className="space-y-2 grid grid-cols-1 md:grid-cols-3 gap-2">
+                            {t.proposal.enhancedCaps.smartBatching.features.map((feat: string, i: number) => (
                                 <li key={i} className="text-xs text-slate-700 flex items-start gap-2">
                                 <CheckCircle size={14} className="text-green-500 mt-0.5 flex-shrink-0" />
                                 {feat}

@@ -1,8 +1,7 @@
-
 import React, { useState, useEffect, useMemo } from 'react';
 import { Employee, BookingStatus, Booking, UserRole, TrainingSession, SystemNotification } from '../types';
 import { COMPANIES, DEPARTMENTS, ROLES } from '../constants';
-import { Plus, Trash2, Save, Settings, ShieldCheck, Calendar, UserPlus, FileSignature, CheckCircle2, AlertCircle, Search, UserCheck, RefreshCw } from 'lucide-react';
+import { Plus, Trash2, Save, Settings, ShieldCheck, Calendar, UserPlus, FileSignature, CheckCircle2, AlertCircle, Search, UserCheck, RefreshCw, Lock } from 'lucide-react';
 import { v4 as uuidv4 } from 'uuid';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { sanitizeInput } from '../utils/security';
@@ -15,6 +14,7 @@ interface BookingFormProps {
   userRole: UserRole;
   existingBookings?: Booking[];
   addNotification?: (notification: SystemNotification) => void; 
+  currentEmployeeId?: string; // Passed from App.tsx
 }
 
 interface RenewalBatch {
@@ -22,7 +22,7 @@ interface RenewalBatch {
     employees: Employee[];
 }
 
-const BookingForm: React.FC<BookingFormProps> = ({ addBookings, sessions, userRole, existingBookings = [], addNotification }) => {
+const BookingForm: React.FC<BookingFormProps> = ({ addBookings, sessions, userRole, existingBookings = [], addNotification, currentEmployeeId }) => {
   const navigate = useNavigate();
   const location = useLocation();
   const { t } = useLanguage();
@@ -33,8 +33,9 @@ const BookingForm: React.FC<BookingFormProps> = ({ addBookings, sessions, userRo
   const [renewalQueue, setRenewalQueue] = useState<RenewalBatch[]>([]);
   
   const canManageSessions = userRole === UserRole.SYSTEM_ADMIN || userRole === UserRole.RAC_ADMIN;
+  const isSelfService = userRole === UserRole.USER;
 
-  const initialRows = Array.from({ length: 5 }).map(() => ({
+  const initialRows = Array.from({ length: isSelfService ? 1 : 5 }).map(() => ({
     id: uuidv4(),
     name: '',
     recordId: '',
@@ -58,26 +59,43 @@ const BookingForm: React.FC<BookingFormProps> = ({ addBookings, sessions, userRo
               if (key && !map.has(key)) {
                   map.set(key, b.employee);
               }
+              // Also map by internal ID for self-service lookup
+              map.set(b.employee.id, b.employee);
           }
       });
       return map;
   }, [existingBookings]);
 
   useEffect(() => {
-    if (location.state) {
-        if (location.state.prefill) {
-            setRows(location.state.prefill);
+    // Fix: Cast location.state to avoid 'unknown' type errors
+    const state = location.state as { prefill?: any[]; targetRac?: string; remainingBatches?: RenewalBatch[] } | null;
+    if (state) {
+        if (state.prefill) {
+            setRows(state.prefill);
         }
-        if (location.state.targetRac) {
-            setTargetRac(location.state.targetRac);
+        if (state.targetRac) {
+            setTargetRac(state.targetRac);
         }
-        if (location.state.remainingBatches) {
-            setRenewalQueue(location.state.remainingBatches);
+        if (state.remainingBatches) {
+            setRenewalQueue(state.remainingBatches);
         }
         // Clear state to prevent loop on refresh, but we keep local state
         window.history.replaceState({}, document.title);
     }
   }, [location]);
+
+  // SELF-SERVICE: Auto-populate if USER role
+  useEffect(() => {
+      if (isSelfService && currentEmployeeId) {
+          // Attempt to find employee by internal ID (from App.tsx mock)
+          const found = employeeLookup.get(currentEmployeeId) || 
+                        Array.from(employeeLookup.values()).find((e: Employee) => e.id === currentEmployeeId);
+          
+          if (found) {
+              setRows([{ ...found, id: uuidv4() }]); // Populate single row
+          }
+      }
+  }, [isSelfService, currentEmployeeId, employeeLookup]);
 
   const sessionData = sessions.find(s => s.id === selectedSession);
   const isRac02Selected = sessionData?.racType.includes('RAC02') || sessionData?.racType.includes('RAC 02') || (targetRac && targetRac.includes('RAC02'));
@@ -300,8 +318,10 @@ const BookingForm: React.FC<BookingFormProps> = ({ addBookings, sessions, userRo
                 if (renewalQueue.length > 0) {
                     loadNextBatch();
                 } else {
-                    // Reset to blank
-                    setRows(initialRows);
+                    // Reset
+                    if (!isSelfService) {
+                       setRows(initialRows);
+                    }
                     setSelectedSession('');
                     setTargetRac('');
                 }
@@ -331,7 +351,7 @@ const BookingForm: React.FC<BookingFormProps> = ({ addBookings, sessions, userRo
                     <UserPlus size={28} className="text-yellow-500" />
                   </div>
                   <h2 className="text-3xl font-black tracking-tight text-white">
-                      {t.booking.title}
+                      {isSelfService ? 'Self-Service Booking' : t.booking.title}
                   </h2>
                </div>
                <p className="text-slate-400 text-sm max-w-xl flex items-center gap-2 font-medium">
@@ -469,6 +489,8 @@ const BookingForm: React.FC<BookingFormProps> = ({ addBookings, sessions, userRo
                   {rows.map((row, index) => {
                     // Check if current ID exists in DB
                     const isKnownId = !!(row.recordId && employeeLookup.has(row.recordId.toLowerCase()));
+                    // Lock inputs if Self-Service
+                    const isLocked = isSelfService;
 
                     return (
                     <tr key={row.id} className="group transition-transform duration-200 hover:scale-[1.002]">
@@ -486,18 +508,21 @@ const BookingForm: React.FC<BookingFormProps> = ({ addBookings, sessions, userRo
                             <input 
                               type="text" 
                               className={`w-full border rounded-lg px-3 py-2 text-xs font-mono transition-all outline-none
-                                ${isKnownId 
-                                    ? 'bg-green-50 dark:bg-green-900/20 border-green-200 text-green-700 dark:text-green-300 focus:ring-2 focus:ring-green-500' 
-                                    : 'bg-slate-50 dark:bg-slate-700/50 border-slate-200 dark:border-slate-600 text-slate-900 dark:text-white placeholder-slate-400 focus:ring-2 focus:ring-blue-500'
+                                ${isLocked 
+                                    ? 'bg-gray-100 dark:bg-slate-800 text-gray-500 cursor-not-allowed' 
+                                    : isKnownId 
+                                        ? 'bg-green-50 dark:bg-green-900/20 border-green-200 text-green-700 dark:text-green-300 focus:ring-2 focus:ring-green-500' 
+                                        : 'bg-slate-50 dark:bg-slate-700/50 border-slate-200 dark:border-slate-600 text-slate-900 dark:text-white placeholder-slate-400 focus:ring-2 focus:ring-blue-500'
                                 }`}
                               placeholder="Search ID..."
                               value={row.recordId}
                               onChange={(e) => handleRowChange(index, 'recordId', e.target.value)}
                               onBlur={() => handleIdBlur(index)}
+                              readOnly={isLocked}
                             />
                             {/* Visual indicator for search/found */}
                             <div className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none">
-                                {isKnownId ? (
+                                {isLocked ? <Lock size={12} className="text-gray-400"/> : isKnownId ? (
                                     <UserCheck size={14} className="text-green-500" />
                                 ) : (
                                     <Search size={12} className="text-slate-300" />
@@ -510,11 +535,12 @@ const BookingForm: React.FC<BookingFormProps> = ({ addBookings, sessions, userRo
                       <td className="px-2 py-2">
                         <input 
                           type="text" 
-                          className="w-full bg-slate-50 dark:bg-slate-700/50 border border-slate-200 dark:border-slate-600 rounded-lg px-3 py-2 text-xs font-bold text-slate-900 dark:text-white placeholder-slate-400 focus:bg-white dark:focus:bg-slate-700 focus:ring-2 focus:ring-blue-500 transition-all outline-none disabled:bg-gray-100 dark:disabled:bg-slate-800 disabled:text-gray-500 disabled:cursor-not-allowed"
+                          className={`w-full bg-slate-50 dark:bg-slate-700/50 border border-slate-200 dark:border-slate-600 rounded-lg px-3 py-2 text-xs font-bold text-slate-900 dark:text-white placeholder-slate-400 focus:bg-white dark:focus:bg-slate-700 focus:ring-2 focus:ring-blue-500 transition-all outline-none disabled:bg-gray-100 dark:disabled:bg-slate-800 disabled:text-gray-500 disabled:cursor-not-allowed
+                            ${isLocked ? 'cursor-not-allowed bg-gray-100 dark:bg-slate-800' : ''}`}
                           placeholder={t.common.name}
                           value={row.name}
                           onChange={(e) => handleRowChange(index, 'name', e.target.value)}
-                          disabled={isKnownId}
+                          disabled={isKnownId || isLocked}
                         />
                       </td>
 
@@ -556,7 +582,7 @@ const BookingForm: React.FC<BookingFormProps> = ({ addBookings, sessions, userRo
                           className="w-full bg-slate-50 dark:bg-slate-700/50 border border-slate-200 dark:border-slate-600 rounded-lg px-2 py-2 text-xs text-slate-900 dark:text-slate-300 focus:ring-2 focus:ring-blue-500 outline-none appearance-none cursor-pointer truncate disabled:bg-gray-100 dark:disabled:bg-slate-800 disabled:text-gray-500 disabled:cursor-not-allowed"
                           value={row.company}
                           onChange={(e) => handleRowChange(index, 'company', e.target.value)}
-                          disabled={isKnownId}
+                          disabled={isKnownId || isLocked}
                         >
                           {COMPANIES.map(c => <option key={c} value={c}>{c}</option>)}
                         </select>
@@ -568,7 +594,7 @@ const BookingForm: React.FC<BookingFormProps> = ({ addBookings, sessions, userRo
                           className="w-full bg-slate-50 dark:bg-slate-700/50 border border-slate-200 dark:border-slate-600 rounded-lg px-2 py-2 text-xs text-slate-900 dark:text-slate-300 focus:ring-2 focus:ring-blue-500 outline-none appearance-none cursor-pointer truncate disabled:bg-gray-100 dark:disabled:bg-slate-800 disabled:text-gray-500 disabled:cursor-not-allowed"
                           value={row.department}
                           onChange={(e) => handleRowChange(index, 'department', e.target.value)}
-                          disabled={isKnownId}
+                          disabled={isKnownId || isLocked}
                         >
                           {DEPARTMENTS.map(d => <option key={d} value={d}>{d}</option>)}
                         </select>
@@ -580,21 +606,23 @@ const BookingForm: React.FC<BookingFormProps> = ({ addBookings, sessions, userRo
                           className="w-full bg-slate-50 dark:bg-slate-700/50 border border-slate-200 dark:border-slate-600 rounded-lg px-2 py-2 text-xs text-slate-900 dark:text-slate-300 focus:ring-2 focus:ring-blue-500 outline-none appearance-none cursor-pointer truncate disabled:bg-gray-100 dark:disabled:bg-slate-800 disabled:text-gray-500 disabled:cursor-not-allowed"
                           value={row.role}
                           onChange={(e) => handleRowChange(index, 'role', e.target.value)}
-                          disabled={isKnownId}
+                          disabled={isKnownId || isLocked}
                         >
                           {ROLES.map(r => <option key={r} value={r}>{r}</option>)}
                         </select>
                       </td>
 
                       <td className="px-2 py-2 text-center">
-                        <button 
-                          type="button"
-                          onClick={() => removeRow(index)}
-                          className="p-1.5 text-slate-300 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-all"
-                          title="Remove Row"
-                        >
-                          <Trash2 size={16} />
-                        </button>
+                        {!isLocked && (
+                            <button 
+                            type="button"
+                            onClick={() => removeRow(index)}
+                            className="p-1.5 text-slate-300 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-all"
+                            title="Remove Row"
+                            >
+                            <Trash2 size={16} />
+                            </button>
+                        )}
                       </td>
                     </tr>
                   )})}
@@ -604,18 +632,20 @@ const BookingForm: React.FC<BookingFormProps> = ({ addBookings, sessions, userRo
 
             {/* Footer Actions */}
             <div className="p-6 md:p-8 border-t border-slate-100 dark:border-slate-700 flex flex-col md:flex-row justify-between items-center gap-6 bg-slate-50 dark:bg-slate-800/50">
-              <button 
-                type="button" 
-                onClick={addRow}
-                className="flex items-center gap-2 text-slate-700 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 font-bold px-6 py-3 rounded-xl hover:bg-white dark:hover:bg-slate-700 border border-transparent hover:border-slate-200 dark:hover:border-slate-600 transition-all shadow-sm hover:shadow-md"
-              >
-                <Plus size={20} />
-                <span>{t.booking.addRow}</span>
-              </button>
+              {!isSelfService && (
+                  <button 
+                    type="button" 
+                    onClick={addRow}
+                    className="flex items-center gap-2 text-slate-700 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 font-bold px-6 py-3 rounded-xl hover:bg-white dark:hover:bg-slate-700 border border-transparent hover:border-slate-200 dark:hover:border-slate-600 transition-all shadow-sm hover:shadow-md"
+                  >
+                    <Plus size={20} />
+                    <span>{t.booking.addRow}</span>
+                  </button>
+              )}
 
               <button 
                 type="submit"
-                className="w-full md:w-auto flex items-center justify-center gap-3 bg-gradient-to-r from-yellow-500 to-amber-500 hover:from-yellow-400 hover:to-amber-400 text-slate-900 text-lg px-10 py-4 rounded-2xl font-black shadow-xl shadow-yellow-500/20 transition-all transform hover:-translate-y-1 active:scale-95"
+                className={`w-full md:w-auto flex items-center justify-center gap-3 bg-gradient-to-r from-yellow-500 to-amber-500 hover:from-yellow-400 hover:to-amber-400 text-slate-900 text-lg px-10 py-4 rounded-2xl font-black shadow-xl shadow-yellow-500/20 transition-all transform hover:-translate-y-1 active:scale-95 ${isSelfService ? 'mx-auto' : ''}`}
               >
                 <Save size={24} />
                 <span>{t.booking.submitBooking}</span>

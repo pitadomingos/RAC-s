@@ -104,59 +104,78 @@ const CardTemplate: React.FC<CardTemplateProps> = ({
   const labelClass = "font-bold text-[5px] pl-[2px] flex items-center bg-gray-50 leading-none";
   const valueClass = "text-[5px] font-bold text-center flex items-center justify-center leading-none";
 
-  // Data for Right Column (8 Rows - Mapped from OPS_KEYS)
-  const rightColData = Array.from({ length: 8 }).map((_, idx) => {
-      const key = OPS_KEYS[idx];
-      if (!key) return { label: '', val: '' };
+  // --- Combined List Construction ---
+  interface GridItem {
+      code: string;
+      label: string;
+      isOps: boolean;
+  }
 
-      const isRequired = requirement?.requiredRacs?.[key];
-      
-      // Strict Visibility: If not mapped, show nothing
-      if (!isRequired) return { label: '', val: '' };
+  // 1. Define Master List in Database Order
+  const masterGridItems: GridItem[] = [
+      // Normal RACs (RAC01-10 + PTS, ART, LIBs)
+      ...racDefinitions.map(def => ({
+          code: def.code,
+          label: def.code.startsWith('RAC') ? def.code.replace('RAC', 'RAC ') : def.code,
+          isOps: false
+      })),
+      // Operational Designations
+      ...OPS_KEYS.map(key => {
+          let displayLabel = key;
+          if (key === 'EMI_PTS') displayLabel = 'Emi-PTS';
+          if (key === 'APR_ART') displayLabel = 'Apr-ART';
+          if (key === 'DONO_AREA_PTS') displayLabel = 'Dono-AreaPTS';
+          if (key === 'EXEC') displayLabel = 'Exec';
+          return {
+              code: key,
+              label: displayLabel,
+              isOps: true
+          };
+      })
+  ];
 
+  // 2. Filter to COMPACT list (Remove gaps/unrequired items)
+  // This ensures items flow sequentially without restricted slot positions
+  const activeGridItems = masterGridItems.filter(item => 
+      requirement?.requiredRacs?.[item.code]
+  );
+
+  // Logic to process a single grid row item
+  const processItem = (item: GridItem | undefined) => {
+      if (!item) return { label: '', val: '' };
+
+      const key = item.code;
       let val = '';
-      if (PERMISSION_KEYS.includes(key)) {
+
+      if (item.isOps && PERMISSION_KEYS.includes(key)) {
+          // It's a permission/designation -> Show -SIM-
           val = '-SIM-';
       } else {
+          // It's a training (RAC or Ops Training like PTS) -> Show Date
           const info = getRacDateInfo(key);
           if (info) {
               val = info.dateStr;
               checkDateForMax(info.rawDate);
           } else {
-              // Mapped but Invalid/Expired -> Show Nothing (empty cell)
-              return { label: '', val: '' };
+              // Required but no valid date found -> Empty value (Label still shows)
+              val = '';
           }
       }
 
-      let displayLabel = key;
-      if (key === 'EXEC_CRED') displayLabel = 'Exec. Cred';
-      if (key === 'EMIT_PTS') displayLabel = 'Emitente PTS';
-      if (key === 'APR_ART') displayLabel = 'Aprovad. ART';
+      return { label: item.label, val };
+  };
 
-      return { label: displayLabel, val };
+  // --- Split into Columns ---
+  // Left: 11 Slots
+  // Right: 8 Slots
+  const leftColData = Array.from({ length: 11 }).map((_, idx) => {
+      const item = activeGridItems[idx];
+      return processItem(item);
   });
 
-  // Data for Left Column
-  const totalLeftRows = 11;
-  const leftColData = Array.from({ length: totalLeftRows }).map((_, idx) => {
-      const racDef = racDefinitions[idx];
-      if (!racDef) return { label: '', val: '' };
-      
-      const key = racDef.code;
-      const isRequired = requirement?.requiredRacs?.[key];
-      const label = key.replace('RAC', 'RAC ');
-      
-      // Strict Visibility
-      if (!isRequired) return { label: '', val: '' };
-
-      const info = getRacDateInfo(key);
-      if (info) {
-          checkDateForMax(info.rawDate);
-          return { label, val: info.dateStr };
-      }
-      
-      // Required but not valid -> Empty
-      return { label: '', val: '' };
+  const rightColData = Array.from({ length: 8 }).map((_, idx) => {
+      const item = activeGridItems[11 + idx]; // Offset by 11
+      return processItem(item);
   });
 
   const validUntilStr = maxValidDate ? formatDate(maxValidDate) : '';

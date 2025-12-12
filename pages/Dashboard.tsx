@@ -60,7 +60,7 @@ const Dashboard: React.FC<DashboardProps> = ({
   // Sort sessions by date (closest first) for the "Upcoming" view
   const upcomingSessions = [...sessions]
     .sort((a, b) => new Date(`${a.date}T${a.startTime}`).getTime() - new Date(`${b.date}T${b.startTime}`).getTime())
-    .slice(0, 5);
+    .slice(0, 10); // Increased limit slightly as it scrolls now
 
   const getBookingCount = (sessionId: string) => {
     return bookings.filter(b => b.sessionId === sessionId).length;
@@ -132,30 +132,25 @@ const Dashboard: React.FC<DashboardProps> = ({
   const handleBookRenewals = () => {
       if (expiringBookings.length === 0) return;
 
-      // Group expiring bookings by RAC Type (Session Name)
-      // This ensures we book one RAC type at a time (e.g. Batch 1: RAC01, Batch 2: RAC02)
       const groupedBatch: Record<string, any[]> = {};
 
       expiringBookings.forEach(b => {
-          // Resolve the Training Type Name
           let racType = 'Unknown Training';
           const session = sessions.find(s => s.id === b.sessionId);
           
           if (session) {
               racType = session.racType;
           } else if (b.sessionId.includes('RAC')) {
-              // Fallback for older records or strings like 'RAC01'
               const parts = b.sessionId.split(' - ');
-              racType = parts[0]; // e.g. "RAC01" or "RAC 01"
+              racType = parts[0]; 
           } else {
-              racType = b.sessionId; // Raw ID
+              racType = b.sessionId;
           }
 
           if (!groupedBatch[racType]) {
               groupedBatch[racType] = [];
           }
 
-          // Create the form-compatible employee row object
           groupedBatch[racType].push({
               id: uuidv4(),
               name: b.employee.name,
@@ -169,7 +164,6 @@ const Dashboard: React.FC<DashboardProps> = ({
           });
       });
 
-      // Convert grouped object to array of batches
       const batchQueue = Object.entries(groupedBatch).map(([racType, employees]) => ({
           racType,
           employees
@@ -179,7 +173,6 @@ const Dashboard: React.FC<DashboardProps> = ({
           const firstBatch = batchQueue[0];
           const remainingBatches = batchQueue.slice(1);
 
-          // Navigate to booking with the queue
           navigate('/booking', { 
               state: { 
                   prefill: firstBatch.employees,
@@ -190,29 +183,26 @@ const Dashboard: React.FC<DashboardProps> = ({
       }
   };
 
-  // --- Logic for Employee Bookings Table ---
   const employeeBookingsList = useMemo(() => {
     return bookings.map(b => {
-      // Resolve Session Details
       const session = sessions.find(s => s.id === b.sessionId);
       
       let racName = b.sessionId;
       let sessionDate = '';
       let sessionRoom = 'TBD';
+      let sessionTrainer = 'TBD';
 
       if (session) {
         racName = session.racType;
         sessionDate = session.date;
         sessionRoom = session.location;
+        sessionTrainer = session.instructor;
       } else {
-         // Fallback for raw string IDs in mock data
-         // If sessionId looks like "RAC01 - ...", use it as name
          if (b.sessionId.includes('RAC')) {
             racName = b.sessionId;
          }
       }
 
-      // Simplify RAC name for filtering (e.g. "RAC 01 - Height" -> "RAC01")
       const racCode = racName.split(' - ')[0].replace(' ', '');
 
       return {
@@ -220,21 +210,16 @@ const Dashboard: React.FC<DashboardProps> = ({
         racName,
         racCode,
         sessionDate,
-        sessionRoom
+        sessionRoom,
+        sessionTrainer
       };
     });
   }, [bookings, sessions]);
 
   const filteredEmployeeBookings = employeeBookingsList.filter(item => {
-    // Filter by Company
     if (empFilterCompany !== 'All' && item.employee.company !== empFilterCompany) return false;
-    
-    // Filter by RAC
     if (empFilterRac !== 'All' && item.racCode !== empFilterRac) return false;
-
-    // Filter by Date
     if (empFilterDate && item.sessionDate !== empFilterDate) return false;
-
     return true;
   });
 
@@ -242,8 +227,8 @@ const Dashboard: React.FC<DashboardProps> = ({
 
   return (
     <div className="space-y-6">
-      {/* Top Header */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-white dark:bg-slate-800 p-4 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 transition-colors">
+      {/* Top Header - Sticky ONLY on Desktop */}
+      <div className="md:sticky md:top-0 z-20 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-white dark:bg-slate-800 p-4 rounded-xl shadow-md border border-slate-200 dark:border-slate-700 transition-colors backdrop-blur-sm bg-opacity-95 dark:bg-opacity-95">
         <div>
           <h2 className="text-lg font-bold text-slate-800 dark:text-white">{t.dashboard.title}</h2>
           <p className="text-sm text-slate-700 dark:text-gray-400">{t.dashboard.subtitle}</p>
@@ -267,7 +252,7 @@ const Dashboard: React.FC<DashboardProps> = ({
         onBookRenewals={handleBookRenewals}
       />
 
-       {/* Auto-Booking Approval Table (Paginated) - Only visible to Admins */}
+       {/* Auto-Booking Approval Table (Paginated) */}
        {canManageAutoBookings && autoBookings.length > 0 && onApproveAutoBooking && onRejectAutoBooking && (
           <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-orange-200 dark:border-orange-900/50 overflow-hidden">
              <div className="p-4 bg-orange-50 dark:bg-orange-900/20 border-b border-orange-100 dark:border-orange-800 flex justify-between items-center">
@@ -310,7 +295,7 @@ const Dashboard: React.FC<DashboardProps> = ({
 
              <div className="overflow-x-auto">
                  <table className="min-w-full divide-y divide-orange-100 dark:divide-orange-900/30">
-                     <thead className="bg-white dark:bg-slate-800">
+                     <thead className="bg-white dark:bg-slate-800 md:sticky md:top-0 z-10">
                          <tr>
                              <th className="px-4 py-3 text-left text-xs font-bold text-black dark:text-gray-400 uppercase">Employee</th>
                              <th className="px-4 py-3 text-left text-xs font-bold text-black dark:text-gray-400 uppercase">Session / RAC</th>
@@ -373,8 +358,8 @@ const Dashboard: React.FC<DashboardProps> = ({
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
         
         {/* Left Column: Upcoming Sessions (Session Centric) */}
-        <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden flex flex-col transition-colors">
-          <div className="px-6 py-4 border-b border-slate-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-800/50 flex justify-between items-center">
+        <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden flex flex-col transition-colors h-[500px]">
+          <div className="px-6 py-4 border-b border-slate-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-800/50 flex justify-between items-center shrink-0">
              <div className="flex items-center gap-2">
                 <Calendar className="text-yellow-600 dark:text-yellow-500" size={20} />
                 <h3 className="font-bold text-slate-800 dark:text-white text-lg">{t.dashboard.upcoming.title}</h3>
@@ -384,9 +369,9 @@ const Dashboard: React.FC<DashboardProps> = ({
              </button>
           </div>
           
-          <div className="overflow-x-auto flex-1">
+          <div className="overflow-auto flex-1">
             <table className="min-w-full divide-y divide-gray-200 dark:divide-slate-700">
-              <thead className="bg-white dark:bg-slate-800">
+              <thead className="bg-white dark:bg-slate-800 md:sticky md:top-0 z-10 shadow-sm">
                  <tr>
                    <th className="px-4 py-3 text-left text-xs font-bold text-black dark:text-gray-400 uppercase tracking-wider">{t.dashboard.upcoming.date}</th>
                    <th className="px-4 py-3 text-left text-xs font-bold text-black dark:text-gray-400 uppercase tracking-wider">{t.dashboard.upcoming.session}</th>
@@ -427,7 +412,7 @@ const Dashboard: React.FC<DashboardProps> = ({
 
         {/* Right Column: Employees Booked (Person Centric) */}
         <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden flex flex-col h-[500px] transition-colors">
-           <div className="px-6 py-4 border-b border-slate-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-800/50">
+           <div className="px-6 py-4 border-b border-slate-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-800/50 shrink-0">
              <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-2">
                    <User className="text-blue-600 dark:text-blue-500" size={20} />
@@ -468,21 +453,22 @@ const Dashboard: React.FC<DashboardProps> = ({
              </div>
            </div>
 
-           <div className="overflow-auto flex-1">
+           <div className="overflow-auto flex-1 relative">
               <table className="min-w-full divide-y divide-gray-200 dark:divide-slate-700">
-                <thead className="bg-gray-50 dark:bg-slate-800 sticky top-0 shadow-sm z-10">
+                <thead className="bg-gray-50 dark:bg-slate-800 md:sticky md:top-0 shadow-sm z-10">
                    <tr>
                      <th className="px-3 py-2 text-left text-[10px] font-bold text-black dark:text-gray-400 uppercase tracking-wider">ID</th>
                      <th className="px-3 py-2 text-left text-[10px] font-bold text-black dark:text-gray-400 uppercase tracking-wider">{t.dashboard.booked.tableEmployee}</th>
                      <th className="px-3 py-2 text-left text-[10px] font-bold text-black dark:text-gray-400 uppercase tracking-wider">{t.dashboard.booked.tableRac}</th>
                      <th className="px-3 py-2 text-left text-[10px] font-bold text-black dark:text-gray-400 uppercase tracking-wider">{t.dashboard.booked.tableDate}</th>
                      <th className="px-3 py-2 text-left text-[10px] font-bold text-black dark:text-gray-400 uppercase tracking-wider">{t.dashboard.booked.tableRoom}</th>
+                     <th className="px-3 py-2 text-left text-[10px] font-bold text-black dark:text-gray-400 uppercase tracking-wider">{t.dashboard.booked.tableTrainer}</th>
                    </tr>
                 </thead>
                 <tbody className="bg-white dark:bg-slate-800 divide-y divide-gray-200 dark:divide-slate-700">
                    {filteredEmployeeBookings.length === 0 ? (
                       <tr>
-                        <td colSpan={5} className="px-6 py-8 text-center text-gray-400 dark:text-gray-500 text-sm">
+                        <td colSpan={6} className="px-6 py-8 text-center text-gray-400 dark:text-gray-500 text-sm">
                           {t.dashboard.booked.noData}
                         </td>
                       </tr>
@@ -506,6 +492,9 @@ const Dashboard: React.FC<DashboardProps> = ({
                            </td>
                            <td className="px-3 py-2 whitespace-nowrap text-xs text-slate-800 dark:text-gray-400">
                              {item.sessionRoom ? String(item.sessionRoom) : <span className="text-gray-300 italic">--</span>}
+                           </td>
+                           <td className="px-3 py-2 whitespace-nowrap text-xs text-slate-800 dark:text-gray-400">
+                             {item.sessionTrainer ? String(item.sessionTrainer) : <span className="text-gray-300 italic">--</span>}
                            </td>
                         </tr>
                       ))

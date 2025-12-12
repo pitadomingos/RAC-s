@@ -18,6 +18,18 @@ export interface RacDef {
   name: string;
 }
 
+export interface Room {
+  id: string;
+  name: string;
+  capacity: number;
+}
+
+export interface Trainer {
+  id: string;
+  name: string;
+  racs: string[];
+}
+
 export enum UserRole {
   SYSTEM_ADMIN = 'System Admin',
   RAC_ADMIN = 'RAC Admin',

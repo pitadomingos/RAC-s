@@ -1,58 +1,91 @@
 
-
-
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { UserRole } from '../types';
 import { 
   Monitor, Shield, Briefcase, Users, UserCog, 
-  Settings, Database, Plus, Save, Upload, Download, 
-  CheckCircle, AlertTriangle, Printer, Search, Bell
+  Settings, AlertTriangle, Bell, Info, CheckCircle
 } from 'lucide-react';
 import { useLanguage } from '../contexts/LanguageContext';
 
-const UserManualsPage: React.FC = () => {
+interface UserManualsPageProps {
+    userRole: UserRole;
+}
+
+const UserManualsPage: React.FC<UserManualsPageProps> = ({ userRole }) => {
   const { t } = useLanguage();
-  const [activeRole, setActiveRole] = useState<UserRole>(UserRole.SYSTEM_ADMIN);
+  const [activeTab, setActiveTab] = useState<UserRole>(userRole);
 
-  // Safety check to prevent crash if translations are not yet loaded or missing
-  if (!t || !t.manuals || !t.proposal) {
-      return <div className="p-8 text-center text-gray-500">Loading manuals...</div>;
-  }
+  // Sync active tab when userRole changes (e.g. simulation)
+  useEffect(() => {
+      setActiveTab(userRole);
+  }, [userRole]);
 
-  const roles = [
-    { id: UserRole.SYSTEM_ADMIN, label: t.proposal.roles.sysAdmin.title, icon: Monitor, color: 'text-blue-600', bg: 'bg-blue-50' },
-    { id: UserRole.RAC_ADMIN, label: t.proposal.roles.racAdmin.title, icon: Shield, color: 'text-yellow-600', bg: 'bg-yellow-50' },
-    { id: UserRole.RAC_TRAINER, label: t.proposal.roles.racTrainer.title, icon: Briefcase, color: 'text-green-600', bg: 'bg-green-50' },
-    { id: UserRole.DEPT_ADMIN, label: t.proposal.roles.deptAdmin.title, icon: Users, color: 'text-purple-600', bg: 'bg-purple-50' },
-    { id: UserRole.USER, label: t.proposal.roles.user.title, icon: UserCog, color: 'text-gray-600', bg: 'bg-gray-50' },
-  ];
+  // Define available manuals based on Role Heirarchy
+  const getAvailableRoles = () => {
+      if (userRole === UserRole.SYSTEM_ADMIN) {
+          return [UserRole.SYSTEM_ADMIN, UserRole.RAC_ADMIN, UserRole.RAC_TRAINER, UserRole.DEPT_ADMIN, UserRole.USER];
+      }
+      if (userRole === UserRole.RAC_ADMIN) {
+          return [UserRole.RAC_ADMIN, UserRole.RAC_TRAINER, UserRole.USER];
+      }
+      if (userRole === UserRole.RAC_TRAINER) {
+          return [UserRole.RAC_TRAINER, UserRole.USER];
+      }
+      if (userRole === UserRole.DEPT_ADMIN) {
+          return [UserRole.DEPT_ADMIN, UserRole.USER];
+      }
+      return [UserRole.USER];
+  };
+
+  const availableRoles = getAvailableRoles();
+
+  const getIcon = (role: UserRole) => {
+      switch(role) {
+          case UserRole.SYSTEM_ADMIN: return Monitor;
+          case UserRole.RAC_ADMIN: return Shield;
+          case UserRole.RAC_TRAINER: return Briefcase;
+          case UserRole.DEPT_ADMIN: return Users;
+          default: return UserCog;
+      }
+  };
+
+  const getColor = (role: UserRole) => {
+      switch(role) {
+          case UserRole.SYSTEM_ADMIN: return 'text-blue-600 bg-blue-50';
+          case UserRole.RAC_ADMIN: return 'text-yellow-600 bg-yellow-50';
+          case UserRole.RAC_TRAINER: return 'text-green-600 bg-green-50';
+          case UserRole.DEPT_ADMIN: return 'text-purple-600 bg-purple-50';
+          default: return 'text-gray-600 bg-gray-50';
+      }
+  };
 
   return (
-    <div className="flex flex-col md:flex-row h-[calc(100vh-80px)] bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+    <div className="flex flex-col md:flex-row h-[calc(100vh-80px)] bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden transition-colors">
       
       {/* Sidebar Navigation */}
-      <div className="w-full md:w-64 bg-slate-50 border-r border-slate-200 flex flex-col">
-        <div className="p-6 border-b border-slate-200">
-           <h2 className="text-lg font-bold text-slate-800">{t.manuals.title}</h2>
-           <p className="text-xs text-gray-500 mt-1">{t.manuals.subtitle}</p>
+      <div className="w-full md:w-72 bg-slate-50 dark:bg-slate-900/50 border-r border-slate-200 dark:border-slate-700 flex flex-col">
+        <div className="p-6 border-b border-slate-200 dark:border-slate-700">
+           <h2 className="text-lg font-bold text-slate-800 dark:text-white">{t.manuals.title}</h2>
+           <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{t.manuals.subtitle}</p>
         </div>
-        <div className="flex-1 overflow-y-auto p-2 space-y-1">
-           {roles.map((role) => {
-             const Icon = role.icon;
-             const isActive = activeRole === role.id;
+        <div className="flex-1 overflow-y-auto p-3 space-y-2">
+           {availableRoles.map((role) => {
+             const Icon = getIcon(role);
+             const isActive = activeTab === role;
+             const colorClass = getColor(role);
              return (
                <button
-                 key={role.id}
-                 onClick={() => setActiveRole(role.id)}
+                 key={role}
+                 onClick={() => setActiveTab(role)}
                  className={`
-                    w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-all
-                    ${isActive ? 'bg-white shadow-sm border border-slate-200 text-slate-900' : 'text-gray-500 hover:bg-gray-100 hover:text-slate-700'}
+                    w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all text-left
+                    ${isActive ? 'bg-white dark:bg-slate-800 shadow-md border border-slate-100 dark:border-slate-600 ring-1 ring-black/5 dark:ring-white/5' : 'text-gray-500 dark:text-gray-400 hover:bg-white/50 dark:hover:bg-slate-800/50'}
                  `}
                >
-                 <div className={`p-1.5 rounded-md ${role.bg} ${role.color}`}>
-                    <Icon size={16} />
+                 <div className={`p-2 rounded-lg ${colorClass}`}>
+                    <Icon size={18} />
                  </div>
-                 <span>{role.label}</span>
+                 <span className={isActive ? 'text-slate-900 dark:text-white font-bold' : ''}>{String(role)}</span>
                </button>
              );
            })}
@@ -60,50 +93,43 @@ const UserManualsPage: React.FC = () => {
       </div>
 
       {/* Content Area */}
-      <div className="flex-1 overflow-y-auto p-8 bg-white scroll-smooth">
+      <div className="flex-1 overflow-y-auto p-8 bg-white dark:bg-slate-800 scroll-smooth">
          
          {/* System Admin Manual */}
-         {activeRole === UserRole.SYSTEM_ADMIN && (
-            <div className="max-w-4xl mx-auto animate-fade-in-up">
-               <Header title={t.manuals.sysAdmin.title} icon={Monitor} color="blue" />
+         {activeTab === UserRole.SYSTEM_ADMIN && (
+            <div className="max-w-4xl mx-auto animate-fade-in-up space-y-12">
+               <Header title={t.manuals.sysAdmin.title} icon={Monitor} color="blue" subtitle={t.manuals.sysAdmin.subtitle} />
                
-               <Section title={t.manuals.sysAdmin.sec1}>
-                  <p>{t.manuals.sysAdmin.sec1text}</p>
-                  <ul className="step-list">
+               <Section title={t.manuals.sysAdmin.configTitle}>
+                  <p>{t.manuals.sysAdmin.configDesc}</p>
+                  <ul className="step-list mt-4">
                      <Step 
                         num="1" 
-                        text={t.manuals.sysAdmin.step1} 
-                        visual={<div className="btn-mock"><Plus size={12}/> {t.settings.rooms.new}</div>}
+                        text={t.manuals.sysAdmin.rooms}
+                        visual={<Settings className="text-slate-400" size={16} />}
                      />
                      <Step 
                         num="2" 
-                        text={t.manuals.sysAdmin.step2} 
-                        visual={<div className="badge-mock">RAC01, RAC05</div>} 
+                        text={t.manuals.sysAdmin.trainers}
+                        visual={<Users className="text-slate-400" size={16} />}
                      />
                      <Step 
                         num="3" 
-                        text={t.manuals.sysAdmin.step3} 
-                        visual={<div className="btn-primary-mock"><Save size={12}/> {t.settings.saveAll}</div>}
+                        text={t.manuals.sysAdmin.racs}
+                        visual={<AlertTriangle className="text-red-400" size={16} />}
                      />
                   </ul>
                </Section>
 
-               <Section title={t.manuals.sysAdmin.sec2}>
-                  <p>{t.manuals.sysAdmin.sec2text}</p>
+               <Section title={t.manuals.sysAdmin.dbTitle}>
+                  <p>{t.manuals.sysAdmin.dbDesc}</p>
+                  <AlertBox type="info">
+                      {t.manuals.sysAdmin.csv}
+                  </AlertBox>
                   <ul className="step-list">
                      <Step 
-                        num="1" 
-                        text={t.manuals.sysAdmin.step4} 
-                        visual={<div className="btn-mock">{t.common.template}</div>}
-                     />
-                     <Step 
-                        num="2" 
-                        text={t.manuals.sysAdmin.step5} 
-                     />
-                     <Step 
-                        num="3" 
-                        text={t.manuals.sysAdmin.step6} 
-                        visual={<div className="btn-blue-mock"><Upload size={12}/> {t.common.import}</div>}
+                        num="A" 
+                        text={t.manuals.sysAdmin.active}
                      />
                   </ul>
                </Section>
@@ -111,133 +137,95 @@ const UserManualsPage: React.FC = () => {
          )}
 
          {/* RAC Admin Manual */}
-         {activeRole === UserRole.RAC_ADMIN && (
-            <div className="max-w-4xl mx-auto animate-fade-in-up">
-               <Header title={t.manuals.racAdmin.title} icon={Shield} color="yellow" />
+         {activeTab === UserRole.RAC_ADMIN && (
+            <div className="max-w-4xl mx-auto animate-fade-in-up space-y-12">
+               <Header title={t.manuals.racAdmin.title} icon={Shield} color="yellow" subtitle={t.manuals.racAdmin.subtitle} />
                
-               <Section title={t.manuals.racAdmin.sec1}>
-                  <p>{t.manuals.racAdmin.sec1text}</p>
-                  <ul className="step-list">
-                     <Step 
-                        num="1" 
-                        text={t.manuals.racAdmin.step1} 
-                        visual={<div className="btn-black-mock"><Plus size={12}/> {t.schedule.newSession}</div>}
-                     />
-                     <Step 
-                        num="2" 
-                        text={t.manuals.racAdmin.step2} 
-                     />
+               <Section title={t.manuals.racAdmin.schedTitle}>
+                  <p>{t.manuals.racAdmin.schedDesc}</p>
+                  <ul className="step-list mt-4">
+                     <Step num="1" text={t.manuals.racAdmin.create} />
+                     <Step num="2" text={t.manuals.racAdmin.lang} />
                   </ul>
                </Section>
 
-               <Section title={t.manuals.racAdmin.sec2}>
-                  <p>{t.manuals.racAdmin.sec2text}</p>
+               <Section title={t.manuals.racAdmin.autoTitle}>
+                  <p>{t.manuals.racAdmin.autoDesc}</p>
                   <AlertBox type="warning">
-                      <strong>{t.manuals.racAdmin.alert}</strong>
+                      {t.manuals.racAdmin.approve}
                   </AlertBox>
-                  <ul className="step-list">
-                     <Step 
-                        num="1" 
-                        text={t.manuals.racAdmin.step3} 
-                        visual={<div className="flex gap-2"><Bell size={14}/> {t.dashboard.renewal.title}</div>}
-                     />
-                     <Step 
-                        num="2" 
-                        text={t.manuals.racAdmin.step4} 
-                     />
-                  </ul>
+               </Section>
+
+               <Section title={t.manuals.racAdmin.renewTitle}>
+                  <Step num="->" text={t.manuals.racAdmin.renewDesc} />
                </Section>
             </div>
          )}
 
          {/* RAC Trainer Manual */}
-         {activeRole === UserRole.RAC_TRAINER && (
-            <div className="max-w-4xl mx-auto animate-fade-in-up">
-               <Header title={t.manuals.racTrainer.title} icon={Briefcase} color="green" />
+         {activeTab === UserRole.RAC_TRAINER && (
+            <div className="max-w-4xl mx-auto animate-fade-in-up space-y-12">
+               <Header title={t.manuals.racTrainer.title} icon={Briefcase} color="green" subtitle={t.manuals.racTrainer.subtitle} />
                
-               <Section title={t.manuals.racTrainer.sec1}>
-                  <p>{t.manuals.racTrainer.sec1text}</p>
-                  <AlertBox type="error">
-                      <strong>{t.manuals.racTrainer.alert}</strong>
-                  </AlertBox>
-                  <ul className="step-list">
-                     <Step 
-                        num="1" 
-                        text={t.manuals.racTrainer.step1} 
-                     />
-                     <Step 
-                        num="2" 
-                        text={t.manuals.racTrainer.step2} 
-                        visual={<div className="checkbox-mock checked" />}
-                     />
-                     <Step 
-                        num="3" 
-                        text={t.manuals.racTrainer.step3} 
-                        visual={<div className="checkbox-red-mock checked" />}
-                     />
-                     <Step 
-                        num="4" 
-                        text={t.manuals.racTrainer.step4} 
-                     />
+               <Section title={t.manuals.racTrainer.inputTitle}>
+                  <p>{t.manuals.racTrainer.inputDesc}</p>
+                  <ul className="step-list mt-4">
+                     <Step num="1" text={t.manuals.racTrainer.grading} />
                   </ul>
+               </Section>
+
+               <Section title="Special Rules">
+                  <AlertBox type="error">
+                      {t.manuals.racTrainer.rac02}
+                  </AlertBox>
+               </Section>
+
+               <Section title="Finalize">
+                  <Step num="->" text={t.manuals.racTrainer.save} />
                </Section>
             </div>
          )}
 
          {/* Dept Admin Manual */}
-         {activeRole === UserRole.DEPT_ADMIN && (
-            <div className="max-w-4xl mx-auto animate-fade-in-up">
-               <Header title={t.manuals.deptAdmin.title} icon={Users} color="purple" />
+         {activeTab === UserRole.DEPT_ADMIN && (
+            <div className="max-w-4xl mx-auto animate-fade-in-up space-y-12">
+               <Header title={t.manuals.deptAdmin.title} icon={Users} color="purple" subtitle={t.manuals.deptAdmin.subtitle} />
                
-               <Section title={t.manuals.deptAdmin.sec1}>
-                  <p>{t.manuals.deptAdmin.sec1text}</p>
-                  <ul className="step-list">
-                     <Step 
-                        num="1" 
-                        text={t.manuals.deptAdmin.step1} 
-                        visual={<CheckCircle size={16} className="text-green-500" />}
-                     />
-                     <Step 
-                        num="2" 
-                        text={t.manuals.deptAdmin.step2} 
-                        visual={<div className="btn-black-mock"><Printer size={12}/> {t.cards.goToPrint}</div>}
-                     />
+               <Section title={t.manuals.deptAdmin.reqTitle}>
+                  <p>{t.manuals.deptAdmin.reqDesc}</p>
+                  <ul className="step-list mt-4">
+                     <Step num="1" text={t.manuals.deptAdmin.search} />
+                     <Step num="2" text={t.manuals.deptAdmin.print} />
                   </ul>
                </Section>
 
-               <Section title={t.manuals.deptAdmin.sec2}>
-                  <p>{t.manuals.deptAdmin.sec2text}</p>
-                  <ul className="step-list">
-                     <Step 
-                        num="1" 
-                        text={t.manuals.deptAdmin.step3} 
-                     />
-                     <Step 
-                        num="2" 
-                        text={t.manuals.deptAdmin.step4} 
-                     />
-                  </ul>
+               <Section title={t.manuals.deptAdmin.repTitle}>
+                  <p>{t.manuals.deptAdmin.repDesc}</p>
                </Section>
             </div>
          )}
 
          {/* User Manual */}
-         {activeRole === UserRole.USER && (
-            <div className="max-w-4xl mx-auto animate-fade-in-up">
-               <Header title={t.manuals.user.title} icon={UserCog} color="gray" />
+         {activeTab === UserRole.USER && (
+            <div className="max-w-4xl mx-auto animate-fade-in-up space-y-12">
+               <Header title={t.manuals.user.title} icon={UserCog} color="gray" subtitle={t.manuals.user.subtitle} />
                
-               <Section title={t.manuals.user.sec1}>
-                  <p>{t.manuals.user.sec1text}</p>
-                  <div className="flex gap-4 my-4">
-                     <div className="badge-green-mock">{t.manuals.user.compliant}</div>
-                  </div>
-                  <div className="flex gap-4 mb-4">
-                     <div className="badge-red-mock">{t.manuals.user.nonCompliant}</div>
+               <Section title={t.manuals.user.statusTitle}>
+                  <p>{t.manuals.user.statusDesc}</p>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                      <div className="p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
+                          <h4 className="font-bold text-green-700 dark:text-green-400 flex items-center gap-2"><CheckCircle size={16}/> Compliant</h4>
+                          <p className="text-xs text-slate-600 dark:text-slate-300 mt-1">{t.manuals.user.green}</p>
+                      </div>
+                      <div className="p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+                          <h4 className="font-bold text-red-700 dark:text-red-400 flex items-center gap-2"><AlertTriangle size={16}/> Non-Compliant</h4>
+                          <p className="text-xs text-slate-600 dark:text-slate-300 mt-1">{t.manuals.user.red}</p>
+                      </div>
                   </div>
                </Section>
 
-               <Section title={t.manuals.user.sec2}>
-                  <p>{t.manuals.user.sec2text}</p>
+               <Section title="Digital Verification">
+                  <Step num="QR" text={t.manuals.user.qr} />
                </Section>
             </div>
          )}
@@ -249,42 +237,63 @@ const UserManualsPage: React.FC = () => {
 
 // --- Helper Components for Styling ---
 
-const Header = ({ title, icon: Icon, color }: any) => (
-   <div className="flex items-center gap-3 mb-8 pb-4 border-b border-gray-100">
-      <div className={`p-3 rounded-lg bg-${color}-50 text-${color}-600`}>
-         <Icon size={24} />
-      </div>
-      <h1 className="text-2xl font-black text-slate-900">{title}</h1>
-   </div>
-);
+const Header = ({ title, icon: Icon, color, subtitle }: any) => {
+    const colorMap: Record<string, string> = {
+        blue: 'bg-blue-50 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400',
+        yellow: 'bg-yellow-50 text-yellow-600 dark:bg-yellow-900/30 dark:text-yellow-400',
+        green: 'bg-green-50 text-green-600 dark:bg-green-900/30 dark:text-green-400',
+        purple: 'bg-purple-50 text-purple-600 dark:bg-purple-900/30 dark:text-purple-400',
+        gray: 'bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-300'
+    };
+
+    return (
+        <div className="flex items-center gap-4 mb-8 pb-6 border-b border-slate-100 dark:border-slate-700">
+            <div className={`p-4 rounded-xl shadow-sm ${colorMap[color]}`}>
+                <Icon size={32} />
+            </div>
+            <div>
+                <h1 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight">{title}</h1>
+                <p className="text-slate-500 dark:text-slate-400 font-medium">{subtitle}</p>
+            </div>
+        </div>
+    );
+};
 
 const Section = ({ title, children }: any) => (
-   <div className="mb-8">
-      <h3 className="text-lg font-bold text-slate-800 mb-3">{title}</h3>
-      <div className="text-sm text-slate-600 leading-relaxed space-y-3">
+   <div className="mb-10">
+      <h3 className="text-xl font-bold text-slate-800 dark:text-white mb-4 flex items-center gap-2">
+          {title}
+      </h3>
+      <div className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed space-y-4">
          {children}
       </div>
    </div>
 );
 
 const Step = ({ num, text, visual }: any) => (
-   <li className="flex items-start gap-4 p-3 rounded-lg hover:bg-gray-50 transition-colors border border-transparent hover:border-gray-100">
-      <div className="flex-shrink-0 w-6 h-6 rounded-full bg-slate-900 text-white flex items-center justify-center text-xs font-bold mt-0.5">
+   <li className="flex items-start gap-4 p-4 rounded-xl bg-slate-50 dark:bg-slate-900/50 border border-slate-100 dark:border-slate-700 transition-colors">
+      <div className="flex-shrink-0 w-8 h-8 rounded-full bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-white flex items-center justify-center text-sm font-bold mt-0.5 shadow-inner">
          {num}
       </div>
       <div className="flex-1">
-         <p className="text-sm text-slate-700">{text}</p>
-         {visual && <div className="mt-2">{visual}</div>}
+         <p className="text-sm font-medium text-slate-800 dark:text-slate-200">{text}</p>
+         {visual && <div className="mt-3 p-3 bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-600 shadow-sm">{visual}</div>}
       </div>
    </li>
 );
 
 const AlertBox = ({ type, children }: any) => {
-   const styles = type === 'error' ? 'bg-red-50 border-red-200 text-red-800' : 'bg-yellow-50 border-yellow-200 text-yellow-800';
-   const Icon = type === 'error' ? AlertTriangle : Bell;
+   const styles = type === 'error' 
+    ? 'bg-red-50 border-red-200 text-red-800 dark:bg-red-900/20 dark:border-red-900/50 dark:text-red-300' 
+    : type === 'warning'
+        ? 'bg-orange-50 border-orange-200 text-orange-800 dark:bg-orange-900/20 dark:border-orange-900/50 dark:text-orange-300'
+        : 'bg-blue-50 border-blue-200 text-blue-800 dark:bg-blue-900/20 dark:border-blue-900/50 dark:text-blue-300';
+   
+   const Icon = type === 'error' ? AlertTriangle : type === 'warning' ? Bell : Info;
+   
    return (
-      <div className={`p-4 rounded-lg border flex gap-3 text-sm my-4 ${styles}`}>
-         <Icon size={18} className="flex-shrink-0 mt-0.5" />
+      <div className={`p-4 rounded-xl border flex gap-3 text-sm my-4 shadow-sm ${styles}`}>
+         <Icon size={20} className="flex-shrink-0 mt-0.5" />
          <div>{children}</div>
       </div>
    );

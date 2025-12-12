@@ -1,5 +1,4 @@
 
-// ... existing imports ...
 import React, { useState, useMemo, useRef } from 'react';
 import { Booking, BookingStatus, EmployeeRequirement, Employee, TrainingSession, RacDef } from '../types';
 import { COMPANIES, DEPARTMENTS, ROLES, OPS_KEYS, PERMISSION_KEYS } from '../constants';
@@ -87,13 +86,24 @@ const DatabasePage: React.FC<DatabasePageProps> = ({ bookings, requirements, upd
 
   const handleRequirementChange = (empId: string, racKey: string, isRequired: boolean) => {
     const current = getRequirement(empId);
+    
+    // Prepare the new requirements map
+    const newRequiredRacs = { ...current.requiredRacs, [racKey]: isRequired };
+
+    // Mutual Exclusion Logic for LIB-OPS and LIB-MOV
+    // If one is enabled, the other must be disabled.
+    if (isRequired) {
+        if (racKey === 'LIB_OPS') {
+            newRequiredRacs['LIB_MOV'] = false;
+        } else if (racKey === 'LIB_MOV') {
+            newRequiredRacs['LIB_OPS'] = false;
+        }
+    }
+
     const updated = {
       ...current,
       employeeId: empId,
-      requiredRacs: {
-        ...current.requiredRacs,
-        [racKey]: isRequired
-      }
+      requiredRacs: newRequiredRacs
     };
     updateRequirements(updated);
   };
@@ -334,10 +344,10 @@ const DatabasePage: React.FC<DatabasePageProps> = ({ bookings, requirements, upd
   };
 
   return (
-    <div className="flex flex-col h-full bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden relative transition-colors">
+    <div className="flex flex-col h-auto md:h-[calc(100vh-6rem)] bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden relative transition-colors">
         
         {/* Header Control Bar */}
-        <div className="p-4 border-b border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-800/50 flex flex-col xl:flex-row justify-between gap-4">
+        <div className="shrink-0 p-4 border-b border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-800/50 flex flex-col xl:flex-row justify-between gap-4">
              <div>
                  <h2 className="text-lg font-bold text-slate-800 dark:text-white flex items-center gap-2">
                      {t.database.title}
@@ -385,12 +395,13 @@ const DatabasePage: React.FC<DatabasePageProps> = ({ bookings, requirements, upd
         {/* High Density Table */}
         <div className="flex-1 overflow-auto">
              <table className="min-w-full divide-y divide-gray-200 dark:divide-slate-700">
-                 {/* ... table content same as before ... */}
-                 <thead className="bg-gray-100 dark:bg-slate-700 sticky top-0 z-10 shadow-sm">
+                 <thead className="bg-gray-100 dark:bg-slate-700 md:sticky md:top-0 z-10 shadow-sm">
                      <tr>
                          <th className="px-2 py-2 text-left text-[10px] font-bold text-black dark:text-gray-300 uppercase w-20">ID</th>
-                         <th className="px-2 py-2 text-left text-[10px] font-bold text-black dark:text-gray-300 uppercase w-36">{t.common.name}</th>
-                         <th className="px-2 py-2 text-left text-[10px] font-bold text-black dark:text-gray-300 uppercase w-28 hidden md:table-cell">{t.common.company}</th>
+                         <th className="px-2 py-2 text-left text-[10px] font-bold text-black dark:text-gray-300 uppercase w-32">{t.common.name}</th>
+                         <th className="px-2 py-2 text-left text-[10px] font-bold text-black dark:text-gray-300 uppercase w-24">Dept</th>
+                         <th className="px-2 py-2 text-left text-[10px] font-bold text-black dark:text-gray-300 uppercase w-24">Job Title</th>
+                         <th className="px-2 py-2 text-left text-[10px] font-bold text-black dark:text-gray-300 uppercase w-24 hidden md:table-cell">{t.common.company}</th>
                          <th className="px-2 py-2 text-center text-[10px] font-bold text-black dark:text-gray-300 uppercase w-12">{t.database.active}</th>
                          <th className="px-2 py-2 text-center text-[10px] font-bold text-black dark:text-gray-300 uppercase w-24">{t.database.accessStatus}</th>
                          <th className="px-2 py-2 text-center text-[10px] font-bold text-black dark:text-gray-300 uppercase w-24">{t.database.aso}</th>
@@ -407,7 +418,9 @@ const DatabasePage: React.FC<DatabasePageProps> = ({ bookings, requirements, upd
                              <tr key={emp.id} className={`hover:bg-blue-50 dark:hover:bg-slate-700/50 transition-colors`}>
                                  <td className="px-2 py-2 text-xs font-mono text-black dark:text-gray-400">{emp.recordId}</td>
                                  <td className="px-2 py-2"><span className={`text-xs font-bold truncate max-w-[150px] text-slate-900 dark:text-slate-200`}>{emp.name}</span></td>
-                                 <td className="px-2 py-2 text-[10px] text-black dark:text-gray-400 hidden md:table-cell truncate max-w-[120px]" title={emp.company}>{emp.company}</td>
+                                 <td className="px-2 py-2 text-[10px] text-slate-600 dark:text-gray-400 truncate max-w-[100px]">{emp.department}</td>
+                                 <td className="px-2 py-2 text-[10px] text-slate-600 dark:text-gray-400 truncate max-w-[100px]">{emp.role}</td>
+                                 <td className="px-2 py-2 text-[10px] text-black dark:text-gray-400 hidden md:table-cell truncate max-w-[100px]" title={emp.company}>{emp.company}</td>
                                  <td className="px-2 py-2 text-center bg-gray-50 dark:bg-slate-700/50">
                                      <input type="checkbox" className="h-3 w-3 text-slate-900 rounded cursor-pointer" checked={isActive} onChange={() => handleActiveToggle(emp.id, isActive)} />
                                  </td>
@@ -460,7 +473,9 @@ const DatabasePage: React.FC<DatabasePageProps> = ({ bookings, requirements, upd
                                              } else {
                                                  bgClass = 'bg-gray-100 dark:bg-slate-800 text-gray-400 dark:text-gray-600 border border-gray-200 dark:border-slate-700';
                                              }
-                                             return <button key={key} onClick={() => handleRequirementChange(emp.id, key, !isRequired)} className={`text-[9px] font-bold w-12 h-6 rounded flex items-center justify-center transition-all ${bgClass}`} title={t.database.ops[key as keyof typeof t.database.ops]}>{key.substring(0, 3)}</button>;
+                                             // Use translated label instead of abbreviation, allow dynamic width
+                                             const label = t.database.ops[key as keyof typeof t.database.ops] || key;
+                                             return <button key={key} onClick={() => handleRequirementChange(emp.id, key, !isRequired)} className={`text-[9px] font-bold px-2 h-6 min-w-[2.5rem] rounded flex items-center justify-center transition-all whitespace-nowrap ${bgClass}`} title={label}>{label}</button>;
                                          })}
                                      </div>
                                  </td>
@@ -475,7 +490,7 @@ const DatabasePage: React.FC<DatabasePageProps> = ({ bookings, requirements, upd
         </div>
 
         {/* Footer Pagination */}
-        <div className="p-3 border-t border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-800/50 flex flex-col md:flex-row justify-between items-center gap-4">
+        <div className="shrink-0 p-3 border-t border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-800/50 flex flex-col md:flex-row justify-between items-center gap-4">
              
              {/* Rows per page selector */}
              <div className="flex items-center gap-2">

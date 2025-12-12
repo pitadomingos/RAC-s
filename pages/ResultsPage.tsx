@@ -1,5 +1,4 @@
 
-// ... existing imports ...
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Booking, BookingStatus, UserRole, TrainingSession } from '../types';
@@ -7,7 +6,7 @@ import {
   Upload, FileSpreadsheet, Search, Filter, Download, 
   CheckCircle2, XCircle, Award, Users, TrendingUp,
   FileText, ArrowUpRight, MoreVertical, Calendar, User, MapPin,
-  ChevronLeft, ChevronRight
+  ChevronLeft, ChevronRight, Briefcase
 } from 'lucide-react';
 import { v4 as uuidv4 } from 'uuid';
 import { format, addYears } from 'date-fns';
@@ -20,9 +19,10 @@ interface ResultsPageProps {
   importBookings?: (newBookings: Booking[]) => void;
   userRole: UserRole;
   sessions: TrainingSession[];
+  currentEmployeeId?: string;
 }
 
-const ResultsPage: React.FC<ResultsPageProps> = ({ bookings, updateBookingStatus, importBookings, userRole, sessions }) => {
+const ResultsPage: React.FC<ResultsPageProps> = ({ bookings, updateBookingStatus, importBookings, userRole, sessions, currentEmployeeId }) => {
   const [searchParams] = useSearchParams();
   const initialQuery = searchParams.get('q') || '';
   
@@ -40,7 +40,6 @@ const ResultsPage: React.FC<ResultsPageProps> = ({ bookings, updateBookingStatus
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { t } = useLanguage();
   
-  // ... useEffects and logic for filtering (same as before) ...
   useEffect(() => {
     const query = searchParams.get('q');
     if (query) setFilter(query);
@@ -61,6 +60,11 @@ const ResultsPage: React.FC<ResultsPageProps> = ({ bookings, updateBookingStatus
   // -- LOGIC: Filtering --
   const filteredBookings = useMemo(() => {
     return bookings.filter(b => {
+      // SECURITY CHECK: Strictly restrict General User to own records
+      if (userRole === UserRole.USER && currentEmployeeId) {
+          if (b.employee.id !== currentEmployeeId) return false;
+      }
+
       const session = sessions.find(s => s.id === b.sessionId);
       const bookingDate = session ? session.date : (b.resultDate || '');
       // Lookup trainer from session OR from historical record encoded in sessionId
@@ -83,7 +87,7 @@ const ResultsPage: React.FC<ResultsPageProps> = ({ bookings, updateBookingStatus
 
       return matchesSearch && matchesStatus && matchesTrainer && matchesDate && matchesRac;
     });
-  }, [bookings, filter, statusFilter, trainerFilter, dateFilter, racFilter, sessions]);
+  }, [bookings, filter, statusFilter, trainerFilter, dateFilter, racFilter, sessions, userRole, currentEmployeeId]);
 
   // -- LOGIC: Pagination --
   const totalPages = Math.ceil(filteredBookings.length / itemsPerPage);
@@ -111,7 +115,7 @@ const ResultsPage: React.FC<ResultsPageProps> = ({ bookings, updateBookingStatus
   // -- ACTIONS --
   const handleDownloadTemplate = () => {
     const headers = [
-      'Full Name', 'Record ID', 'Company', 'Department', 'Role',
+      'Full Name', 'Record ID', 'Company', 'Department', 'Job Title', // Added Job Title
       'RAC Code (e.g. RAC01)', 'Date (YYYY-MM-DD)', 'Trainer', 'Room', 
       'Status (Passed/Failed)', 'Theory Score', 'Practical Score', 
       'DL Number', 'DL Class', 'DL Expiry (YYYY-MM-DD)'
@@ -141,11 +145,12 @@ const ResultsPage: React.FC<ResultsPageProps> = ({ bookings, updateBookingStatus
 
       dataRows.forEach(line => {
         const cols = line.split(',');
-        if (cols.length < 9) return; 
+        // Expect at least 10 columns now
+        if (cols.length < 10) return; 
 
         // Map columns based on new template
         const [
-            name, recordId, company, dept, role,
+            name, recordId, company, dept, role, // Added role (Job Title) at index 4
             racCode, date, trainer, room, statusRaw, theory, practical, dlNum, dlClass, dlExp
         ] = cols.map(c => c?.trim());
 
@@ -224,91 +229,103 @@ const ResultsPage: React.FC<ResultsPageProps> = ({ bookings, updateBookingStatus
   };
 
   return (
-    <div className="space-y-8 pb-12 animate-fade-in-up">
-        {/* ... KPI HEADER ... */}
-        <div className="bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 rounded-2xl shadow-xl p-8 text-white relative overflow-hidden">
-            <div className="absolute inset-0 opacity-10" style={{ backgroundImage: 'radial-gradient(#ffffff 1px, transparent 1px)', backgroundSize: '30px 30px' }}></div>
-            <div className="relative z-10 flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
-                <div>
-                    <h2 className="text-3xl font-black tracking-tight flex items-center gap-3">
-                        <FileText size={32} className="text-yellow-500" />
-                        {t.results.title}
-                    </h2>
-                    <p className="text-slate-400 mt-2 text-sm max-w-xl">High-definition view of all training records.</p>
-                </div>
-                {/* Admin Actions */}
-                {userRole === UserRole.SYSTEM_ADMIN && (
-                    <div className="flex gap-3">
-                        <button onClick={handleDownloadTemplate} className="bg-white/10 hover:bg-white/20 text-white px-4 py-2.5 rounded-lg text-sm font-bold backdrop-blur-sm border border-white/10 flex items-center gap-2 transition-all"><FileSpreadsheet size={16} />{t.common.template}</button>
-                        <button onClick={() => fileInputRef.current?.click()} className="bg-yellow-500 hover:bg-yellow-400 text-slate-900 px-4 py-2.5 rounded-lg text-sm font-bold shadow-lg shadow-yellow-500/20 flex items-center gap-2 transition-all transform hover:-translate-y-0.5"><Upload size={16} />{t.common.import}</button>
-                        <input type="file" ref={fileInputRef} className="hidden" accept=".csv" onChange={handleFileUpload} />
+    <div className="flex flex-col h-auto md:h-[calc(100vh-6rem)] space-y-6 animate-fade-in-up">
+        
+        {/* --- FIXED TOP PART (The "Sexy" Header) --- */}
+        <div className="shrink-0 space-y-6">
+            {/* KPI HEADER */}
+            <div className="bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 rounded-2xl shadow-xl p-8 text-white relative overflow-hidden">
+                <div className="absolute inset-0 opacity-10" style={{ backgroundImage: 'radial-gradient(#ffffff 1px, transparent 1px)', backgroundSize: '30px 30px' }}></div>
+                <div className="relative z-10 flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+                    <div>
+                        <h2 className="text-3xl font-black tracking-tight flex items-center gap-3">
+                            <FileText size={32} className="text-yellow-500" />
+                            {userRole === UserRole.USER ? 'My Training Records' : t.results.title}
+                        </h2>
+                        <p className="text-slate-400 mt-2 text-sm max-w-xl">
+                            {userRole === UserRole.USER 
+                                ? 'View your personal training history and certification status.'
+                                : 'High-definition view of all training records.'}
+                        </p>
                     </div>
-                )}
+                    {/* Admin Actions */}
+                    {userRole === UserRole.SYSTEM_ADMIN && (
+                        <div className="flex gap-3">
+                            <button onClick={handleDownloadTemplate} className="bg-white/10 hover:bg-white/20 text-white px-4 py-2.5 rounded-lg text-sm font-bold backdrop-blur-sm border border-white/10 flex items-center gap-2 transition-all"><FileSpreadsheet size={16} />{t.common.template}</button>
+                            <button onClick={() => fileInputRef.current?.click()} className="bg-yellow-500 hover:bg-yellow-400 text-slate-900 px-4 py-2.5 rounded-lg text-sm font-bold shadow-lg shadow-yellow-500/20 flex items-center gap-2 transition-all transform hover:-translate-y-0.5"><Upload size={16} />{t.common.import}</button>
+                            <input type="file" ref={fileInputRef} className="hidden" accept=".csv" onChange={handleFileUpload} />
+                        </div>
+                    )}
+                </div>
+                {/* Stats Cards Row */}
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mt-8 relative z-10">
+                    <div className="bg-white/5 backdrop-blur-sm border border-white/10 p-4 rounded-xl">
+                        <p className="text-xs text-slate-400 uppercase tracking-wider font-bold mb-1">Total Records</p>
+                        <div className="flex items-end justify-between"><span className="text-2xl font-black">{stats.total}</span><Users size={18} className="text-blue-400 mb-1" /></div>
+                    </div>
+                    <div className="bg-white/5 backdrop-blur-sm border border-white/10 p-4 rounded-xl">
+                        <p className="text-xs text-slate-400 uppercase tracking-wider font-bold mb-1">Pass Rate</p>
+                        <div className="flex items-end justify-between"><span className={`text-2xl font-black ${Number(stats.passRate) >= 80 ? 'text-green-400' : 'text-yellow-400'}`}>{stats.passRate}%</span><TrendingUp size={18} className={Number(stats.passRate) >= 80 ? 'text-green-400' : 'text-yellow-400 mb-1'} /></div>
+                    </div>
+                    <div className="bg-white/5 backdrop-blur-sm border border-white/10 p-4 rounded-xl">
+                        <p className="text-xs text-slate-400 uppercase tracking-wider font-bold mb-1">Avg Score</p>
+                        <div className="flex items-end justify-between"><span className="text-2xl font-black">{stats.avgTheory}</span><Award size={18} className="text-purple-400 mb-1" /></div>
+                    </div>
+                    <div className="bg-white/5 backdrop-blur-sm border border-white/10 p-4 rounded-xl">
+                        <p className="text-xs text-slate-400 uppercase tracking-wider font-bold mb-1">Certifications</p>
+                        <div className="flex items-end justify-between"><span className="text-2xl font-black text-white">{stats.passed}</span><CheckCircle2 size={18} className="text-green-400 mb-1" /></div>
+                    </div>
+                </div>
             </div>
-            {/* Stats Cards Row */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mt-8 relative z-10">
-                <div className="bg-white/5 backdrop-blur-sm border border-white/10 p-4 rounded-xl">
-                    <p className="text-xs text-slate-400 uppercase tracking-wider font-bold mb-1">Total Records</p>
-                    <div className="flex items-end justify-between"><span className="text-2xl font-black">{stats.total}</span><Users size={18} className="text-blue-400 mb-1" /></div>
+
+            {/* --- CONTROL BAR --- */}
+            <div className="bg-white dark:bg-slate-800 p-4 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 flex flex-col xl:flex-row justify-between items-start xl:items-center gap-4 transition-all">
+                <div className="flex flex-col md:flex-row flex-wrap items-center gap-3 w-full xl:w-auto">
+                    {userRole !== UserRole.USER && (
+                        <div className="relative flex-1 min-w-[200px] w-full md:w-auto group">
+                            <Search className="absolute left-3 top-2.5 text-slate-400 group-hover:text-blue-500 transition-colors" size={18} />
+                            <input type="text" placeholder={t.results.searchPlaceholder} className="pl-10 pr-4 py-2 bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg text-sm w-full outline-none focus:ring-2 focus:ring-blue-500 text-black dark:text-white transition-all" value={filter} onChange={(e) => setFilter(e.target.value)} />
+                        </div>
+                    )}
+                    <div className="flex flex-wrap items-center gap-2 w-full md:w-auto">
+                        <div className="relative flex-1 min-w-[120px]">
+                            <select className="w-full pl-3 pr-8 py-2 bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg text-sm font-medium text-black dark:text-gray-300 outline-none focus:ring-2 focus:ring-blue-500 appearance-none cursor-pointer" value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
+                                <option value="All">{t.common.all} Status</option><option value="Passed">Passed</option><option value="Failed">Failed</option><option value="Pending">Pending</option>
+                            </select>
+                            <Filter size={14} className="absolute right-3 top-2.5 text-slate-400 pointer-events-none" />
+                        </div>
+                        <div className="relative flex-1 min-w-[120px]">
+                            <select className="w-full pl-3 pr-8 py-2 bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg text-sm font-medium text-black dark:text-gray-300 outline-none focus:ring-2 focus:ring-blue-500 appearance-none cursor-pointer" value={racFilter} onChange={(e) => setRacFilter(e.target.value)}>
+                                <option value="All">All RACs</option>{RAC_KEYS.map(r => <option key={r} value={r}>{r}</option>)}
+                            </select>
+                            <Filter size={14} className="absolute right-3 top-2.5 text-slate-400 pointer-events-none" />
+                        </div>
+                        <div className="relative flex-1 min-w-[140px]">
+                            <select className="w-full pl-3 pr-8 py-2 bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg text-sm font-medium text-black dark:text-gray-300 outline-none focus:ring-2 focus:ring-blue-500 appearance-none cursor-pointer" value={trainerFilter} onChange={(e) => setTrainerFilter(e.target.value)}>
+                                <option value="All">All Trainers</option>{uniqueTrainers.map(tr => <option key={tr} value={tr}>{tr}</option>)}
+                            </select>
+                            <User size={14} className="absolute right-3 top-2.5 text-slate-400 pointer-events-none" />
+                        </div>
+                        <div className="relative flex-1 min-w-[130px]">
+                            <input type="date" className="w-full pl-3 pr-3 py-2 bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg text-sm font-medium text-black dark:text-gray-300 outline-none focus:ring-2 focus:ring-blue-500" value={dateFilter} onChange={(e) => setDateFilter(e.target.value)} />
+                        </div>
+                    </div>
                 </div>
-                <div className="bg-white/5 backdrop-blur-sm border border-white/10 p-4 rounded-xl">
-                    <p className="text-xs text-slate-400 uppercase tracking-wider font-bold mb-1">Pass Rate</p>
-                    <div className="flex items-end justify-between"><span className={`text-2xl font-black ${Number(stats.passRate) >= 80 ? 'text-green-400' : 'text-yellow-400'}`}>{stats.passRate}%</span><TrendingUp size={18} className={Number(stats.passRate) >= 80 ? 'text-green-400' : 'text-yellow-400 mb-1'} /></div>
-                </div>
-                <div className="bg-white/5 backdrop-blur-sm border border-white/10 p-4 rounded-xl">
-                    <p className="text-xs text-slate-400 uppercase tracking-wider font-bold mb-1">Avg Score</p>
-                    <div className="flex items-end justify-between"><span className="text-2xl font-black">{stats.avgTheory}</span><Award size={18} className="text-purple-400 mb-1" /></div>
-                </div>
-                <div className="bg-white/5 backdrop-blur-sm border border-white/10 p-4 rounded-xl">
-                    <p className="text-xs text-slate-400 uppercase tracking-wider font-bold mb-1">Certifications</p>
-                    <div className="flex items-end justify-between"><span className="text-2xl font-black text-white">{stats.passed}</span><CheckCircle2 size={18} className="text-green-400 mb-1" /></div>
+                <div className="text-xs text-slate-600 dark:text-slate-400 font-medium bg-slate-100 dark:bg-slate-700 px-3 py-1.5 rounded-full whitespace-nowrap">
+                    {filteredBookings.length} records found
                 </div>
             </div>
         </div>
 
-        {/* --- CONTROL BAR --- */}
-        <div className="bg-white dark:bg-slate-800 p-4 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 flex flex-col xl:flex-row justify-between items-start xl:items-center gap-4 sticky top-4 z-20 transition-all">
-            <div className="flex flex-col md:flex-row flex-wrap items-center gap-3 w-full xl:w-auto">
-                <div className="relative flex-1 min-w-[200px] w-full md:w-auto group">
-                    <Search className="absolute left-3 top-2.5 text-slate-400 group-hover:text-blue-500 transition-colors" size={18} />
-                    <input type="text" placeholder={t.results.searchPlaceholder} className="pl-10 pr-4 py-2 bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg text-sm w-full outline-none focus:ring-2 focus:ring-blue-500 text-black dark:text-white transition-all" value={filter} onChange={(e) => setFilter(e.target.value)} />
-                </div>
-                <div className="flex flex-wrap items-center gap-2 w-full md:w-auto">
-                    <div className="relative flex-1 min-w-[120px]">
-                        <select className="w-full pl-3 pr-8 py-2 bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg text-sm font-medium text-black dark:text-gray-300 outline-none focus:ring-2 focus:ring-blue-500 appearance-none cursor-pointer" value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
-                            <option value="All">{t.common.all} Status</option><option value="Passed">Passed</option><option value="Failed">Failed</option><option value="Pending">Pending</option>
-                        </select>
-                        <Filter size={14} className="absolute right-3 top-2.5 text-slate-400 pointer-events-none" />
-                    </div>
-                    <div className="relative flex-1 min-w-[120px]">
-                        <select className="w-full pl-3 pr-8 py-2 bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg text-sm font-medium text-black dark:text-gray-300 outline-none focus:ring-2 focus:ring-blue-500 appearance-none cursor-pointer" value={racFilter} onChange={(e) => setRacFilter(e.target.value)}>
-                            <option value="All">All RACs</option>{RAC_KEYS.map(r => <option key={r} value={r}>{r}</option>)}
-                        </select>
-                        <Filter size={14} className="absolute right-3 top-2.5 text-slate-400 pointer-events-none" />
-                    </div>
-                    <div className="relative flex-1 min-w-[140px]">
-                        <select className="w-full pl-3 pr-8 py-2 bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg text-sm font-medium text-black dark:text-gray-300 outline-none focus:ring-2 focus:ring-blue-500 appearance-none cursor-pointer" value={trainerFilter} onChange={(e) => setTrainerFilter(e.target.value)}>
-                            <option value="All">All Trainers</option>{uniqueTrainers.map(tr => <option key={tr} value={tr}>{tr}</option>)}
-                        </select>
-                        <User size={14} className="absolute right-3 top-2.5 text-slate-400 pointer-events-none" />
-                    </div>
-                    <div className="relative flex-1 min-w-[130px]">
-                        <input type="date" className="w-full pl-3 pr-3 py-2 bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg text-sm font-medium text-black dark:text-gray-300 outline-none focus:ring-2 focus:ring-blue-500" value={dateFilter} onChange={(e) => setDateFilter(e.target.value)} />
-                    </div>
-                </div>
-            </div>
-            <div className="text-xs text-slate-600 dark:text-slate-400 font-medium bg-slate-100 dark:bg-slate-700 px-3 py-1.5 rounded-full whitespace-nowrap">
-                {filteredBookings.length} records found
-            </div>
-        </div>
-
-        {/* --- DATA GRID --- */}
-        <div className="bg-white dark:bg-slate-800 rounded-xl shadow-lg border border-slate-200 dark:border-slate-700 overflow-hidden flex flex-col">
-            <div className="overflow-x-auto">
+        {/* --- DATA GRID (Scrollable Part) --- */}
+        <div className="flex-1 bg-white dark:bg-slate-800 rounded-xl shadow-lg border border-slate-200 dark:border-slate-700 flex flex-col relative h-[600px] md:h-auto md:overflow-hidden">
+            <div className="flex-1 overflow-auto">
                 <table className="min-w-full divide-y divide-slate-100 dark:divide-slate-700">
-                    <thead>
-                        <tr className="bg-slate-50 dark:bg-slate-900/50">
+                    <thead className="bg-slate-50 dark:bg-slate-900/50 md:sticky md:top-0 z-10 shadow-sm">
+                        <tr>
                             <th className="px-6 py-4 text-left text-xs font-bold text-black dark:text-slate-400 uppercase tracking-wider">{t.results.table.employee}</th>
+                            <th className="px-6 py-4 text-left text-xs font-bold text-black dark:text-slate-400 uppercase tracking-wider">{t.common.department}</th>
+                            <th className="px-6 py-4 text-left text-xs font-bold text-black dark:text-slate-400 uppercase tracking-wider">{t.common.jobTitle}</th>
                             <th className="px-6 py-4 text-left text-xs font-bold text-black dark:text-slate-400 uppercase tracking-wider">{t.results.table.session}</th>
                             <th className="px-6 py-4 text-left text-xs font-bold text-black dark:text-slate-400 uppercase tracking-wider">{t.results.table.date}</th>
                             <th className="px-6 py-4 text-left text-xs font-bold text-black dark:text-slate-400 uppercase tracking-wider">{t.results.table.trainer}</th>
@@ -322,7 +339,7 @@ const ResultsPage: React.FC<ResultsPageProps> = ({ bookings, updateBookingStatus
                     </thead>
                     <tbody className="divide-y divide-slate-100 dark:divide-slate-700 bg-white dark:bg-slate-800">
                         {paginatedBookings.length === 0 ? (
-                            <tr><td colSpan={10} className="px-6 py-12 text-center text-gray-400">No records found</td></tr>
+                            <tr><td colSpan={12} className="px-6 py-12 text-center text-gray-400">No records found</td></tr>
                         ) : (
                             paginatedBookings.map((booking) => {
                                 const { isRac02 } = getRacDetails(booking.sessionId);
@@ -368,10 +385,12 @@ const ResultsPage: React.FC<ResultsPageProps> = ({ bookings, updateBookingStatus
                                                 <div className={`w-10 h-10 rounded-full flex items-center justify-center text-xs font-bold mr-4 ${colorClass}`}>{initials}</div>
                                                 <div>
                                                     <div className="text-sm font-bold text-slate-900 dark:text-white group-hover:text-blue-600 transition-colors">{String(booking.employee.name)}</div>
-                                                    <div className="text-xs text-slate-600 font-mono flex items-center gap-1">{String(booking.employee.recordId)}<span className="text-slate-300">•</span><span className="truncate max-w-[100px]">{booking.employee.company}</span></div>
+                                                    <div className="text-xs text-slate-600 dark:text-blue-300 font-mono flex items-center gap-1">{String(booking.employee.recordId)}<span className="text-slate-300">•</span><span className="truncate max-w-[100px]">{booking.employee.company}</span></div>
                                                 </div>
                                             </div>
                                         </td>
+                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700 dark:text-slate-300">{booking.employee.department}</td>
+                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700 dark:text-slate-300"><div className="flex items-center gap-1"><Briefcase size={12} className="text-slate-400" />{booking.employee.role}</div></td>
                                         <td className="px-6 py-4 whitespace-nowrap"><div className="flex flex-col"><span className="text-sm font-medium text-slate-800 dark:text-slate-300">{displaySessionName}</span></div></td>
                                         <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700 dark:text-slate-300">{displayDate}</td>
                                         <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700 dark:text-slate-300"><div className="flex items-center gap-1"><User size={12} className="text-slate-400" />{displayTrainer}</div></td>
@@ -379,8 +398,8 @@ const ResultsPage: React.FC<ResultsPageProps> = ({ bookings, updateBookingStatus
                                         <td className="px-6 py-4 whitespace-nowrap">
                                             {isRac02 ? (
                                                 <div className="flex flex-col text-xs">
-                                                    <div className="flex gap-2 mb-0.5"><span className="font-bold text-slate-700">Cls:</span><span className="text-slate-900 dark:text-slate-300 font-mono">{dlClass}</span></div>
-                                                    <div className={`${isDlExpired ? 'text-red-600 font-bold flex items-center gap-1' : 'text-slate-600'}`}>{isDlExpired && <XCircle size={10} />}<span>Exp: {dlExpStr}</span></div>
+                                                    <div className="flex gap-2 mb-0.5"><span className="font-bold text-slate-700 dark:text-slate-400">Cls:</span><span className="text-slate-900 dark:text-slate-300 font-mono">{dlClass}</span></div>
+                                                    <div className={`${isDlExpired ? 'text-red-600 font-bold flex items-center gap-1' : 'text-slate-600 dark:text-slate-400'}`}>{isDlExpired && <XCircle size={10} />}<span>Exp: {dlExpStr}</span></div>
                                                 </div>
                                             ) : <span className="text-xs text-slate-300 italic">N/A</span>}
                                         </td>
@@ -401,7 +420,7 @@ const ResultsPage: React.FC<ResultsPageProps> = ({ bookings, updateBookingStatus
             </div>
 
             {/* --- PAGINATION FOOTER --- */}
-            <div className="px-6 py-4 border-t border-slate-100 dark:border-slate-700 flex flex-col md:flex-row justify-between items-center bg-slate-50 dark:bg-slate-800/50 gap-4">
+            <div className="shrink-0 px-6 py-4 border-t border-slate-100 dark:border-slate-700 flex flex-col md:flex-row justify-between items-center bg-slate-50 dark:bg-slate-800/50 gap-4">
                 <div className="flex items-center gap-2">
                      <span className="text-xs text-slate-600 dark:text-slate-400">Rows per page:</span>
                      <select value={itemsPerPage} onChange={handlePageSizeChange} className="text-xs border border-slate-300 dark:border-slate-600 rounded bg-white dark:bg-slate-700 text-slate-800 dark:text-white px-2 py-1 outline-none focus:ring-1 focus:ring-blue-500">

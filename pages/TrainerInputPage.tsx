@@ -27,17 +27,33 @@ const TrainerInputPage: React.FC<TrainerInputPageProps> = ({
   const [successMsg, setSuccessMsg] = useState('');
   const [studentSearch, setStudentSearch] = useState('');
 
-  // --- SECURITY FILTER ---
-  const availableSessions = (userRole === UserRole.RAC_TRAINER) 
-    ? sessions.filter(s => s.instructor === currentUserName)
-    : sessions;
+  // --- SECURITY FILTER & PENDING LOGIC ---
+  const availableSessions = useMemo(() => {
+      // 1. Filter by Instructor (If Trainer)
+      let relevantSessions = sessions;
+      if (userRole === UserRole.RAC_TRAINER) {
+          relevantSessions = sessions.filter(s => s.instructor === currentUserName);
+      }
+
+      // 2. Filter by "Pending Marking"
+      // A session is considered "Pending" if it has at least one booking with status PENDING.
+      // Sessions with NO bookings or ALL completed bookings are hidden.
+      return relevantSessions.filter(session => {
+          const sessionBookings = bookings.filter(b => b.sessionId === session.id);
+          
+          if (sessionBookings.length === 0) return false; // Empty session, nothing to mark
+
+          const hasPending = sessionBookings.some(b => b.status === BookingStatus.PENDING);
+          return hasPending;
+      });
+  }, [sessions, bookings, userRole, currentUserName]);
 
   // When session changes, load bookings into local state
   const handleSessionChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const sId = e.target.value;
     setSelectedSessionId(sId);
     if (sId) {
-      const filtered = bookings.filter(b => b.sessionId === sId);
+      const filtered = bookings.filter(b => b.sessionId === sId && b.status === BookingStatus.PENDING);
       const initialized = filtered.map(b => ({
         ...b,
         attendance: b.attendance ?? false,
@@ -130,10 +146,20 @@ const TrainerInputPage: React.FC<TrainerInputPageProps> = ({
     });
 
     updateBookings(bookingsToSave);
-    setSessionBookings(bookingsToSave); // Update local state with new dates
-    setHasUnsavedChanges(false);
+    
+    // Remove processed bookings from the local list since they are no longer "Pending"
+    // But we might want to keep showing them momentarily to confirm.
+    // However, if we refresh the list from props, they will disappear because filter checks for PENDING.
+    
     setSuccessMsg(String(t.booking.success).replace('Booking submitted', 'Results saved'));
-    setTimeout(() => setSuccessMsg(''), 3000);
+    setHasUnsavedChanges(false);
+    
+    // After a short delay, refresh the view (which will likely clear the table as they are no longer pending)
+    setTimeout(() => {
+        setSuccessMsg('');
+        setSelectedSessionId(''); // Force reset
+        setSessionBookings([]);
+    }, 1500);
   };
 
   const selectedSessionDetails = sessions.find(s => s.id === selectedSessionId);
@@ -172,7 +198,7 @@ const TrainerInputPage: React.FC<TrainerInputPageProps> = ({
                     <div className="flex gap-4">
                         <div className="bg-white/10 p-3 rounded-xl border border-white/10 backdrop-blur-sm text-center min-w-[100px]">
                             <div className="text-2xl font-bold">{sessionBookings.length}</div>
-                            <div className="text-[10px] uppercase text-slate-400 font-bold">Attendees</div>
+                            <div className="text-[10px] uppercase text-slate-400 font-bold">Pending</div>
                         </div>
                         <div className="bg-green-500/20 p-3 rounded-xl border border-green-500/30 backdrop-blur-sm text-center min-w-[100px]">
                             <div className="text-2xl font-bold text-green-400">{sessionBookings.filter(b => b.status === 'Passed').length}</div>
@@ -238,9 +264,14 @@ const TrainerInputPage: React.FC<TrainerInputPageProps> = ({
 
                 <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-700">
                 <table className="min-w-full divide-y divide-slate-200 dark:divide-slate-700">
-                    <thead className="bg-slate-50 dark:bg-slate-700">
+                    <thead className="bg-slate-50 dark:bg-slate-700 md:sticky md:top-0 z-10">
                     <tr>
                         <th className="px-4 py-4 text-left text-xs font-bold text-black dark:text-slate-400 uppercase tracking-wider">{t.trainer.table.employee}</th>
+                        {/* NEW COLUMNS */}
+                        <th className="px-4 py-4 text-left text-xs font-bold text-black dark:text-slate-400 uppercase tracking-wider hidden md:table-cell">{t.common.company}</th>
+                        <th className="px-4 py-4 text-left text-xs font-bold text-black dark:text-slate-400 uppercase tracking-wider hidden md:table-cell">{t.common.department}</th>
+                        <th className="px-4 py-4 text-left text-xs font-bold text-black dark:text-slate-400 uppercase tracking-wider hidden md:table-cell">{t.common.jobTitle}</th>
+                        
                         <th className="px-4 py-4 text-center text-xs font-bold text-black dark:text-slate-400 uppercase tracking-wider w-24">{t.trainer.table.attendance}</th>
                         {isRac02 && <th className="px-4 py-4 text-center text-xs font-bold text-red-600 dark:text-red-400 uppercase tracking-wider w-28 bg-red-50 dark:bg-red-900/20">{t.trainer.table.dlCheck}</th>}
                         <th className="px-4 py-4 text-center text-xs font-bold text-black dark:text-slate-400 uppercase tracking-wider w-32">{t.trainer.table.theory}</th>
@@ -257,9 +288,25 @@ const TrainerInputPage: React.FC<TrainerInputPageProps> = ({
                         return (
                         <tr key={booking.id} className="hover:bg-blue-50/50 dark:hover:bg-slate-700/50 transition-colors group">
                             <td className="px-4 py-4">
-                            <div className="text-sm font-bold text-slate-900 dark:text-white">{booking.employee.name}</div>
-                            <div className="text-xs text-slate-500 font-mono">{booking.employee.recordId}</div>
+                                <div className="text-sm font-bold text-slate-900 dark:text-white">{booking.employee.name}</div>
+                                <div className="text-xs text-slate-500 font-mono">{booking.employee.recordId}</div>
+                                {/* Mobile-only extra info */}
+                                <div className="md:hidden text-[10px] text-slate-400 mt-1">
+                                    {booking.employee.company} • {booking.employee.role}
+                                </div>
                             </td>
+                            
+                            {/* NEW COLUMNS DATA */}
+                            <td className="px-4 py-4 hidden md:table-cell text-xs text-slate-600 dark:text-slate-300">
+                                {booking.employee.company}
+                            </td>
+                            <td className="px-4 py-4 hidden md:table-cell text-xs text-slate-600 dark:text-slate-300">
+                                {booking.employee.department}
+                            </td>
+                            <td className="px-4 py-4 hidden md:table-cell text-xs text-slate-600 dark:text-slate-300">
+                                {booking.employee.role}
+                            </td>
+
                             <td className="px-4 py-4 text-center">
                             <label className="relative inline-flex items-center cursor-pointer">
                                 <input type="checkbox" className="sr-only peer" checked={booking.attendance || false} onChange={(e) => handleInputChange(booking.id, 'attendance', e.target.checked)} />
@@ -334,7 +381,7 @@ const TrainerInputPage: React.FC<TrainerInputPageProps> = ({
                 </table>
                 </div>
               
-              <div className="p-6 bg-slate-50 dark:bg-slate-800 border-t border-slate-200 dark:border-slate-700 flex justify-end items-center gap-4 sticky bottom-0 z-10">
+              <div className="p-6 bg-slate-50 dark:bg-slate-800 border-t border-slate-200 dark:border-slate-700 flex justify-end items-center gap-4 md:sticky md:bottom-0 z-10">
                  {successMsg && (
                     <span className="text-green-600 font-bold text-sm animate-pulse flex items-center gap-2">
                         <CheckCircle2 size={16} /> {successMsg}
@@ -357,7 +404,11 @@ const TrainerInputPage: React.FC<TrainerInputPageProps> = ({
                  <div className="bg-slate-50 dark:bg-slate-700 w-24 h-24 rounded-full flex items-center justify-center mx-auto mb-4 border border-slate-200 dark:border-slate-600">
                     <ClipboardList size={40} className="text-slate-300 dark:text-slate-500" />
                  </div>
-                 <p className="font-medium">Select a session to begin grading</p>
+                 <p className="font-medium">
+                    {availableSessions.length === 0 
+                        ? "No pending sessions found assigned to you."
+                        : "Select a pending session to begin grading."}
+                 </p>
              </div>
           )}
       </div>
