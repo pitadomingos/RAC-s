@@ -4,6 +4,7 @@ import { UserRole, User } from '../types';
 import { Shield, MoreVertical, Plus, X, Trash2, Edit, Users, Lock, Key, ChevronLeft, ChevronRight, Mail, Briefcase, CheckCircle2, XCircle, Search, Upload, Download } from 'lucide-react';
 import { useLanguage } from '../contexts/LanguageContext';
 import { COMPANIES } from '../constants';
+import ConfirmModal from '../components/ConfirmModal';
 
 interface UserManagementProps {
     users: User[];
@@ -23,6 +24,21 @@ const UserManagement: React.FC<UserManagementProps> = ({ users, setUsers }) => {
   // Pagination State
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
+
+  // Confirmation Modal State
+  const [confirmState, setConfirmState] = useState<{
+    isOpen: boolean;
+    title: string;
+    message: string;
+    onConfirm: () => void;
+    isDestructive: boolean;
+  }>({
+    isOpen: false,
+    title: '',
+    message: '',
+    onConfirm: () => {},
+    isDestructive: false
+  });
 
   const handleAddUser = () => {
       if (!newUser.name || !newUser.email) {
@@ -44,10 +60,14 @@ const UserManagement: React.FC<UserManagementProps> = ({ users, setUsers }) => {
   };
 
   const handleDeleteUser = (id: number) => {
-      if (confirm('Are you sure you want to delete this user?')) {
-          setUsers(users.filter(u => u.id !== id));
-      }
-      setOpenActionId(null);
+      setOpenActionId(null); // Close dropdown first
+      setConfirmState({
+          isOpen: true,
+          title: 'Delete User Account?',
+          message: 'Are you sure you want to delete this user? This action cannot be undone.',
+          onConfirm: () => setUsers(users.filter(u => u.id !== id)),
+          isDestructive: true
+      });
   };
 
   const handleDownloadTemplate = () => {
@@ -353,6 +373,17 @@ const UserManagement: React.FC<UserManagementProps> = ({ users, setUsers }) => {
              </div>
         </div>
       </div>
+
+      {/* --- CONFIRMATION MODAL --- */}
+      <ConfirmModal 
+          isOpen={confirmState.isOpen}
+          title={confirmState.title}
+          message={confirmState.message}
+          onConfirm={confirmState.onConfirm}
+          onClose={() => setConfirmState(prev => ({ ...prev, isOpen: false }))}
+          isDestructive={confirmState.isDestructive}
+          confirmText="Delete"
+      />
 
       {/* Modern Modal */}
       {isModalOpen && (

@@ -5,6 +5,7 @@ import { RacDef, Room, Trainer } from '../types';
 import { v4 as uuidv4 } from 'uuid';
 import { logger } from '../utils/logger';
 import { useLanguage } from '../contexts/LanguageContext';
+import ConfirmModal from '../components/ConfirmModal';
 
 interface SettingsPageProps {
     racDefinitions: RacDef[];
@@ -19,6 +20,21 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ racDefinitions, onUpdateRac
   const { t } = useLanguage();
   const [activeTab, setActiveTab] = useState<'General' | 'Trainers' | 'RACs'>('General');
   const [isSaving, setIsSaving] = useState(false);
+
+  // Confirmation Modal State
+  const [confirmState, setConfirmState] = useState<{
+    isOpen: boolean;
+    title: string;
+    message: string;
+    onConfirm: () => void;
+    isDestructive: boolean;
+  }>({
+    isOpen: false,
+    title: '',
+    message: '',
+    onConfirm: () => {},
+    isDestructive: false
+  });
 
   // --- ROOMS CRUD ---
   const [newRoom, setNewRoom] = useState({ name: '', capacity: 0 });
@@ -49,9 +65,13 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ racDefinitions, onUpdateRac
   };
 
   const deleteRoom = (id: string) => {
-      if (confirm('Delete this room?')) {
-          onUpdateRooms(rooms.filter(r => r.id !== id));
-      }
+      setConfirmState({
+          isOpen: true,
+          title: 'Delete Room?',
+          message: 'Are you sure you want to delete this room configuration?',
+          onConfirm: () => onUpdateRooms(rooms.filter(r => r.id !== id)),
+          isDestructive: true
+      });
   };
 
 
@@ -86,9 +106,13 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ racDefinitions, onUpdateRac
   };
 
   const deleteTrainer = (id: string) => {
-      if (confirm('Delete this trainer?')) {
-          onUpdateTrainers(trainers.filter(t => t.id !== id));
-      }
+      setConfirmState({
+          isOpen: true,
+          title: 'Delete Trainer?',
+          message: 'Are you sure you want to remove this trainer from the system?',
+          onConfirm: () => onUpdateTrainers(trainers.filter(t => t.id !== id)),
+          isDestructive: true
+      });
   };
 
 
@@ -121,9 +145,13 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ racDefinitions, onUpdateRac
   };
 
   const deleteRac = (id: string) => {
-      if (confirm('Delete this RAC Definition? This will affect columns in the database.')) {
-          onUpdateRacs(racDefinitions.filter(r => r.id !== id));
-      }
+      setConfirmState({
+          isOpen: true,
+          title: 'Delete RAC Definition?',
+          message: 'Warning: Deleting this RAC Definition will affect the database matrix columns. Are you sure?',
+          onConfirm: () => onUpdateRacs(racDefinitions.filter(r => r.id !== id)),
+          isDestructive: true
+      });
   };
   
   const handleGlobalSave = () => {
@@ -561,6 +589,17 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ racDefinitions, onUpdateRac
                 </div>
             </div>
         </div>
+
+        {/* --- CONFIRMATION MODAL --- */}
+        <ConfirmModal 
+            isOpen={confirmState.isOpen}
+            title={confirmState.title}
+            message={confirmState.message}
+            onConfirm={confirmState.onConfirm}
+            onClose={() => setConfirmState(prev => ({ ...prev, isOpen: false }))}
+            isDestructive={confirmState.isDestructive}
+            confirmText="Delete"
+        />
     </div>
   );
 };

@@ -6,6 +6,7 @@ import { Calendar, Plus, Settings, X, Save, Clock, MapPin, User, CalendarDays, C
 import { useNavigate } from 'react-router-dom';
 import { v4 as uuidv4 } from 'uuid';
 import { useLanguage } from '../contexts/LanguageContext';
+import ConfirmModal from '../components/ConfirmModal';
 
 interface ScheduleTrainingProps {
     sessions: TrainingSession[];
@@ -35,6 +36,21 @@ const ScheduleTraining: React.FC<ScheduleTrainingProps> = ({ sessions, setSessio
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
 
+  // Confirmation Modal State
+  const [confirmState, setConfirmState] = useState<{
+    isOpen: boolean;
+    title: string;
+    message: string;
+    onConfirm: () => void;
+    isDestructive: boolean;
+  }>({
+    isOpen: false,
+    title: '',
+    message: '',
+    onConfirm: () => {},
+    isDestructive: false
+  });
+
   const handleAddSession = () => {
       if (!newSession.date || !newSession.racType || !newSession.location) {
           alert("Please fill in Date, RAC Type and Location");
@@ -59,9 +75,13 @@ const ScheduleTraining: React.FC<ScheduleTrainingProps> = ({ sessions, setSessio
   };
 
   const handleDeleteSession = (id: string) => {
-      if (confirm('Are you sure you want to delete this session? This will cancel the session and remove it from the schedule.')) {
-          setSessions(prev => prev.filter(s => s.id !== id));
-      }
+      setConfirmState({
+          isOpen: true,
+          title: 'Cancel Session?',
+          message: 'Are you sure you want to cancel this training session? This will remove it from the schedule and cannot be undone.',
+          onConfirm: () => setSessions(prev => prev.filter(s => s.id !== id)),
+          isDestructive: true
+      });
   };
 
   // Filter & Sort Logic
@@ -238,6 +258,17 @@ const ScheduleTraining: React.FC<ScheduleTrainingProps> = ({ sessions, setSessio
               </div>
           )}
        </div>
+
+      {/* --- CONFIRMATION MODAL --- */}
+      <ConfirmModal 
+          isOpen={confirmState.isOpen}
+          title={confirmState.title}
+          message={confirmState.message}
+          onConfirm={confirmState.onConfirm}
+          onClose={() => setConfirmState(prev => ({ ...prev, isOpen: false }))}
+          isDestructive={confirmState.isDestructive}
+          confirmText="Confirm"
+      />
 
       {/* Add Session Modal */}
       {isModalOpen && (

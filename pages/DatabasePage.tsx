@@ -5,6 +5,7 @@ import { COMPANIES, OPS_KEYS, PERMISSION_KEYS, DEPARTMENTS } from '../constants'
 import { Search, CheckCircle, XCircle, Edit, ChevronLeft, ChevronRight, Download, X, Trash2, QrCode, Printer, Phone, AlertTriangle, Loader2, Archive, Filter } from 'lucide-react';
 import { useLanguage } from '../contexts/LanguageContext';
 import JSZip from 'jszip';
+import ConfirmModal from '../components/ConfirmModal';
 
 interface DatabasePageProps {
   bookings: Booking[];
@@ -38,6 +39,21 @@ const DatabasePage: React.FC<DatabasePageProps> = ({ bookings, requirements, upd
   // Mass Download State
   const [isZipping, setIsZipping] = useState(false);
 
+  // Confirmation Modal State
+  const [confirmState, setConfirmState] = useState<{
+    isOpen: boolean;
+    title: string;
+    message: string;
+    onConfirm: () => void;
+    isDestructive: boolean;
+  }>({
+    isOpen: false,
+    title: '',
+    message: '',
+    onConfirm: () => {},
+    isDestructive: false
+  });
+
   // -- Date Validation Helper --
   const validateDateInput = (dateStr: string): boolean => {
       if (!dateStr) return true; // Allow clearing
@@ -59,13 +75,14 @@ const DatabasePage: React.FC<DatabasePageProps> = ({ bookings, requirements, upd
   useEffect(() => {
     const handleEsc = (e: KeyboardEvent) => {
         if (e.key === 'Escape') {
-            if (qrEmployee) setQrEmployee(null);
-            if (editingEmployee) setEditingEmployee(null);
+            if (confirmState.isOpen) setConfirmState(prev => ({ ...prev, isOpen: false }));
+            else if (qrEmployee) setQrEmployee(null);
+            else if (editingEmployee) setEditingEmployee(null);
         }
     };
     window.addEventListener('keydown', handleEsc);
     return () => window.removeEventListener('keydown', handleEsc);
-  }, [qrEmployee, editingEmployee]);
+  }, [qrEmployee, editingEmployee, confirmState.isOpen]);
 
   // -- Derived Data Logic --
 
@@ -164,9 +181,13 @@ const DatabasePage: React.FC<DatabasePageProps> = ({ bookings, requirements, upd
   
   const handleActiveToggle = (empId: string, currentStatus: boolean) => {
       if (currentStatus === true) {
-          if (confirm("Marking as Inactive will delete this employee from the database to save space. Are you sure?")) {
-              onDeleteEmployee(empId);
-          }
+          setConfirmState({
+              isOpen: true,
+              title: 'Deactivate Employee?',
+              message: 'Marking as Inactive will delete this employee from the database to save space. Are you sure?',
+              onConfirm: () => onDeleteEmployee(empId),
+              isDestructive: true
+          });
       } 
   };
 
@@ -187,9 +208,17 @@ const DatabasePage: React.FC<DatabasePageProps> = ({ bookings, requirements, upd
   };
 
   const handleDelete = () => {
-      if (editingEmployee && confirm('Are you sure you want to delete this employee? This will remove all associated training records.')) {
-          onDeleteEmployee(editingEmployee.id);
-          setEditingEmployee(null);
+      if (editingEmployee) {
+          setConfirmState({
+              isOpen: true,
+              title: 'Delete Employee Record?',
+              message: `Are you sure you want to delete ${editingEmployee.name}? This will remove all associated training records permanently.`,
+              onConfirm: () => {
+                  onDeleteEmployee(editingEmployee.id);
+                  setEditingEmployee(null);
+              },
+              isDestructive: true
+          });
       }
   };
 
@@ -610,6 +639,17 @@ const DatabasePage: React.FC<DatabasePageProps> = ({ bookings, requirements, upd
                  </div>
              </div>
         </div>
+
+        {/* --- CONFIRMATION MODAL --- */}
+        <ConfirmModal 
+            isOpen={confirmState.isOpen}
+            title={confirmState.title}
+            message={confirmState.message}
+            onConfirm={confirmState.onConfirm}
+            onClose={() => setConfirmState(prev => ({ ...prev, isOpen: false }))}
+            isDestructive={confirmState.isDestructive}
+            confirmText={confirmState.isDestructive ? 'Delete' : 'Confirm'}
+        />
 
         {/* --- EDIT MODAL --- */}
         {editingEmployee && (
