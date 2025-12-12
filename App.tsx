@@ -24,6 +24,7 @@ const SettingsPage = lazy(() => import('./pages/SettingsPage'));
 const RequestCardsPage = lazy(() => import('./pages/RequestCardsPage'));
 const CardsPage = lazy(() => import('./pages/CardsPage'));
 const UserManualsPage = lazy(() => import('./pages/UserManualsPage'));
+const AdminManualPage = lazy(() => import('./pages/AdminManualPage')); // New Import
 const LogsPage = lazy(() => import('./pages/LogsPage'));
 const ProjectProposal = lazy(() => import('./pages/ProjectProposal'));
 const PresentationPage = lazy(() => import('./pages/PresentationPage'));
@@ -542,6 +543,9 @@ const App: React.FC = () => {
               
               {/* Technical Docs: System Admin Only */}
               <Route path="/tech-docs" element={userRole === UserRole.SYSTEM_ADMIN ? <TechnicalDocs /> : <Navigate to="/" replace />} />
+              
+              {/* Dedicated Admin Manual Page (NEW) - System Admin Only */}
+              <Route path="/admin-manual" element={userRole === UserRole.SYSTEM_ADMIN ? <AdminManualPage /> : <Navigate to="/manuals" replace />} />
               
               {/* Pass currentEmployeeId for Self-Service */}
               <Route path="/request-cards" element={[UserRole.SYSTEM_ADMIN, UserRole.DEPT_ADMIN, UserRole.RAC_ADMIN, UserRole.USER].includes(userRole) ? <RequestCardsPage bookings={bookings} requirements={requirements} racDefinitions={racDefinitions} sessions={sessions} userRole={userRole} currentEmployeeId={currentEmployeeId} /> : <Navigate to="/" replace />} />

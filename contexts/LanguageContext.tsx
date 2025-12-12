@@ -16,7 +16,8 @@ export const LanguageProvider: React.FC<{ children: ReactNode }> = ({ children }
   const value = {
     language,
     setLanguage,
-    t: translations[language]
+    // Fallback to 'en' if the selected language translation is missing
+    t: translations[language] || translations['en']
   };
 
   return (

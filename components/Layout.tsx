@@ -31,7 +31,8 @@ import {
   Maximize,
   Minimize,
   Presentation,
-  FileCode
+  FileCode,
+  Shield
 } from 'lucide-react';
 import { UserRole, SystemNotification } from '../types';
 import { useLanguage } from '../contexts/LanguageContext';
@@ -56,6 +57,24 @@ const Layout: React.FC<LayoutProps> = ({ children, userRole, setUserRole, notifi
   const { theme, setTheme } = useTheme();
 
   const unreadCount = notifications.filter(n => !n.isRead).length;
+
+  // Safety check for translations
+  if (!t || !t.nav) {
+      return (
+          <div className="flex items-center justify-center h-screen bg-slate-900 text-white">
+              <div className="text-center">
+                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-yellow-500 mx-auto mb-4"></div>
+                  <p>Loading Language Resources...</p>
+                  <button 
+                    onClick={() => window.location.reload()} 
+                    className="mt-4 px-4 py-2 bg-slate-800 rounded hover:bg-slate-700"
+                  >
+                    Reload
+                  </button>
+              </div>
+          </div>
+      );
+  }
 
   useEffect(() => {
     const handleFullScreenChange = () => {
@@ -169,6 +188,12 @@ const Layout: React.FC<LayoutProps> = ({ children, userRole, setUserRole, notifi
       visible: true
     },
     {
+      path: '/admin-manual',
+      label: t.nav.adminGuide, // New Label
+      icon: Shield,
+      visible: userRole === UserRole.SYSTEM_ADMIN
+    },
+    {
       path: '/tech-docs',
       label: 'Technical Docs', // Hardcoded as it's dev-only
       icon: FileCode,
@@ -201,6 +226,8 @@ const Layout: React.FC<LayoutProps> = ({ children, userRole, setUserRole, notifi
     pageTitle = String(t.nav.presentation);
   } else if (location.pathname === '/tech-docs') {
     pageTitle = 'Technical Documentation';
+  } else if (location.pathname === '/admin-manual') {
+    pageTitle = 'System Administrator Manual';
   }
 
   return (
@@ -235,7 +262,7 @@ const Layout: React.FC<LayoutProps> = ({ children, userRole, setUserRole, notifi
         </div>
 
         {/* Navigation */}
-        <nav className="p-4 space-y-2 flex-1 overflow-y-auto scrollbar-hide">
+        <nav className="p-4 space-y-2 flex-1 overflow-y-auto">
           {navItems.map((item) => {
             const Icon = item.icon;
             const isActive = location.pathname === item.path;
