@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { Booking, BookingStatus, UserRole, TrainingSession } from '../types';
+import { Booking, BookingStatus, UserRole, TrainingSession, Employee } from '../types';
 import { 
   Upload, FileSpreadsheet, Search, Filter, Download, 
   CheckCircle2, XCircle, Award, Users, TrendingUp,
@@ -179,6 +179,24 @@ const ResultsPage: React.FC<ResultsPageProps> = ({ bookings, updateBookingStatus
       const lines = text.split('\n');
       const dataRows = lines.slice(1);
       const newBookings: Booking[] = [];
+      let skippedCount = 0;
+
+      // PRE-PROCESSING: Build lookup maps to prevent duplicates and reuse IDs
+      const existingEmployeeMap = new Map<string, Employee>();
+      const existingBookingFingerprints = new Set<string>();
+
+      bookings.forEach(b => {
+          if (b.employee && b.employee.recordId) {
+              existingEmployeeMap.set(b.employee.recordId.toLowerCase(), b.employee);
+          }
+          
+          // Identify booking uniqueness by RecordID + RAC + Date
+          const session = sessions.find(s => s.id === b.sessionId);
+          const racCode = session ? session.racType.split(' - ')[0] : b.sessionId.split('|')[0];
+          const date = session ? session.date : (b.resultDate || '');
+          const fingerprint = `${b.employee.recordId.toLowerCase()}|${racCode.replace(/\s+/g, '')}|${date}`;
+          existingBookingFingerprints.add(fingerprint);
+      });
 
       dataRows.forEach(line => {
         const cols = line.split(',');
@@ -193,6 +211,15 @@ const ResultsPage: React.FC<ResultsPageProps> = ({ bookings, updateBookingStatus
 
         if (!name || !recordId || !racCode) return;
 
+        // Check Duplicates
+        const cleanRac = racCode.replace(/\s+/g, '');
+        const fingerprint = `${recordId.toLowerCase()}|${cleanRac}|${date}`;
+        
+        if (existingBookingFingerprints.has(fingerprint)) {
+            skippedCount++;
+            return; // SKIP DUPLICATE
+        }
+
         const status = statusRaw?.toLowerCase() === 'passed' ? BookingStatus.PASSED : BookingStatus.FAILED;
         let expiryDate = '';
         
@@ -205,7 +232,11 @@ const ResultsPage: React.FC<ResultsPageProps> = ({ bookings, updateBookingStatus
 
         // Encode historical metadata into sessionId string
         // Format: RAC01|Historical|John Doe|Room 101
-        const sessionString = `${racCode}|Historical|${trainer || 'Unknown'}|${room || 'Unknown'}`;
+        const sessionString = `${cleanRac}|Historical|${trainer || 'Unknown'}|${room || 'Unknown'}`;
+
+        // Resolve Employee ID (Reuse if exists)
+        const existingEmp = existingEmployeeMap.get(recordId.toLowerCase());
+        const empId = existingEmp ? existingEmp.id : uuidv4();
 
         const newBooking: Booking = {
             id: uuidv4(),
@@ -217,7 +248,7 @@ const ResultsPage: React.FC<ResultsPageProps> = ({ bookings, updateBookingStatus
             practicalScore: parseInt(practical) || 0,
             attendance: true,
             employee: {
-                id: uuidv4(),
+                id: empId, // Reuse ID to keep history linked
                 name,
                 recordId,
                 company: company || 'Unknown',
@@ -229,13 +260,19 @@ const ResultsPage: React.FC<ResultsPageProps> = ({ bookings, updateBookingStatus
             }
         };
         newBookings.push(newBooking);
+        
+        // Add to temp set to handle duplicates within the same CSV file
+        existingBookingFingerprints.add(fingerprint);
       });
 
       if (newBookings.length > 0 && importBookings) {
           importBookings(newBookings);
-          alert(`Successfully imported ${newBookings.length} records.`);
+          let msg = `Successfully imported ${newBookings.length} records.`;
+          if (skippedCount > 0) msg += `\nSkipped ${skippedCount} duplicate records.`;
+          alert(msg);
       } else {
-          alert("No valid records found in file.");
+          if (skippedCount > 0) alert(`No new records found. Skipped ${skippedCount} duplicates.`);
+          else alert("No valid records found in file.");
       }
       if (fileInputRef.current) fileInputRef.current.value = '';
     };

@@ -80,12 +80,21 @@ const DatabasePage: React.FC<DatabasePageProps> = ({ bookings, requirements, upd
         const session = sessions.find(s => s.id === b.sessionId);
         if (session) {
             // e.g. "RAC 01 - Height" -> "RAC01"
-            racCode = session.racType.split(' - ')[0].replace(/\s+/g, '');
+            racCode = session.racType.split(' - ')[0];
         } else {
-            // 2. Fallback to String Parsing (if imported/legacy)
-            // Remove spaces to match: "RAC 01" -> "RAC01", "RAC01" -> "RAC01"
-            racCode = b.sessionId.split(' - ')[0].replace(/\s+/g, '');
+            // 2. Fallback to String Parsing (Imported/Legacy)
+            if (b.sessionId.includes('|')) {
+                // Imported format: "RAC01|Historical|..."
+                racCode = b.sessionId.split('|')[0];
+            } else {
+                // Legacy format: "RAC 01" or "RAC01"
+                racCode = b.sessionId.split(' - ')[0];
+            }
         }
+        
+        // Normalize: remove spaces to match key (e.g., "RAC 01" -> "RAC01")
+        racCode = racCode.replace(/\s+/g, '');
+        
         return racCode === racKey;
     });
 
@@ -245,6 +254,10 @@ const DatabasePage: React.FC<DatabasePageProps> = ({ bookings, requirements, upd
         
         const importPayload: { employee: Employee, req: EmployeeRequirement }[] = [];
 
+        // Helper: Lookup existing employee by RecordID (Case Insensitive)
+        const existingEmpMap = new Map<string, Employee>();
+        uniqueEmployees.forEach(e => existingEmpMap.set(e.recordId.toLowerCase(), e));
+
         // Helper to find index of a header
         const getIdx = (name: string) => headerRow.findIndex(h => h.toLowerCase() === name.toLowerCase());
         
@@ -260,9 +273,6 @@ const DatabasePage: React.FC<DatabasePageProps> = ({ bookings, requirements, upd
         const idxDlClass = 8;
         const idxDlExp = 9;
         
-        // Matrix Start Index (After DL Exp)
-        const matrixStartIndex = 10;
-
         dataRows.forEach(line => {
             const cols = line.split(',');
             if (cols.length < 2) return;
@@ -271,13 +281,15 @@ const DatabasePage: React.FC<DatabasePageProps> = ({ bookings, requirements, upd
             const recordId = cols[idxId]?.trim();
             
             if (name && recordId) {
-                const empId = uuidv4();
+                // De-duplication: Check if ID exists
+                const existing = existingEmpMap.get(recordId.toLowerCase());
+                const empId = existing ? existing.id : uuidv4();
                 
                 // 1. Build Employee Object
                 const employee: Employee = {
                     id: empId,
                     name,
-                    recordId,
+                    recordId, // Preserve original case from CSV, or potentially normalize
                     company: cols[idxComp]?.trim() || 'Unknown',
                     department: cols[idxDept]?.trim() || 'Operations',
                     role: cols[idxRole]?.trim() || 'Staff',
@@ -320,7 +332,7 @@ const DatabasePage: React.FC<DatabasePageProps> = ({ bookings, requirements, upd
 
         if (importPayload.length > 0 && onImportEmployees) {
             onImportEmployees(importPayload);
-            alert(`Successfully imported ${importPayload.length} employees with matrix settings.`);
+            alert(`Successfully processed ${importPayload.length} rows.\n\nNote: Existing employees with matching IDs were updated. New employees were created.`);
         } else {
             alert("No valid data found or import function missing.");
         }

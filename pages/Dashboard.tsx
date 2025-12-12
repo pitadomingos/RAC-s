@@ -94,14 +94,24 @@ const Dashboard: React.FC<DashboardProps> = ({
                       if (b.status !== BookingStatus.PASSED) return false;
                       if (!b.expiryDate || b.expiryDate <= today) return false;
                       
-                      // Match RAC Key
+                      // Match RAC Key - Consistent with DatabasePage Logic
                       let bRacKey = '';
                       const session = sessions.find(s => s.id === b.sessionId);
                       if (session) {
-                          bRacKey = session.racType.split(' - ')[0].replace(/\s+/g, '');
+                          bRacKey = session.racType.split(' - ')[0];
                       } else {
-                          bRacKey = b.sessionId.split(' - ')[0].replace(/\s+/g, '');
+                          // Handle Imported Records (Pipe separated)
+                          if (b.sessionId.includes('|')) {
+                              bRacKey = b.sessionId.split('|')[0];
+                          } else {
+                              // Handle Legacy/Manual Strings
+                              bRacKey = b.sessionId.split(' - ')[0];
+                          }
                       }
+                      
+                      // Normalize spaces
+                      bRacKey = bRacKey.replace(/\s+/g, '');
+                      
                       return bRacKey === key;
                   });
 
