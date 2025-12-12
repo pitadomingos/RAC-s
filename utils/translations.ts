@@ -217,6 +217,7 @@ export const translations = {
         subtitle: 'The definitive guide to configuring, maintaining, and operating the CARS Manager ecosystem.',
         slides: {
             intro: 'System Overview',
+            objectives: 'Objectives & Solutions',
             logic: 'The Compliance Logic',
             workflow: 'Core Workflows',
             config: 'Configuration',
@@ -232,7 +233,30 @@ export const translations = {
                 active: 'IsActive',
                 aso: 'ASO_Expiry',
                 today: 'Today',
-                racs: 'ALL Required_RACs'
+                racs: 'ALL Required_RACs',
+                and: 'AND',
+                result: 'ACCESS_GRANTED'
+            },
+            objectives: {
+                title: 'Current Challenges vs. Solutions',
+                problemTitle: 'Current Operational Problems',
+                solutionTitle: 'CARS System Capabilities',
+                p1Title: 'Fragmented Data Silos',
+                p1Desc: 'Training records, medical (ASO) dates, and operational permissions are currently tracked in disconnected spreadsheets, leading to version control issues and data loss.',
+                s1Title: 'Unified Source of Truth',
+                s1Desc: 'A centralized SQL-structured database consolidates Employee Health, Safety Training, and Access Permissions into a single, real-time master record.',
+                p2Title: 'Reactive Compliance Management',
+                p2Desc: 'Managers often realize an employee is non-compliant only after they are blocked at the gate or when a certificate has already expired, causing downtime.',
+                s2Title: 'Proactive Auto-Booking Engine',
+                s2Desc: 'The system automatically scans for certifications expiring in < 7 days and auto-reserves a training slot, ensuring zero downtime.',
+                p3Title: 'Administrative Overhead',
+                p3Desc: 'Generating monthly safety reports and issuing cards requires hours of manual data collation and formatting.',
+                s3Title: 'Automated Intelligence',
+                s3Desc: 'One-click AI-powered Executive Reports and batch generation of QR-coded ID cards reduce administrative time by 90%.',
+                p4Title: 'Lack of Field Verification',
+                p4Desc: 'Physical cards can be forged or may not reflect the most recent revocation of access rights.',
+                s4Title: 'Digital Passport Verification',
+                s4Desc: 'Live QR codes allow field officers to scan any badge and view the real-time, tamper-proof database status of that employee.'
             },
             flowTitle: 'Core Data Flow',
             flowSteps: {
@@ -257,6 +281,12 @@ export const translations = {
             bookingTitle: 'Critical Booking Rules',
             matrixLock: 'The Matrix Lock',
             matrixDesc: 'The Booking Module strictly enforces the Database Matrix. You cannot book an employee for "RAC 01" unless it is marked as Required in their Database profile.',
+            gradingTitle: 'Grading Logic',
+            gradingText: 'Pass mark is 70%. Attendance is mandatory. If Theory score < 70, Practical input is locked.',
+            rac02Title: 'RAC 02 Driver License',
+            rac02Text: 'Requires "DL Verified" check by trainer. If unchecked, student fails automatically regardless of score.',
+            expiryTitle: 'Auto-Expiry',
+            expiryText: 'Successful results set an expiry date of 2 Years from the session date automatically.',
             advancedTitle: 'Advanced Features',
             autoBook: 'Auto-Booking Engine',
             autoBookDesc: 'Scans for employees expiring in < 7 Days. Automatically reserves slots.',
@@ -334,7 +364,7 @@ export const translations = {
         }
     },
     alcohol: { title: 'Alcohol Control', subtitle: 'Roadmap', banner: { title: 'Coming Soon', desc: 'IoT Integration', status: 'Dev' }, features: { title: 'Vision', iotTitle: 'IoT', iotDesc: 'Direct integration with industrial breathalyzers to capture results in real-time.', accessTitle: 'Automated Lockout', accessDesc: 'Automatically block turnstile access if alcohol is detected or training is expired.', complianceTitle: 'Compliance Reporting', complianceDesc: 'Unified logs for both safety training and fitness-for-duty checks.' }, protocol: { title: 'Protocol', positiveTitle: 'Positive Test Protocol', positiveDesc: 'If a positive test (>0.00%) is detected, the turnstile locks immediately. The employee is marked as "Blocked" in the database.', resetTitle: '02:00 AM Reset Rule', resetDesc: 'The system automatically unlocks the employee at exactly 02:00:00 hrs the following day, allowing re-entry if sober.' }, challenges: { title: 'Current Challenges', oemIssue: 'Current breathalyzers send data to an external OEM Cloud. This poses data sovereignty risks.', gateSetup: 'Main gate physical layout requires modification.' }, proposal: { title: 'Proposed Solution', faceCap: 'Purchase models with Face Capture.', integration: 'Develop middleware to intercept data.', projectScope: 'Independent project involving Civil & Electrical.' } },
-    logs: { title: 'Audit Logs', subtitle: 'Tracking.', levels: { all: 'All', info: 'Info', warn: 'Warn', error: 'Error', audit: 'Audit' }, table: { level: 'Level', timestamp: 'Time', user: 'User', message: 'Msg' } },
+    logs: { title: 'Audit Logs', subtitle: 'Tracking.', levels: { all: 'All', info: 'Info', warn: 'Warn', error: 'Error', audit: 'Audit' }, table: { level: 'Nível', timestamp: 'Time', user: 'User', message: 'Msg' } },
     proposal: {
         title: 'Project Proposal: CARS Manager',
         digitalTrans: 'Digital Transformation Initiative',
@@ -509,6 +539,11 @@ export const translations = {
                 title: 'Matrix-Locked Booking Engine',
                 desc: 'To ensure absolute compliance, the booking engine is hard-locked to the Database Matrix. Admins and Users cannot bypass safety requirements—bookings are only permitted if the specific RAC is marked as mandatory.',
                 features: ['Prevents unauthorized training', 'Enforces role-based safety matrix', 'Reduces training waste']
+            },
+            selfService: {
+                title: 'Employee Self-Service Portal',
+                desc: 'Empowers employees to manage their own compliance. Staff can log in to view their status, check requirement gaps, and download their digital passport, significantly reducing administrative inquiries.',
+                features: ['Personal Compliance Dashboard', 'Digital Card Download', 'Requirement Gap Analysis']
             }
         },
         conclusion: {
@@ -719,6 +754,7 @@ export const translations = {
         subtitle: 'O guia definitivo para configurar, manter e operar o ecossistema CARS Manager.',
         slides: {
             intro: 'Visão Geral',
+            objectives: 'Objetivos e Soluções',
             logic: 'A Lógica de Conformidade',
             workflow: 'Fluxos de Trabalho',
             config: 'Configuração',
@@ -734,7 +770,30 @@ export const translations = {
                 active: 'EstaAtivo',
                 aso: 'Validade_ASO',
                 today: 'Hoje',
-                racs: 'TODOS RACs_Obrigatorios'
+                racs: 'TODOS RACs_Obrigatorios',
+                and: 'E',
+                result: 'ACESSO_PERMITIDO'
+            },
+            objectives: {
+                title: 'Desafios Atuais vs. Soluções',
+                problemTitle: 'Problemas Operacionais Atuais',
+                solutionTitle: 'Capacidades do Sistema CARS',
+                p1Title: 'Silos de Dados Fragmentados',
+                p1Desc: 'A dependência de planilhas desconectadas leva a conflitos de versão e perda de dados.',
+                s1Title: 'Fonte Única da Verdade',
+                s1Desc: 'Banco de dados centralizado garante que todos os departamentos vejam o status em tempo real.',
+                p2Title: 'Gestão Reativa de Conformidade',
+                p2Desc: 'Gestores só percebem a não conformidade quando um funcionário é barrado no portão.',
+                s2Title: 'Motor de Auto-Agendamento',
+                s2Desc: 'O sistema verifica certificações expirando em < 7 dias e reserva vaga automaticamente.',
+                p3Title: 'Sobrecarga Administrativa',
+                p3Desc: 'Gerar relatórios mensais e emitir cartões exige horas de trabalho manual.',
+                s3Title: 'Inteligência Automatizada',
+                s3Desc: 'Relatórios executivos via IA e emissão de cartões com QR reduzem o tempo administrativo em 90%.',
+                p4Title: 'Falta de Verificação em Campo',
+                p4Desc: 'Cartões físicos podem ser falsificados ou não refletir a revogação recente de acesso.',
+                s4Title: 'Passaporte Digital',
+                s4Desc: 'Códigos QR permitem que oficiais escaneiem qualquer crachá e vejam o status real no banco de dados.'
             },
             flowTitle: 'Fluxo de Dados Principal',
             flowSteps: {
@@ -759,6 +818,12 @@ export const translations = {
             bookingTitle: 'Regras Críticas de Agendamento',
             matrixLock: 'O Bloqueio da Matriz',
             matrixDesc: 'O Módulo de Agendamento impõe estritamente a Matriz da Base de Dados. Você não pode agendar um funcionário para "RAC 01" a menos que esteja marcado como Obrigatório no perfil dele.',
+            gradingTitle: 'Lógica de Avaliação',
+            gradingText: 'Nota de aprovação é 70%. Presença é obrigatória. Se Teoria < 70, Prática bloqueada.',
+            rac02Title: 'Carta de Condução RAC 02',
+            rac02Text: 'Requer verificação física da Carta. Se desmarcado, reprovação automática.',
+            expiryTitle: 'Validade Automática',
+            expiryText: 'Resultados aprovados definem validade de 2 Anos automaticamente.',
             advancedTitle: 'Recursos Avançados',
             autoBook: 'Motor de Auto-Agendamento',
             autoBookDesc: 'Verifica funcionários expirando em < 7 Dias. Reserva vagas automaticamente.',
@@ -871,7 +936,7 @@ export const translations = {
         execSummary: {
             title: '1. Resumo Executivo',
             text: 'O Gestor CARS é uma plataforma web personalizada projetada para digitalizar o processo de ponta a ponta da gestão de treinamento de segurança. Desde o agendamento de sessões até a avaliação de resultados e emissão de cartões de identificação, o sistema fornece uma única fonte de verdade para conformidade HSE. Ele substitui planilhas manuais e registros em papel por uma base de dados segura e automatizada acessível por Administradores do Sistema, Instrutores RAC e Líderes de Departamento.',
-            quote: '"Segurança não é apenas uma prioridade, é um valor fundamental. Nossas ferramentas digitais devem refletir o mesmo padrão de excelência de nosso maquinário operacional."'
+            quote: '"Segurança não é apenas uma prioridade, it é um valor fundamental. Nossas ferramentas digitais devem refletir o mesmo padrão de excelência de nosso maquinário operacional."'
         },
         objectives: {
             title: '2. Objetivos do Projeto',
@@ -1011,6 +1076,11 @@ export const translations = {
                 title: 'Motor de Agendamento Bloqueado por Matriz',
                 desc: 'Para garantir conformidade absoluta, o motor de agendamento é travado na Matriz da Base de Dados. Administradores e Usuários não podem ignorar os requisitos de segurança — agendamentos só são permitidos se o RAC específico for marcado como obrigatório.',
                 features: ['Previne treinamento não autorizado', 'Impõe matriz de segurança baseada em função', 'Reduz desperdício de treinamento']
+            },
+            selfService: {
+                title: 'Portal de Autoatendimento do Funcionário',
+                desc: 'Capacita os funcionários a gerenciar sua própria conformidade. O pessoal pode fazer login para visualizar seu status, verificar lacunas de requisitos e baixar seu passaporte digital, reduzindo significativamente as consultas administrativas.',
+                features: ['Painel de Conformidade Pessoal', 'Download de Cartão Digital', 'Análise de Lacunas de Requisitos']
             }
         },
         conclusion: {
