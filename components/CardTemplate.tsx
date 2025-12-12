@@ -11,6 +11,7 @@ interface CardTemplateProps {
   allBookings?: Booking[];
   racDefinitions?: RacDef[]; 
   sessions?: TrainingSession[];
+  printedBy?: string;
 }
 
 const CardTemplate: React.FC<CardTemplateProps> = ({ 
@@ -18,7 +19,8 @@ const CardTemplate: React.FC<CardTemplateProps> = ({
   requirement, 
   allBookings,
   racDefinitions = INITIAL_RAC_DEFINITIONS,
-  sessions = []
+  sessions = [],
+  printedBy = 'System'
 }) => {
   if (!booking || !booking.employee) return null;
 
@@ -135,7 +137,6 @@ const CardTemplate: React.FC<CardTemplateProps> = ({
   ];
 
   // 2. Filter to COMPACT list (Remove gaps/unrequired items)
-  // This ensures items flow sequentially without restricted slot positions
   const activeGridItems = masterGridItems.filter(item => 
       requirement?.requiredRacs?.[item.code]
   );
@@ -148,16 +149,13 @@ const CardTemplate: React.FC<CardTemplateProps> = ({
       let val = '';
 
       if (item.isOps && PERMISSION_KEYS.includes(key)) {
-          // It's a permission/designation -> Show -SIM-
           val = '-SIM-';
       } else {
-          // It's a training (RAC or Ops Training like PTS) -> Show Date
           const info = getRacDateInfo(key);
           if (info) {
               val = info.dateStr;
               checkDateForMax(info.rawDate);
           } else {
-              // Required but no valid date found -> Empty value (Label still shows)
               val = '';
           }
       }
@@ -166,15 +164,9 @@ const CardTemplate: React.FC<CardTemplateProps> = ({
   };
 
   // --- Split into Columns ---
-  // Left: 11 Slots
-  // Right: 8 Slots
-  const leftColData = Array.from({ length: 11 }).map((_, idx) => {
+  // Left: 13 Slots (Increased to hold most items)
+  const leftColData = Array.from({ length: 13 }).map((_, idx) => {
       const item = activeGridItems[idx];
-      return processItem(item);
-  });
-
-  const rightColData = Array.from({ length: 8 }).map((_, idx) => {
-      const item = activeGridItems[11 + idx]; // Offset by 11
       return processItem(item);
   });
 
@@ -184,8 +176,8 @@ const CardTemplate: React.FC<CardTemplateProps> = ({
     <div 
       className="bg-white text-slate-900 relative flex flex-col overflow-hidden box-border" 
       style={{ 
-        width: '54mm', 
-        height: '86mm', 
+        width: '51mm',
+        height: '81mm',
         border: '1px solid black',
         fontSize: '8px',
         lineHeight: '1.1'
@@ -193,37 +185,46 @@ const CardTemplate: React.FC<CardTemplateProps> = ({
     >
       
       {/* Header - FLUSH TO TOP EDGE */}
-      <div className="flex h-[11mm] border-b-[1px] border-black relative justify-between items-center px-1 overflow-hidden">
-          {/* Logo Section - Relative Path */}
+      <div className="flex h-[10mm] border-b-[1px] border-black relative justify-between items-center px-1 overflow-hidden">
+          {/* Logo */}
           <div className="flex flex-col justify-center h-full w-[15mm] relative">
              <img 
                 src="assets/vulcan.png" 
                 alt="Vulcan" 
-                className="max-h-[10mm] object-contain"
+                className="max-h-[9mm] object-contain"
                 style={{ display: 'block' }}
                 onError={(e) => { e.currentTarget.style.display = 'none'; }}
              />
           </div>
           
-          {/* Centered Company Bar Container - STARTS AT TOP EDGE (top-0) */}
+          {/* Centered Company Bar */}
           <div className="absolute inset-x-0 top-0 flex justify-center pointer-events-none">
               <div className="flex flex-col items-center justify-start w-full">
-                  <span className="text-[4px] font-bold text-gray-500 absolute top-[1px] right-[2px] z-20">PAD_v5e</span>
+                  <span className="text-[4px] font-bold text-gray-500 absolute top-[1px] right-[2px] z-20">PAD_v7</span>
                   
-                  {/* The Bar */}
                   <div 
                     className="w-[24mm] min-h-[6mm] flex items-center justify-center text-[5px] font-bold uppercase overflow-hidden shadow-sm border-b-[0.5px] border-x-[0.5px] border-black leading-tight"
                     style={{ backgroundColor: headerBg, color: headerTextColor }}
                   >
-                     {/* Text Wrapping Enabled */}
                      <span className="px-1 text-center whitespace-normal break-words w-full">
                         {headerText}
                      </span>
                   </div>
               </div>
           </div>
-          
           <div className="w-1"></div>
+      </div>
+
+      {/* NEW: Issue Info Bar (Immediately below header) */}
+      <div className="flex items-center justify-between px-1 h-[3mm] border-b-[1px] border-black bg-gray-50">
+          <div className="text-[5px] flex items-center gap-1">
+               <span className="font-bold">EMISSÃO:</span>
+               <span>{new Date().toLocaleString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>
+           </div>
+           <div className="text-[5px] flex items-center gap-1">
+               <span className="font-bold">REQ. POR:</span>
+               <span className="uppercase font-bold">{printedBy.split(' ')[0]}</span>
+           </div>
       </div>
 
       {/* Identity Details */}
@@ -252,7 +253,7 @@ const CardTemplate: React.FC<CardTemplateProps> = ({
       </div>
 
       {/* Driver License Section */}
-      <div className="border-b-[1px] border-black h-[6.5mm] flex flex-col">
+      <div className="border-b-[1px] border-black h-[6mm] flex flex-col">
            <div className="flex h-1/2">
                 <div className="w-[25%] border-r-[0.5px] border-black text-[5px] font-bold pl-1 flex items-center bg-gray-50">Carta Condução</div>
                 <div className="w-[40%] border-r-[0.5px] border-black text-[5px] font-bold text-center flex items-center justify-center">Número</div>
@@ -270,18 +271,18 @@ const CardTemplate: React.FC<CardTemplateProps> = ({
       </div>
 
       {/* ASO Section */}
-      <div className="bg-vulcan-green text-white h-[3.5mm] flex items-center justify-between px-1 border-b-[1px] border-black">
+      <div className="bg-vulcan-green text-white h-[3mm] flex items-center justify-between px-1 border-b-[1px] border-black">
           <span className="text-[6px] font-bold">VALIDADE ASO:</span>
           <span className="text-[6px] font-bold">{asoDate}</span>
       </div>
 
       {/* RAC Grid */}
-      <div className="flex-1 flex text-[5px] border-b-[1px] border-black">
-          {/* Left Column - 11 Rows */}
-          <div className="w-1/2 border-r-[1px] border-black">
+      <div className="flex-1 flex text-[5px]">
+          {/* Left Column - 13 Rows */}
+          <div className="w-[58%] border-r-[1px] border-black">
               {leftColData.map((row, idx) => (
-                    <div key={`left-${idx}`} className="flex h-[3.5mm] border-b-[0.5px] border-black last:border-b-0">
-                        <div className={`w-[12mm] ${labelClass} border-r-[0.5px] border-black`}>
+                    <div key={`left-${idx}`} className="flex h-[3.1mm] border-b-[0.5px] border-black last:border-b-0">
+                        <div className={`w-[13mm] ${labelClass} border-r-[0.5px] border-black`}>
                            {row.label}
                         </div>
                         <div className={`flex-1 ${valueClass}`}>
@@ -291,76 +292,47 @@ const CardTemplate: React.FC<CardTemplateProps> = ({
               ))}
           </div>
           
-          {/* Right Column - 8 Rows + QR */}
-          <div className="w-1/2 flex flex-col">
-               {/* 8 Data Rows */}
-               <div>
-                   {rightColData.map((row, idx) => (
-                        <div key={`right-${idx}`} className="flex h-[3.5mm] border-b-[0.5px] border-black">
-                            <div className={`w-[16mm] ${labelClass} border-r-[0.5px] border-black`}>
-                               {row.label}
-                            </div>
-                            <div className={`flex-1 ${valueClass}`}>
-                               {row.val}
-                            </div>
-                        </div>
-                   ))}
+          {/* Right Column - Graphics Only */}
+          <div className="flex-1 flex flex-col items-center justify-evenly p-[1mm] relative">
+               {/* QR Code */}
+               <div className="flex items-center justify-center w-full h-[50%]">
+                   <img 
+                       src={`https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(qrUrl)}`} 
+                       alt="QR" 
+                       className="w-[19mm] h-[19mm] object-contain"
+                   />
                </div>
                
-               {/* QR Container */}
-               <div className="flex-1 flex items-center justify-start pl-[2px] relative overflow-hidden">
+               {/* Golden Rules Shield */}
+               <div className="flex items-center justify-center w-full h-[50%]">
                    <img 
-                       src={`https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=${encodeURIComponent(qrUrl)}`} 
-                       alt="QR" 
-                       className="w-[10mm] h-[10mm]"
+                      src="assets/Golden_Rules.png" 
+                      alt="Golden Rules"
+                      className="w-[18mm] h-[20mm] object-contain"
+                      style={{ display: 'block' }}
+                      onError={(e) => { e.currentTarget.style.display = 'none'; }}
                    />
                </div>
           </div>
       </div>
 
-      {/* Footer / Signature */}
-      <div className="h-[9mm] px-1 relative flex flex-col justify-start pt-[1px]">
-           <div className="text-[5px] flex items-center gap-1">
-               <span className="font-bold">EMISSÃO:</span>
-               <span>{new Date().toLocaleString('en-GB')}</span>
-           </div>
-           
-           <div className="flex flex-col mb-[2px]">
-               <div className="text-[5px] flex items-end gap-1">
-                   <span className="font-bold">Riquisitado por:</span>
-                   <span>{safeName.split(' ')[0]}</span>
-               </div>
-               <div className="text-[4px] text-gray-500 font-mono leading-none">
-                   System: RAC MANAGER
-               </div>
-           </div>
-      </div>
-
-      {/* Valid Until Strip - Green (Calculated MAX date) */}
-      <div className="bg-vulcan-green text-white text-[7px] font-bold text-center py-[1px]">
-          VALIDO ATÉ {validUntilStr}
-      </div>
-
-      {/* Emergency Strip */}
-      <div className="h-[6mm] bg-[#65a30d] flex items-center pl-1 relative border-t-[1px] border-white">
-          <div className="w-[4mm] h-[4mm] bg-orange-500 rounded-full flex items-center justify-center border-[1px] border-white z-20 shadow-sm">
-             <Phone size={8} className="text-white fill-white" />
+      {/* Footer Area - Valid Until & Emergency */}
+      <div className="border-t-[1px] border-black">
+          {/* Valid Until Strip */}
+          <div className="bg-vulcan-green text-white text-[7px] font-bold text-center py-[1px] border-b-[1px] border-black">
+              VALIDO ATÉ {validUntilStr}
           </div>
-          <div className="text-center text-slate-900 leading-none ml-2 flex flex-col items-center flex-1 pr-[12mm]">
-              <div className="text-[5px] font-bold">EM CASO DE EMERGÊNCIA LIGUE</div>
-              <div className="text-[7px] font-black tracking-widest">822030 / 842030</div>
-          </div>
-      </div>
 
-      {/* 10 Golden Rules Shield - IMAGE ASSET - Relative Path */}
-      <div className="absolute -right-[1px] bottom-[8.5mm] w-[13mm] h-[15mm] z-30">
-           <img 
-              src="assets/Golden_Rules.png" 
-              alt="Golden Rules"
-              className="w-full h-full object-contain filter drop-shadow-sm"
-              style={{ display: 'block' }}
-              onError={(e) => { e.currentTarget.style.display = 'none'; }}
-           />
+          {/* Emergency Strip */}
+          <div className="h-[5mm] bg-[#65a30d] flex items-center pl-1 relative">
+              <div className="w-[4mm] h-[4mm] bg-orange-500 rounded-full flex items-center justify-center border-[1px] border-white z-20 shadow-sm">
+                <Phone size={8} className="text-white fill-white" />
+              </div>
+              <div className="text-center text-slate-900 leading-none ml-2 flex flex-col items-center flex-1 pr-[10mm]">
+                  <div className="text-[5px] font-bold">EM CASO DE EMERGÊNCIA LIGUE</div>
+                  <div className="text-[7px] font-black tracking-widest">822030 / 842030</div>
+              </div>
+          </div>
       </div>
 
     </div>

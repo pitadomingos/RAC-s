@@ -34,6 +34,21 @@ const DatabasePage: React.FC<DatabasePageProps> = ({ bookings, requirements, upd
   // Editing / Transfer State
   const [editingEmployee, setEditingEmployee] = useState<Employee | null>(null);
 
+  // -- Date Validation Helper --
+  const validateDateInput = (dateStr: string): boolean => {
+      if (!dateStr) return true; // Allow clearing
+      
+      const parts = dateStr.split('-');
+      if (parts.length !== 3) return false;
+      
+      const year = parseInt(parts[0]);
+      // Enforce 4-digit year sanity check
+      if (year < 1900 || year > 2100) return false;
+      if (parts[0].length > 4) return false; // Prevent typing 5 digits like 20255
+
+      return true;
+  };
+
   // -- Derived Data Logic --
 
   // 1. Unify Employees
@@ -109,6 +124,7 @@ const DatabasePage: React.FC<DatabasePageProps> = ({ bookings, requirements, upd
   };
 
   const handleAsoChange = (empId: string, date: string) => {
+    if (!validateDateInput(date)) return; // Reject invalid dates immediately
     const current = getRequirement(empId);
     const updated = { ...current, employeeId: empId, asoExpiryDate: date };
     updateRequirements(updated);
@@ -431,7 +447,14 @@ const DatabasePage: React.FC<DatabasePageProps> = ({ bookings, requirements, upd
                                      </div>
                                  </td>
                                  <td className="px-2 py-2 text-center">
-                                     <input type="date" className={`border dark:border-slate-600 rounded px-1 py-0.5 text-[10px] text-center w-24 bg-transparent focus:ring-1 focus:ring-yellow-500 ${!isAsoValid ? 'text-red-600 font-bold bg-red-50 dark:bg-red-900/10' : 'text-black dark:text-gray-300'}`} value={req.asoExpiryDate || ''} onChange={e => handleAsoChange(emp.id, e.target.value)} />
+                                     <input 
+                                        type="date" 
+                                        min="1900-01-01"
+                                        max="2100-12-31"
+                                        className={`border dark:border-slate-600 rounded px-1 py-0.5 text-[10px] text-center w-24 bg-transparent focus:ring-1 focus:ring-yellow-500 ${!isAsoValid ? 'text-red-600 font-bold bg-red-50 dark:bg-red-900/10' : 'text-black dark:text-gray-300'}`} 
+                                        value={req.asoExpiryDate || ''} 
+                                        onChange={e => handleAsoChange(emp.id, e.target.value)} 
+                                     />
                                  </td>
                                  <td className="px-2 py-2 border-l border-gray-100 dark:border-slate-700">
                                      <div className="flex flex-wrap gap-1 w-full min-w-[250px]">
@@ -543,7 +566,18 @@ const DatabasePage: React.FC<DatabasePageProps> = ({ bookings, requirements, upd
                             <div className="grid grid-cols-3 gap-2">
                                 <input className="border rounded p-2 text-xs text-black" placeholder="Number" value={editingEmployee.driverLicenseNumber || ''} onChange={e => setEditingEmployee({...editingEmployee, driverLicenseNumber: e.target.value})} />
                                 <input className="border rounded p-2 text-xs text-black" placeholder="Class" value={editingEmployee.driverLicenseClass || ''} onChange={e => setEditingEmployee({...editingEmployee, driverLicenseClass: e.target.value})} />
-                                <input type="date" className="border rounded p-2 text-xs text-black" value={editingEmployee.driverLicenseExpiry || ''} onChange={e => setEditingEmployee({...editingEmployee, driverLicenseExpiry: e.target.value})} />
+                                <input 
+                                    type="date" 
+                                    min="1900-01-01"
+                                    max="2100-12-31"
+                                    className="border rounded p-2 text-xs text-black" 
+                                    value={editingEmployee.driverLicenseExpiry || ''} 
+                                    onChange={e => {
+                                        if (validateDateInput(e.target.value)) {
+                                            setEditingEmployee({...editingEmployee, driverLicenseExpiry: e.target.value});
+                                        }
+                                    }} 
+                                />
                             </div>
                         </div>
                     </div>

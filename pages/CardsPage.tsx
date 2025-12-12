@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Booking, BookingStatus, EmployeeRequirement, RacDef, TrainingSession } from '../types';
+import { Booking, BookingStatus, EmployeeRequirement, RacDef, TrainingSession, UserRole } from '../types';
 import CardTemplate from '../components/CardTemplate';
 import { Printer, AlertCircle, ArrowLeft } from 'lucide-react';
 import { useLanguage } from '../contexts/LanguageContext';
@@ -11,9 +11,10 @@ interface CardsPageProps {
   requirements: EmployeeRequirement[];
   racDefinitions: RacDef[];
   sessions: TrainingSession[];
+  userRole?: UserRole; // Added to get current user name context
 }
 
-const CardsPage: React.FC<CardsPageProps> = ({ bookings, requirements, racDefinitions, sessions }) => {
+const CardsPage: React.FC<CardsPageProps> = ({ bookings, requirements, racDefinitions, sessions, userRole }) => {
   const { t } = useLanguage();
   const location = useLocation();
   const navigate = useNavigate();
@@ -56,6 +57,8 @@ const CardsPage: React.FC<CardsPageProps> = ({ bookings, requirements, racDefini
           navigate(-1);
       }
   };
+
+  const printerName = userRole ? String(userRole) : 'System';
 
   return (
     <div className="flex flex-col h-full">
@@ -132,6 +135,7 @@ const CardsPage: React.FC<CardsPageProps> = ({ bookings, requirements, racDefini
                               allBookings={bookings} 
                               racDefinitions={racDefinitions}
                               sessions={sessions}
+                              printedBy={printerName}
                             />
                         </div>
                     ))}
@@ -147,6 +151,7 @@ const CardsPage: React.FC<CardsPageProps> = ({ bookings, requirements, racDefini
                             allBookings={bookings}
                             racDefinitions={racDefinitions}
                             sessions={sessions}
+                            printedBy={printerName}
                         />
                     </div>
                 ))}
