@@ -6,7 +6,6 @@ import { Calendar, Plus, Settings, X, Save, Clock, MapPin, User, CalendarDays, C
 import { useNavigate } from 'react-router-dom';
 import { v4 as uuidv4 } from 'uuid';
 import { useLanguage } from '../contexts/LanguageContext';
-import { AdvisorTrigger } from '../components/GeminiAdvisor';
 
 interface ScheduleTrainingProps {
     sessions: TrainingSession[];
@@ -230,11 +229,11 @@ const ScheduleTraining: React.FC<ScheduleTrainingProps> = ({ sessions, setSessio
                       <div className="text-xs font-bold text-slate-400 uppercase tracking-wider">
                           Page {currentPage} of {Math.max(1, totalPages)} • {sortedSessions.length} Total
                       </div>
-                      <AdvisorTrigger />
-                  </div>
-                  <div className="flex gap-2">
-                      <button onClick={() => goToPage(currentPage - 1)} disabled={currentPage === 1} className="p-2 rounded-lg border border-slate-200 dark:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-700 disabled:opacity-50 transition-colors text-slate-600 dark:text-slate-300"><ChevronLeft size={16} /></button>
-                      <button onClick={() => goToPage(currentPage + 1)} disabled={currentPage === totalPages} className="p-2 rounded-lg border border-slate-200 dark:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-700 disabled:opacity-50 transition-colors text-slate-600 dark:text-slate-300"><ChevronRight size={16} /></button>
+                      
+                      <div className="flex gap-2 border-l border-slate-200 dark:border-slate-700 pl-4">
+                          <button onClick={() => goToPage(currentPage - 1)} disabled={currentPage === 1} className="p-2 rounded-lg border border-slate-200 dark:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-700 disabled:opacity-50 transition-colors text-slate-600 dark:text-slate-300"><ChevronLeft size={16} /></button>
+                          <button onClick={() => goToPage(currentPage + 1)} disabled={currentPage === totalPages} className="p-2 rounded-lg border border-slate-200 dark:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-700 disabled:opacity-50 transition-colors text-slate-600 dark:text-slate-300"><ChevronRight size={16} /></button>
+                      </div>
                   </div>
               </div>
           )}

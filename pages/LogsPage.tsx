@@ -2,7 +2,6 @@
 import React, { useState } from 'react';
 import { ScrollText, Filter, AlertTriangle, CheckCircle, Info, ShieldAlert, Clock, Terminal, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useLanguage } from '../contexts/LanguageContext';
-import { AdvisorTrigger } from '../components/GeminiAdvisor';
 
 type LogLevel = 'INFO' | 'WARN' | 'ERROR' | 'AUDIT';
 
@@ -166,16 +165,15 @@ const LogsPage: React.FC = () => {
                                 <option value={120}>120</option>
                             </select>
                         </div>
-                        <AdvisorTrigger />
-                    </div>
-
-                    <div className="flex items-center gap-4">
-                        <div className="text-xs text-slate-600">
-                            Page {currentPage} of {Math.max(1, totalPages)} ({filteredLogs.length} total)
-                        </div>
-                        <div className="flex items-center gap-1">
-                            <button onClick={() => goToPage(currentPage - 1)} disabled={currentPage === 1} className="p-1 rounded hover:bg-gray-200 disabled:opacity-30 text-slate-600"><ChevronLeft size={16} /></button>
-                            <button onClick={() => goToPage(currentPage + 1)} disabled={currentPage === totalPages} className="p-1 rounded hover:bg-gray-200 disabled:opacity-30 text-slate-600"><ChevronRight size={16} /></button>
+                        
+                        <div className="flex items-center gap-4 border-l border-slate-300 pl-4">
+                            <div className="text-xs text-slate-600">
+                                Page {currentPage} of {Math.max(1, totalPages)} ({filteredLogs.length} total)
+                            </div>
+                            <div className="flex items-center gap-1">
+                                <button onClick={() => goToPage(currentPage - 1)} disabled={currentPage === 1} className="p-1 rounded hover:bg-gray-200 disabled:opacity-30 text-slate-600"><ChevronLeft size={16} /></button>
+                                <button onClick={() => goToPage(currentPage + 1)} disabled={currentPage === totalPages} className="p-1 rounded hover:bg-gray-200 disabled:opacity-30 text-slate-600"><ChevronRight size={16} /></button>
+                            </div>
                         </div>
                     </div>
                 </div>

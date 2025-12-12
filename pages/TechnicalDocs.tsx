@@ -40,7 +40,7 @@ const TechnicalDocs: React.FC = () => {
                   </h2>
                </div>
                <p className="text-slate-400 text-sm max-w-xl font-medium ml-1">
-                  Developer guide for maintaining, debugging, and extending the Vulcan Safety Manager.
+                  Developer guide for maintaining, debugging, and extending the CARS Manager.
                </p>
             </div>
             <div className="bg-black/30 backdrop-blur-md px-4 py-2 rounded-lg border border-white/10 text-xs font-mono text-cyan-400">

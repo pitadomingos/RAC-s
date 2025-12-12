@@ -1,11 +1,9 @@
 
-import React, { useState, useMemo, useRef } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Booking, BookingStatus, EmployeeRequirement, Employee, TrainingSession, RacDef } from '../types';
 import { COMPANIES, OPS_KEYS, PERMISSION_KEYS } from '../constants';
-import { Search, CheckCircle, XCircle, Edit, Save, X, ChevronLeft, ChevronRight, Filter, Trash2, Download, Upload } from 'lucide-react';
+import { Search, CheckCircle, XCircle, Edit, ChevronLeft, ChevronRight, Download, X, Trash2, QrCode, Printer, Phone, AlertTriangle } from 'lucide-react';
 import { useLanguage } from '../contexts/LanguageContext';
-import { AdvisorTrigger } from '../components/GeminiAdvisor';
-import { v4 as uuidv4 } from 'uuid';
 
 interface DatabasePageProps {
   bookings: Booking[];
@@ -14,13 +12,11 @@ interface DatabasePageProps {
   sessions: TrainingSession[];
   onUpdateEmployee: (id: string, updates: Partial<Employee>) => void;
   onDeleteEmployee: (id: string) => void;
-  onImportEmployees?: (data: { employee: Employee, req: EmployeeRequirement }[]) => void;
   racDefinitions: RacDef[];
 }
 
-const DatabasePage: React.FC<DatabasePageProps> = ({ bookings, requirements, updateRequirements, sessions, onUpdateEmployee, onDeleteEmployee, onImportEmployees, racDefinitions }) => {
+const DatabasePage: React.FC<DatabasePageProps> = ({ bookings, requirements, updateRequirements, sessions, onUpdateEmployee, onDeleteEmployee, racDefinitions }) => {
   const { t } = useLanguage();
-  const fileInputRef = useRef<HTMLInputElement>(null);
   
   // -- State --
   const [selectedCompany, setSelectedCompany] = useState<string>('All');
@@ -33,6 +29,9 @@ const DatabasePage: React.FC<DatabasePageProps> = ({ bookings, requirements, upd
 
   // Editing / Transfer State
   const [editingEmployee, setEditingEmployee] = useState<Employee | null>(null);
+  
+  // QR / Back of Card State
+  const [qrEmployee, setQrEmployee] = useState<Employee | null>(null);
 
   // -- Date Validation Helper --
   const validateDateInput = (dateStr: string): boolean => {
@@ -72,7 +71,7 @@ const DatabasePage: React.FC<DatabasePageProps> = ({ bookings, requirements, upd
     };
   };
 
-  // --- CRITICAL FIX: Robust RAC Matching ---
+  // --- CRITICAL FIX: Robust RAC Matching (Case Insensitive for (imp)) ---
   const getTrainingStatus = (empId: string, racKey: string): string | null => {
     const relevantBookings = bookings.filter(b => {
         if (b.employee.id !== empId) return false;
@@ -92,10 +91,14 @@ const DatabasePage: React.FC<DatabasePageProps> = ({ bookings, requirements, upd
         // --- NORMALIZATION LOGIC ---
         // 1. Remove Pipe metadata (e.g. "|Historical...")
         if (racCode.includes('|')) racCode = racCode.split('|')[0];
-        // 2. Remove (Imp) suffix if present
-        racCode = racCode.replace('(Imp)', '');
+        
+        // 2. Remove (Imp) suffix if present (CASE INSENSITIVE Regex, flexible spacing)
+        // Matches "(imp)", "(Imp)", "(IMP)", " (imp)", etc.
+        racCode = racCode.replace(/\s*\(imp\)\s*/gi, '');
+        
         // 3. Remove dashes (e.g. "RAC 01 - Name" -> "RAC 01  Name")
         if (racCode.includes('-')) racCode = racCode.split('-')[0];
+        
         // 4. Remove ALL spaces to ensure "RAC 01" matches "RAC01"
         racCode = racCode.replace(/\s+/g, '').trim().toUpperCase();
         
@@ -173,6 +176,29 @@ const DatabasePage: React.FC<DatabasePageProps> = ({ bookings, requirements, upd
       }
   };
 
+  // --- QR Helper Functions ---
+  const getQrUrl = (recordId: string) => {
+      const appOrigin = window.location.origin + window.location.pathname;
+      const verificationUrl = `${appOrigin}#/verify/${recordId}`;
+      return `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(verificationUrl)}`;
+  };
+
+  const handleDownloadQr = async (recordId: string, name: string) => {
+      const url = getQrUrl(recordId);
+      try {
+          const response = await fetch(url);
+          const blob = await response.blob();
+          const downloadLink = document.createElement("a");
+          downloadLink.href = URL.createObjectURL(blob);
+          downloadLink.download = `QR_${name.replace(/\s+/g, '_')}_${recordId}.png`;
+          document.body.appendChild(downloadLink);
+          downloadLink.click();
+          document.body.removeChild(downloadLink);
+      } catch (e) {
+          alert("Error downloading QR Code. Please try printing instead.");
+      }
+  };
+
   const handleExportDatabase = () => {
       const baseHeaders = [
           "Full Name", "Record ID", "Company", "Department", "Role", "Active", "Access Status",
@@ -213,138 +239,6 @@ const DatabasePage: React.FC<DatabasePageProps> = ({ bookings, requirements, upd
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
-  };
-
-  const handleDownloadTemplate = () => {
-    const baseHeaders = [
-        "Full Name", "Record ID", "Company", "Department", "Role", "Active", 
-        "ASO Expiry (YYYY-MM-DD)", "DL Number", "DL Class", "DL Expiry (YYYY-MM-DD)"
-    ];
-    
-    const racHeaders = racDefinitions.map(r => r.code);
-    const opsHeaders = OPS_KEYS;
-    
-    const headers = [...baseHeaders, ...racHeaders, ...opsHeaders];
-    
-    const csvContent = "data:text/csv;charset=utf-8," + headers.join(",");
-    const encodedUri = encodeURI(csvContent);
-    const link = document.createElement("a");
-    link.setAttribute("href", encodedUri);
-    link.setAttribute("download", "vulcan_database_import_template.csv");
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  };
-
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    const reader = new FileReader();
-    reader.onload = (evt) => {
-        const text = evt.target?.result as string;
-        if (!text) return;
-        
-        const lines = text.split('\n');
-        
-        // --- REGION PROOF SEPARATOR DETECTION ---
-        const firstLine = lines[0] || '';
-        const separator = firstLine.includes(';') ? ';' : ',';
-        
-        const headerRow = firstLine.split(separator).map(h => h.trim().replace(/^"|"$/g, ''));
-        const dataRows = lines.slice(1);
-        
-        const importPayload: { employee: Employee, req: EmployeeRequirement }[] = [];
-        const existingEmpMap = new Map<string, Employee>();
-        uniqueEmployees.forEach(e => existingEmpMap.set(e.recordId.toLowerCase(), e));
-
-        // Dynamic Index Lookup
-        const getIdx = (patterns: string[]) => headerRow.findIndex(h => patterns.some(p => h.toLowerCase().includes(p.toLowerCase())));
-        
-        const idxName = getIdx(['name', 'nome']);
-        const idxId = getIdx(['record', 'id', 'matrícula', 'matricula']);
-        
-        // Safety check
-        if (idxName === -1 || idxId === -1) {
-            alert(`Error: Could not find 'Name' or 'Record ID' columns. Detected separator: '${separator}'. Please check your CSV format.`);
-            return;
-        }
-
-        const idxComp = getIdx(['company', 'empresa']);
-        const idxDept = getIdx(['department', 'dept', 'departamento']);
-        const idxRole = getIdx(['role', 'job', 'cargo', 'função']);
-        const idxActive = getIdx(['active', 'ativo']);
-        const idxAso = getIdx(['aso', 'medical']);
-        const idxDlNum = getIdx(['dl num', 'carta', 'license']);
-        const idxDlClass = getIdx(['class', 'classe']);
-        const idxDlExp = getIdx(['dl exp', 'validade carta']);
-
-        dataRows.forEach(line => {
-            if (!line.trim()) return;
-            
-            // Handle quotes if they exist, but simple split for now
-            const cols = line.split(separator).map(c => c?.trim().replace(/^"|"$/g, ''));
-            
-            const name = cols[idxName];
-            const recordId = cols[idxId];
-            
-            if (name && recordId) {
-                // Deduplicate logic
-                const existing = existingEmpMap.get(recordId.toLowerCase());
-                const empId = existing ? existing.id : uuidv4();
-                
-                const employee: Employee = {
-                    id: empId,
-                    name,
-                    recordId,
-                    company: idxComp > -1 ? cols[idxComp] || 'Unknown' : 'Unknown',
-                    department: idxDept > -1 ? cols[idxDept] || 'Operations' : 'Operations',
-                    role: idxRole > -1 ? cols[idxRole] || 'Staff' : 'Staff',
-                    isActive: idxActive > -1 ? (cols[idxActive].toLowerCase() === 'false' || cols[idxActive] === '0' ? false : true) : true,
-                    driverLicenseNumber: idxDlNum > -1 ? cols[idxDlNum] : '',
-                    driverLicenseClass: idxDlClass > -1 ? cols[idxDlClass] : '',
-                    driverLicenseExpiry: idxDlExp > -1 ? cols[idxDlExp] : '',
-                };
-
-                const requiredRacs: Record<string, boolean> = {};
-                
-                // RACs
-                racDefinitions.forEach(def => {
-                    const colIdx = getIdx([def.code]);
-                    if (colIdx >= 0) {
-                        const val = cols[colIdx]?.toLowerCase();
-                        requiredRacs[def.code] = (val === '1' || val === 'true' || val === 'yes' || val === 'sim');
-                    }
-                });
-
-                // OPS
-                OPS_KEYS.forEach(key => {
-                    const colIdx = getIdx([key]);
-                    if (colIdx >= 0) {
-                        const val = cols[colIdx]?.toLowerCase();
-                        requiredRacs[key] = (val === '1' || val === 'true' || val === 'yes' || val === 'sim');
-                    }
-                });
-
-                const req: EmployeeRequirement = {
-                    employeeId: empId,
-                    asoExpiryDate: idxAso > -1 ? cols[idxAso] : '',
-                    requiredRacs
-                };
-
-                importPayload.push({ employee, req });
-            }
-        });
-
-        if (importPayload.length > 0 && onImportEmployees) {
-            onImportEmployees(importPayload);
-            alert(`Successfully processed ${importPayload.length} rows using '${separator}' separator.`);
-        } else {
-            alert("No valid data found.");
-        }
-        if (fileInputRef.current) fileInputRef.current.value = '';
-    };
-    reader.readAsText(file);
   };
 
   // -- Processing & Filtering --
@@ -448,29 +342,12 @@ const DatabasePage: React.FC<DatabasePageProps> = ({ bookings, requirements, upd
                      />
                  </div>
                  
-                 {onImportEmployees && (
-                     <>
-                        <button 
-                            onClick={handleExportDatabase}
-                            className="flex items-center gap-1 bg-emerald-600 text-white px-3 py-1.5 rounded-md text-xs font-bold hover:bg-emerald-500 shadow-sm"
-                        >
-                            <Download size={14} /> Export DB
-                        </button>
-                        <button 
-                            onClick={handleDownloadTemplate}
-                            className="flex items-center gap-1 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 px-3 py-1.5 rounded-md text-xs font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-50"
-                        >
-                            <Download size={14} /> {t.database.downloadTemplate}
-                        </button>
-                        <button 
-                            onClick={() => fileInputRef.current?.click()}
-                            className="flex items-center gap-1 bg-yellow-500 text-slate-900 px-3 py-1.5 rounded-md text-xs font-bold hover:bg-yellow-400"
-                        >
-                            <Upload size={14} /> {t.database.importCsv}
-                        </button>
-                        <input type="file" ref={fileInputRef} className="hidden" accept=".csv" onChange={handleFileUpload} />
-                     </>
-                 )}
+                 <button 
+                    onClick={handleExportDatabase}
+                    className="flex items-center gap-1 bg-emerald-600 text-white px-3 py-1.5 rounded-md text-xs font-bold hover:bg-emerald-500 shadow-sm"
+                >
+                    <Download size={14} /> Export DB
+                </button>
              </div>
         </div>
 
@@ -490,11 +367,12 @@ const DatabasePage: React.FC<DatabasePageProps> = ({ bookings, requirements, upd
                          <th className="px-2 py-2 text-left text-[10px] font-bold text-black dark:text-gray-300 uppercase pl-4 border-l border-gray-300 dark:border-slate-600">RAC Matrix (Left)</th>
                          <th className="px-2 py-2 text-left text-[10px] font-bold text-black dark:text-gray-300 uppercase pl-4 border-l border-gray-300 dark:border-slate-600">{t.database.opsMatrix} (Right)</th>
                          <th className="px-2 py-2 text-center text-[10px] font-bold text-black dark:text-gray-300 uppercase w-12">Edit</th>
+                         <th className="px-2 py-2 text-center text-[10px] font-bold text-black dark:text-gray-300 uppercase w-12">QR</th>
                      </tr>
                  </thead>
                  <tbody className="bg-white dark:bg-slate-800 divide-y divide-gray-200 dark:divide-slate-700">
                      {paginatedData.length === 0 ? (
-                         <tr><td colSpan={12} className="p-8 text-center text-gray-400">No records found.</td></tr>
+                         <tr><td colSpan={13} className="p-8 text-center text-gray-400">No records found.</td></tr>
                      ) : (
                          paginatedData.map(({ emp, req, status, isAsoValid, isDlExpired, isActive, hasRac02Req }) => (
                              <tr key={emp.id} className={`hover:bg-blue-50 dark:hover:bg-slate-700/50 transition-colors`}>
@@ -526,10 +404,15 @@ const DatabasePage: React.FC<DatabasePageProps> = ({ bookings, requirements, upd
                                      <div className="flex flex-wrap gap-1 w-full min-w-[250px]">
                                          {racDefinitions.map(def => {
                                              const key = def.code;
-                                             const isRequired = req.requiredRacs[key] || false;
+                                             // AUTOMATICALLY ENABLE CHECK IF A VALID RECORD EXISTS (Visual Fix)
                                              const trainingDate = getTrainingStatus(emp.id, key);
                                              const today = new Date().toISOString().split('T')[0];
                                              const isValid = trainingDate && trainingDate > today;
+                                             
+                                             // IMPORTANT: "Required" logic visual update.
+                                             // If it's valid, it should show Green regardless of "requiredRacs" state, implying it's "Mapped"
+                                             const isRequired = req.requiredRacs[key] || isValid; 
+                                             
                                              const isRac02Blocked = key === 'RAC02' && isDlExpired;
                                              let bgClass = 'bg-gray-100 dark:bg-slate-700 text-gray-300';
                                              if (isRequired) {
@@ -538,37 +421,44 @@ const DatabasePage: React.FC<DatabasePageProps> = ({ bookings, requirements, upd
                                              } else {
                                                  bgClass = 'bg-gray-100 dark:bg-slate-800 text-gray-400 dark:text-gray-600 border border-gray-200 dark:border-slate-700';
                                              }
-                                             return <button key={key} onClick={() => handleRequirementChange(emp.id, key, !isRequired)} className={`text-[9px] font-bold w-10 h-6 rounded flex items-center justify-center transition-all ${bgClass}`} title={def.name}>{key.replace('RAC', 'R')}</button>;
+                                             return <button key={key} onClick={() => handleRequirementChange(emp.id, key, !req.requiredRacs[key])} className={`text-[9px] font-bold w-10 h-6 rounded flex items-center justify-center transition-all ${bgClass}`} title={def.name}>{key.replace('RAC', 'R')}</button>;
                                          })}
                                      </div>
                                  </td>
                                  <td className="px-2 py-2 border-l border-gray-100 dark:border-slate-700">
                                      <div className="flex flex-wrap gap-1 w-full min-w-[250px]">
                                          {OPS_KEYS.map(key => {
-                                             const isRequired = req.requiredRacs[key] || false;
                                              const isPermission = PERMISSION_KEYS.includes(key);
                                              let isValid = false;
-                                             if (isPermission) isValid = isRequired; 
-                                             else {
+                                             if (isPermission) {
+                                                 isValid = req.requiredRacs[key] || false; 
+                                             } else {
                                                  const trainingDate = getTrainingStatus(emp.id, key);
                                                  const today = new Date().toISOString().split('T')[0];
                                                  isValid = !!(trainingDate && trainingDate > today);
                                              }
+                                             
+                                             // Same logic: If Valid record found (for non-permissions), implied mapped
+                                             const isRequired = req.requiredRacs[key] || (!isPermission && isValid);
+
                                              let bgClass = 'bg-gray-100 dark:bg-slate-700 text-gray-300';
                                              if (isRequired) {
-                                                 if (isPermission) bgClass = 'bg-blue-600 text-white shadow-sm';
-                                                 else if (isValid) bgClass = 'bg-green-500 text-white shadow-sm';
+                                                 if (isPermission && isValid) bgClass = 'bg-blue-600 text-white shadow-sm';
+                                                 else if (!isPermission && isValid) bgClass = 'bg-green-500 text-white shadow-sm';
                                                  else bgClass = 'bg-red-500 text-white shadow-sm';
                                              } else {
                                                  bgClass = 'bg-gray-100 dark:bg-slate-800 text-gray-400 dark:text-gray-600 border border-gray-200 dark:border-slate-700';
                                              }
                                              const label = t.database.ops[key as keyof typeof t.database.ops] || key;
-                                             return <button key={key} onClick={() => handleRequirementChange(emp.id, key, !isRequired)} className={`text-[9px] font-bold px-2 h-6 min-w-[2.5rem] rounded flex items-center justify-center transition-all whitespace-nowrap ${bgClass}`} title={label}>{label}</button>;
+                                             return <button key={key} onClick={() => handleRequirementChange(emp.id, key, !req.requiredRacs[key])} className={`text-[9px] font-bold px-2 h-6 min-w-[2.5rem] rounded flex items-center justify-center transition-all whitespace-nowrap ${bgClass}`} title={label}>{label}</button>;
                                          })}
                                      </div>
                                  </td>
                                  <td className="px-2 py-2 text-center">
                                      <button onClick={() => setEditingEmployee(emp)} className="p-1 hover:bg-gray-200 dark:hover:bg-slate-700 rounded text-slate-500 hover:text-blue-600 transition-colors"><Edit size={14} /></button>
+                                 </td>
+                                 <td className="px-2 py-2 text-center">
+                                     <button onClick={() => setQrEmployee(emp)} className="p-1 hover:bg-gray-200 dark:hover:bg-slate-700 rounded text-slate-500 hover:text-purple-600 transition-colors"><QrCode size={14} /></button>
                                  </td>
                              </tr>
                          ))
@@ -594,21 +484,20 @@ const DatabasePage: React.FC<DatabasePageProps> = ({ bookings, requirements, upd
                          <option value={120}>120</option>
                      </select>
                  </div>
-                 {/* Trigger Button Here */}
-                 <AdvisorTrigger />
-             </div>
-
-             <div className="flex items-center gap-4">
-                <div className="text-xs text-slate-600 dark:text-gray-400">
-                    {t.common.page} {currentPage} {t.common.of} {totalPages} ({processedData.length} items)
-                </div>
-                <div className="flex items-center gap-1">
-                    <button onClick={() => goToPage(currentPage - 1)} disabled={currentPage === 1} className="p-1 rounded hover:bg-gray-200 dark:hover:bg-slate-700 disabled:opacity-30"><ChevronLeft size={16} /></button>
-                    <button onClick={() => goToPage(currentPage + 1)} disabled={currentPage === totalPages} className="p-1 rounded hover:bg-gray-200 dark:hover:bg-slate-700 disabled:opacity-30"><ChevronRight size={16} /></button>
-                </div>
+                 
+                 <div className="flex items-center gap-4 border-l border-slate-300 dark:border-slate-600 pl-4">
+                    <div className="text-xs text-slate-600 dark:text-gray-400">
+                        {t.common.page} {currentPage} {t.common.of} {totalPages} ({processedData.length} items)
+                    </div>
+                    <div className="flex items-center gap-1">
+                        <button onClick={() => goToPage(currentPage - 1)} disabled={currentPage === 1} className="p-1 rounded hover:bg-gray-200 dark:hover:bg-slate-700 disabled:opacity-30"><ChevronLeft size={16} /></button>
+                        <button onClick={() => goToPage(currentPage + 1)} disabled={currentPage === totalPages} className="p-1 rounded hover:bg-gray-200 dark:hover:bg-slate-700 disabled:opacity-30"><ChevronRight size={16} /></button>
+                    </div>
+                 </div>
              </div>
         </div>
 
+        {/* --- EDIT MODAL --- */}
         {editingEmployee && (
             <div className="absolute inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
                 <div className="bg-white dark:bg-slate-800 rounded-xl shadow-2xl w-full max-w-lg p-6">
@@ -647,6 +536,129 @@ const DatabasePage: React.FC<DatabasePageProps> = ({ bookings, requirements, upd
                     <div className="flex justify-between gap-2 mt-6 border-t pt-4">
                         <button onClick={handleDelete} className="bg-red-50 text-red-600 px-4 py-2 rounded text-sm font-bold flex items-center gap-2"><Trash2 size={16}/> Delete</button>
                         <button onClick={handleSaveEdit} className="bg-blue-600 text-white px-6 py-2 rounded text-sm font-bold">Save Changes</button>
+                    </div>
+                </div>
+            </div>
+        )}
+
+        {/* --- ID CARD BACK MODAL (QR & Emergency) --- */}
+        {qrEmployee && (
+            <div className="fixed inset-0 z-[60] bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
+                <div className="bg-white rounded-3xl shadow-2xl p-0 overflow-hidden max-w-2xl w-full flex flex-col md:flex-row">
+                    
+                    {/* Left: Preview */}
+                    <div className="p-8 bg-slate-100 flex-1 flex flex-col items-center justify-center border-r border-slate-200">
+                        <h3 className="text-sm font-bold text-slate-500 uppercase tracking-widest mb-6">Card Back Preview</h3>
+                        
+                        {/* THE CARD BACK (CR80 Aspect Ratio ~ 85.6 x 54) -> Scaled up for screen */}
+                        <div id="card-back-print" className="bg-white w-[85.6mm] h-[54mm] rounded-lg shadow-xl border border-slate-200 relative overflow-hidden flex flex-col" style={{ transform: 'scale(1.2)' }}>
+                            {/* Header */}
+                            <div className="bg-slate-900 text-white h-[8mm] flex items-center justify-center">
+                                <span className="text-[10px] font-black tracking-widest">SAFETY PASSPORT / PASSAPORTE</span>
+                            </div>
+                            
+                            {/* Body */}
+                            <div className="flex-1 flex items-center justify-center p-2 relative">
+                                {/* Large QR */}
+                                <img 
+                                    src={getQrUrl(qrEmployee.recordId)} 
+                                    alt="QR Code"
+                                    className="w-[28mm] h-[28mm]" 
+                                />
+                                
+                                {/* Right Side Info */}
+                                <div className="ml-4 flex flex-col justify-center h-full space-y-2">
+                                    <div className="text-[8px] font-bold text-slate-400 uppercase">Employee ID</div>
+                                    <div className="text-sm font-black text-slate-900">{qrEmployee.recordId}</div>
+                                    
+                                    <div className="h-px bg-slate-200 w-full my-2"></div>
+                                    
+                                    <div className="flex items-center gap-1 text-red-600">
+                                        <AlertTriangle size={10} />
+                                        <span className="text-[7px] font-bold uppercase">Emergency / Emergência</span>
+                                    </div>
+                                    <div className="text-xs font-black text-slate-900">842030</div>
+                                </div>
+                            </div>
+
+                            {/* Footer */}
+                            <div className="bg-gray-100 border-t border-gray-300 h-[6mm] flex items-center justify-center text-[6px] text-gray-500 text-center px-2">
+                                IF FOUND PLEASE RETURN TO VULCAN SECURITY DEPARTMENT
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Right: Controls */}
+                    <div className="p-8 w-full md:w-72 bg-white flex flex-col justify-center space-y-4">
+                        <div className="mb-4">
+                            <h2 className="text-xl font-black text-slate-900">{qrEmployee.name}</h2>
+                            <p className="text-sm text-slate-500 font-mono">{qrEmployee.recordId}</p>
+                        </div>
+
+                        <button 
+                            onClick={() => handleDownloadQr(qrEmployee.recordId, qrEmployee.name)}
+                            className="w-full py-3 px-4 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-bold flex items-center justify-center gap-2 transition-colors"
+                        >
+                            <Download size={18} /> Download QR
+                        </button>
+
+                        <button 
+                            onClick={() => {
+                                const win = window.open('', '', 'width=800,height=600');
+                                if (win) {
+                                    win.document.write(`
+                                        <html>
+                                            <head>
+                                                <title>Print Back - ${qrEmployee.recordId}</title>
+                                                <style>
+                                                    @page { size: 85.6mm 54mm; margin: 0; }
+                                                    body { margin: 0; padding: 0; -webkit-print-color-adjust: exact; print-color-adjust: exact; font-family: sans-serif; }
+                                                    .card { width: 85.6mm; height: 54mm; position: relative; background: white; overflow: hidden; display: flex; flex-direction: column; }
+                                                    .header { background: #0f172a; color: white; height: 8mm; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 900; letter-spacing: 2px; }
+                                                    .body { flex: 1; display: flex; align-items: center; justify-content: center; padding: 2mm; }
+                                                    .qr { width: 28mm; height: 28mm; }
+                                                    .info { margin-left: 4mm; display: flex; flex-direction: column; justify-content: center; }
+                                                    .label { font-size: 8px; font-weight: bold; color: #94a3b8; text-transform: uppercase; }
+                                                    .value { font-size: 14px; font-weight: 900; color: #0f172a; }
+                                                    .divider { height: 1px; background: #e2e8f0; width: 100%; margin: 2mm 0; }
+                                                    .alert { display: flex; align-items: center; gap: 2px; color: #dc2626; font-size: 7px; font-weight: bold; text-transform: uppercase; }
+                                                    .emergency { font-size: 12px; font-weight: 900; color: #0f172a; }
+                                                    .footer { background: #f1f5f9; border-top: 1px solid #cbd5e1; height: 6mm; display: flex; align-items: center; justify-content: center; font-size: 6px; color: #64748b; text-align: center; padding: 0 2mm; }
+                                                </style>
+                                            </head>
+                                            <body>
+                                                <div class="card">
+                                                    <div class="header">SAFETY PASSPORT</div>
+                                                    <div class="body">
+                                                        <img src="${getQrUrl(qrEmployee.recordId)}" class="qr" />
+                                                        <div class="info">
+                                                            <div class="label">Employee ID</div>
+                                                            <div class="value">${qrEmployee.recordId}</div>
+                                                            <div class="divider"></div>
+                                                            <div class="alert">EMERGENCY / EMERGÊNCIA</div>
+                                                            <div class="emergency">842030</div>
+                                                        </div>
+                                                    </div>
+                                                    <div class="footer">IF FOUND PLEASE RETURN TO VULCAN SECURITY DEPARTMENT</div>
+                                                </div>
+                                                <script>window.onload = function() { window.print(); window.close(); }</script>
+                                            </body>
+                                        </html>
+                                    `);
+                                    win.document.close();
+                                }
+                            }}
+                            className="w-full py-3 px-4 bg-slate-900 hover:bg-slate-800 text-white rounded-xl font-bold flex items-center justify-center gap-2 transition-colors shadow-lg"
+                        >
+                            <Printer size={18} /> Print Card Back
+                        </button>
+
+                        <button 
+                            onClick={() => setQrEmployee(null)}
+                            className="w-full py-3 px-4 text-slate-400 hover:text-slate-600 font-bold flex items-center justify-center gap-2 transition-colors"
+                        >
+                            Close
+                        </button>
                     </div>
                 </div>
             </div>

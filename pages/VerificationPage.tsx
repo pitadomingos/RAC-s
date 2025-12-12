@@ -1,3 +1,4 @@
+
 import React, { useMemo } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { Booking, BookingStatus, EmployeeRequirement, Employee, RacDef, TrainingSession } from '../types';
@@ -154,7 +155,7 @@ const VerificationPage: React.FC<VerificationPageProps> = ({
                  <ArrowLeft size={20} className="text-slate-700" />
              </Link>
              <div className="flex flex-col items-end">
-                 <span className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Vulcan Safety</span>
+                 <span className="text-[10px] font-bold uppercase tracking-widest text-slate-500">{t.common.vulcan}</span>
                  <span className="text-sm font-black text-slate-800">{t.verification.title}</span>
              </div>
         </div>

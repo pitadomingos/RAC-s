@@ -113,7 +113,13 @@ const BookingForm: React.FC<BookingFormProps> = ({ addBookings, sessions, userRo
                         Array.from(employeeLookup.values()).find((e: Employee) => e.id === currentEmployeeId);
           
           if (found) {
-              setRows([{ ...found, id: uuidv4() }]); // Populate single row
+              setRows([{ 
+                  ...found, 
+                  id: uuidv4(),
+                  driverLicenseNumber: found.driverLicenseNumber || '',
+                  driverLicenseClass: found.driverLicenseClass || '',
+                  driverLicenseExpiry: found.driverLicenseExpiry || ''
+              }]); // Populate single row
           }
       }
   }, [isSelfService, currentEmployeeId, employeeLookup]);
@@ -180,7 +186,12 @@ const BookingForm: React.FC<BookingFormProps> = ({ addBookings, sessions, userRo
       const nextBatch = renewalQueue[0];
       const newQueue = renewalQueue.slice(1);
 
-      setRows(nextBatch.employees);
+      setRows(nextBatch.employees.map(e => ({
+          ...e,
+          driverLicenseNumber: e.driverLicenseNumber || '',
+          driverLicenseClass: e.driverLicenseClass || '',
+          driverLicenseExpiry: e.driverLicenseExpiry || ''
+      })));
       setTargetRac(nextBatch.racType);
       setRenewalQueue(newQueue);
       setSelectedSession(''); // Force user to pick new session

@@ -4,7 +4,6 @@ import { UserRole, User } from '../types';
 import { Shield, MoreVertical, Plus, X, Trash2, Edit, Users, Lock, Key, ChevronLeft, ChevronRight, Mail, Briefcase, CheckCircle2, XCircle, Search, Upload, Download } from 'lucide-react';
 import { useLanguage } from '../contexts/LanguageContext';
 import { COMPANIES } from '../constants';
-import { AdvisorTrigger } from '../components/GeminiAdvisor';
 
 interface UserManagementProps {
     users: User[];
@@ -346,12 +345,11 @@ const UserManagement: React.FC<UserManagementProps> = ({ users, setUsers }) => {
                  <div className="text-xs font-bold text-slate-400 uppercase tracking-wider">
                      Page {currentPage} of {Math.max(1, totalPages)} • {users.length} Total
                  </div>
-                 <AdvisorTrigger />
-             </div>
-
-             <div className="flex gap-2">
-                <button onClick={() => goToPage(currentPage - 1)} disabled={currentPage === 1} className="p-2 rounded-lg border border-slate-200 dark:border-slate-600 hover:bg-slate-100 dark:hover:bg-slate-700 disabled:opacity-50 transition-colors text-slate-600 dark:text-slate-300"><ChevronLeft size={16} /></button>
-                <button onClick={() => goToPage(currentPage + 1)} disabled={currentPage === totalPages} className="p-2 rounded-lg border border-slate-200 dark:border-slate-600 hover:bg-slate-100 dark:hover:bg-slate-700 disabled:opacity-50 transition-colors text-slate-600 dark:text-slate-300"><ChevronRight size={16} /></button>
+                 
+                 <div className="flex gap-2">
+                    <button onClick={() => goToPage(currentPage - 1)} disabled={currentPage === 1} className="p-2 rounded-lg border border-slate-200 dark:border-slate-600 hover:bg-slate-100 dark:hover:bg-slate-700 disabled:opacity-50 transition-colors text-slate-600 dark:text-slate-300"><ChevronLeft size={16} /></button>
+                    <button onClick={() => goToPage(currentPage + 1)} disabled={currentPage === totalPages} className="p-2 rounded-lg border border-slate-200 dark:border-slate-600 hover:bg-slate-100 dark:hover:bg-slate-700 disabled:opacity-50 transition-colors text-slate-600 dark:text-slate-300"><ChevronRight size={16} /></button>
+                 </div>
              </div>
         </div>
       </div>

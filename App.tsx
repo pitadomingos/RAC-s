@@ -287,8 +287,56 @@ const App: React.FC = () => {
       setNotifications(prev => [n, ...prev]);
   };
 
+  // GENERIC HELPER: Sync Requirements from Bookings
+  // This ensures "Records drive Database" - if you have a booking, you have a requirement.
+  const syncRequirementsFromBookings = (bookingsToSync: Booking[]) => {
+      setRequirements(prevReqs => {
+          const newReqs = [...prevReqs];
+          
+          bookingsToSync.forEach(b => {
+              // 1. Find or Create Requirement for Employee
+              let reqIndex = newReqs.findIndex(r => r.employeeId === b.employee.id);
+              if (reqIndex === -1) {
+                  newReqs.push({ 
+                      employeeId: b.employee.id, 
+                      asoExpiryDate: '', 
+                      requiredRacs: {} 
+                  });
+                  reqIndex = newReqs.length - 1;
+              }
+              
+              // 2. Determine RAC Key from Session/Booking ID
+              let racCode = '';
+              const session = sessions.find(s => s.id === b.sessionId);
+              
+              if (session) {
+                  // e.g. "RAC 01 - Height" -> "RAC01"
+                  racCode = session.racType.split(' - ')[0]; 
+              } else {
+                  // Fallback for imports: e.g. "RAC01|Historical" -> "RAC01"
+                  racCode = b.sessionId.split('|')[0];
+              }
+              
+              // 3. Normalize Code (Remove spaces, (imp), uppercase)
+              // Matches logic in DatabasePage
+              racCode = racCode.replace(/\(imp\)/gi, '').replace(/\s+/g, '').toUpperCase();
+              
+              // 4. Update Matrix
+              if (racCode) {
+                  // Only update if not already true (preserve existing state, though true is idempotent)
+                  if (!newReqs[reqIndex].requiredRacs[racCode]) {
+                      newReqs[reqIndex].requiredRacs[racCode] = true;
+                  }
+              }
+          });
+          
+          return newReqs;
+      });
+  };
+
   const addBookings = (newBookings: Booking[]) => {
       setBookings(prev => [...prev, ...newBookings]);
+      syncRequirementsFromBookings(newBookings);
   };
 
   const updateBookings = (updates: Booking[]) => {
@@ -296,14 +344,83 @@ const App: React.FC = () => {
           const update = updates.find(u => u.id === b.id);
           return update ? update : b;
       }));
+      // Also sync on update (e.g. Trainer saves results -> Ensure mapped)
+      syncRequirementsFromBookings(updates);
   };
 
   const updateBookingStatus = (id: string, status: BookingStatus) => {
       setBookings(prev => prev.map(b => b.id === id ? { ...b, status } : b));
   };
 
-  const importBookings = (newBookings: Booking[]) => {
+  // ENHANCED IMPORT: Handles Bookings AND Matrix/ASO Side Effects
+  // Now accepts full Employee object in sideEffects to enable new employee creation
+  const importBookings = (newBookings: Booking[], sideEffects?: { employee: Employee, aso: string, ops: Record<string, boolean> }[]) => {
+      // 1. Process New Training Records
       setBookings(prev => [...prev, ...newBookings]);
+      syncRequirementsFromBookings(newBookings);
+
+      // 2. Process Matrix Side Effects (Updates OR New Employees)
+      if (sideEffects && sideEffects.length > 0) {
+          const extraBookings: Booking[] = []; // Dummy bookings for new employees
+
+          // Update Requirements
+          setRequirements(prevReqs => {
+              const newReqs = [...prevReqs];
+              
+              sideEffects.forEach(effect => {
+                  let idx = newReqs.findIndex(r => r.employeeId === effect.employee.id);
+                  
+                  // Create if not exists (New Employee via Matrix)
+                  if (idx === -1) {
+                      newReqs.push({
+                          employeeId: effect.employee.id,
+                          asoExpiryDate: '',
+                          requiredRacs: {}
+                      });
+                      idx = newReqs.length - 1;
+
+                      // CRITICAL: Ensure this new employee exists in the system by adding a dummy booking if not already in `newBookings`
+                      // Check if already covered by the main training import
+                      const inMainImport = newBookings.some(b => b.employee.id === effect.employee.id);
+                      if (!inMainImport) {
+                          // Check if already exists in GLOBAL bookings (need access to current state, tricky inside setRequirements)
+                          // We'll handle this check outside or assume safe to add registration if not found
+                          extraBookings.push({
+                              id: uuidv4(),
+                              sessionId: 'REGISTRATION',
+                              employee: effect.employee,
+                              status: BookingStatus.PENDING,
+                              isAutoBooked: false
+                          });
+                      }
+                  }
+
+                  // Update ASO if provided
+                  if (effect.aso) {
+                      newReqs[idx].asoExpiryDate = effect.aso;
+                  }
+
+                  // Merge Ops Flags
+                  if (effect.ops) {
+                      newReqs[idx].requiredRacs = {
+                          ...newReqs[idx].requiredRacs,
+                          ...effect.ops
+                      };
+                  }
+              });
+              
+              return newReqs;
+          });
+
+          // Add any new dummy bookings needed for registration
+          if (extraBookings.length > 0) {
+              setBookings(prev => {
+                  // Filter out duplicates just in case
+                  const uniqueExtras = extraBookings.filter(eb => !prev.some(pb => pb.employee.id === eb.employee.id));
+                  return [...prev, ...uniqueExtras];
+              });
+          }
+      }
   };
 
   const updateRequirements = (req: EmployeeRequirement) => {
@@ -329,7 +446,9 @@ const App: React.FC = () => {
       setRequirements(prev => prev.filter(r => r.employeeId !== id));
   };
 
+  // Deprecated direct import function, but kept if needed by legacy calls
   const onImportEmployees = (data: { employee: Employee, req: EmployeeRequirement }[]) => {
+      // Re-route to new logic if possible or keep for safety
       const newBookings: Booking[] = [];
       const newReqs: EmployeeRequirement[] = [];
 
@@ -394,7 +513,7 @@ const App: React.FC = () => {
               <Route path="/database" element={
                   (userRole === UserRole.USER || userRole === UserRole.RAC_TRAINER)
                     ? <Navigate to="/manuals" replace />
-                    : <DatabasePage bookings={bookings} requirements={requirements} updateRequirements={updateRequirements} sessions={sessions} onUpdateEmployee={onUpdateEmployee} onDeleteEmployee={onDeleteEmployee} onImportEmployees={onImportEmployees} racDefinitions={racDefinitions} />
+                    : <DatabasePage bookings={bookings} requirements={requirements} updateRequirements={updateRequirements} sessions={sessions} onUpdateEmployee={onUpdateEmployee} onDeleteEmployee={onDeleteEmployee} racDefinitions={racDefinitions} />
               } />
               
               {/* Reports is RESTRICTED for RAC Trainer */}

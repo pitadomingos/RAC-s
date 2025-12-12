@@ -23,7 +23,7 @@ export class ErrorBoundary extends Component<Props, State> {
 
   public componentDidCatch(error: Error, errorInfo: ErrorInfo) {
     // In a real production app, you would log this to a service like Sentry or LogRocket
-    console.error('Vulcan Critical Error:', error, errorInfo);
+    console.error('CARS Manager Critical Error:', error, errorInfo);
   }
 
   public render() {
@@ -44,7 +44,7 @@ export class ErrorBoundary extends Component<Props, State> {
             </div>
             <h1 className="text-2xl font-black text-slate-900 mb-2">System Error</h1>
             <p className="text-gray-600 mb-6 text-sm">
-              The Vulcan Safety Manager encountered an unexpected issue. <br/>
+              The CARS Manager encountered an unexpected issue. <br/>
               Our technical team has been automatically notified.
             </p>
             
@@ -63,7 +63,7 @@ export class ErrorBoundary extends Component<Props, State> {
               Reload Application
             </button>
           </div>
-          <p className="mt-8 text-gray-400 text-xs font-mono">Vulcan Safety Systems • Production Build v2.5.0</p>
+          <p className="mt-8 text-gray-400 text-xs font-mono">CARS Manager Systems • Production Build v2.5.0</p>
         </div>
       );
     }
