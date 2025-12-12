@@ -1,9 +1,10 @@
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Booking, BookingStatus, EmployeeRequirement, Employee, TrainingSession, RacDef } from '../types';
-import { COMPANIES, OPS_KEYS, PERMISSION_KEYS } from '../constants';
-import { Search, CheckCircle, XCircle, Edit, ChevronLeft, ChevronRight, Download, X, Trash2, QrCode, Printer, Phone, AlertTriangle } from 'lucide-react';
+import { COMPANIES, OPS_KEYS, PERMISSION_KEYS, DEPARTMENTS } from '../constants';
+import { Search, CheckCircle, XCircle, Edit, ChevronLeft, ChevronRight, Download, X, Trash2, QrCode, Printer, Phone, AlertTriangle, Loader2, Archive, Filter } from 'lucide-react';
 import { useLanguage } from '../contexts/LanguageContext';
+import JSZip from 'jszip';
 
 interface DatabasePageProps {
   bookings: Booking[];
@@ -20,6 +21,7 @@ const DatabasePage: React.FC<DatabasePageProps> = ({ bookings, requirements, upd
   
   // -- State --
   const [selectedCompany, setSelectedCompany] = useState<string>('All');
+  const [selectedDepartment, setSelectedDepartment] = useState<string>('All');
   const [accessStatusFilter, setAccessStatusFilter] = useState<'All' | 'Granted' | 'Blocked'>('All');
   const [searchTerm, setSearchTerm] = useState('');
   
@@ -32,6 +34,9 @@ const DatabasePage: React.FC<DatabasePageProps> = ({ bookings, requirements, upd
   
   // QR / Back of Card State
   const [qrEmployee, setQrEmployee] = useState<Employee | null>(null);
+  
+  // Mass Download State
+  const [isZipping, setIsZipping] = useState(false);
 
   // -- Date Validation Helper --
   const validateDateInput = (dateStr: string): boolean => {
@@ -49,6 +54,18 @@ const DatabasePage: React.FC<DatabasePageProps> = ({ bookings, requirements, upd
 
       return true;
   };
+
+  // -- ESC Key Listener for Modals --
+  useEffect(() => {
+    const handleEsc = (e: KeyboardEvent) => {
+        if (e.key === 'Escape') {
+            if (qrEmployee) setQrEmployee(null);
+            if (editingEmployee) setEditingEmployee(null);
+        }
+    };
+    window.addEventListener('keydown', handleEsc);
+    return () => window.removeEventListener('keydown', handleEsc);
+  }, [qrEmployee, editingEmployee]);
 
   // -- Derived Data Logic --
 
@@ -199,6 +216,63 @@ const DatabasePage: React.FC<DatabasePageProps> = ({ bookings, requirements, upd
       }
   };
 
+  // --- MASS DOWNLOAD LOGIC ---
+  const handleBulkQrDownload = async () => {
+      if (processedData.length === 0) {
+          alert("No records to download.");
+          return;
+      }
+      
+      const confirmMsg = `This will generate and download QR codes for ${processedData.length} employees currently visible in the table. This might take a moment. Continue?`;
+      if (!confirm(confirmMsg)) return;
+
+      setIsZipping(true);
+      const zip = new JSZip();
+      const folder = zip.folder("vulkan_safety_qrs");
+
+      try {
+          // Limit to prevent browser crash on huge datasets, though standard use is fine
+          const limit = 500; 
+          const dataToProcess = processedData.slice(0, limit);
+          
+          if (processedData.length > limit) {
+              alert(`Note: Dataset too large. Downloading first ${limit} records to prevent browser timeout.`);
+          }
+
+          // Fetch sequentially to avoid rate limiting or browser connection limits
+          for (const item of dataToProcess) {
+              const { emp } = item;
+              const url = getQrUrl(emp.recordId);
+              try {
+                  const response = await fetch(url);
+                  if (response.ok) {
+                      const blob = await response.blob();
+                      // Sanitize filename
+                      const safeName = emp.name.replace(/[^a-z0-9]/gi, '_').toLowerCase();
+                      const safeId = emp.recordId.replace(/[^a-z0-9]/gi, '_');
+                      folder?.file(`${safeName}_${safeId}.png`, blob);
+                  }
+              } catch (e) {
+                  console.error(`Failed to fetch QR for ${emp.recordId}`, e);
+              }
+          }
+
+          const content = await zip.generateAsync({ type: "blob" });
+          const downloadLink = document.createElement("a");
+          downloadLink.href = URL.createObjectURL(content);
+          downloadLink.download = `vulkan_qr_batch_${new Date().toISOString().split('T')[0]}.zip`;
+          document.body.appendChild(downloadLink);
+          downloadLink.click();
+          document.body.removeChild(downloadLink);
+
+      } catch (err) {
+          console.error("Zip Error", err);
+          alert("An error occurred while generating the bulk archive.");
+      } finally {
+          setIsZipping(false);
+      }
+  };
+
   const handleExportDatabase = () => {
       const baseHeaders = [
           "Full Name", "Record ID", "Company", "Department", "Role", "Active", "Access Status",
@@ -288,6 +362,7 @@ const DatabasePage: React.FC<DatabasePageProps> = ({ bookings, requirements, upd
       };
     }).filter(item => {
         if (selectedCompany !== 'All' && item.emp.company !== selectedCompany) return false;
+        if (selectedDepartment !== 'All' && item.emp.department !== selectedDepartment) return false;
         if (accessStatusFilter !== 'All' && item.status !== accessStatusFilter) return false;
         if (searchTerm) {
             const lower = searchTerm.toLowerCase();
@@ -295,7 +370,7 @@ const DatabasePage: React.FC<DatabasePageProps> = ({ bookings, requirements, upd
         }
         return true;
     });
-  }, [uniqueEmployees, requirements, bookings, sessions, selectedCompany, accessStatusFilter, searchTerm, racDefinitions]);
+  }, [uniqueEmployees, requirements, bookings, sessions, selectedCompany, selectedDepartment, accessStatusFilter, searchTerm, racDefinitions]);
 
   // -- Pagination Logic --
   const totalPages = Math.ceil(processedData.length / itemsPerPage);
@@ -331,6 +406,34 @@ const DatabasePage: React.FC<DatabasePageProps> = ({ bookings, requirements, upd
              
              {/* Filters & Actions */}
              <div className="flex flex-wrap items-center gap-2">
+                 
+                 {/* Company Filter */}
+                 <div className="relative group">
+                     <select 
+                        value={selectedCompany} 
+                        onChange={(e) => { setSelectedCompany(e.target.value); setCurrentPage(1); }}
+                        className="pl-3 pr-8 py-1.5 border border-gray-300 dark:border-slate-600 dark:bg-slate-700 text-black dark:text-white rounded-md text-xs font-medium outline-none focus:ring-yellow-500 focus:border-yellow-500 cursor-pointer appearance-none hover:bg-white dark:hover:bg-slate-600 transition-colors"
+                     >
+                        <option value="All">All Companies</option>
+                        {COMPANIES.map(c => <option key={c} value={c}>{c}</option>)}
+                     </select>
+                     <Filter size={12} className="absolute right-2.5 top-2.5 text-gray-400 pointer-events-none" />
+                 </div>
+
+                 {/* Department Filter */}
+                 <div className="relative group">
+                     <select 
+                        value={selectedDepartment} 
+                        onChange={(e) => { setSelectedDepartment(e.target.value); setCurrentPage(1); }}
+                        className="pl-3 pr-8 py-1.5 border border-gray-300 dark:border-slate-600 dark:bg-slate-700 text-black dark:text-white rounded-md text-xs font-medium outline-none focus:ring-yellow-500 focus:border-yellow-500 cursor-pointer appearance-none hover:bg-white dark:hover:bg-slate-600 transition-colors"
+                     >
+                        <option value="All">All Depts</option>
+                        {DEPARTMENTS.map(d => <option key={d} value={d}>{d}</option>)}
+                     </select>
+                     <Filter size={12} className="absolute right-2.5 top-2.5 text-gray-400 pointer-events-none" />
+                 </div>
+
+                 {/* Search Box */}
                  <div className="relative">
                      <Search size={14} className="absolute left-3 top-2.5 text-gray-400" />
                      <input 
@@ -342,6 +445,17 @@ const DatabasePage: React.FC<DatabasePageProps> = ({ bookings, requirements, upd
                      />
                  </div>
                  
+                 <button 
+                    onClick={handleBulkQrDownload}
+                    disabled={isZipping || processedData.length === 0}
+                    className={`flex items-center gap-1 bg-purple-600 text-white px-3 py-1.5 rounded-md text-xs font-bold hover:bg-purple-500 shadow-sm transition-all
+                        ${isZipping ? 'opacity-70 cursor-wait' : ''}
+                    `}
+                >
+                    {isZipping ? <Loader2 size={14} className="animate-spin" /> : <Archive size={14} />}
+                    {isZipping ? 'Zipping...' : 'Mass QRs'}
+                </button>
+
                  <button 
                     onClick={handleExportDatabase}
                     className="flex items-center gap-1 bg-emerald-600 text-white px-3 py-1.5 rounded-md text-xs font-bold hover:bg-emerald-500 shadow-sm"
@@ -499,11 +613,13 @@ const DatabasePage: React.FC<DatabasePageProps> = ({ bookings, requirements, upd
 
         {/* --- EDIT MODAL --- */}
         {editingEmployee && (
-            <div className="absolute inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
-                <div className="bg-white dark:bg-slate-800 rounded-xl shadow-2xl w-full max-w-lg p-6">
+            <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4" onClick={() => setEditingEmployee(null)}>
+                <div className="bg-white dark:bg-slate-800 rounded-xl shadow-2xl w-full max-w-lg p-6 relative" onClick={(e) => e.stopPropagation()}>
                     <div className="flex justify-between mb-4">
                         <h3 className="font-bold text-lg dark:text-white">Edit Employee</h3>
-                        <button onClick={() => setEditingEmployee(null)}><X size={20} className="dark:text-white"/></button>
+                        <button onClick={() => setEditingEmployee(null)} className="p-1 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-full text-slate-500 dark:text-slate-400">
+                            <X size={20}/>
+                        </button>
                     </div>
                     <div className="space-y-3">
                         <input className="w-full border rounded p-2 text-black" value={editingEmployee.name} onChange={e => setEditingEmployee({...editingEmployee, name: e.target.value})} placeholder="Name" />
@@ -543,9 +659,17 @@ const DatabasePage: React.FC<DatabasePageProps> = ({ bookings, requirements, upd
 
         {/* --- ID CARD BACK MODAL (QR & Emergency) --- */}
         {qrEmployee && (
-            <div className="fixed inset-0 z-[60] bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
-                <div className="bg-white rounded-3xl shadow-2xl p-0 overflow-hidden max-w-2xl w-full flex flex-col md:flex-row">
+            <div className="fixed inset-0 z-[60] bg-black/80 backdrop-blur-md flex items-center justify-center p-4" onClick={() => setQrEmployee(null)}>
+                <div className="bg-white rounded-3xl shadow-2xl p-0 overflow-hidden max-w-2xl w-full flex flex-col md:flex-row relative" onClick={(e) => e.stopPropagation()}>
                     
+                    {/* Close X (Absolute) */}
+                    <button 
+                        onClick={() => setQrEmployee(null)} 
+                        className="absolute top-4 right-4 z-50 p-2 bg-gray-100 hover:bg-gray-200 rounded-full text-gray-600 transition-colors md:hidden"
+                    >
+                        <X size={20} />
+                    </button>
+
                     {/* Left: Preview */}
                     <div className="p-8 bg-slate-100 flex-1 flex flex-col items-center justify-center border-r border-slate-200">
                         <h3 className="text-sm font-bold text-slate-500 uppercase tracking-widest mb-6">Card Back Preview</h3>
@@ -589,7 +713,15 @@ const DatabasePage: React.FC<DatabasePageProps> = ({ bookings, requirements, upd
                     </div>
 
                     {/* Right: Controls */}
-                    <div className="p-8 w-full md:w-72 bg-white flex flex-col justify-center space-y-4">
+                    <div className="p-8 w-full md:w-72 bg-white flex flex-col justify-center space-y-4 relative">
+                        {/* Desktop Close X */}
+                        <button 
+                            onClick={() => setQrEmployee(null)} 
+                            className="absolute top-4 right-4 hidden md:flex p-2 bg-gray-50 hover:bg-gray-100 rounded-full text-gray-400 hover:text-gray-700 transition-colors"
+                        >
+                            <X size={20} />
+                        </button>
+
                         <div className="mb-4">
                             <h2 className="text-xl font-black text-slate-900">{qrEmployee.name}</h2>
                             <p className="text-sm text-slate-500 font-mono">{qrEmployee.recordId}</p>

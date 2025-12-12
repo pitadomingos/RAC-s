@@ -49,6 +49,19 @@ const ResultsPage: React.FC<ResultsPageProps> = ({ bookings, updateBookingStatus
       setCurrentPage(1);
   }, [filter, statusFilter, trainerFilter, dateFilter, racFilter]);
 
+  // -- Esc Key for Modal --
+  useEffect(() => {
+    const handleEsc = (e: KeyboardEvent) => {
+        if (e.key === 'Escape') {
+            setShowQrModal(false);
+        }
+    };
+    if (showQrModal) {
+        window.addEventListener('keydown', handleEsc);
+    }
+    return () => window.removeEventListener('keydown', handleEsc);
+  }, [showQrModal]);
+
   const uniqueTrainers = useMemo(() => {
       const trainers = new Set<string>();
       sessions.forEach(s => {
@@ -627,9 +640,17 @@ const ResultsPage: React.FC<ResultsPageProps> = ({ bookings, updateBookingStatus
 
         {/* --- QR / PASSPORT MODAL (User Profile) --- */}
         {showQrModal && currentUserEmployee && (
-            <div className="fixed inset-0 z-[60] bg-black/80 backdrop-blur-md flex items-center justify-center p-4 animate-fade-in">
-                <div className="bg-white rounded-3xl shadow-2xl p-0 overflow-hidden max-w-2xl w-full flex flex-col md:flex-row">
+            <div className="fixed inset-0 z-[60] bg-black/80 backdrop-blur-md flex items-center justify-center p-4 animate-fade-in" onClick={() => setShowQrModal(false)}>
+                <div className="bg-white rounded-3xl shadow-2xl p-0 overflow-hidden max-w-2xl w-full flex flex-col md:flex-row relative" onClick={(e) => e.stopPropagation()}>
                     
+                    {/* Desktop Close X */}
+                    <button 
+                        onClick={() => setShowQrModal(false)} 
+                        className="absolute top-4 right-4 z-50 p-2 bg-gray-50 hover:bg-gray-100 rounded-full text-gray-400 hover:text-gray-700 transition-colors"
+                    >
+                        <X size={20} />
+                    </button>
+
                     {/* Left: Preview */}
                     <div className="p-8 bg-slate-100 flex-1 flex flex-col items-center justify-center border-r border-slate-200">
                         <h3 className="text-sm font-bold text-slate-500 uppercase tracking-widest mb-6">Digital Passport View</h3>
