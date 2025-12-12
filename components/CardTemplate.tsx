@@ -188,11 +188,11 @@ const CardTemplate: React.FC<CardTemplateProps> = ({
       {/* Header - FLUSH TO TOP EDGE */}
       <div className="flex h-[10mm] border-b-[1px] border-black relative justify-between items-center px-1 overflow-hidden">
           {/* Logo - Aligned Left and Enlarged */}
-          <div className="flex items-center justify-start h-full w-[20mm] relative pl-[1px]">
+          <div className="flex items-center justify-start h-full w-[24mm] relative">
              <img 
                 src="assets/vulcan.png" 
                 alt="Vulcan" 
-                className="h-[9mm] w-auto object-contain object-left"
+                className="h-[9.5mm] w-auto object-contain object-left"
                 style={{ display: 'block' }}
                 onError={(e) => { e.currentTarget.style.display = 'none'; }}
              />
@@ -256,7 +256,7 @@ const CardTemplate: React.FC<CardTemplateProps> = ({
       {/* Driver License Section - Sizes Increased, Carta text adjusted */}
       <div className="border-b-[1px] border-black h-[6mm] flex flex-col">
            <div className="flex h-1/2">
-                <div className="w-[25%] border-r-[0.5px] border-black text-[6px] font-bold pl-1 flex items-center bg-gray-50 leading-none tracking-tight">Carta Condução</div>
+                <div className="w-[25%] border-r-[0.5px] border-black text-[5px] font-bold pl-1 flex items-center bg-gray-50 leading-none tracking-tight">Carta Condução</div>
                 <div className="w-[40%] border-r-[0.5px] border-black text-[7px] font-bold text-center flex items-center justify-center leading-none">Número</div>
                 <div className="w-[35%] text-[7px] font-bold text-center flex items-center justify-center leading-none">Validade</div>
            </div>
