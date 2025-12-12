@@ -103,8 +103,9 @@ const CardTemplate: React.FC<CardTemplateProps> = ({
       return null; 
   };
 
-  const labelClass = "font-bold text-[5px] pl-[2px] flex items-center bg-gray-50 leading-none";
-  const valueClass = "text-[5px] font-bold text-center flex items-center justify-center leading-none";
+  // Bumped font sizes for Grid
+  const labelClass = "font-bold text-[7px] pl-[2px] flex items-center bg-gray-50 leading-none";
+  const valueClass = "text-[7px] font-bold text-center flex items-center justify-center leading-none";
 
   // --- Combined List Construction ---
   interface GridItem {
@@ -186,12 +187,12 @@ const CardTemplate: React.FC<CardTemplateProps> = ({
       
       {/* Header - FLUSH TO TOP EDGE */}
       <div className="flex h-[10mm] border-b-[1px] border-black relative justify-between items-center px-1 overflow-hidden">
-          {/* Logo */}
-          <div className="flex flex-col justify-center h-full w-[15mm] relative">
+          {/* Logo - Aligned Left and Enlarged */}
+          <div className="flex items-center justify-start h-full w-[20mm] relative pl-[1px]">
              <img 
                 src="assets/vulcan.png" 
                 alt="Vulcan" 
-                className="max-h-[9mm] object-contain"
+                className="h-[9mm] w-auto object-contain object-left"
                 style={{ display: 'block' }}
                 onError={(e) => { e.currentTarget.style.display = 'none'; }}
              />
@@ -200,10 +201,10 @@ const CardTemplate: React.FC<CardTemplateProps> = ({
           {/* Centered Company Bar */}
           <div className="absolute inset-x-0 top-0 flex justify-center pointer-events-none">
               <div className="flex flex-col items-center justify-start w-full">
-                  <span className="text-[4px] font-bold text-gray-500 absolute top-[1px] right-[2px] z-20">PAD_v7</span>
+                  <span className="text-[5px] font-bold text-gray-500 absolute top-[1px] right-[2px] z-20">PAD_v7</span>
                   
                   <div 
-                    className="w-[24mm] min-h-[6mm] flex items-center justify-center text-[5px] font-bold uppercase overflow-hidden shadow-sm border-b-[0.5px] border-x-[0.5px] border-black leading-tight"
+                    className="w-[24mm] min-h-[6mm] flex items-center justify-center text-[12px] font-bold uppercase overflow-hidden shadow-sm border-b-[0.5px] border-x-[0.5px] border-black leading-[0.9]"
                     style={{ backgroundColor: headerBg, color: headerTextColor }}
                   >
                      <span className="px-1 text-center whitespace-normal break-words w-full">
@@ -217,63 +218,63 @@ const CardTemplate: React.FC<CardTemplateProps> = ({
 
       {/* NEW: Issue Info Bar (Immediately below header) */}
       <div className="flex items-center justify-between px-1 h-[3mm] border-b-[1px] border-black bg-gray-50">
-          <div className="text-[5px] flex items-center gap-1">
+          <div className="text-[7px] flex items-center gap-1">
                <span className="font-bold">EMISSÃO:</span>
                <span>{new Date().toLocaleString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>
            </div>
-           <div className="text-[5px] flex items-center gap-1">
+           <div className="text-[7px] flex items-center gap-1">
                <span className="font-bold">REQ. POR:</span>
                <span className="uppercase font-bold">{printedBy.split(' ')[0]}</span>
            </div>
       </div>
 
-      {/* Identity Details */}
+      {/* Identity Details - Font Sizes Increased */}
       <div className="px-1 py-[1px] space-y-[0.5px] mt-[1px]">
           <div className="flex items-baseline">
-              <span className="font-bold w-[15mm] text-[6px]">NOME:</span>
-              <span className="font-bold text-[7px] uppercase truncate flex-1">{safeName}</span>
+              <span className="font-bold w-[16mm] text-[7px]">NOME:</span>
+              <span className="font-bold text-[9px] uppercase truncate flex-1 leading-none">{safeName}</span>
           </div>
           <div className="flex items-baseline">
-              <span className="font-bold w-[15mm] text-[6px]">MATRÍCULA:</span>
-              <span className="font-bold text-[7px] uppercase truncate flex-1 bg-gray-200 px-1">{safeRecordId}</span>
+              <span className="font-bold w-[16mm] text-[7px]">MATRÍCULA:</span>
+              <span className="font-bold text-[9px] uppercase truncate flex-1 bg-gray-200 px-1 leading-none">{safeRecordId}</span>
           </div>
           <div className="flex items-baseline">
-              <span className="font-bold w-[15mm] text-[6px]">CARGO:</span>
-              <span className="font-bold text-[6px] uppercase truncate flex-1">{safeRole}</span>
+              <span className="font-bold w-[16mm] text-[7px]">CARGO:</span>
+              <span className="font-bold text-[8px] uppercase truncate flex-1 leading-none">{safeRole}</span>
           </div>
           <div className="flex items-baseline">
-              <span className="font-bold w-[15mm] text-[6px]">DEPARTMENT:</span>
-              <span className="font-bold text-[6px] uppercase truncate flex-1">{safeDept}</span>
+              <span className="font-bold w-[16mm] text-[7px]">DEPARTMENT:</span>
+              <span className="font-bold text-[8px] uppercase truncate flex-1 leading-none">{safeDept}</span>
           </div>
       </div>
 
       {/* Yellow Banner */}
       <div className="bg-vulcan-warning w-full py-[1px] border-y-[1px] border-black text-center mt-[1px]">
-          <p className="text-[5px] font-bold">Matenha os seus treinamentos de segurança válidos</p>
+          <p className="text-[7px] font-bold leading-tight">Matenha os seus treinamentos de segurança válidos</p>
       </div>
 
-      {/* Driver License Section */}
+      {/* Driver License Section - Sizes Increased, Carta text adjusted */}
       <div className="border-b-[1px] border-black h-[6mm] flex flex-col">
            <div className="flex h-1/2">
-                <div className="w-[25%] border-r-[0.5px] border-black text-[5px] font-bold pl-1 flex items-center bg-gray-50">Carta Condução</div>
-                <div className="w-[40%] border-r-[0.5px] border-black text-[5px] font-bold text-center flex items-center justify-center">Número</div>
-                <div className="w-[35%] text-[5px] font-bold text-center flex items-center justify-center">Validade</div>
+                <div className="w-[25%] border-r-[0.5px] border-black text-[6px] font-bold pl-1 flex items-center bg-gray-50 leading-none tracking-tight">Carta Condução</div>
+                <div className="w-[40%] border-r-[0.5px] border-black text-[7px] font-bold text-center flex items-center justify-center leading-none">Número</div>
+                <div className="w-[35%] text-[7px] font-bold text-center flex items-center justify-center leading-none">Validade</div>
            </div>
            {isRac02Mapped ? (
                <div className="flex h-1/2 border-t-[0.5px] border-black">
-                    <div className="w-[25%] border-r-[0.5px] border-black text-[6px] font-bold pl-1 flex items-center">{dlClass}</div>
-                    <div className="w-[40%] border-r-[0.5px] border-black text-[6px] font-bold text-center flex items-center justify-center underline">{dlNum}</div>
-                    <div className="w-[35%] text-[6px] font-bold text-center flex items-center justify-center">{dlExp}</div>
+                    <div className="w-[25%] border-r-[0.5px] border-black text-[9px] font-bold pl-1 flex items-center leading-none">{dlClass}</div>
+                    <div className="w-[40%] border-r-[0.5px] border-black text-[9px] font-bold text-center flex items-center justify-center underline leading-none">{dlNum}</div>
+                    <div className="w-[35%] text-[9px] font-bold text-center flex items-center justify-center leading-none">{dlExp}</div>
                </div>
            ) : (
-               <div className="flex h-1/2 border-t-[0.5px] border-black bg-gray-100 items-center justify-center text-[5px]">N/A</div>
+               <div className="flex h-1/2 border-t-[0.5px] border-black bg-gray-100 items-center justify-center text-[7px] leading-none">N/A</div>
            )}
       </div>
 
-      {/* ASO Section */}
+      {/* ASO Section - Sizes Increased */}
       <div className="bg-vulcan-green text-white h-[3mm] flex items-center justify-between px-1 border-b-[1px] border-black">
-          <span className="text-[6px] font-bold">VALIDADE ASO:</span>
-          <span className="text-[6px] font-bold">{asoDate}</span>
+          <span className="text-[8px] font-bold leading-none">VALIDADE ASO:</span>
+          <span className="text-[8px] font-bold leading-none">{asoDate}</span>
       </div>
 
       {/* RAC Grid */}
@@ -316,21 +317,21 @@ const CardTemplate: React.FC<CardTemplateProps> = ({
           </div>
       </div>
 
-      {/* Footer Area - Valid Until & Emergency */}
+      {/* Footer Area - Valid Until & Emergency - Sizes Increased */}
       <div className="border-t-[1px] border-black">
           {/* Valid Until Strip */}
-          <div className="bg-vulcan-green text-white text-[7px] font-bold text-center py-[1px] border-b-[1px] border-black">
+          <div className="bg-vulcan-green text-white text-[9px] font-bold text-center py-[1px] border-b-[1px] border-black leading-tight">
               VALIDO ATÉ {validUntilStr}
           </div>
 
           {/* Emergency Strip */}
           <div className="h-[5mm] bg-[#65a30d] flex items-center pl-1 relative">
               <div className="w-[4mm] h-[4mm] bg-orange-500 rounded-full flex items-center justify-center border-[1px] border-white z-20 shadow-sm">
-                <Phone size={8} className="text-white fill-white" />
+                <Phone size={10} className="text-white fill-white" />
               </div>
               <div className="text-center text-slate-900 leading-none ml-2 flex flex-col items-center flex-1 pr-[10mm]">
-                  <div className="text-[5px] font-bold">EM CASO DE EMERGÊNCIA LIGUE</div>
-                  <div className="text-[7px] font-black tracking-widest">822030 / 842030</div>
+                  <div className="text-[7px] font-bold">EM CASO DE EMERGÊNCIA LIGUE</div>
+                  <div className="text-[10px] font-black tracking-widest leading-none mt-[1px]">842030</div>
               </div>
           </div>
       </div>
