@@ -98,21 +98,19 @@ const Dashboard: React.FC<DashboardProps> = ({
                       let bRacKey = '';
                       const session = sessions.find(s => s.id === b.sessionId);
                       if (session) {
-                          bRacKey = session.racType.split(' - ')[0];
+                          bRacKey = session.racType;
                       } else {
-                          // Handle Imported Records (Pipe separated)
-                          if (b.sessionId.includes('|')) {
-                              bRacKey = b.sessionId.split('|')[0];
-                          } else {
-                              // Handle Legacy/Manual Strings
-                              bRacKey = b.sessionId.split(' - ')[0];
-                          }
+                          bRacKey = b.sessionId;
                       }
                       
-                      // Normalize spaces
-                      bRacKey = bRacKey.replace(/\s+/g, '');
+                      // Normalize
+                      if (bRacKey.includes('|')) bRacKey = bRacKey.split('|')[0];
+                      bRacKey = bRacKey.replace('(Imp)', '');
+                      if (bRacKey.includes('-')) bRacKey = bRacKey.split('-')[0];
+                      bRacKey = bRacKey.replace(/\s+/g, '').trim().toUpperCase();
                       
-                      return bRacKey === key;
+                      const targetKey = key.replace(/\s+/g, '').trim().toUpperCase();
+                      return bRacKey === targetKey;
                   });
 
                   if (!validBooking) {

@@ -3,6 +3,7 @@ import React, { useState, Suspense, lazy, useEffect } from 'react';
 import { HashRouter, Routes, Route, Navigate } from 'react-router-dom';
 import Layout from './components/Layout';
 import GeminiAdvisor from './components/GeminiAdvisor';
+import { AdvisorProvider } from './contexts/AdvisorContext';
 import { 
   UserRole, Booking, EmployeeRequirement, TrainingSession, User, RacDef, 
   BookingStatus, Employee, SystemNotification, Room, Trainer
@@ -378,6 +379,7 @@ const App: React.FC = () => {
 
   return (
     <HashRouter>
+      <AdvisorProvider>
       <Layout userRole={userRole} setUserRole={setUserRole} notifications={notifications} clearNotifications={clearNotifications}>
         <Suspense fallback={<div className="flex items-center justify-center h-full text-slate-500">Loading...</div>}>
             <Routes>
@@ -444,6 +446,7 @@ const App: React.FC = () => {
         </Suspense>
         <GeminiAdvisor />
       </Layout>
+      </AdvisorProvider>
     </HashRouter>
   );
 };

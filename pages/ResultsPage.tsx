@@ -12,6 +12,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { format, addYears } from 'date-fns';
 import { useLanguage } from '../contexts/LanguageContext';
 import { RAC_KEYS } from '../constants';
+import { AdvisorTrigger } from '../components/GeminiAdvisor';
 
 interface ResultsPageProps {
   bookings: Booking[];
@@ -60,14 +61,12 @@ const ResultsPage: React.FC<ResultsPageProps> = ({ bookings, updateBookingStatus
   // -- LOGIC: Filtering --
   const filteredBookings = useMemo(() => {
     return bookings.filter(b => {
-      // SECURITY CHECK: Strictly restrict General User to own records
       if (userRole === UserRole.USER && currentEmployeeId) {
           if (b.employee.id !== currentEmployeeId) return false;
       }
 
       const session = sessions.find(s => s.id === b.sessionId);
       const bookingDate = session ? session.date : (b.resultDate || '');
-      // Lookup trainer from session OR from historical record encoded in sessionId
       let bookingTrainer = session ? session.instructor : '';
       if (!bookingTrainer && b.sessionId.includes('|')) {
           const parts = b.sessionId.split('|');
@@ -78,6 +77,9 @@ const ResultsPage: React.FC<ResultsPageProps> = ({ bookings, updateBookingStatus
       if (session) bookingRacCode = session.racType.split(' - ')[0].replace(' ', '');
       else if (b.sessionId.includes('RAC')) bookingRacCode = b.sessionId.split(' - ')[0].replace(' ', '');
       if (!bookingRacCode && b.sessionId.includes('|')) bookingRacCode = b.sessionId.split('|')[0];
+
+      // Remove Imp suffix if checking
+      bookingRacCode = bookingRacCode.replace('(Imp)', '');
 
       const matchesSearch = String(b.employee.name).toLowerCase().includes(filter.toLowerCase()) || String(b.employee.recordId).includes(filter);
       const matchesStatus = statusFilter === 'All' ? true : b.status.toLowerCase() === statusFilter.toLowerCase();
@@ -101,7 +103,6 @@ const ResultsPage: React.FC<ResultsPageProps> = ({ bookings, updateBookingStatus
       setCurrentPage(1);
   };
 
-  // -- LOGIC: Stats (same as before) --
   const stats = useMemo(() => {
       const total = filteredBookings.length;
       const passed = filteredBookings.filter(b => b.status === BookingStatus.PASSED).length;
@@ -127,7 +128,7 @@ const ResultsPage: React.FC<ResultsPageProps> = ({ bookings, updateBookingStatus
           
           return [
               b.employee.recordId,
-              `"${b.employee.name}"`, // Quote name to handle commas
+              `"${b.employee.name}"`, 
               b.employee.company,
               b.employee.department,
               b.employee.role,
@@ -152,7 +153,7 @@ const ResultsPage: React.FC<ResultsPageProps> = ({ bookings, updateBookingStatus
 
   const handleDownloadTemplate = () => {
     const headers = [
-      'Full Name', 'Record ID', 'Company', 'Department', 'Job Title', // Added Job Title
+      'Full Name', 'Record ID', 'Company', 'Department', 'Job Title', 
       'RAC Code (e.g. RAC01)', 'Date (YYYY-MM-DD)', 'Trainer', 'Room', 
       'Status (Passed/Failed)', 'Theory Score', 'Practical Score', 
       'DL Number', 'DL Class', 'DL Expiry (YYYY-MM-DD)'
@@ -177,11 +178,15 @@ const ResultsPage: React.FC<ResultsPageProps> = ({ bookings, updateBookingStatus
       if (!text) return;
 
       const lines = text.split('\n');
+      // Region Proofing: Detect separator from first line
+      const firstLine = lines[0] || '';
+      const separator = firstLine.includes(';') ? ';' : ',';
+
       const dataRows = lines.slice(1);
       const newBookings: Booking[] = [];
       let skippedCount = 0;
 
-      // PRE-PROCESSING: Build lookup maps to prevent duplicates and reuse IDs
+      // PRE-PROCESSING: Build lookup maps
       const existingEmployeeMap = new Map<string, Employee>();
       const existingBookingFingerprints = new Set<string>();
 
@@ -190,34 +195,47 @@ const ResultsPage: React.FC<ResultsPageProps> = ({ bookings, updateBookingStatus
               existingEmployeeMap.set(b.employee.recordId.toLowerCase(), b.employee);
           }
           
-          // Identify booking uniqueness by RecordID + RAC + Date
           const session = sessions.find(s => s.id === b.sessionId);
           const racCode = session ? session.racType.split(' - ')[0] : b.sessionId.split('|')[0];
           const date = session ? session.date : (b.resultDate || '');
-          const fingerprint = `${b.employee.recordId.toLowerCase()}|${racCode.replace(/\s+/g, '')}|${date}`;
+          // Create fingerprint: ID + RAC (Normalized) + Date
+          const fingerprint = `${b.employee.recordId.toLowerCase()}|${racCode.replace(/\s+/g, '').replace('(Imp)','')}|${date}`;
           existingBookingFingerprints.add(fingerprint);
       });
 
       dataRows.forEach(line => {
-        const cols = line.split(',');
-        // Expect at least 10 columns now
-        if (cols.length < 10) return; 
+        if (!line.trim()) return;
+        const cols = line.split(separator).map(c => c?.trim().replace(/^"|"$/g, ''));
+        
+        // Strict mapping based on template order:
+        // 0:Name, 1:ID, 2:Comp, 3:Dept, 4:Role, 5:RAC, 6:Date, 7:Trainer, 8:Room, 9:Status...
+        if (cols.length < 5) return; 
 
-        // Map columns based on new template
-        const [
-            name, recordId, company, dept, role, // Added role (Job Title) at index 4
-            racCode, date, trainer, room, statusRaw, theory, practical, dlNum, dlClass, dlExp
-        ] = cols.map(c => c?.trim());
+        const name = cols[0];
+        const recordId = cols[1];
+        const company = cols[2];
+        const dept = cols[3];
+        const role = cols[4];
+        const racCode = cols[5];
+        const date = cols[6];
+        const trainer = cols[7];
+        const room = cols[8];
+        const statusRaw = cols[9];
+        const theory = cols[10];
+        const practical = cols[11];
+        const dlNum = cols[12];
+        const dlClass = cols[13];
+        const dlExp = cols[14];
 
         if (!name || !recordId || !racCode) return;
 
-        // Check Duplicates
-        const cleanRac = racCode.replace(/\s+/g, '');
+        // Normalize RAC for check
+        const cleanRac = racCode.replace(/\s+/g, '').replace('(Imp)', '');
         const fingerprint = `${recordId.toLowerCase()}|${cleanRac}|${date}`;
         
         if (existingBookingFingerprints.has(fingerprint)) {
             skippedCount++;
-            return; // SKIP DUPLICATE
+            return; 
         }
 
         const status = statusRaw?.toLowerCase() === 'passed' ? BookingStatus.PASSED : BookingStatus.FAILED;
@@ -230,11 +248,10 @@ const ResultsPage: React.FC<ResultsPageProps> = ({ bookings, updateBookingStatus
              } catch(e) {}
         }
 
-        // Encode historical metadata into sessionId string
-        // Format: RAC01|Historical|John Doe|Room 101
+        // Standardize Import ID format
+        // Clean RAC + | + Metadata
         const sessionString = `${cleanRac}|Historical|${trainer || 'Unknown'}|${room || 'Unknown'}`;
 
-        // Resolve Employee ID (Reuse if exists)
         const existingEmp = existingEmployeeMap.get(recordId.toLowerCase());
         const empId = existingEmp ? existingEmp.id : uuidv4();
 
@@ -248,7 +265,7 @@ const ResultsPage: React.FC<ResultsPageProps> = ({ bookings, updateBookingStatus
             practicalScore: parseInt(practical) || 0,
             attendance: true,
             employee: {
-                id: empId, // Reuse ID to keep history linked
+                id: empId,
                 name,
                 recordId,
                 company: company || 'Unknown',
@@ -260,19 +277,17 @@ const ResultsPage: React.FC<ResultsPageProps> = ({ bookings, updateBookingStatus
             }
         };
         newBookings.push(newBooking);
-        
-        // Add to temp set to handle duplicates within the same CSV file
         existingBookingFingerprints.add(fingerprint);
       });
 
       if (newBookings.length > 0 && importBookings) {
           importBookings(newBookings);
           let msg = `Successfully imported ${newBookings.length} records.`;
-          if (skippedCount > 0) msg += `\nSkipped ${skippedCount} duplicate records.`;
+          if (skippedCount > 0) msg += `\n\nSkipped ${skippedCount} duplicate records (already in system).`;
           alert(msg);
       } else {
           if (skippedCount > 0) alert(`No new records found. Skipped ${skippedCount} duplicates.`);
-          else alert("No valid records found in file.");
+          else alert(`No valid records found in file. Check if separator is correct (Detected: '${separator}').`);
       }
       if (fileInputRef.current) fileInputRef.current.value = '';
     };
@@ -304,7 +319,6 @@ const ResultsPage: React.FC<ResultsPageProps> = ({ bookings, updateBookingStatus
 
   return (
     <div className="flex flex-col h-auto md:h-[calc(100vh-6rem)] space-y-6 animate-fade-in-up">
-        
         {/* --- FIXED TOP PART (The "Sexy" Header) --- */}
         <div className="shrink-0 space-y-6">
             {/* KPI HEADER */}
@@ -392,7 +406,7 @@ const ResultsPage: React.FC<ResultsPageProps> = ({ bookings, updateBookingStatus
             </div>
         </div>
 
-        {/* --- DATA GRID (Scrollable Part) --- */}
+        {/* --- DATA GRID --- */}
         <div className="flex-1 bg-white dark:bg-slate-800 rounded-xl shadow-lg border border-slate-200 dark:border-slate-700 flex flex-col relative h-[600px] md:h-auto md:overflow-hidden">
             <div className="flex-1 overflow-auto">
                 <table className="min-w-full divide-y divide-slate-100 dark:divide-slate-700">
@@ -425,22 +439,17 @@ const ResultsPage: React.FC<ResultsPageProps> = ({ bookings, updateBookingStatus
                                 const initials = booking.employee.name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
                                 
                                 const session = sessions.find(s => s.id === booking.sessionId);
-                                
-                                // Resolve Date
                                 const displayDate = session ? session.date : (booking.resultDate || '-');
                                 
-                                // Resolve Trainer & Room: Try Session -> Try Encoded string -> Default
                                 let displayTrainer = session ? session.instructor : '-';
                                 let displayRoom = session ? session.location : '-';
                                 
                                 if (!session && booking.sessionId.includes('|')) {
                                     const parts = booking.sessionId.split('|');
-                                    // Encoded: RAC01|Historical|John Doe|Room 101
                                     if (parts.length >= 3) displayTrainer = parts[2];
                                     if (parts.length >= 4) displayRoom = parts[3];
                                 }
 
-                                // Display Session Name (Cleaned)
                                 let displaySessionName = booking.sessionId;
                                 if (session) {
                                     displaySessionName = session.racType;
@@ -496,11 +505,15 @@ const ResultsPage: React.FC<ResultsPageProps> = ({ bookings, updateBookingStatus
 
             {/* --- PAGINATION FOOTER --- */}
             <div className="shrink-0 px-6 py-4 border-t border-slate-100 dark:border-slate-700 flex flex-col md:flex-row justify-between items-center bg-slate-50 dark:bg-slate-800/50 gap-4">
-                <div className="flex items-center gap-2">
-                     <span className="text-xs text-slate-600 dark:text-slate-400">Rows per page:</span>
-                     <select value={itemsPerPage} onChange={handlePageSizeChange} className="text-xs border border-slate-300 dark:border-slate-600 rounded bg-white dark:bg-slate-700 text-slate-800 dark:text-white px-2 py-1 outline-none focus:ring-1 focus:ring-blue-500">
-                         <option value={10}>10</option><option value={20}>20</option><option value={30}>30</option><option value={50}>50</option><option value={100}>100</option><option value={120}>120</option>
-                     </select>
+                <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-2">
+                        <span className="text-xs text-slate-600 dark:text-slate-400">Rows per page:</span>
+                        <select value={itemsPerPage} onChange={handlePageSizeChange} className="text-xs border border-slate-300 dark:border-slate-600 rounded bg-white dark:bg-slate-700 text-slate-800 dark:text-white px-2 py-1 outline-none focus:ring-1 focus:ring-blue-500">
+                            <option value={10}>10</option><option value={20}>20</option><option value={30}>30</option><option value={50}>50</option><option value={100}>100</option><option value={120}>120</option>
+                        </select>
+                    </div>
+                    {/* Trigger Button Here */}
+                    <AdvisorTrigger />
                 </div>
                 <div className="flex items-center gap-4">
                     <div className="text-xs text-slate-500">Page {currentPage} of {Math.max(1, totalPages)} ({filteredBookings.length} total)</div>

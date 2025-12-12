@@ -1,9 +1,10 @@
 
 import React, { useState, useMemo, useRef } from 'react';
 import { Booking, BookingStatus, EmployeeRequirement, Employee, TrainingSession, RacDef } from '../types';
-import { COMPANIES, DEPARTMENTS, ROLES, OPS_KEYS, PERMISSION_KEYS } from '../constants';
-import { Search, CheckCircle, XCircle, CreditCard, Edit, Save, X, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Filter, Trash2, Download, Upload } from 'lucide-react';
+import { COMPANIES, OPS_KEYS, PERMISSION_KEYS } from '../constants';
+import { Search, CheckCircle, XCircle, Edit, Save, X, ChevronLeft, ChevronRight, Filter, Trash2, Download, Upload } from 'lucide-react';
 import { useLanguage } from '../contexts/LanguageContext';
+import { AdvisorTrigger } from '../components/GeminiAdvisor';
 import { v4 as uuidv4 } from 'uuid';
 
 interface DatabasePageProps {
@@ -13,7 +14,6 @@ interface DatabasePageProps {
   sessions: TrainingSession[];
   onUpdateEmployee: (id: string, updates: Partial<Employee>) => void;
   onDeleteEmployee: (id: string) => void;
-  // Updated signature to handle full matrix import
   onImportEmployees?: (data: { employee: Employee, req: EmployeeRequirement }[]) => void;
   racDefinitions: RacDef[];
 }
@@ -38,13 +38,15 @@ const DatabasePage: React.FC<DatabasePageProps> = ({ bookings, requirements, upd
   const validateDateInput = (dateStr: string): boolean => {
       if (!dateStr) return true; // Allow clearing
       
+      // Handle Excel formats or DD/MM/YYYY if accidentally pasted
+      if (dateStr.includes('/')) return false; 
+
       const parts = dateStr.split('-');
       if (parts.length !== 3) return false;
       
       const year = parseInt(parts[0]);
-      // Enforce 4-digit year sanity check
       if (year < 1900 || year > 2100) return false;
-      if (parts[0].length > 4) return false; // Prevent typing 5 digits like 20255
+      if (parts[0].length > 4) return false;
 
       return true;
   };
@@ -70,32 +72,36 @@ const DatabasePage: React.FC<DatabasePageProps> = ({ bookings, requirements, upd
     };
   };
 
+  // --- CRITICAL FIX: Robust RAC Matching ---
   const getTrainingStatus = (empId: string, racKey: string): string | null => {
     const relevantBookings = bookings.filter(b => {
         if (b.employee.id !== empId) return false;
         if (b.status !== BookingStatus.PASSED) return false;
         
         let racCode = '';
-        // 1. Try Session Object (Most Reliable)
         const session = sessions.find(s => s.id === b.sessionId);
+        
         if (session) {
-            // e.g. "RAC 01 - Height" -> "RAC01"
-            racCode = session.racType.split(' - ')[0];
+            // Case 1: Linked to a real session -> "RAC 01 - Height"
+            racCode = session.racType;
         } else {
-            // 2. Fallback to String Parsing (Imported/Legacy)
-            if (b.sessionId.includes('|')) {
-                // Imported format: "RAC01|Historical|..."
-                racCode = b.sessionId.split('|')[0];
-            } else {
-                // Legacy format: "RAC 01" or "RAC01"
-                racCode = b.sessionId.split(' - ')[0];
-            }
+            // Case 2: Imported Record -> "RAC01|Historical" OR "RAC 01 (Imp)" OR "RAC01"
+            racCode = b.sessionId;
         }
+
+        // --- NORMALIZATION LOGIC ---
+        // 1. Remove Pipe metadata (e.g. "|Historical...")
+        if (racCode.includes('|')) racCode = racCode.split('|')[0];
+        // 2. Remove (Imp) suffix if present
+        racCode = racCode.replace('(Imp)', '');
+        // 3. Remove dashes (e.g. "RAC 01 - Name" -> "RAC 01  Name")
+        if (racCode.includes('-')) racCode = racCode.split('-')[0];
+        // 4. Remove ALL spaces to ensure "RAC 01" matches "RAC01"
+        racCode = racCode.replace(/\s+/g, '').trim().toUpperCase();
         
-        // Normalize: remove spaces to match key (e.g., "RAC 01" -> "RAC01")
-        racCode = racCode.replace(/\s+/g, '');
-        
-        return racCode === racKey;
+        const targetKey = racKey.replace(/\s+/g, '').trim().toUpperCase();
+
+        return racCode === targetKey;
     });
 
     // STRICT SORT: Latest expiry date first
@@ -111,11 +117,8 @@ const DatabasePage: React.FC<DatabasePageProps> = ({ bookings, requirements, upd
   const handleRequirementChange = (empId: string, racKey: string, isRequired: boolean) => {
     const current = getRequirement(empId);
     
-    // Prepare the new requirements map
     const newRequiredRacs = { ...current.requiredRacs, [racKey]: isRequired };
 
-    // Mutual Exclusion Logic for LIB-OPS and LIB-MOV
-    // If one is enabled, the other must be disabled.
     if (isRequired) {
         if (racKey === 'LIB_OPS') {
             newRequiredRacs['LIB_MOV'] = false;
@@ -133,14 +136,13 @@ const DatabasePage: React.FC<DatabasePageProps> = ({ bookings, requirements, upd
   };
 
   const handleAsoChange = (empId: string, date: string) => {
-    if (!validateDateInput(date)) return; // Reject invalid dates immediately
+    if (!validateDateInput(date)) return;
     const current = getRequirement(empId);
     const updated = { ...current, employeeId: empId, asoExpiryDate: date };
     updateRequirements(updated);
   };
   
   const handleActiveToggle = (empId: string, currentStatus: boolean) => {
-      // If currently active (true) and clicking to uncheck (false) -> Delete
       if (currentStatus === true) {
           if (confirm("Marking as Inactive will delete this employee from the database to save space. Are you sure?")) {
               onDeleteEmployee(empId);
@@ -171,17 +173,14 @@ const DatabasePage: React.FC<DatabasePageProps> = ({ bookings, requirements, upd
       }
   };
 
-  // --- CSV Logic Implementation ---
-  
   const handleExportDatabase = () => {
-      // Dynamic Header Construction for Export
       const baseHeaders = [
           "Full Name", "Record ID", "Company", "Department", "Role", "Active", "Access Status",
           "ASO Expiry", "DL Number", "DL Class", "DL Expiry"
       ];
       
-      const racHeaders = racDefinitions.map(r => r.code); // RAC01, RAC02...
-      const opsHeaders = OPS_KEYS; // PTS, ART...
+      const racHeaders = racDefinitions.map(r => r.code);
+      const opsHeaders = OPS_KEYS;
       
       const headers = [...baseHeaders, ...racHeaders, ...opsHeaders];
       
@@ -217,14 +216,13 @@ const DatabasePage: React.FC<DatabasePageProps> = ({ bookings, requirements, upd
   };
 
   const handleDownloadTemplate = () => {
-    // Dynamic Header Construction
     const baseHeaders = [
         "Full Name", "Record ID", "Company", "Department", "Role", "Active", 
         "ASO Expiry (YYYY-MM-DD)", "DL Number", "DL Class", "DL Expiry (YYYY-MM-DD)"
     ];
     
-    const racHeaders = racDefinitions.map(r => r.code); // RAC01, RAC02...
-    const opsHeaders = OPS_KEYS; // PTS, ART...
+    const racHeaders = racDefinitions.map(r => r.code);
+    const opsHeaders = OPS_KEYS;
     
     const headers = [...baseHeaders, ...racHeaders, ...opsHeaders];
     
@@ -248,81 +246,89 @@ const DatabasePage: React.FC<DatabasePageProps> = ({ bookings, requirements, upd
         if (!text) return;
         
         const lines = text.split('\n');
-        // Extract headers to map dynamic columns
-        const headerRow = lines[0].split(',').map(h => h.trim());
+        
+        // --- REGION PROOF SEPARATOR DETECTION ---
+        const firstLine = lines[0] || '';
+        const separator = firstLine.includes(';') ? ';' : ',';
+        
+        const headerRow = firstLine.split(separator).map(h => h.trim().replace(/^"|"$/g, ''));
         const dataRows = lines.slice(1);
         
         const importPayload: { employee: Employee, req: EmployeeRequirement }[] = [];
-
-        // Helper: Lookup existing employee by RecordID (Case Insensitive)
         const existingEmpMap = new Map<string, Employee>();
         uniqueEmployees.forEach(e => existingEmpMap.set(e.recordId.toLowerCase(), e));
 
-        // Helper to find index of a header
-        const getIdx = (name: string) => headerRow.findIndex(h => h.toLowerCase() === name.toLowerCase());
+        // Dynamic Index Lookup
+        const getIdx = (patterns: string[]) => headerRow.findIndex(h => patterns.some(p => h.toLowerCase().includes(p.toLowerCase())));
         
-        // Base Indices (Dynamic lookup is safer)
-        const idxName = 0;
-        const idxId = 1;
-        const idxComp = 2;
-        const idxDept = 3;
-        const idxRole = 4;
-        const idxActive = 5;
-        const idxAso = 6;
-        const idxDlNum = 7;
-        const idxDlClass = 8;
-        const idxDlExp = 9;
+        const idxName = getIdx(['name', 'nome']);
+        const idxId = getIdx(['record', 'id', 'matrícula', 'matricula']);
         
-        dataRows.forEach(line => {
-            const cols = line.split(',');
-            if (cols.length < 2) return;
+        // Safety check
+        if (idxName === -1 || idxId === -1) {
+            alert(`Error: Could not find 'Name' or 'Record ID' columns. Detected separator: '${separator}'. Please check your CSV format.`);
+            return;
+        }
 
-            const name = cols[idxName]?.trim();
-            const recordId = cols[idxId]?.trim();
+        const idxComp = getIdx(['company', 'empresa']);
+        const idxDept = getIdx(['department', 'dept', 'departamento']);
+        const idxRole = getIdx(['role', 'job', 'cargo', 'função']);
+        const idxActive = getIdx(['active', 'ativo']);
+        const idxAso = getIdx(['aso', 'medical']);
+        const idxDlNum = getIdx(['dl num', 'carta', 'license']);
+        const idxDlClass = getIdx(['class', 'classe']);
+        const idxDlExp = getIdx(['dl exp', 'validade carta']);
+
+        dataRows.forEach(line => {
+            if (!line.trim()) return;
+            
+            // Handle quotes if they exist, but simple split for now
+            const cols = line.split(separator).map(c => c?.trim().replace(/^"|"$/g, ''));
+            
+            const name = cols[idxName];
+            const recordId = cols[idxId];
             
             if (name && recordId) {
-                // De-duplication: Check if ID exists
+                // Deduplicate logic
                 const existing = existingEmpMap.get(recordId.toLowerCase());
                 const empId = existing ? existing.id : uuidv4();
                 
-                // 1. Build Employee Object
                 const employee: Employee = {
                     id: empId,
                     name,
-                    recordId, // Preserve original case from CSV, or potentially normalize
-                    company: cols[idxComp]?.trim() || 'Unknown',
-                    department: cols[idxDept]?.trim() || 'Operations',
-                    role: cols[idxRole]?.trim() || 'Staff',
-                    isActive: cols[idxActive]?.trim().toLowerCase() === 'false' ? false : true,
-                    driverLicenseNumber: cols[idxDlNum]?.trim(),
-                    driverLicenseClass: cols[idxDlClass]?.trim(),
-                    driverLicenseExpiry: cols[idxDlExp]?.trim(),
+                    recordId,
+                    company: idxComp > -1 ? cols[idxComp] || 'Unknown' : 'Unknown',
+                    department: idxDept > -1 ? cols[idxDept] || 'Operations' : 'Operations',
+                    role: idxRole > -1 ? cols[idxRole] || 'Staff' : 'Staff',
+                    isActive: idxActive > -1 ? (cols[idxActive].toLowerCase() === 'false' || cols[idxActive] === '0' ? false : true) : true,
+                    driverLicenseNumber: idxDlNum > -1 ? cols[idxDlNum] : '',
+                    driverLicenseClass: idxDlClass > -1 ? cols[idxDlClass] : '',
+                    driverLicenseExpiry: idxDlExp > -1 ? cols[idxDlExp] : '',
                 };
 
-                // 2. Build Requirements Object
                 const requiredRacs: Record<string, boolean> = {};
                 
-                // Parse RAC Columns from header
+                // RACs
                 racDefinitions.forEach(def => {
-                    const colIdx = headerRow.indexOf(def.code);
+                    const colIdx = getIdx([def.code]);
                     if (colIdx >= 0) {
-                        const val = cols[colIdx]?.trim().toLowerCase();
-                        requiredRacs[def.code] = (val === '1' || val === 'true' || val === 'yes');
+                        const val = cols[colIdx]?.toLowerCase();
+                        requiredRacs[def.code] = (val === '1' || val === 'true' || val === 'yes' || val === 'sim');
                     }
                 });
 
-                // Parse OPS Columns from header
+                // OPS
                 OPS_KEYS.forEach(key => {
-                    const colIdx = headerRow.indexOf(key);
+                    const colIdx = getIdx([key]);
                     if (colIdx >= 0) {
-                        const val = cols[colIdx]?.trim().toLowerCase();
-                        requiredRacs[key] = (val === '1' || val === 'true' || val === 'yes');
+                        const val = cols[colIdx]?.toLowerCase();
+                        requiredRacs[key] = (val === '1' || val === 'true' || val === 'yes' || val === 'sim');
                     }
                 });
 
                 const req: EmployeeRequirement = {
                     employeeId: empId,
-                    asoExpiryDate: cols[idxAso]?.trim() || '',
+                    asoExpiryDate: idxAso > -1 ? cols[idxAso] : '',
                     requiredRacs
                 };
 
@@ -332,9 +338,9 @@ const DatabasePage: React.FC<DatabasePageProps> = ({ bookings, requirements, upd
 
         if (importPayload.length > 0 && onImportEmployees) {
             onImportEmployees(importPayload);
-            alert(`Successfully processed ${importPayload.length} rows.\n\nNote: Existing employees with matching IDs were updated. New employees were created.`);
+            alert(`Successfully processed ${importPayload.length} rows using '${separator}' separator.`);
         } else {
-            alert("No valid data found or import function missing.");
+            alert("No valid data found.");
         }
         if (fileInputRef.current) fileInputRef.current.value = '';
     };
@@ -411,7 +417,7 @@ const DatabasePage: React.FC<DatabasePageProps> = ({ bookings, requirements, upd
 
   const handlePageSizeChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
       setItemsPerPage(Number(e.target.value));
-      setCurrentPage(1); // Reset to first page when page size changes
+      setCurrentPage(1);
   };
 
   return (
@@ -431,7 +437,6 @@ const DatabasePage: React.FC<DatabasePageProps> = ({ bookings, requirements, upd
              
              {/* Filters & Actions */}
              <div className="flex flex-wrap items-center gap-2">
-                 {/* ... existing filters ... */}
                  <div className="relative">
                      <Search size={14} className="absolute left-3 top-2.5 text-gray-400" />
                      <input 
@@ -557,7 +562,6 @@ const DatabasePage: React.FC<DatabasePageProps> = ({ bookings, requirements, upd
                                              } else {
                                                  bgClass = 'bg-gray-100 dark:bg-slate-800 text-gray-400 dark:text-gray-600 border border-gray-200 dark:border-slate-700';
                                              }
-                                             // Use translated label instead of abbreviation, allow dynamic width
                                              const label = t.database.ops[key as keyof typeof t.database.ops] || key;
                                              return <button key={key} onClick={() => handleRequirementChange(emp.id, key, !isRequired)} className={`text-[9px] font-bold px-2 h-6 min-w-[2.5rem] rounded flex items-center justify-center transition-all whitespace-nowrap ${bgClass}`} title={label}>{label}</button>;
                                          })}
@@ -573,24 +577,25 @@ const DatabasePage: React.FC<DatabasePageProps> = ({ bookings, requirements, upd
              </table>
         </div>
 
-        {/* Footer Pagination */}
         <div className="shrink-0 p-3 border-t border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-800/50 flex flex-col md:flex-row justify-between items-center gap-4">
-             
-             {/* Rows per page selector */}
-             <div className="flex items-center gap-2">
-                 <span className="text-xs text-slate-600 dark:text-gray-400">{t.common.rowsPerPage}</span>
-                 <select 
-                    value={itemsPerPage}
-                    onChange={handlePageSizeChange}
-                    className="text-xs border border-slate-300 dark:border-slate-600 rounded bg-white dark:bg-slate-700 text-slate-800 dark:text-white px-2 py-1 outline-none focus:ring-1 focus:ring-yellow-500"
-                 >
-                     <option value={10}>10</option>
-                     <option value={20}>20</option>
-                     <option value={30}>30</option>
-                     <option value={50}>50</option>
-                     <option value={100}>100</option>
-                     <option value={120}>120</option>
-                 </select>
+             <div className="flex items-center gap-4">
+                 <div className="flex items-center gap-2">
+                     <span className="text-xs text-slate-600 dark:text-gray-400">{t.common.rowsPerPage}</span>
+                     <select 
+                        value={itemsPerPage}
+                        onChange={handlePageSizeChange}
+                        className="text-xs border border-slate-300 dark:border-slate-600 rounded bg-white dark:bg-slate-700 text-slate-800 dark:text-white px-2 py-1 outline-none focus:ring-1 focus:ring-yellow-500"
+                     >
+                         <option value={10}>10</option>
+                         <option value={20}>20</option>
+                         <option value={30}>30</option>
+                         <option value={50}>50</option>
+                         <option value={100}>100</option>
+                         <option value={120}>120</option>
+                     </select>
+                 </div>
+                 {/* Trigger Button Here */}
+                 <AdvisorTrigger />
              </div>
 
              <div className="flex items-center gap-4">
@@ -604,7 +609,6 @@ const DatabasePage: React.FC<DatabasePageProps> = ({ bookings, requirements, upd
              </div>
         </div>
 
-        {/* Transfer/Edit Modal */}
         {editingEmployee && (
             <div className="absolute inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
                 <div className="bg-white dark:bg-slate-800 rounded-xl shadow-2xl w-full max-w-lg p-6">
@@ -612,7 +616,6 @@ const DatabasePage: React.FC<DatabasePageProps> = ({ bookings, requirements, upd
                         <h3 className="font-bold text-lg dark:text-white">Edit Employee</h3>
                         <button onClick={() => setEditingEmployee(null)}><X size={20} className="dark:text-white"/></button>
                     </div>
-                    {/* Simplified for brevity - fields implied from context */}
                     <div className="space-y-3">
                         <input className="w-full border rounded p-2 text-black" value={editingEmployee.name} onChange={e => setEditingEmployee({...editingEmployee, name: e.target.value})} placeholder="Name" />
                         <div className="flex gap-2">
@@ -621,7 +624,6 @@ const DatabasePage: React.FC<DatabasePageProps> = ({ bookings, requirements, upd
                                 {COMPANIES.map(c => <option key={c} value={c}>{c}</option>)}
                             </select>
                         </div>
-                        {/* Driver License Fields in Modal */}
                         <div className="border-t pt-2 mt-2">
                             <p className="text-xs font-bold text-gray-500 uppercase mb-2">Driver License Details</p>
                             <div className="grid grid-cols-3 gap-2">

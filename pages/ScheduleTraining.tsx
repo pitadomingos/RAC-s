@@ -6,6 +6,7 @@ import { Calendar, Plus, Settings, X, Save, Clock, MapPin, User, CalendarDays, C
 import { useNavigate } from 'react-router-dom';
 import { v4 as uuidv4 } from 'uuid';
 import { useLanguage } from '../contexts/LanguageContext';
+import { AdvisorTrigger } from '../components/GeminiAdvisor';
 
 interface ScheduleTrainingProps {
     sessions: TrainingSession[];
@@ -225,8 +226,11 @@ const ScheduleTraining: React.FC<ScheduleTrainingProps> = ({ sessions, setSessio
           {/* Footer Pagination */}
           {sortedSessions.length > 0 && (
               <div className="p-4 border-t border-slate-100 dark:border-slate-700 bg-white dark:bg-slate-800 flex justify-between items-center">
-                  <div className="text-xs font-bold text-slate-400 uppercase tracking-wider">
-                      Page {currentPage} of {Math.max(1, totalPages)} • {sortedSessions.length} Total
+                  <div className="flex items-center gap-4">
+                      <div className="text-xs font-bold text-slate-400 uppercase tracking-wider">
+                          Page {currentPage} of {Math.max(1, totalPages)} • {sortedSessions.length} Total
+                      </div>
+                      <AdvisorTrigger />
                   </div>
                   <div className="flex gap-2">
                       <button onClick={() => goToPage(currentPage - 1)} disabled={currentPage === 1} className="p-2 rounded-lg border border-slate-200 dark:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-700 disabled:opacity-50 transition-colors text-slate-600 dark:text-slate-300"><ChevronLeft size={16} /></button>

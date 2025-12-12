@@ -1,9 +1,10 @@
 
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { UserRole, User } from '../types';
-import { Shield, MoreVertical, Plus, X, Trash2, Edit, Users, Lock, Key, ChevronLeft, ChevronRight, Mail, Briefcase, CheckCircle2, XCircle, Search } from 'lucide-react';
+import { Shield, MoreVertical, Plus, X, Trash2, Edit, Users, Lock, Key, ChevronLeft, ChevronRight, Mail, Briefcase, CheckCircle2, XCircle, Search, Upload, Download } from 'lucide-react';
 import { useLanguage } from '../contexts/LanguageContext';
 import { COMPANIES } from '../constants';
+import { AdvisorTrigger } from '../components/GeminiAdvisor';
 
 interface UserManagementProps {
     users: User[];
@@ -12,6 +13,7 @@ interface UserManagementProps {
 
 const UserManagement: React.FC<UserManagementProps> = ({ users, setUsers }) => {
   const { t } = useLanguage();
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [filterQuery, setFilterQuery] = useState('');
   const [newUser, setNewUser] = useState<Partial<User>>({
@@ -47,6 +49,78 @@ const UserManagement: React.FC<UserManagementProps> = ({ users, setUsers }) => {
           setUsers(users.filter(u => u.id !== id));
       }
       setOpenActionId(null);
+  };
+
+  const handleDownloadTemplate = () => {
+      const headers = ['Name', 'Email', 'Role (System Admin/RAC Admin/RAC Trainer/Departmental Admin/User)', 'Status (Active/Inactive)', 'Company', 'Job Title'];
+      const csvContent = "data:text/csv;charset=utf-8," + headers.join(",");
+      const encodedUri = encodeURI(csvContent);
+      const link = document.createElement("a");
+      link.setAttribute("href", encodedUri);
+      link.setAttribute("download", "user_import_template.csv");
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+  };
+
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = (evt) => {
+          const text = evt.target?.result as string;
+          if (!text) return;
+
+          const lines = text.split('\n');
+          
+          // Region Proof: Detect Separator
+          const firstLine = lines[0] || '';
+          const separator = firstLine.includes(';') ? ';' : ',';
+
+          const dataRows = lines.slice(1);
+          const newUsers: User[] = [];
+
+          dataRows.forEach((line, index) => {
+              if (!line.trim()) return;
+              const cols = line.split(separator).map(c => c?.trim().replace(/^"|"$/g, ''));
+              
+              if (cols.length < 2) return; // Need at least Name and Email
+
+              const name = cols[0];
+              const email = cols[1];
+              
+              // Validate minimal data
+              if (name && email) {
+                  // Resolve Role Enum
+                  let role = UserRole.USER;
+                  const roleStr = cols[2]?.toLowerCase() || '';
+                  if (roleStr.includes('system')) role = UserRole.SYSTEM_ADMIN;
+                  else if (roleStr.includes('rac admin')) role = UserRole.RAC_ADMIN;
+                  else if (roleStr.includes('trainer')) role = UserRole.RAC_TRAINER;
+                  else if (roleStr.includes('dept')) role = UserRole.DEPT_ADMIN;
+
+                  newUsers.push({
+                      id: Date.now() + index, // Simple ID gen
+                      name,
+                      email,
+                      role,
+                      status: cols[3]?.toLowerCase() === 'inactive' ? 'Inactive' : 'Active',
+                      company: cols[4] || 'Unknown',
+                      jobTitle: cols[5] || 'N/A'
+                  });
+              }
+          });
+
+          if (newUsers.length > 0) {
+              setUsers(prev => [...prev, ...newUsers]);
+              alert(`Successfully imported ${newUsers.length} users.`);
+          } else {
+              alert("No valid user records found.");
+          }
+          if (fileInputRef.current) fileInputRef.current.value = '';
+      };
+      reader.readAsText(file);
   };
 
   // Filter Logic
@@ -102,13 +176,30 @@ const UserManagement: React.FC<UserManagementProps> = ({ users, setUsers }) => {
                   {t.users.subtitle}
                </p>
             </div>
-            <button 
-                onClick={() => setIsModalOpen(true)}
-                className="flex items-center gap-2 bg-green-600 hover:bg-green-500 text-white px-6 py-3 rounded-xl font-bold shadow-lg shadow-green-500/30 transition-all transform hover:-translate-y-0.5 text-sm"
-            >
-                <Plus size={18} />
-                <span>{t.users.addUser}</span>
-            </button>
+            
+            <div className="flex gap-2">
+                <button 
+                    onClick={handleDownloadTemplate}
+                    className="flex items-center gap-2 bg-white/10 hover:bg-white/20 text-white px-4 py-3 rounded-xl font-bold backdrop-blur-sm border border-white/10 transition-all text-xs"
+                >
+                    <Download size={16} /> Template
+                </button>
+                <button 
+                    onClick={() => fileInputRef.current?.click()}
+                    className="flex items-center gap-2 bg-white/10 hover:bg-white/20 text-white px-4 py-3 rounded-xl font-bold backdrop-blur-sm border border-white/10 transition-all text-xs"
+                >
+                    <Upload size={16} /> Import CSV
+                </button>
+                <input type="file" ref={fileInputRef} className="hidden" accept=".csv" onChange={handleFileUpload} />
+                
+                <button 
+                    onClick={() => setIsModalOpen(true)}
+                    className="flex items-center gap-2 bg-green-600 hover:bg-green-500 text-white px-6 py-3 rounded-xl font-bold shadow-lg shadow-green-500/30 transition-all transform hover:-translate-y-0.5 text-sm"
+                >
+                    <Plus size={18} />
+                    <span>{t.users.addUser}</span>
+                </button>
+            </div>
          </div>
 
          {/* Stats Row */}
@@ -251,8 +342,11 @@ const UserManagement: React.FC<UserManagementProps> = ({ users, setUsers }) => {
 
         {/* Footer Pagination */}
         <div className="p-4 border-t border-slate-100 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 flex flex-col md:flex-row justify-between items-center gap-4">
-             <div className="text-xs font-bold text-slate-400 uppercase tracking-wider">
-                 Page {currentPage} of {Math.max(1, totalPages)} • {users.length} Total
+             <div className="flex items-center gap-4">
+                 <div className="text-xs font-bold text-slate-400 uppercase tracking-wider">
+                     Page {currentPage} of {Math.max(1, totalPages)} • {users.length} Total
+                 </div>
+                 <AdvisorTrigger />
              </div>
 
              <div className="flex gap-2">

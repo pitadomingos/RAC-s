@@ -2,6 +2,7 @@
 import React, { useState } from 'react';
 import { ScrollText, Filter, AlertTriangle, CheckCircle, Info, ShieldAlert, Clock, Terminal, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useLanguage } from '../contexts/LanguageContext';
+import { AdvisorTrigger } from '../components/GeminiAdvisor';
 
 type LogLevel = 'INFO' | 'WARN' | 'ERROR' | 'AUDIT';
 
@@ -149,20 +150,23 @@ const LogsPage: React.FC = () => {
 
                 {/* Footer Pagination */}
                 <div className="p-3 border-t border-slate-100 bg-slate-50 flex flex-col md:flex-row justify-between items-center gap-4">
-                    <div className="flex items-center gap-2">
-                        <span className="text-xs text-slate-600">Rows per page:</span>
-                        <select 
-                            value={itemsPerPage}
-                            onChange={handlePageSizeChange}
-                            className="text-xs border border-slate-300 rounded bg-white text-slate-800 px-2 py-1 outline-none focus:ring-1 focus:ring-blue-500"
-                        >
-                            <option value={10}>10</option>
-                            <option value={20}>20</option>
-                            <option value={30}>30</option>
-                            <option value={50}>50</option>
-                            <option value={100}>100</option>
-                            <option value={120}>120</option>
-                        </select>
+                    <div className="flex items-center gap-4">
+                        <div className="flex items-center gap-2">
+                            <span className="text-xs text-slate-600">Rows per page:</span>
+                            <select 
+                                value={itemsPerPage}
+                                onChange={handlePageSizeChange}
+                                className="text-xs border border-slate-300 rounded bg-white text-slate-800 px-2 py-1 outline-none focus:ring-1 focus:ring-blue-500"
+                            >
+                                <option value={10}>10</option>
+                                <option value={20}>20</option>
+                                <option value={30}>30</option>
+                                <option value={50}>50</option>
+                                <option value={100}>100</option>
+                                <option value={120}>120</option>
+                            </select>
+                        </div>
+                        <AdvisorTrigger />
                     </div>
 
                     <div className="flex items-center gap-4">
