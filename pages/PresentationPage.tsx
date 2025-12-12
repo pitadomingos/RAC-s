@@ -6,7 +6,8 @@ import {
   Target, Zap, HardHat, Smartphone, CalendarClock,
   Database, Monitor, Lock, Server, Key, Mail,
   Rocket, Code, CheckCircle, BarChart3, FileSpreadsheet, ScrollText,
-  User, Award, Briefcase, HeartHandshake, FileText, Phone, GraduationCap, Activity, CreditCard, Wallet, Wrench, Layers
+  User, Award, Briefcase, HeartHandshake, FileText, Phone, GraduationCap, Activity, CreditCard, Wallet, Wrench, Layers,
+  AlertTriangle, RotateCcw, Play
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
@@ -22,6 +23,7 @@ const PresentationPage: React.FC = () => {
   const slides = [
     { id: 'title', type: 'title' },
     { id: 'aboutMe', type: 'aboutMe', title: t.proposal.aboutMe.title },
+    { id: 'scenario', type: 'scenario', title: 'Real World Scenario' }, // NEW SLIDE
     { id: 'summary', type: 'content', title: t.proposal.execSummary.title },
     { id: 'objectives', type: 'objectives', title: t.proposal.objectives.title },
     { id: 'organogram', type: 'organogram', title: t.proposal.organogram.title },
@@ -81,6 +83,61 @@ const PresentationPage: React.FC = () => {
           </h2>
           <div className="mt-8 md:mt-12 text-xs md:text-sm font-mono text-slate-500">
               PITA DOMINGOS • DigiSols
+          </div>
+      </div>
+  );
+
+  const ScenarioSlide = () => (
+      <div className="flex flex-col justify-center h-full max-w-7xl mx-auto animate-fade-in px-4 md:px-0">
+          <div className="flex items-center gap-4 mb-8 md:mb-12">
+              <div className="p-4 bg-orange-500/20 rounded-2xl border border-orange-500/50">
+                  <Play size={40} className="text-orange-500" />
+              </div>
+              <h2 className="text-3xl md:text-5xl font-bold text-white">Scenario: The Zero-Downtime Workflow</h2>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
+              
+              <div className="space-y-8">
+                  <div className="bg-slate-800 p-6 rounded-2xl border-l-8 border-red-500">
+                      <h3 className="text-xl font-bold text-red-400 mb-2 flex items-center gap-2">
+                          <AlertTriangle size={24}/> The Problem
+                      </h3>
+                      <p className="text-slate-300 leading-relaxed">
+                          Operator <strong>Paulo Manjate</strong> has a Critical RAC 02 (Vehicles) certification expiring in <strong className="text-white">3 days</strong>.
+                          <br/><br/>
+                          If he expires, the turnstile will block his entry, causing operational downtime for his shift.
+                      </p>
+                  </div>
+
+                  <div className="bg-slate-800 p-6 rounded-2xl border-l-8 border-green-500">
+                      <h3 className="text-xl font-bold text-green-400 mb-2 flex items-center gap-2">
+                          <Zap size={24}/> The Solution (Auto-Booking)
+                      </h3>
+                      <p className="text-slate-300 leading-relaxed">
+                          The Vulcan Safety Manager detects the risk (Expiry &lt; 7 Days).
+                          <br/><br/>
+                          It automatically scans the schedule and <strong>books him into the next available session (Tomorrow)</strong>.
+                      </p>
+                  </div>
+              </div>
+
+              <div className="bg-slate-900/50 p-8 rounded-3xl border border-slate-700 flex flex-col justify-center items-center text-center">
+                  <div className="w-24 h-24 bg-blue-600 rounded-full flex items-center justify-center mb-6 shadow-xl shadow-blue-500/30 animate-pulse">
+                      <CalendarClock size={48} className="text-white" />
+                  </div>
+                  <h3 className="text-2xl font-bold text-white mb-4">Live Demo Check</h3>
+                  <p className="text-slate-400 mb-8 max-w-sm">
+                      We will now switch to the Dashboard. You should see a <span className="text-orange-400 font-bold">Pending Action</span> alert for Paulo Manjate.
+                  </p>
+                  <button 
+                    onClick={() => navigate('/')}
+                    className="bg-white text-slate-900 px-8 py-4 rounded-xl font-black text-lg hover:scale-105 transition-transform flex items-center gap-3"
+                  >
+                      Go to Dashboard <ChevronRight size={20}/>
+                  </button>
+              </div>
+
           </div>
       </div>
   );
@@ -527,6 +584,7 @@ const PresentationPage: React.FC = () => {
       switch(slides[currentSlide].id) {
           case 'title': return <TitleSlide />;
           case 'aboutMe': return <AboutMeSlide />;
+          case 'scenario': return <ScenarioSlide />;
           case 'summary': return <SummarySlide />;
           case 'objectives': return <ObjectivesSlide />;
           case 'organogram': return <OrganogramSlide />;

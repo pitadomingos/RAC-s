@@ -123,6 +123,12 @@ const UserManualsPage: React.FC<UserManualsPageProps> = ({ userRole }) => {
 
                <Section title={t.manuals.sysAdmin.dbTitle}>
                   <p>{t.manuals.sysAdmin.dbDesc}</p>
+                  
+                  {/* NEW MATRIX ALERT */}
+                  <AlertBox type="error">
+                      {t.manuals.sysAdmin.restrictionWarning}
+                  </AlertBox>
+
                   <AlertBox type="info">
                       {t.manuals.sysAdmin.csv}
                   </AlertBox>
@@ -212,6 +218,12 @@ const UserManualsPage: React.FC<UserManualsPageProps> = ({ userRole }) => {
                
                <Section title={t.manuals.user.statusTitle}>
                   <p>{t.manuals.user.statusDesc}</p>
+                  
+                  {/* NEW FILTER ALERT */}
+                  <AlertBox type="warning">
+                      {t.manuals.user.filterAlert}
+                  </AlertBox>
+
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
                       <div className="p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
                           <h4 className="font-bold text-green-700 dark:text-green-400 flex items-center gap-2"><CheckCircle size={16}/> Compliant</h4>

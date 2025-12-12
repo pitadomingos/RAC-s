@@ -285,7 +285,12 @@ const DashboardStats: React.FC<DashboardStatsProps> = ({ bookings, requirements,
           <div className="mb-4 md:mb-0">
             <h3 className="text-lg font-bold text-yellow-800 dark:text-yellow-400">{t.dashboard.renewal.title}</h3>
             <p className="text-sm text-yellow-700 dark:text-yellow-300">
-              {String(expiring.length)} {t.dashboard.renewal.message}
+              {String(expiring.length)} {t.dashboard.renewal.message} 
+              {expiring.length <= 5 && (
+                  <span className="font-bold ml-1">
+                      ({expiring.map(e => e.employee.name).join(', ')})
+                  </span>
+              )}
             </p>
           </div>
           <button 

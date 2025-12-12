@@ -1,7 +1,8 @@
+
 import React, { useState, useEffect, useMemo } from 'react';
-import { Employee, BookingStatus, Booking, UserRole, TrainingSession, SystemNotification } from '../types';
+import { Employee, BookingStatus, Booking, UserRole, TrainingSession, SystemNotification, EmployeeRequirement } from '../types';
 import { COMPANIES, DEPARTMENTS, ROLES } from '../constants';
-import { Plus, Trash2, Save, Settings, ShieldCheck, Calendar, UserPlus, FileSignature, CheckCircle2, AlertCircle, Search, UserCheck, RefreshCw, Lock } from 'lucide-react';
+import { Plus, Trash2, Save, Settings, ShieldCheck, Calendar, UserPlus, FileSignature, CheckCircle2, AlertCircle, Search, UserCheck, RefreshCw, Lock, Layers } from 'lucide-react';
 import { v4 as uuidv4 } from 'uuid';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { sanitizeInput } from '../utils/security';
@@ -15,6 +16,7 @@ interface BookingFormProps {
   existingBookings?: Booking[];
   addNotification?: (notification: SystemNotification) => void; 
   currentEmployeeId?: string; // Passed from App.tsx
+  requirements?: EmployeeRequirement[]; // Added requirements prop
 }
 
 interface RenewalBatch {
@@ -22,7 +24,7 @@ interface RenewalBatch {
     employees: Employee[];
 }
 
-const BookingForm: React.FC<BookingFormProps> = ({ addBookings, sessions, userRole, existingBookings = [], addNotification, currentEmployeeId }) => {
+const BookingForm: React.FC<BookingFormProps> = ({ addBookings, sessions, userRole, existingBookings = [], addNotification, currentEmployeeId, requirements = [] }) => {
   const navigate = useNavigate();
   const location = useLocation();
   const { t } = useLanguage();
@@ -66,8 +68,29 @@ const BookingForm: React.FC<BookingFormProps> = ({ addBookings, sessions, userRo
       return map;
   }, [existingBookings]);
 
+  // Filter available sessions based on Role
+  const availableSessions = useMemo(() => {
+      // 1. SELF-SERVICE VIEW: Restricted to mapped trainings only
+      if (isSelfService && currentEmployeeId) {
+          // Find requirement for current logged-in user
+          const myReq = requirements.find(r => r.employeeId === currentEmployeeId);
+          if (!myReq) return []; // If not mapped in DB, cannot book anything.
+
+          // Filter sessions: Only show if mapped in requirements matrix
+          return sessions.filter(session => {
+              const racKey = session.racType.split(' - ')[0].replace(/\s+/g, '');
+              return myReq.requiredRacs[racKey] === true;
+          });
+      }
+
+      // 2. ADMIN/MANAGER VIEW: Full visibility of all sessions
+      // System Admins, RAC Admins, and Dept Admins can see the entire schedule.
+      // Note: The 'handleSubmit' validation will still prevent them from booking 
+      // an unmapped employee, but they can view and select any session here.
+      return sessions;
+  }, [sessions, isSelfService, currentEmployeeId, requirements]);
+
   useEffect(() => {
-    // Fix: Cast location.state to avoid 'unknown' type errors
     const state = location.state as { prefill?: any[]; targetRac?: string; remainingBatches?: RenewalBatch[] } | null;
     if (state) {
         if (state.prefill) {
@@ -79,7 +102,6 @@ const BookingForm: React.FC<BookingFormProps> = ({ addBookings, sessions, userRo
         if (state.remainingBatches) {
             setRenewalQueue(state.remainingBatches);
         }
-        // Clear state to prevent loop on refresh, but we keep local state
         window.history.replaceState({}, document.title);
     }
   }, [location]);
@@ -87,7 +109,6 @@ const BookingForm: React.FC<BookingFormProps> = ({ addBookings, sessions, userRo
   // SELF-SERVICE: Auto-populate if USER role
   useEffect(() => {
       if (isSelfService && currentEmployeeId) {
-          // Attempt to find employee by internal ID (from App.tsx mock)
           const found = employeeLookup.get(currentEmployeeId) || 
                         Array.from(employeeLookup.values()).find((e: Employee) => e.id === currentEmployeeId);
           
@@ -97,7 +118,7 @@ const BookingForm: React.FC<BookingFormProps> = ({ addBookings, sessions, userRo
       }
   }, [isSelfService, currentEmployeeId, employeeLookup]);
 
-  const sessionData = sessions.find(s => s.id === selectedSession);
+  const sessionData = availableSessions.find(s => s.id === selectedSession);
   const isRac02Selected = sessionData?.racType.includes('RAC02') || sessionData?.racType.includes('RAC 02') || (targetRac && targetRac.includes('RAC02'));
 
   const handleRowChange = (index: number, field: keyof Employee, value: string) => {
@@ -189,6 +210,30 @@ const BookingForm: React.FC<BookingFormProps> = ({ addBookings, sessions, userRo
     if (validRows.length === 0) {
       alert("Please enter at least one employee.");
       return;
+    }
+
+    // Determine target RAC Key from session
+    const racKey = sessionData.racType.split(' - ')[0].replace(/\s+/g, '');
+
+    // VALIDATION LOOP: Check Matrix Mapping (Applies to ALL roles for consistency)
+    for (const row of validRows) {
+        // 1. Resolve to existing Employee record to find their internal ID
+        // Note: employeeLookup uses lowercase recordId keys
+        const empRecord = employeeLookup.get(row.recordId.trim().toLowerCase());
+        
+        if (!empRecord) {
+            alert(`Booking Blocked: Employee "${row.name}" (${row.recordId}) is not registered in the system database.\n\nPlease register them in the Database page first to assign requirements.`);
+            return; // Block entire batch
+        }
+
+        // 2. Check Requirement Mapping
+        const empReq = requirements.find(r => r.employeeId === empRecord.id);
+        
+        // If no req object found OR racKey is false/undefined -> Block
+        if (!empReq || !empReq.requiredRacs[racKey]) {
+            alert(`Booking Blocked: Employee "${row.name}" is NOT mapped for ${racKey} in the database.\n\nPlease contact the Department Manager to update their training matrix.`);
+            return; // Block entire batch
+        }
     }
 
     if (isRac02Selected) {
@@ -356,7 +401,7 @@ const BookingForm: React.FC<BookingFormProps> = ({ addBookings, sessions, userRo
                </div>
                <p className="text-slate-400 text-sm max-w-xl flex items-center gap-2 font-medium">
                   <ShieldCheck size={16} className="text-green-400" />
-                  {t.booking.secureMode}
+                  {isSelfService ? "View only trainings mapped to you." : "Full Schedule Access (Secure Mode)"}
                </p>
             </div>
             
@@ -406,10 +451,17 @@ const BookingForm: React.FC<BookingFormProps> = ({ addBookings, sessions, userRo
             
             {/* Session Selector Zone */}
             <div className="p-8 bg-slate-50 dark:bg-slate-800/50 border-b border-slate-200 dark:border-slate-700">
-               <label className="text-xs font-bold text-slate-900 dark:text-slate-400 uppercase tracking-wider mb-3 flex items-center gap-2 ml-1">
-                  <Calendar size={14} />
-                  {t.booking.selectSession}
-               </label>
+               <div className="flex justify-between items-center mb-3">
+                   <label className="text-xs font-bold text-slate-900 dark:text-slate-400 uppercase tracking-wider flex items-center gap-2 ml-1">
+                      <Calendar size={14} />
+                      {t.booking.selectSession}
+                   </label>
+                   {!isSelfService && (
+                       <span className="text-[10px] bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300 px-2 py-0.5 rounded font-bold uppercase flex items-center gap-1">
+                           <Layers size={10} /> Full View
+                       </span>
+                   )}
+               </div>
                
                <div className="relative group">
                    <select 
@@ -421,7 +473,7 @@ const BookingForm: React.FC<BookingFormProps> = ({ addBookings, sessions, userRo
                       required
                     >
                       <option value="">-- {t.booking.chooseSession} --</option>
-                      {sessions.map(session => {
+                      {availableSessions.map(session => {
                         const count = existingBookings.filter(b => b.sessionId === session.id).length;
                         const isFull = count >= session.capacity;
                         const langLabel = session.sessionLanguage === 'English' ? 'Eng' : 'Port';
@@ -434,7 +486,6 @@ const BookingForm: React.FC<BookingFormProps> = ({ addBookings, sessions, userRo
                             <option 
                                 key={session.id} 
                                 value={session.id} 
-                                disabled={isFull && false} 
                                 className={`${isFull ? 'text-red-500' : ''} ${isMatch ? 'bg-blue-100 font-black' : ''}`}
                             >
                             {isMatch ? '★ ' : ''}{session.racType} {displayLang} • {session.date} • {session.location} • (Cap: {count}/{session.capacity}) {isFull ? '(FULL)' : ''}
@@ -446,6 +497,12 @@ const BookingForm: React.FC<BookingFormProps> = ({ addBookings, sessions, userRo
                         <Calendar size={24} />
                     </div>
                </div>
+                
+                {isSelfService && availableSessions.length === 0 && (
+                    <p className="text-xs text-red-500 mt-2 font-bold flex items-center gap-1">
+                        <AlertCircle size={12}/> No eligible training sessions available for your profile. Please check if you are correctly mapped in the Database.
+                    </p>
+                )}
 
                 {isRac02Selected && (
                     <div className="mt-4 flex items-start gap-3 text-red-700 bg-red-50 dark:bg-red-900/20 dark:text-red-300 p-4 rounded-xl border border-red-100 dark:border-red-900/50 animate-fade-in-down">

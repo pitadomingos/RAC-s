@@ -130,6 +130,11 @@ export const translations = {
         title: 'Action Required: Training Renewal',
         message: 'employees have critical training expiring within 30 days.',
         button: 'Book Renewals'
+      },
+      autoBooking: {
+        title: 'Action Required: Pending Auto-Bookings',
+        subPart1: 'System detected expiry risks',
+        subPart2: 'and reserved slots to prevent lockout. Approve to finalize.'
       }
     },
     database: {
@@ -220,7 +225,8 @@ export const translations = {
             dbTitle: '2. Database & CSV Import',
             dbDesc: 'The Database is the master record for compliance.',
             csv: 'CSV Import: Use the "Download Template" button. The matrix columns (RAC01, etc.) expect "1" or "TRUE" for required training.',
-            active: 'Active Status: Unchecking "Active" triggers a deletion prompt to keep the database clean.'
+            active: 'Active Status: Unchecking "Active" triggers a deletion prompt to keep the database clean.',
+            restrictionWarning: "CRITICAL RESTRICTION: The Booking Module strictly enforces the Database Matrix. You cannot book an employee for a training (e.g., RAC 01) unless it is marked as 'Required' in their Database profile. This prevents unauthorized training."
         },
         racAdmin: { 
             title: 'RAC Administrator Manual',
@@ -261,7 +267,8 @@ export const translations = {
             statusDesc: 'Your site access depends on your status.',
             green: 'Compliant: Valid ASO + All Required RACs passed.',
             red: 'Non-Compliant: Expired ASO, Missing RAC, or Expired Driver License (if RAC 02 holder).',
-            qr: 'Digital Passport: Scanning your card QR code reveals your real-time status from the database.'
+            qr: 'Digital Passport: Scanning your card QR code reveals your real-time status from the database.',
+            filterAlert: "NOTE: Your booking options are filtered. You will ONLY see training sessions that are assigned to your specific Job Role/Matrix. If you do not see a session, you are not authorized to book it."
         }
     },
     alcohol: { title: 'Alcohol Control', subtitle: 'Roadmap', banner: { title: 'Coming Soon', desc: 'IoT Integration', status: 'Dev' }, features: { title: 'Vision', iotTitle: 'IoT', iotDesc: 'Direct integration with industrial breathalyzers to capture results in real-time.', accessTitle: 'Automated Lockout', accessDesc: 'Automatically block turnstile access if alcohol is detected or training is expired.', complianceTitle: 'Compliance Reporting', complianceDesc: 'Unified logs for both safety training and fitness-for-duty checks.' }, protocol: { title: 'Protocol', positiveTitle: 'Positive Test Protocol', positiveDesc: 'If a positive test (>0.00%) is detected, the turnstile locks immediately. The employee is marked as "Blocked" in the database.', resetTitle: '02:00 AM Reset Rule', resetDesc: 'The system automatically unlocks the employee at exactly 02:00:00 hrs the following day, allowing re-entry if sober.' }, challenges: { title: 'Current Challenges', oemIssue: 'Current breathalyzers send data to an external OEM Cloud. This poses data sovereignty risks.', gateSetup: 'Main gate physical layout requires modification.' }, proposal: { title: 'Proposed Solution', faceCap: 'Purchase models with Face Capture.', integration: 'Develop middleware to intercept data.', projectScope: 'Independent project involving Civil & Electrical.' } },
@@ -435,6 +442,11 @@ export const translations = {
                 title: 'Smart Batch Processing',
                 desc: 'To handle high-volume sites, the system includes a dedicated batch processor. It groups expiring certifications by training type (RAC) and creates a guided, sequential booking queue for the administrator.',
                 features: ['Sequential Renewal Queue', 'Visual Card Batch Builder', 'Conflict-Free Session Allocation']
+            },
+            matrixCompliance: {
+                title: 'Matrix-Locked Booking Engine',
+                desc: 'To ensure absolute compliance, the booking engine is hard-locked to the Employee Database Matrix. Administrators and Users cannot bypass safety requirements—bookings are only permitted if the specific RAC is flagged as required for that employee.',
+                features: ['Prevents unauthorized training', 'Enforces role-based safety matrix', 'Reduces training wastage']
             }
         },
         conclusion: {
@@ -569,9 +581,14 @@ export const translations = {
         noData: 'Sem dados'
       },
       renewal: {
-        title: 'Ação Necessária',
-        message: 'funcionários expirando.',
-        button: 'Agendar'
+        title: 'Ação Necessária: Renovação de Treino',
+        message: 'funcionários com treino crítico expirando em 30 dias.',
+        button: 'Agendar Renovações'
+      },
+      autoBooking: {
+        title: 'Ação Necessária: Auto-Agendamentos Pendentes',
+        subPart1: 'O sistema detectou riscos de expiração',
+        subPart2: 'e reservou vagas para evitar bloqueio. Aprove para finalizar.'
       }
     },
     database: {
@@ -637,7 +654,8 @@ export const translations = {
             dbTitle: '2. Base de Dados & Importação CSV',
             dbDesc: 'A Base de Dados é o registro mestre de conformidade.',
             csv: 'Importação CSV: Use o botão "Modelo". As colunas da matriz (RAC01, etc.) esperam "1" ou "TRUE" para treinamento obrigatório.',
-            active: 'Status Ativo: Desmarcar "Ativo" aciona um aviso de exclusão para manter o banco de dados limpo.'
+            active: 'Status Ativo: Desmarcar "Ativo" aciona um aviso de exclusão para manter o banco de dados limpo.',
+            restrictionWarning: "RESTRIÇÃO CRÍTICA: O Módulo de Agendamento impõe estritamente a Matriz da Base de Dados. Você não pode agendar um funcionário para um treinamento (ex: RAC 01) a menos que esteja marcado como 'Obrigatório' no perfil dele. Isso evita treinamentos não autorizados."
         },
         racAdmin: { 
             title: 'Manual do Administrador RAC',
@@ -678,7 +696,8 @@ export const translations = {
             statusDesc: 'Seu acesso ao local depende do seu status.',
             green: 'Conforme: ASO Válido + Todos RACs Obrigatórios aprovados.',
             red: 'Não Conforme: ASO Expirado, RAC Ausente ou Carta de Condução Expirada (se RAC 02).',
-            qr: 'Passaporte Digital: Escanear o código QR do seu cartão revela seu status em tempo real do banco de dados.'
+            qr: 'Passaporte Digital: Escanear o código QR do seu cartão revela seu status em tempo real do banco de dados.',
+            filterAlert: "NOTA: Suas opções de agendamento são filtradas. Você verá APENAS as sessões de treinamento atribuídas ao seu Cargo/Matriz específico. Se não vir uma sessão, você não tem autorização para agendá-la."
         }
     },
     alcohol: { title: 'Álcool', subtitle: 'Roteiro', banner: { title: 'Em Breve', desc: 'IoT', status: 'Dev' }, features: { title: 'Visão', iotTitle: 'IoT', iotDesc: 'Integração direta com bafômetros industriais para capturar resultados em tempo real.', accessTitle: 'Bloqueio', accessDesc: 'Bloqueia automaticamente o acesso ao torniquete se álcool for detectado.', complianceTitle: 'Relatório', complianceDesc: 'Logs unificados para treinamento de segurança e verificações.' }, protocol: { title: 'Protocolo', positiveTitle: 'Protocolo de Teste Positivo', positiveDesc: 'Se positivo (>0,00%), o torniquete bloqueia imediatamente. O funcionário é marcado como "Bloqueado".', resetTitle: 'Regra 02:00 AM', resetDesc: 'O sistema desbloqueia automaticamente às 02:00:00 do dia seguinte.' }, challenges: { title: 'Desafios', oemIssue: 'Os bafômetros atuais usam nuvem OEM externa (Risco de Dados).', gateSetup: 'O layout do portão requer modificação física.' }, proposal: { title: 'Proposta', faceCap: 'Captura Facial', integration: 'API Direta', projectScope: 'Engenharia Civil/Elétrica' } },
@@ -852,6 +871,11 @@ export const translations = {
                 title: 'Processamento em Lote Inteligente',
                 desc: 'Para lidar com locais de grande volume, o sistema inclui um processador de lote dedicado. Ele agrupa certificações expirando por tipo de treinamento (RAC) e cria uma fila de agendamento sequencial e guiada.',
                 features: ['Fila de Renovação Sequencial', 'Construtor Visual de Lotes de Cartões', 'Alocação de Sessão sem Conflitos']
+            },
+            matrixCompliance: {
+                title: 'Motor de Agendamento Bloqueado por Matriz',
+                desc: 'Para garantir conformidade absoluta, o motor de agendamento é travado na Matriz da Base de Dados. Administradores e Usuários não podem ignorar os requisitos de segurança — agendamentos só são permitidos se o RAC específico for marcado como obrigatório.',
+                features: ['Previne treinamento não autorizado', 'Impõe matriz de segurança baseada em função', 'Reduz desperdício de treinamento']
             }
         },
         conclusion: {

@@ -1,9 +1,9 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import DashboardStats from '../components/DashboardStats';
-import { Booking, UserRole, EmployeeRequirement, TrainingSession } from '../types';
-import { COMPANIES, RAC_KEYS } from '../constants';
-import { Calendar, Clock, MapPin, ChevronRight, Filter, Timer, User, CheckCircle, XCircle, ChevronLeft } from 'lucide-react';
+import { Booking, UserRole, EmployeeRequirement, TrainingSession, BookingStatus, RacDef } from '../types';
+import { COMPANIES, DEPARTMENTS, OPS_KEYS, RAC_KEYS } from '../constants';
+import { Calendar, Clock, MapPin, ChevronRight, Filter, Timer, User, CheckCircle, XCircle, ChevronLeft, Zap, Layers, Briefcase } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { v4 as uuidv4 } from 'uuid';
 import { useLanguage } from '../contexts/LanguageContext';
@@ -15,6 +15,7 @@ interface DashboardProps {
   userRole: UserRole;
   onApproveAutoBooking?: (bookingId: string) => void;
   onRejectAutoBooking?: (bookingId: string) => void;
+  racDefinitions?: RacDef[];
 }
 
 const Dashboard: React.FC<DashboardProps> = ({ 
@@ -23,17 +24,23 @@ const Dashboard: React.FC<DashboardProps> = ({
   sessions, 
   userRole,
   onApproveAutoBooking,
-  onRejectAutoBooking
+  onRejectAutoBooking,
+  racDefinitions = []
 }) => {
   const navigate = useNavigate();
   const { t } = useLanguage();
+  
+  // -- GLOBAL FILTERS --
   const [selectedCompany, setSelectedCompany] = useState<string>('All');
+  const [selectedDepartment, setSelectedDepartment] = useState<string>('All');
+  const [selectedAccessStatus, setSelectedAccessStatus] = useState<'All' | 'Granted' | 'Blocked'>('All');
+
   // Trigger re-render every minute to update countdowns
   const [, setTick] = useState(0);
 
   // Pagination state for Auto-Booking Table
   const [abPage, setAbPage] = useState(1);
-  const AB_ROWS_PER_PAGE = 5; // Kept compact to save dashboard vertical space
+  const AB_ROWS_PER_PAGE = 5; 
 
   // Filters for Employee Bookings Table
   const [empFilterCompany, setEmpFilterCompany] = useState<string>('All');
@@ -45,22 +52,122 @@ const Dashboard: React.FC<DashboardProps> = ({
     return () => clearInterval(timer);
   }, []);
 
-  // Filter bookings based on selected company (for Stats)
-  const filteredBookingsForStats = selectedCompany === 'All' 
-    ? bookings 
-    : bookings.filter(b => b.employee.company === selectedCompany);
+  // --- CORE LOGIC: Access Status Calculation (Replicated from DatabasePage) ---
+  const employeesWithStatus = useMemo(() => {
+      // 1. Get Unique Employees
+      const empMap = new Map<string, any>();
+      bookings.forEach(b => {
+          if (!empMap.has(b.employee.id)) {
+              empMap.set(b.employee.id, b.employee);
+          }
+      });
+      // Also check requirements incase employee has no bookings yet
+      requirements.forEach(r => {
+          // If we can't find employee object, we skip (bookings usually populate employee data)
+          // In a real app, we'd have a separate 'users' table.
+      });
 
-  const filteredRequirements = selectedCompany === 'All'
-    ? requirements
-    : requirements.filter(r => {
-        const empBooking = bookings.find(b => b.employee.id === r.employeeId);
-        return empBooking ? empBooking.employee.company === selectedCompany : false; 
-    });
+      const uniqueEmployees = Array.from(empMap.values());
+
+      return uniqueEmployees.map(emp => {
+          const req = requirements.find(r => r.employeeId === emp.id) || { employeeId: emp.id, asoExpiryDate: '', requiredRacs: {} };
+          const today = new Date().toISOString().split('T')[0];
+          const isAsoValid = !!(req.asoExpiryDate && req.asoExpiryDate > today);
+          const dlExpiry = emp.driverLicenseExpiry || '';
+          const isDlExpired = !!(dlExpiry && dlExpiry <= today);
+          const isActive = emp.isActive ?? true;
+
+          let allRacsMet = true;
+          let hasRac02Req = false;
+
+          // Use racDefinitions if available, else fallback to constants
+          const definitions = racDefinitions.length > 0 ? racDefinitions : RAC_KEYS.map(k => ({ code: k }));
+
+          definitions.forEach((def: any) => {
+              const key = def.code;
+              if (req.requiredRacs[key]) {
+                  if (key === 'RAC02') hasRac02Req = true;
+                  
+                  // Check for valid booking
+                  const validBooking = bookings.find(b => {
+                      if (b.employee.id !== emp.id) return false;
+                      if (b.status !== BookingStatus.PASSED) return false;
+                      if (!b.expiryDate || b.expiryDate <= today) return false;
+                      
+                      // Match RAC Key
+                      let bRacKey = '';
+                      const session = sessions.find(s => s.id === b.sessionId);
+                      if (session) {
+                          bRacKey = session.racType.split(' - ')[0].replace(/\s+/g, '');
+                      } else {
+                          bRacKey = b.sessionId.split(' - ')[0].replace(/\s+/g, '');
+                      }
+                      return bRacKey === key;
+                  });
+
+                  if (!validBooking) {
+                      allRacsMet = false;
+                  }
+              }
+          });
+
+          let status: 'Granted' | 'Blocked' = 'Granted';
+          if (!isActive) status = 'Blocked';
+          else if (!isAsoValid || !allRacsMet) status = 'Blocked';
+          else if (hasRac02Req && isDlExpired) status = 'Blocked';
+
+          return {
+              ...emp,
+              accessStatus: status,
+              requirements: req // Attach requirement for Matrix counting
+          };
+      });
+  }, [bookings, requirements, sessions, racDefinitions]);
+
+  // --- FILTERING ---
+  const filteredEmployees = useMemo(() => {
+      return employeesWithStatus.filter(e => {
+          if (selectedCompany !== 'All' && e.company !== selectedCompany) return false;
+          if (selectedDepartment !== 'All' && e.department !== selectedDepartment) return false;
+          if (selectedAccessStatus !== 'All' && e.accessStatus !== selectedAccessStatus) return false;
+          return true;
+      });
+  }, [employeesWithStatus, selectedCompany, selectedDepartment, selectedAccessStatus]);
+
+  // Filtered Bookings & Requirements for Stats
+  const filteredBookingsForStats = useMemo(() => {
+      const allowedIds = new Set(filteredEmployees.map(e => e.id));
+      return bookings.filter(b => allowedIds.has(b.employee.id));
+  }, [bookings, filteredEmployees]);
+
+  const filteredRequirements = useMemo(() => {
+      const allowedIds = new Set(filteredEmployees.map(e => e.id));
+      return requirements.filter(r => allowedIds.has(r.employeeId));
+  }, [requirements, filteredEmployees]);
+
+  // --- OPERATIONAL MATRIX COUNTS ---
+  const matrixCounts = useMemo(() => {
+      const counts: Record<string, number> = {};
+      OPS_KEYS.forEach(k => counts[k] = 0);
+
+      filteredEmployees.forEach(emp => {
+          const req = emp.requirements;
+          if (req && req.requiredRacs) {
+              OPS_KEYS.forEach(key => {
+                  if (req.requiredRacs[key]) {
+                      counts[key] = (counts[key] || 0) + 1;
+                  }
+              });
+          }
+      });
+      return counts;
+  }, [filteredEmployees]);
+
 
   // Sort sessions by date (closest first) for the "Upcoming" view
   const upcomingSessions = [...sessions]
     .sort((a, b) => new Date(`${a.date}T${a.startTime}`).getTime() - new Date(`${b.date}T${b.startTime}`).getTime())
-    .slice(0, 10); // Increased limit slightly as it scrolls now
+    .slice(0, 10); 
 
   const getBookingCount = (sessionId: string) => {
     return bookings.filter(b => b.sessionId === sessionId).length;
@@ -72,56 +179,47 @@ const Dashboard: React.FC<DashboardProps> = ({
         const sessionDate = new Date(fullDateStr);
         const now = new Date();
         
-        // Handle invalid dates gracefully
         if (isNaN(sessionDate.getTime())) return null;
-
         const diff = sessionDate.getTime() - now.getTime();
 
         if (diff <= 0) {
-        return (
-            <span className="inline-flex items-center px-2 py-1 rounded text-xs font-bold bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-300 border border-gray-200 dark:border-gray-600">
-            Completed
-            </span>
-        );
+            return <span className="inline-flex items-center px-2 py-1 rounded text-xs font-bold bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-300 border border-gray-200 dark:border-gray-600">Completed</span>;
         }
 
         const days = Math.floor(diff / (1000 * 60 * 60 * 24));
         const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-        const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-
-        // Ensure we don't display NaNs if calculation fails
-        if (isNaN(days) || isNaN(hours) || isNaN(minutes)) return null;
+        
+        if (isNaN(days)) return null;
 
         return (
         <span className="inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-bold bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 border border-blue-200 dark:border-blue-800 whitespace-nowrap">
-            <Timer size={12} />
-            {String(days)}d : {String(hours)}h : {String(minutes)}m left
+            <Timer size={12} /> {String(days)}d : {String(hours)}h left
         </span>
         );
-    } catch (e) {
-        return null;
-    }
+    } catch (e) { return null; }
   };
 
-  // Identify expiring bookings for the auto-fill feature
+  // Identify expiring bookings for the auto-fill feature (Use filtered set?)
+  // Usually expiring alerts should show ALL, but maybe filter by company context.
+  // For safety, we'll check ALL bookings for expiry, but button will only prefill filtered if we wanted (kept simple for now).
   const expiringBookings = useMemo(() => {
     const today = new Date();
     const thirtyDaysFromNow = new Date();
     thirtyDaysFromNow.setDate(today.getDate() + 30);
     
-    return bookings.filter(b => {
+    // Filtered by dashboard context
+    return filteredBookingsForStats.filter(b => {
       if (!b.expiryDate) return false;
       const expDate = new Date(b.expiryDate);
       return expDate > today && expDate <= thirtyDaysFromNow;
     });
-  }, [bookings]);
+  }, [filteredBookingsForStats]);
 
   // Identify auto-bookings waiting for approval
   const autoBookings = useMemo(() => {
-      return bookings.filter(b => b.isAutoBooked);
+      return bookings.filter(b => b.isAutoBooked && b.status === BookingStatus.PENDING);
   }, [bookings]);
 
-  // Paginated Auto Bookings
   const paginatedAutoBookings = useMemo(() => {
       const start = (abPage - 1) * AB_ROWS_PER_PAGE;
       return autoBookings.slice(start, start + AB_ROWS_PER_PAGE);
@@ -131,26 +229,15 @@ const Dashboard: React.FC<DashboardProps> = ({
 
   const handleBookRenewals = () => {
       if (expiringBookings.length === 0) return;
-
       const groupedBatch: Record<string, any[]> = {};
-
       expiringBookings.forEach(b => {
           let racType = 'Unknown Training';
           const session = sessions.find(s => s.id === b.sessionId);
-          
-          if (session) {
-              racType = session.racType;
-          } else if (b.sessionId.includes('RAC')) {
-              const parts = b.sessionId.split(' - ');
-              racType = parts[0]; 
-          } else {
-              racType = b.sessionId;
-          }
+          if (session) racType = session.racType;
+          else if (b.sessionId.includes('RAC')) racType = b.sessionId.split(' - ')[0]; 
+          else racType = b.sessionId;
 
-          if (!groupedBatch[racType]) {
-              groupedBatch[racType] = [];
-          }
-
+          if (!groupedBatch[racType]) groupedBatch[racType] = [];
           groupedBatch[racType].push({
               id: uuidv4(),
               name: b.employee.name,
@@ -164,59 +251,32 @@ const Dashboard: React.FC<DashboardProps> = ({
           });
       });
 
-      const batchQueue = Object.entries(groupedBatch).map(([racType, employees]) => ({
-          racType,
-          employees
-      }));
-
+      const batchQueue = Object.entries(groupedBatch).map(([racType, employees]) => ({ racType, employees }));
       if (batchQueue.length > 0) {
-          const firstBatch = batchQueue[0];
-          const remainingBatches = batchQueue.slice(1);
-
-          navigate('/booking', { 
-              state: { 
-                  prefill: firstBatch.employees,
-                  targetRac: firstBatch.racType,
-                  remainingBatches: remainingBatches
-              } 
-          });
+          navigate('/booking', { state: { prefill: batchQueue[0].employees, targetRac: batchQueue[0].racType, remainingBatches: batchQueue.slice(1) } });
       }
   };
 
   const employeeBookingsList = useMemo(() => {
-    return bookings.map(b => {
+    // Only show bookings for filtered employees
+    return filteredBookingsForStats.map(b => {
       const session = sessions.find(s => s.id === b.sessionId);
-      
-      let racName = b.sessionId;
-      let sessionDate = '';
-      let sessionRoom = 'TBD';
-      let sessionTrainer = 'TBD';
-
-      if (session) {
-        racName = session.racType;
-        sessionDate = session.date;
-        sessionRoom = session.location;
-        sessionTrainer = session.instructor;
-      } else {
-         if (b.sessionId.includes('RAC')) {
-            racName = b.sessionId;
-         }
-      }
-
+      let racName = session ? session.racType : b.sessionId;
       const racCode = racName.split(' - ')[0].replace(' ', '');
-
+      
       return {
         ...b,
         racName,
         racCode,
-        sessionDate,
-        sessionRoom,
-        sessionTrainer
+        sessionDate: session ? session.date : '',
+        sessionRoom: session ? session.location : 'TBD',
+        sessionTrainer: session ? session.instructor : 'TBD'
       };
     });
-  }, [bookings, sessions]);
+  }, [filteredBookingsForStats, sessions]);
 
-  const filteredEmployeeBookings = employeeBookingsList.filter(item => {
+  // Local table filters on top of global filters
+  const finalFilteredBookings = employeeBookingsList.filter(item => {
     if (empFilterCompany !== 'All' && item.employee.company !== empFilterCompany) return false;
     if (empFilterRac !== 'All' && item.racCode !== empFilterRac) return false;
     if (empFilterDate && item.sessionDate !== empFilterDate) return false;
@@ -227,22 +287,52 @@ const Dashboard: React.FC<DashboardProps> = ({
 
   return (
     <div className="space-y-6">
-      {/* Top Header - Sticky ONLY on Desktop */}
-      <div className="md:sticky md:top-0 z-20 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-white dark:bg-slate-800 p-4 rounded-xl shadow-md border border-slate-200 dark:border-slate-700 transition-colors backdrop-blur-sm bg-opacity-95 dark:bg-opacity-95">
+      
+      {/* --- FILTER CONTROL BAR --- */}
+      <div className="md:sticky md:top-0 z-20 bg-white dark:bg-slate-800 p-4 rounded-xl shadow-md border border-slate-200 dark:border-slate-700 transition-colors backdrop-blur-sm bg-opacity-95 dark:bg-opacity-95 flex flex-col xl:flex-row justify-between items-start xl:items-center gap-4">
         <div>
           <h2 className="text-lg font-bold text-slate-800 dark:text-white">{t.dashboard.title}</h2>
           <p className="text-sm text-slate-700 dark:text-gray-400">{t.dashboard.subtitle}</p>
         </div>
-        <div className="flex items-center gap-2">
-          <Filter size={16} className="text-gray-400" />
-          <select 
-            value={selectedCompany} 
-            onChange={(e) => setSelectedCompany(e.target.value)}
-            className="border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white text-black rounded-lg text-sm border p-2 focus:ring-yellow-500 focus:border-yellow-500"
-          >
-            <option value="All">All Companies</option>
-            {COMPANIES.map(c => <option key={c} value={c}>{c}</option>)}
-          </select>
+        
+        {/* GLOBAL FILTER GROUP */}
+        <div className="flex flex-wrap gap-3 items-center w-full xl:w-auto">
+            <div className="flex items-center gap-2 bg-slate-50 dark:bg-slate-700 p-1.5 rounded-lg border border-slate-200 dark:border-slate-600 flex-1 min-w-[200px]">
+                <Filter size={16} className="text-slate-400 ml-2" />
+                <select 
+                    value={selectedCompany} 
+                    onChange={(e) => setSelectedCompany(e.target.value)}
+                    className="w-full bg-transparent text-sm font-medium text-slate-800 dark:text-white outline-none cursor-pointer"
+                >
+                    <option value="All">All Companies</option>
+                    {COMPANIES.map(c => <option key={c} value={c}>{c}</option>)}
+                </select>
+            </div>
+
+            <div className="flex items-center gap-2 bg-slate-50 dark:bg-slate-700 p-1.5 rounded-lg border border-slate-200 dark:border-slate-600 flex-1 min-w-[200px]">
+                <Briefcase size={16} className="text-slate-400 ml-2" />
+                <select 
+                    value={selectedDepartment} 
+                    onChange={(e) => setSelectedDepartment(e.target.value)}
+                    className="w-full bg-transparent text-sm font-medium text-slate-800 dark:text-white outline-none cursor-pointer"
+                >
+                    <option value="All">All Departments</option>
+                    {DEPARTMENTS.map(d => <option key={d} value={d}>{d}</option>)}
+                </select>
+            </div>
+
+            <div className="flex items-center gap-2 bg-slate-50 dark:bg-slate-700 p-1.5 rounded-lg border border-slate-200 dark:border-slate-600 flex-1 min-w-[150px]">
+                {selectedAccessStatus === 'Granted' ? <CheckCircle size={16} className="text-green-500 ml-2"/> : selectedAccessStatus === 'Blocked' ? <XCircle size={16} className="text-red-500 ml-2"/> : <Layers size={16} className="text-slate-400 ml-2" />}
+                <select 
+                    value={selectedAccessStatus} 
+                    onChange={(e) => setSelectedAccessStatus(e.target.value as any)}
+                    className="w-full bg-transparent text-sm font-medium text-slate-800 dark:text-white outline-none cursor-pointer"
+                >
+                    <option value="All">All Status</option>
+                    <option value="Granted">Granted Only</option>
+                    <option value="Blocked">Blocked Only</option>
+                </select>
+            </div>
         </div>
       </div>
 
@@ -252,20 +342,42 @@ const Dashboard: React.FC<DashboardProps> = ({
         onBookRenewals={handleBookRenewals}
       />
 
+      {/* --- OPERATIONAL MATRIX BREAKDOWN --- */}
+      <div className="bg-slate-100 dark:bg-slate-800/50 p-4 rounded-xl border border-slate-200 dark:border-slate-700">
+          <h3 className="text-sm font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-3 flex items-center gap-2">
+              <Layers size={14} /> Operational Matrix Breakdown
+          </h3>
+          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-3">
+              {Object.entries(matrixCounts).map(([key, count]) => {
+                  let label = key;
+                  if (key === 'LIB_OPS') label = 'LIB-OPS';
+                  if (key === 'LIB_MOV') label = 'LIB-MOV';
+                  if (key === 'DONO_AREA_PTS') label = 'Owner';
+                  
+                  return (
+                      <div key={key} className="bg-white dark:bg-slate-700 rounded-lg p-3 shadow-sm border border-slate-200 dark:border-slate-600 flex flex-col items-center">
+                          <span className="text-[10px] font-bold text-slate-400 uppercase truncate w-full text-center" title={key}>{label}</span>
+                          <span className="text-xl font-black text-slate-800 dark:text-white">{count}</span>
+                      </div>
+                  );
+              })}
+          </div>
+      </div>
+
        {/* Auto-Booking Approval Table (Paginated) */}
        {canManageAutoBookings && autoBookings.length > 0 && onApproveAutoBooking && onRejectAutoBooking && (
-          <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-orange-200 dark:border-orange-900/50 overflow-hidden">
-             <div className="p-4 bg-orange-50 dark:bg-orange-900/20 border-b border-orange-100 dark:border-orange-800 flex justify-between items-center">
+          <div className="bg-white dark:bg-slate-800 rounded-xl shadow-lg border-2 border-orange-300 dark:border-orange-700 overflow-hidden ring-4 ring-orange-100 dark:ring-orange-900/20 animate-pulse-slow">
+             <div className="p-4 bg-gradient-to-r from-orange-50 to-amber-50 dark:from-orange-900/40 dark:to-amber-900/40 border-b border-orange-200 dark:border-orange-800 flex justify-between items-center">
                  <div>
                      <div className="flex items-center gap-2 text-orange-700 dark:text-orange-400">
-                        <Clock size={20} />
-                        <h3 className="font-bold">Pending Auto-Bookings</h3>
-                        <span className="bg-orange-100 dark:bg-orange-800 text-orange-800 dark:text-orange-200 text-xs px-2 py-0.5 rounded-full font-bold">
+                        <Zap size={20} className="fill-orange-500 text-orange-600" />
+                        <h3 className="font-black text-lg uppercase tracking-tight">{t.dashboard.autoBooking.title}</h3>
+                        <span className="bg-red-500 text-white text-xs px-2 py-0.5 rounded-full font-bold shadow-sm animate-bounce">
                             {autoBookings.length}
                         </span>
                      </div>
-                     <p className="text-xs text-orange-600/70 dark:text-orange-400/70 mt-1">
-                        System generated schedules based on imminent expiry (7 days).
+                     <p className="text-xs text-orange-800 dark:text-orange-300 mt-1 font-medium">
+                        {t.dashboard.autoBooking.subPart1} (<strong className="underline">{"< 7 days"}</strong>) {t.dashboard.autoBooking.subPart2}
                      </p>
                  </div>
                  
@@ -295,12 +407,12 @@ const Dashboard: React.FC<DashboardProps> = ({
 
              <div className="overflow-x-auto">
                  <table className="min-w-full divide-y divide-orange-100 dark:divide-orange-900/30">
-                     <thead className="bg-white dark:bg-slate-800 md:sticky md:top-0 z-10">
+                     <thead className="bg-orange-50/50 dark:bg-orange-900/10 md:sticky md:top-0 z-10">
                          <tr>
-                             <th className="px-4 py-3 text-left text-xs font-bold text-black dark:text-gray-400 uppercase">Employee</th>
-                             <th className="px-4 py-3 text-left text-xs font-bold text-black dark:text-gray-400 uppercase">Session / RAC</th>
-                             <th className="px-4 py-3 text-left text-xs font-bold text-black dark:text-gray-400 uppercase">Scheduled Date</th>
-                             <th className="px-4 py-3 text-right text-xs font-bold text-black dark:text-gray-400 uppercase">Action</th>
+                             <th className="px-4 py-3 text-left text-xs font-bold text-orange-800 dark:text-orange-300 uppercase">Employee</th>
+                             <th className="px-4 py-3 text-left text-xs font-bold text-orange-800 dark:text-orange-300 uppercase">Session / RAC</th>
+                             <th className="px-4 py-3 text-left text-xs font-bold text-orange-800 dark:text-orange-300 uppercase">Scheduled Date</th>
+                             <th className="px-4 py-3 text-right text-xs font-bold text-orange-800 dark:text-orange-300 uppercase">Action</th>
                          </tr>
                      </thead>
                      <tbody className="bg-white dark:bg-slate-800 divide-y divide-gray-50 dark:divide-slate-700">
@@ -308,40 +420,39 @@ const Dashboard: React.FC<DashboardProps> = ({
                              const session = sessions.find(s => s.id === booking.sessionId);
                              return (
                                  <tr key={booking.id} className="hover:bg-orange-50/50 dark:hover:bg-orange-900/10 transition-colors">
-                                     <td className="px-4 py-2">
-                                         <div className="text-sm font-bold text-slate-900 dark:text-slate-200">{booking.employee.name}</div>
-                                         <div className="text-xs text-slate-500 dark:text-gray-400">{booking.employee.company}</div>
+                                     <td className="px-4 py-3">
+                                         <div className="text-sm font-black text-slate-900 dark:text-slate-200">{booking.employee.name}</div>
+                                         <div className="text-xs text-slate-500 dark:text-gray-400 font-mono">{booking.employee.company} • {booking.employee.recordId}</div>
                                      </td>
-                                     <td className="px-4 py-2">
-                                         <div className="text-sm text-slate-700 dark:text-slate-300">
+                                     <td className="px-4 py-3">
+                                         <span className="inline-block bg-orange-100 dark:bg-orange-900/40 text-orange-800 dark:text-orange-200 px-2 py-1 rounded text-xs font-bold border border-orange-200 dark:border-orange-800">
                                             {session ? session.racType : booking.sessionId}
-                                         </div>
+                                         </span>
                                      </td>
-                                     <td className="px-4 py-2">
-                                         <div className="text-sm font-mono text-slate-700 dark:text-slate-300">
+                                     <td className="px-4 py-3">
+                                         <div className="text-sm font-bold text-slate-700 dark:text-slate-300">
                                             {session ? session.date : 'TBD'}
                                          </div>
                                          <div className="text-xs text-slate-500 dark:text-gray-400">
                                             {session ? session.startTime : ''}
                                          </div>
                                      </td>
-                                     <td className="px-4 py-2 text-right">
+                                     <td className="px-4 py-3 text-right">
                                          <div className="flex justify-end gap-2">
                                             <button 
                                                 onClick={() => onApproveAutoBooking(booking.id)} 
-                                                className="flex items-center gap-1 px-2 py-1 bg-green-50 text-green-700 dark:bg-green-900/30 dark:text-green-400 rounded hover:bg-green-100 dark:hover:bg-green-900/50 border border-green-200 dark:border-green-800 transition-colors"
+                                                className="flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-500 text-white rounded-lg shadow-md hover:shadow-lg transition-all transform hover:-translate-y-0.5"
                                                 title="Approve Booking"
                                             >
-                                                <CheckCircle size={14} />
+                                                <CheckCircle size={16} />
                                                 <span className="text-xs font-bold">Approve</span>
                                             </button>
                                             <button 
                                                 onClick={() => onRejectAutoBooking(booking.id)} 
-                                                className="flex items-center gap-1 px-2 py-1 bg-red-50 text-red-700 dark:bg-red-900/30 dark:text-red-400 rounded hover:bg-red-100 dark:hover:bg-red-900/50 border border-red-200 dark:border-red-800 transition-colors"
+                                                className="flex items-center gap-1 px-3 py-2 bg-white text-red-600 border border-red-200 rounded-lg hover:bg-red-50 transition-colors"
                                                 title="Reject & Delete"
                                             >
-                                                <XCircle size={14} />
-                                                <span className="text-xs font-bold">Reject</span>
+                                                <XCircle size={16} />
                                             </button>
                                          </div>
                                      </td>
@@ -419,7 +530,7 @@ const Dashboard: React.FC<DashboardProps> = ({
                    <h3 className="font-bold text-slate-800 dark:text-white text-lg">{t.dashboard.booked.title}</h3>
                 </div>
                 <div className="text-xs text-gray-400">
-                  {filteredEmployeeBookings.length} records
+                  {finalFilteredBookings.length} records
                 </div>
              </div>
              
@@ -466,14 +577,14 @@ const Dashboard: React.FC<DashboardProps> = ({
                    </tr>
                 </thead>
                 <tbody className="bg-white dark:bg-slate-800 divide-y divide-gray-200 dark:divide-slate-700">
-                   {filteredEmployeeBookings.length === 0 ? (
+                   {finalFilteredBookings.length === 0 ? (
                       <tr>
                         <td colSpan={6} className="px-6 py-8 text-center text-gray-400 dark:text-gray-500 text-sm">
                           {t.dashboard.booked.noData}
                         </td>
                       </tr>
                    ) : (
-                      filteredEmployeeBookings.map((item) => (
+                      finalFilteredBookings.map((item) => (
                         <tr key={item.id} className="hover:bg-slate-50 dark:hover:bg-slate-700/50">
                            <td className="px-3 py-2 whitespace-nowrap text-xs font-mono text-black dark:text-gray-400">
                              {String(item.employee.recordId)}

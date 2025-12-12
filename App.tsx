@@ -69,6 +69,10 @@ const App: React.FC = () => {
     if (bookings.length === 0) {
         const generatedBookings: Booking[] = [];
         const generatedRequirements: EmployeeRequirement[] = [];
+        const today = new Date();
+
+        // Helper to format date
+        const fmtDate = (d: Date) => d.toISOString().split('T')[0];
         
         // 1. Create 8 FULLY GRANTED Employees (Perfect Batch)
         for (let i = 1; i <= 8; i++) {
@@ -86,24 +90,19 @@ const App: React.FC = () => {
                 isActive: true
             };
 
-            // Requirements: Standard RACs + New Operational Trainings (treated as RACs)
+            // Requirements
             generatedRequirements.push({
                 employeeId: empId,
                 asoExpiryDate: '2030-06-01', // Valid ASO
                 requiredRacs: { 
-                    'RAC01': true, 
-                    'RAC02': true,
-                    'PTS': true,     // Critical Ops Training
-                    'ART': true,     // Critical Ops Training
-                    'LIB_OPS': true, // Critical Ops Training
-                    'LIB_MOV': true  // Critical Ops Training
+                    'RAC01': true, 'RAC02': true, 'PTS': true, 'ART': true, 'LIB_OPS': true, 'LIB_MOV': true 
                 }
             });
 
             // Booking 1: RAC 01 (Passed, Valid)
             generatedBookings.push({
                 id: uuidv4(),
-                sessionId: 'S001', // Mapped to RAC01 in constants
+                sessionId: 'S001', 
                 employee: { ...employee },
                 status: BookingStatus.PASSED,
                 attendance: true,
@@ -111,120 +110,128 @@ const App: React.FC = () => {
                 resultDate: '2024-01-15',
                 expiryDate: '2026-01-15'
             });
-
-            // Booking 2: RAC 02 (Passed, Valid, DL Verified)
-            generatedBookings.push({
-                id: uuidv4(),
-                sessionId: 'S002', // Mapped to RAC02 in constants
-                employee: { ...employee },
-                status: BookingStatus.PASSED,
-                attendance: true,
-                theoryScore: 90,
-                practicalScore: 95,
-                driverLicenseVerified: true,
-                resultDate: '2024-02-20',
-                expiryDate: '2026-02-20'
-            });
-
-            // Booking 3: PTS (Ops) - Valid 2 Years
-            generatedBookings.push({
-                id: uuidv4(),
-                sessionId: 'PTS - Permit To Work',
-                employee: { ...employee },
-                status: BookingStatus.PASSED,
-                attendance: true,
-                resultDate: '2024-03-01',
-                expiryDate: '2026-03-01'
-            });
-
-            // Booking 4: ART (Ops) - Valid 2 Years
-            generatedBookings.push({
-                id: uuidv4(),
-                sessionId: 'ART - Análise de Risco',
-                employee: { ...employee },
-                status: BookingStatus.PASSED,
-                attendance: true,
-                resultDate: '2024-03-05',
-                expiryDate: '2026-03-05'
-            });
-
-            // Booking 5: LIB_OPS (Ops) - Valid 2 Years
-            generatedBookings.push({
-                id: uuidv4(),
-                sessionId: 'LIB_OPS - Liberação Operacional',
-                employee: { ...employee },
-                status: BookingStatus.PASSED,
-                attendance: true,
-                resultDate: '2024-03-10',
-                expiryDate: '2026-03-10'
-            });
-
-            // Booking 6: LIB_MOV (Ops) - Valid 2 Years
-            generatedBookings.push({
-                id: uuidv4(),
-                sessionId: 'LIB_MOV - Liberação de Movimentação',
-                employee: { ...employee },
-                status: BookingStatus.PASSED,
-                attendance: true,
-                resultDate: '2024-03-12',
-                expiryDate: '2026-03-12'
-            });
         }
 
-        // 2. Create Mixed/Expired Employees
-        for (let i = 9; i <= 20; i++) {
-            const empId = `emp-${i}`;
-            const employee: Employee = {
-                id: empId,
-                name: `Employee ${i}`,
-                recordId: `VUL-${1000 + i}`,
-                company: COMPANIES[i % COMPANIES.length],
-                department: DEPARTMENTS[i % DEPARTMENTS.length],
-                role: ROLES[i % ROLES.length],
+        // --- SCENARIO 1: EXPIRING SOON (< 30 Days) ---
+        // This triggers the Yellow Alert on Dashboard
+        const expiringEmployees = [
+            { name: 'Joao Silva', days: 12 },
+            { name: 'Maria Santos', days: 18 },
+            { name: 'Pedro Jose', days: 25 }
+        ];
+
+        expiringEmployees.forEach((u, i) => {
+            const id = `exp-user-${i}`;
+            const expDate = new Date(today);
+            expDate.setDate(today.getDate() + u.days); // Expiring in X days
+
+            const emp: Employee = {
+                id,
+                name: u.name,
+                recordId: `EXP-${100 + i}`,
+                company: 'Vulcan Mining',
+                department: 'HSE',
+                role: 'Technician',
                 isActive: true
             };
 
-            const isExpiredAso = i % 3 === 0;
-            
             generatedRequirements.push({
-                employeeId: empId,
-                asoExpiryDate: isExpiredAso ? '2023-01-01' : '2030-01-01',
+                employeeId: id,
+                asoExpiryDate: '2026-01-01',
                 requiredRacs: { 'RAC01': true }
             });
 
-            // Booking: Either Pending or Expired
+            // Booking is PASSED but expiryDate is close
             generatedBookings.push({
                 id: uuidv4(),
-                sessionId: 'S006', // RAC01
-                employee: { ...employee },
-                status: i % 2 === 0 ? BookingStatus.PENDING : BookingStatus.PASSED,
-                attendance: i % 2 !== 0,
-                theoryScore: i % 2 !== 0 ? 80 : undefined,
-                resultDate: '2022-01-01',
-                expiryDate: '2023-01-01' // Expired
+                sessionId: 'S001', // RAC 01
+                employee: emp,
+                status: BookingStatus.PASSED,
+                resultDate: '2023-01-01', // Old result
+                expiryDate: fmtDate(expDate), // Expiring soon
+                attendance: true,
+                theoryScore: 88
+            });
+        });
+
+
+        // --- SCENARIO 2: AUTO-BOOKED (< 7 Days) ---
+        // This triggers the Orange Table on Dashboard
+        
+        // 1. Paulo Manjate (Original)
+        const pauloEmp: Employee = {
+            id: 'emp-scenario-01',
+            name: 'Paulo Manjate',
+            recordId: 'VUL-9999',
+            company: 'Vulcan Mining',
+            department: 'Mine Operations',
+            role: 'Heavy Equipment Operator',
+            isActive: true,
+            driverLicenseNumber: 'DL-98765432',
+            driverLicenseClass: 'G (Heavy)',
+            driverLicenseExpiry: '2025-12-31'
+        };
+        generatedRequirements.push({
+            employeeId: pauloEmp.id,
+            asoExpiryDate: '2026-01-01',
+            requiredRacs: { 'RAC02': true }
+        });
+        generatedBookings.push({
+            id: uuidv4(),
+            sessionId: 'S005', // RAC02 Future
+            employee: pauloEmp,
+            status: BookingStatus.PENDING,
+            isAutoBooked: true
+        });
+
+        // 2. Three Additional Auto-Bookings
+        const autoBookingGroup = [
+            { name: 'Sofia Machel', rac: 'RAC01', session: 'S006', rec: 'VUL-8801' },
+            { name: 'Carlos Tamele', rac: 'RAC05', session: 'S003', rec: 'VUL-8802' },
+            { name: 'Ana Langa', rac: 'RAC08', session: 'S004', rec: 'VUL-8803' }
+        ];
+
+        autoBookingGroup.forEach((u, i) => {
+            const emp: Employee = {
+                id: `auto-${i}`,
+                name: u.name,
+                recordId: u.rec,
+                company: 'Global Logistics',
+                department: 'Logistics',
+                role: 'Driver',
+                isActive: true
+            };
+            
+            // Map requirement
+            const racKey = u.rac; 
+            generatedRequirements.push({
+                employeeId: emp.id,
+                asoExpiryDate: '2026-01-01',
+                requiredRacs: { [racKey]: true }
             });
 
-            // DEMO SPECIFIC: Add a Pending RAC02 Booking for Employee 9 to test DL Verification
-            if (i === 9) {
-                generatedBookings.push({
-                    id: uuidv4(),
-                    sessionId: 'S012', // RAC02 - Jane Smith (Pending)
-                    employee: { ...employee, driverLicenseNumber: 'DL-TEST-999', driverLicenseClass: 'C', driverLicenseExpiry: '2026-01-01' },
-                    status: BookingStatus.PENDING,
-                    attendance: false,
-                    driverLicenseVerified: false
-                });
-                
-                // Update requirement to require RAC02
-                const reqIdx = generatedRequirements.findIndex(r => r.employeeId === empId);
-                if (reqIdx >= 0) {
-                    generatedRequirements[reqIdx].requiredRacs['RAC02'] = true;
-                }
-            }
-        }
+            // Create Auto Booking
+            generatedBookings.push({
+                id: uuidv4(),
+                sessionId: u.session,
+                employee: emp,
+                status: BookingStatus.PENDING,
+                isAutoBooked: true
+            });
+        });
 
         setBookings(generatedBookings);
         setRequirements(generatedRequirements);
+        
+        // Push notification immediately
+        setNotifications(prev => [{
+            id: uuidv4(),
+            type: 'alert',
+            title: 'Auto-Booking Engine Active',
+            message: 'Detected 4 critical employees expiring in < 7 days. Auto-booked slots to prevent site lockout.',
+            timestamp: new Date(),
+            isRead: false
+        }]);
     }
   }, []);
 
@@ -354,6 +361,15 @@ const App: React.FC = () => {
 
   const onApproveAutoBooking = (bookingId: string) => {
       setBookings(prev => prev.map(b => b.id === bookingId ? { ...b, isAutoBooked: false, status: BookingStatus.PENDING } : b));
+      // Notify
+      addNotification({
+          id: uuidv4(),
+          type: 'success',
+          title: 'Booking Approved',
+          message: 'Employee confirmed for training. Notification sent to Dept Manager.',
+          timestamp: new Date(),
+          isRead: false
+      });
   };
 
   const onRejectAutoBooking = (bookingId: string) => {
@@ -369,7 +385,7 @@ const App: React.FC = () => {
               <Route path="/" element={
                   userRole === UserRole.USER 
                     ? <Navigate to="/manuals" replace /> 
-                    : <Dashboard bookings={bookings} requirements={requirements} sessions={sessions} userRole={userRole} onApproveAutoBooking={onApproveAutoBooking} onRejectAutoBooking={onRejectAutoBooking} />
+                    : <Dashboard bookings={bookings} requirements={requirements} sessions={sessions} userRole={userRole} onApproveAutoBooking={onApproveAutoBooking} onRejectAutoBooking={onRejectAutoBooking} racDefinitions={racDefinitions} />
               } />
               
               {/* Database is RESTRICTED for General User and RAC Trainer */}
@@ -383,7 +399,7 @@ const App: React.FC = () => {
               <Route path="/reports" element={[UserRole.SYSTEM_ADMIN, UserRole.RAC_ADMIN, UserRole.DEPT_ADMIN].includes(userRole) ? <ReportsPage bookings={bookings} sessions={sessions} /> : <Navigate to="/" replace />} />
               
               {/* Booking is RESTRICTED for RAC Trainer */}
-              <Route path="/booking" element={userRole === UserRole.RAC_TRAINER ? <Navigate to="/" replace /> : <BookingForm addBookings={addBookings} sessions={sessions} userRole={userRole} existingBookings={bookings} addNotification={addNotification} currentEmployeeId={currentEmployeeId} />} />
+              <Route path="/booking" element={userRole === UserRole.RAC_TRAINER ? <Navigate to="/" replace /> : <BookingForm addBookings={addBookings} sessions={sessions} userRole={userRole} existingBookings={bookings} addNotification={addNotification} currentEmployeeId={currentEmployeeId} requirements={requirements} />} />
               
               <Route path="/trainer-input" element={
                   [UserRole.SYSTEM_ADMIN, UserRole.RAC_ADMIN, UserRole.RAC_TRAINER].includes(userRole) 
