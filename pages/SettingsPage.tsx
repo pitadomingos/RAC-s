@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { Settings, Users, Box, Save, Plus, Trash2, Tag, Edit2, Check, X, AlertCircle, Sliders, MapPin, User as UserIcon, Hash, LayoutGrid, Building2, Map, ShieldCheck, Mail, Palette, Briefcase } from 'lucide-react';
+import { Settings, Users, Box, Save, Plus, Trash2, Tag, Edit2, Check, X, AlertCircle, Sliders, MapPin, User as UserIcon, Hash, LayoutGrid, Building2, Map, ShieldCheck, Mail, Palette, Briefcase, GraduationCap } from 'lucide-react';
 import { RacDef, Room, Trainer, Site, Company, UserRole, User, SystemNotification } from '../types';
 import { v4 as uuidv4 } from 'uuid';
 import { logger } from '../utils/logger';
@@ -87,8 +87,6 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
   const handleAddContractor = () => {
       if (!newContractor.trim() || !onUpdateCompanies) return;
       // Find current enterprise (mock: c1 for demo if not SysAdmin)
-      // In a real app, we'd get the ID from context.
-      // Assuming 'c1' is the active enterprise for Enterprise Admin in this demo flow.
       const activeEntId = 'c1'; 
       const activeEnt = companies.find(c => c.id === activeEntId);
       
@@ -313,8 +311,8 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
   const deleteRac = (id: string) => {
       setConfirmState({
           isOpen: true,
-          title: 'Delete RAC Definition?',
-          message: 'Warning: Deleting this RAC Definition will affect the database matrix columns. Are you sure?',
+          title: 'Delete Training Module?',
+          message: 'Warning: Deleting this Training Definition will remove it from the Booking and Reporting system. Are you sure?',
           onConfirm: () => onUpdateRacs(racDefinitions.filter(r => r.id !== id)),
           isDestructive: true
       });
@@ -411,10 +409,10 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
                                 : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700/50 hover:text-slate-900 dark:hover:text-white'}
                         `}
                     >
-                        <Tag size={20} className={activeTab === 'RACs' ? 'text-white' : 'text-slate-400 group-hover:text-emerald-500 transition-colors'} />
+                        <GraduationCap size={20} className={activeTab === 'RACs' ? 'text-white' : 'text-slate-400 group-hover:text-emerald-500 transition-colors'} />
                         <div className="flex flex-col">
-                            <span>{t.settings.tabs.racs}</span>
-                            <span className={`text-[10px] font-normal ${activeTab === 'RACs' ? 'text-emerald-100' : 'text-slate-400'}`}>Module Definitions</span>
+                            <span>Training Modules</span>
+                            <span className={`text-[10px] font-normal ${activeTab === 'RACs' ? 'text-emerald-100' : 'text-slate-400'}`}>Add/Remove Modules</span>
                         </div>
                     </button>
 
@@ -727,8 +725,8 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
                         <div className="max-w-4xl mx-auto animate-fade-in">
                             <div className="flex justify-between items-end mb-6">
                                 <div>
-                                    <h3 className="text-xl font-bold text-slate-900 dark:text-white">{t.settings.racs.title}</h3>
-                                    <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">Define training modules. Changes here affect the database matrix.</p>
+                                    <h3 className="text-xl font-bold text-slate-900 dark:text-white">Training Modules (RACs)</h3>
+                                    <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">Define training modules here. These will appear in dropdowns for Booking and Reporting.</p>
                                 </div>
                             </div>
                             
@@ -740,7 +738,7 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
                                     </label>
                                     <input 
                                         className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-xl p-3 text-sm font-mono font-semibold focus:ring-2 focus:ring-emerald-500 outline-none text-slate-800 dark:text-white placeholder-slate-400 transition-all uppercase" 
-                                        placeholder="RAC11" 
+                                        placeholder="RAC12" 
                                         value={newRac.code}
                                         onChange={(e) => setNewRac({...newRac, code: e.target.value})}
                                     />
@@ -751,16 +749,16 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
                                     </label>
                                     <input 
                                         className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-xl p-3 text-sm font-semibold focus:ring-2 focus:ring-emerald-500 outline-none text-slate-800 dark:text-white placeholder-slate-400 transition-all" 
-                                        placeholder="Hazard Description" 
+                                        placeholder="e.g. Hazardous Materials" 
                                         value={newRac.name}
                                         onChange={(e) => setNewRac({...newRac, name: e.target.value})}
                                     />
                                 </div>
                                 <button 
                                     onClick={handleAddRac}
-                                    className="w-full md:w-auto bg-slate-900 dark:bg-emerald-600 text-white p-3 rounded-xl hover:bg-slate-800 dark:hover:bg-emerald-500 transition-all shadow-lg hover:shadow-xl active:scale-95 flex items-center justify-center"
+                                    className="w-full md:w-auto bg-slate-900 dark:bg-emerald-600 text-white p-3 rounded-xl hover:bg-slate-800 dark:hover:bg-emerald-500 transition-all shadow-lg hover:shadow-xl active:scale-95 flex items-center justify-center gap-2"
                                 >
-                                    <Plus size={20} />
+                                    <Plus size={20} /> <span className="md:hidden font-bold">Add Module</span>
                                 </button>
                             </div>
 

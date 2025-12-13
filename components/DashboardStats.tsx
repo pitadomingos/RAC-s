@@ -4,7 +4,7 @@ import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, 
   PieChart, Pie, Cell, Legend
 } from 'recharts';
-import { Booking, BookingStatus, EmployeeRequirement } from '../types';
+import { Booking, BookingStatus, EmployeeRequirement, RacDef } from '../types';
 import { MOCK_SESSIONS, RAC_KEYS } from '../constants';
 import { AlertTriangle, Users, CheckCircle, Clock, Activity, ShieldAlert } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
@@ -14,14 +14,18 @@ interface DashboardStatsProps {
   bookings: Booking[];
   requirements: EmployeeRequirement[];
   onBookRenewals?: () => void;
+  racDefinitions?: RacDef[];
 }
 
 // Fixed colors by index: 0 = Compliant (Green), 1 = Non-Compliant (Red)
 const PIE_COLORS = ['#059669', '#ef4444'];
 
-const DashboardStats: React.FC<DashboardStatsProps> = ({ bookings, requirements, onBookRenewals }) => {
+const DashboardStats: React.FC<DashboardStatsProps> = ({ bookings, requirements, onBookRenewals, racDefinitions = [] }) => {
   const navigate = useNavigate();
   const { t } = useLanguage();
+
+  // Determine which keys to use (Dynamic or Static Fallback)
+  const activeKeys = racDefinitions.length > 0 ? racDefinitions.map(d => d.code) : RAC_KEYS;
 
   // 1. Basic Counts
   const passed = bookings.filter(b => b.status === BookingStatus.PASSED).length;
@@ -57,7 +61,7 @@ const DashboardStats: React.FC<DashboardStatsProps> = ({ bookings, requirements,
   // Store data for Stacked Bar Chart (By RAC)
   // Format: { 'RAC01': { required: 10, compliant: 8 }, ... }
   const racComplianceStats: Record<string, { required: number, compliant: number, missing: number }> = {};
-  RAC_KEYS.forEach(k => racComplianceStats[k] = { required: 0, compliant: 0, missing: 0 });
+  activeKeys.forEach(k => racComplianceStats[k] = { required: 0, compliant: 0, missing: 0 });
 
   uniqueEmployeeIds.forEach(empId => {
     // Get Req
@@ -76,10 +80,12 @@ const DashboardStats: React.FC<DashboardStatsProps> = ({ bookings, requirements,
     // Check RACs
     let allRacsMet = true;
     
-    RAC_KEYS.forEach(racKey => {
+    activeKeys.forEach(racKey => {
        const isRequired = req.requiredRacs[racKey];
        if (isRequired) {
-         racComplianceStats[racKey].required++;
+         if (racComplianceStats[racKey]) {
+             racComplianceStats[racKey].required++;
+         }
          
          // Check if they have a passed booking
          const hasTraining = bookings.some(b => {
@@ -90,15 +96,18 @@ const DashboardStats: React.FC<DashboardStatsProps> = ({ bookings, requirements,
              // Resolve Session Name to RAC Key
              const session = MOCK_SESSIONS.find(s => s.id === b.sessionId);
              const sessionName = session ? session.racType : b.sessionId;
-             const bookingRacKey = sessionName.split(' - ')[0].replace(' ', ''); // "RAC 01" -> "RAC01"
+             // Handle various formats: "RAC 01 - ...", "RAC01", "RAC01|..."
+             let bookingRacKey = sessionName.split(' - ')[0];
+             if (bookingRacKey.includes('|')) bookingRacKey = bookingRacKey.split('|')[0];
+             bookingRacKey = bookingRacKey.replace(/\(imp\)/gi, '').replace(/\s+/g, '').toUpperCase();
              
              return bookingRacKey === racKey;
          });
 
          if (hasTraining) {
-            racComplianceStats[racKey].compliant++;
+            if (racComplianceStats[racKey]) racComplianceStats[racKey].compliant++;
          } else {
-            racComplianceStats[racKey].missing++;
+            if (racComplianceStats[racKey]) racComplianceStats[racKey].missing++;
             allRacsMet = false;
          }
        }
@@ -124,11 +133,11 @@ const DashboardStats: React.FC<DashboardStatsProps> = ({ bookings, requirements,
         Compliant: asoCompliant,
         Missing: asoMissing
     },
-    ...RAC_KEYS.map(key => ({
+    ...activeKeys.map(key => ({
         name: key,
-        Compliant: racComplianceStats[key].compliant,
-        Missing: racComplianceStats[key].missing
-    }))
+        Compliant: racComplianceStats[key]?.compliant || 0,
+        Missing: racComplianceStats[key]?.missing || 0
+    })).filter(d => (d.Compliant + d.Missing) > 0) // Only show RACs that have requirements
   ];
 
   // Adherence %

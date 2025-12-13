@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { Booking, BookingStatus, UserRole, TrainingSession, Employee, EmployeeRequirement } from '../types';
+import { Booking, BookingStatus, UserRole, TrainingSession, Employee, EmployeeRequirement, RacDef } from '../types';
 import { 
   Upload, FileSpreadsheet, Search, Filter, Download, 
   CheckCircle2, XCircle, Award, Users, TrendingUp,
@@ -20,9 +20,10 @@ interface ResultsPageProps {
   userRole: UserRole;
   sessions: TrainingSession[];
   currentEmployeeId?: string;
+  racDefinitions: RacDef[];
 }
 
-const ResultsPage: React.FC<ResultsPageProps> = ({ bookings, updateBookingStatus, importBookings, userRole, sessions, currentEmployeeId }) => {
+const ResultsPage: React.FC<ResultsPageProps> = ({ bookings, updateBookingStatus, importBookings, userRole, sessions, currentEmployeeId, racDefinitions = [] }) => {
   const [searchParams] = useSearchParams();
   const initialQuery = searchParams.get('q') || '';
   const [filter, setFilter] = useState(initialQuery);
@@ -493,7 +494,12 @@ const ResultsPage: React.FC<ResultsPageProps> = ({ bookings, updateBookingStatus
                         </div>
                         <div className="relative flex-1 min-w-[120px]">
                             <select className="w-full pl-3 pr-8 py-2 bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg text-sm font-medium text-black dark:text-gray-300 outline-none focus:ring-2 focus:ring-blue-500 appearance-none cursor-pointer" value={racFilter} onChange={(e) => setRacFilter(e.target.value)}>
-                                <option value="All">All RACs</option>{RAC_KEYS.map(r => <option key={r} value={r}>{r}</option>)}
+                                <option value="All">All RACs</option>
+                                {racDefinitions.length > 0 ? (
+                                    racDefinitions.map(def => <option key={def.code} value={def.code}>{def.code}</option>)
+                                ) : (
+                                    RAC_KEYS.map(r => <option key={r} value={r}>{r}</option>)
+                                )}
                             </select>
                             <Filter size={14} className="absolute right-3 top-2.5 text-slate-400 pointer-events-none" />
                         </div>

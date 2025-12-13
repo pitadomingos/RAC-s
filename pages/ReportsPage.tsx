@@ -1,6 +1,5 @@
-
 import React, { useState, useMemo } from 'react';
-import { Booking, BookingStatus, TrainingSession } from '../types';
+import { Booking, BookingStatus, TrainingSession, RacDef } from '../types';
 import { DEPARTMENTS, RAC_KEYS } from '../constants';
 import { generateSafetyReport } from '../services/geminiService';
 import { 
@@ -17,13 +16,14 @@ import { useLanguage } from '../contexts/LanguageContext';
 interface ReportsPageProps {
   bookings: Booking[];
   sessions: TrainingSession[];
+  racDefinitions: RacDef[];
 }
 
-type ReportPeriod = 'Weekly' | 'Monthly' | 'YTD' | 'Custom';
+type ReportPeriod = 'Weekly' | 'Monthly' | 'YTD' | 'Custom' | 'All Time';
 
-const ReportsPage: React.FC<ReportsPageProps> = ({ bookings, sessions }) => {
+const ReportsPage: React.FC<ReportsPageProps> = ({ bookings, sessions, racDefinitions }) => {
   const { t, language } = useLanguage();
-  const [period, setPeriod] = useState<ReportPeriod>('Monthly');
+  const [period, setPeriod] = useState<ReportPeriod>('All Time');
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const [selectedDept, setSelectedDept] = useState('All');
@@ -76,12 +76,18 @@ const ReportsPage: React.FC<ReportsPageProps> = ({ bookings, sessions }) => {
        start = `${today.getFullYear()}-01-01`;
        end = today.toISOString().split('T')[0];
     }
+    // 'All Time' leaves start/end as empty or ignored strings
 
     return bookings.filter(b => {
        const bDate = getBookingDate(b);
-       if (!bDate) return false;
-       if (start && bDate < start) return false;
-       if (end && bDate > end) return false;
+       
+       // Only filter by date if NOT 'All Time' and bDate exists
+       if (period !== 'All Time') {
+           if (!bDate) return false;
+           if (start && bDate < start) return false;
+           if (end && bDate > end) return false;
+       }
+
        if (selectedDept !== 'All' && b.employee.department !== selectedDept) return false;
        if (selectedRac !== 'All' && getRacCode(b) !== selectedRac) return false;
        // Site Filter
@@ -218,6 +224,7 @@ const ReportsPage: React.FC<ReportsPageProps> = ({ bookings, sessions }) => {
                      onChange={(e) => setPeriod(e.target.value as ReportPeriod)}
                      className="w-full bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 text-slate-900 dark:text-white rounded-xl px-4 py-2.5 text-sm font-bold focus:ring-2 focus:ring-blue-500 outline-none appearance-none cursor-pointer hover:bg-white dark:hover:bg-slate-600 transition-colors"
                    >
+                      <option value="All Time">All Time</option>
                       <option value="Weekly">{t.reports.periods.weekly}</option>
                       <option value="Monthly">{t.reports.periods.monthly}</option>
                       <option value="YTD">{t.reports.periods.ytd}</option>
@@ -274,7 +281,10 @@ const ReportsPage: React.FC<ReportsPageProps> = ({ bookings, sessions }) => {
                 <div className="relative">
                     <select value={selectedRac} onChange={(e) => setSelectedRac(e.target.value)} className="w-full bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 text-slate-900 dark:text-white rounded-xl px-4 py-2.5 text-sm font-bold focus:ring-2 focus:ring-blue-500 outline-none appearance-none cursor-pointer">
                         <option value="All">{t.common.all}</option>
-                        {RAC_KEYS.map(r => <option key={r} value={r}>{r}</option>)}
+                        {racDefinitions.length > 0 ? (
+                            racDefinitions.map(def => <option key={def.code} value={def.code}>{def.code}</option>)
+                        ) : (
+                            RAC_KEYS.map(r => <option key={r} value={r}>{r}</option>)}
                     </select>
                     <Filter className="absolute right-3 top-2.5 text-slate-400" size={16} />
                 </div>

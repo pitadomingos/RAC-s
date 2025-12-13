@@ -1,8 +1,7 @@
 
 import React, { useState } from 'react';
-import { TrainingSession, Room, Trainer } from '../types';
-import { RAC_KEYS } from '../constants';
-import { Calendar, Plus, Settings, X, Save, Clock, MapPin, User, CalendarDays, ChevronLeft, ChevronRight, Globe, Trash2, Search, Filter } from 'lucide-react';
+import { TrainingSession, Room, Trainer, RacDef } from '../types';
+import { Calendar, Plus, Settings, X, Save, Clock, MapPin, User, CalendarDays, ChevronLeft, ChevronRight, Globe, Trash2, Search } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { v4 as uuidv4 } from 'uuid';
 import { useLanguage } from '../contexts/LanguageContext';
@@ -13,9 +12,10 @@ interface ScheduleTrainingProps {
     setSessions: React.Dispatch<React.SetStateAction<TrainingSession[]>>;
     rooms: Room[];
     trainers: Trainer[];
+    racDefinitions: RacDef[];
 }
 
-const ScheduleTraining: React.FC<ScheduleTrainingProps> = ({ sessions, setSessions, rooms, trainers }) => {
+const ScheduleTraining: React.FC<ScheduleTrainingProps> = ({ sessions, setSessions, rooms, trainers, racDefinitions }) => {
   const navigate = useNavigate();
   const { t } = useLanguage();
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -23,7 +23,7 @@ const ScheduleTraining: React.FC<ScheduleTrainingProps> = ({ sessions, setSessio
   
   // New Session State
   const [newSession, setNewSession] = useState<Partial<TrainingSession>>({
-      racType: 'RAC01 - Working at Height',
+      racType: racDefinitions[0]?.code ? `${racDefinitions[0].code} - ${racDefinitions[0].name}` : '',
       date: '',
       startTime: '08:00',
       location: '',
@@ -294,7 +294,9 @@ const ScheduleTraining: React.FC<ScheduleTrainingProps> = ({ sessions, setSessio
                                 value={String(newSession.racType)}
                                 onChange={e => setNewSession({...newSession, racType: e.target.value})}
                             >
-                                {RAC_KEYS.map(k => <option key={String(k)} value={`${k} - General`}>{String(k)}</option>)}
+                                {racDefinitions.map(def => (
+                                    <option key={def.id} value={`${def.code} - ${def.name}`}>{def.code} - {def.name}</option>
+                                ))}
                             </select>
                             <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
                                 <ChevronRight size={16} className="rotate-90" />

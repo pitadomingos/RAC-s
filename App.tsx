@@ -10,6 +10,7 @@ import {
 } from './types';
 import { MOCK_SESSIONS, INITIAL_RAC_DEFINITIONS, COMPANIES, DEPARTMENTS, ROLES, RAC_KEYS } from './constants';
 import { v4 as uuidv4 } from 'uuid';
+import { requestNotificationPermission, sendBrowserNotification } from './utils/browserNotifications';
 
 // Lazy Load Pages
 const Dashboard = lazy(() => import('./pages/Dashboard'));
@@ -114,6 +115,12 @@ const App: React.FC = () => {
 
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [requirements, setRequirements] = useState<EmployeeRequirement[]>([]);
+
+  // Initialize System
+  useEffect(() => {
+      // Request notification permission immediately on load
+      requestNotificationPermission();
+  }, []);
 
   // Initialize REAL WORLD SCENARIO Data
   useEffect(() => {
@@ -288,14 +295,15 @@ const App: React.FC = () => {
         setBookings(generatedBookings);
         setRequirements(generatedRequirements);
         
-        setNotifications(prev => [{
+        // Initial Notification check
+        addNotification({
             id: uuidv4(),
             type: 'alert',
             title: 'Auto-Booking Engine Active',
             message: 'Detected critical expiry risks. Auto-booked slots created.',
             timestamp: new Date(),
             isRead: false
-        }]);
+        });
     }
   }, []);
 
@@ -337,14 +345,14 @@ const App: React.FC = () => {
           if (count > totalCapacity * 0.9) { 
               const existingNotif = notifications.find(n => n.title.includes('High Demand') && n.message.includes(racType));
               if (!existingNotif) {
-                  setNotifications(prev => [{
+                  addNotification({
                       id: uuidv4(),
                       type: 'alert',
                       title: 'High Training Demand Detected',
                       message: `High demand for ${racType} (${count} bookings). Capacity is low.`,
                       timestamp: new Date(),
                       isRead: false
-                  }, ...prev]);
+                  });
               }
           }
       });
@@ -359,7 +367,14 @@ const App: React.FC = () => {
   const clearNotifications = () => setNotifications([]);
 
   const addNotification = (n: SystemNotification) => {
+      // 1. Add to In-App State
       setNotifications(prev => [n, ...prev]);
+      
+      // 2. Trigger Browser System Notification
+      // Only for High Importance (Alert/Warning) or Success
+      if (n.type === 'alert' || n.type === 'warning' || n.type === 'success') {
+          sendBrowserNotification(n.title, n.message);
+      }
   };
 
   const syncRequirementsFromBookings = (bookingsToSync: Booking[]) => {
@@ -533,7 +548,8 @@ const App: React.FC = () => {
                   ? <SiteGovernancePage 
                       sites={sites} 
                       setSites={setSites} 
-                      racDefinitions={racDefinitions} 
+                      racDefinitions={racDefinitions}
+                      onUpdateRacs={setRacDefinitions}
                       bookings={bookings} 
                       requirements={requirements}
                       updateRequirements={updateRequirements}
@@ -561,7 +577,8 @@ const App: React.FC = () => {
                     : <DatabasePage bookings={filteredBookings} requirements={filteredRequirements} updateRequirements={updateRequirements} sessions={filteredSessions} onUpdateEmployee={onUpdateEmployee} onDeleteEmployee={onDeleteEmployee} racDefinitions={racDefinitions} contractors={currentContractors} />
               } />
               
-              <Route path="/reports" element={authorizedRoles.includes(userRole) ? <ReportsPage bookings={filteredBookings} sessions={filteredSessions} /> : <Navigate to="/" replace />} />
+              <Route path="/reports" element={authorizedRoles.includes(userRole) ? <ReportsPage bookings={filteredBookings} sessions={filteredSessions} racDefinitions={racDefinitions} /> : <Navigate to="/" replace />} />
+              
               <Route path="/booking" element={userRole === UserRole.RAC_TRAINER || userRole === UserRole.ENTERPRISE_ADMIN ? <Navigate to="/" replace /> : <BookingForm addBookings={addBookings} sessions={filteredSessions} userRole={userRole} existingBookings={filteredBookings} addNotification={addNotification} currentEmployeeId={currentEmployeeId} requirements={filteredRequirements} contractors={currentContractors} />} />
               
               <Route path="/trainer-input" element={
@@ -576,7 +593,7 @@ const App: React.FC = () => {
                   : <Navigate to="/" replace />
               } />
               
-              <Route path="/results" element={userRole === UserRole.RAC_TRAINER || userRole === UserRole.ENTERPRISE_ADMIN ? <Navigate to="/" replace /> : <ResultsPage bookings={filteredBookings} updateBookingStatus={updateBookingStatus} importBookings={importBookings} userRole={userRole} sessions={filteredSessions} currentEmployeeId={currentEmployeeId} />} />
+              <Route path="/results" element={userRole === UserRole.RAC_TRAINER || userRole === UserRole.ENTERPRISE_ADMIN ? <Navigate to="/" replace /> : <ResultsPage bookings={filteredBookings} updateBookingStatus={updateBookingStatus} importBookings={importBookings} userRole={userRole} sessions={filteredSessions} currentEmployeeId={currentEmployeeId} racDefinitions={racDefinitions} />} />
               
               <Route path="/proposal" element={userRole === UserRole.SYSTEM_ADMIN ? <ProjectProposal /> : <Navigate to="/" replace />} />
               <Route path="/presentation" element={userRole === UserRole.SYSTEM_ADMIN ? <PresentationPage /> : <Navigate to="/" replace />} />
@@ -588,7 +605,8 @@ const App: React.FC = () => {
               <Route path="/print-cards" element={authorizedRoles.concat(UserRole.USER).includes(userRole) && userRole !== UserRole.ENTERPRISE_ADMIN ? <CardsPage bookings={filteredBookings} requirements={filteredRequirements} racDefinitions={racDefinitions} sessions={filteredSessions} userRole={userRole} /> : <Navigate to="/" replace />} />
               
               <Route path="/users" element={userRole === UserRole.SYSTEM_ADMIN ? <UserManagement users={users} setUsers={setUsers} contractors={currentContractors} sites={sites} /> : <Navigate to="/" replace />} />
-              <Route path="/schedule" element={[UserRole.SYSTEM_ADMIN, UserRole.SITE_ADMIN].includes(userRole) ? <ScheduleTraining sessions={sessions} setSessions={setSessions} rooms={rooms} trainers={trainers} /> : <Navigate to="/" replace />} />
+              
+              <Route path="/schedule" element={[UserRole.SYSTEM_ADMIN, UserRole.SITE_ADMIN].includes(userRole) ? <ScheduleTraining sessions={sessions} setSessions={setSessions} rooms={rooms} trainers={trainers} racDefinitions={racDefinitions} /> : <Navigate to="/" replace />} />
               
               <Route path="/settings" element={[UserRole.SYSTEM_ADMIN, UserRole.ENTERPRISE_ADMIN].includes(userRole) ? 
                 <SettingsPage 

@@ -374,6 +374,7 @@ const Dashboard: React.FC<DashboardProps> = ({
             bookings={filteredBookingsForStats} 
             requirements={filteredRequirements} 
             onBookRenewals={handleBookRenewals}
+            racDefinitions={racDefinitions}
         />
       </div>
 
@@ -586,7 +587,11 @@ const Dashboard: React.FC<DashboardProps> = ({
                    className="text-xs border-gray-300 dark:border-slate-600 dark:bg-slate-700 text-black dark:text-white rounded focus:ring-blue-500 focus:border-blue-500 py-1"
                 >
                    <option value="All">All RACs</option>
-                   {RAC_KEYS.map(r => <option key={r} value={r}>{r}</option>)}
+                   {racDefinitions.length > 0 ? (
+                       racDefinitions.map(def => <option key={def.code} value={def.code}>{def.code}</option>)
+                   ) : (
+                       RAC_KEYS.map(r => <option key={r} value={r}>{r}</option>)
+                   )}
                 </select>
 
                 <input 

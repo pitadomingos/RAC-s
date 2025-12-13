@@ -1,5 +1,5 @@
 
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { Site, Booking, EmployeeRequirement, BookingStatus, UserRole, Company } from '../types';
 import { 
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, 
@@ -21,6 +21,15 @@ interface EnterpriseDashboardProps {
   userRole?: UserRole;
   contractors?: string[]; // Kept for legacy/Enterprise Admin view
   companies?: Company[]; // Passed from App.tsx for System Admin view
+}
+
+// Helper Type for Pre-Calculated Data
+interface AggregatedEmployee {
+    id: string;
+    company: string;
+    dept: string;
+    siteId: string;
+    isCompliant: boolean;
 }
 
 const EnterpriseDashboard: React.FC<EnterpriseDashboardProps> = ({ 
@@ -46,6 +55,21 @@ const EnterpriseDashboard: React.FC<EnterpriseDashboardProps> = ({
   const [isGenerating, setIsGenerating] = useState(false);
   const [aiReport, setAiReport] = useState<string | null>(null);
 
+  // --- AUTO-SELECT TENANT FOR SIMULATION ---
+  // If user switches to Enterprise Admin, auto-select 'Vulcan' (c1) to simulate context
+  useEffect(() => {
+      if (userRole === UserRole.ENTERPRISE_ADMIN) {
+          // Find Vulcan or default to first company
+          const target = companies.find(c => c.name === 'Vulcan') || companies[0];
+          if (target && selectedTenantId === 'All') {
+              setSelectedTenantId(target.id);
+          }
+      } else if (userRole === UserRole.SYSTEM_ADMIN && selectedTenantId !== 'All') {
+          // Optional: Reset to All when switching back to System Admin
+          // setSelectedTenantId('All'); 
+      }
+  }, [userRole, companies]);
+
   // --- DERIVED LISTS (DYNAMIC) ---
 
   // 1. Available Contractors (Depends on Selected Tenant)
@@ -61,10 +85,12 @@ const EnterpriseDashboard: React.FC<EnterpriseDashboardProps> = ({
       }
   }, [companies, selectedTenantId]);
 
-  // --- FILTERING LOGIC ---
-  // Improved Logic: Source unique employees from Requirements first, then augment with Booking data.
-  const filteredEmployeeData = useMemo(() => {
-      const empMap = new Map<string, { id: string, company: string, dept: string, siteId: string }>();
+  // --- FILTERING & COMPLIANCE LOGIC (Unified Pipeline) ---
+  // Calculates compliance ONCE for every employee, then filters.
+  // This guarantees that if an employee is in the "Total", they have a compliance status attached.
+  const filteredEmployeeData = useMemo<AggregatedEmployee[]>(() => {
+      const empMap = new Map<string, AggregatedEmployee>();
+      const today = new Date().toISOString().split('T')[0];
       
       // 1. First pass: Get all unique employees from Requirements (The master list)
       requirements.forEach(req => {
@@ -76,15 +102,37 @@ const EnterpriseDashboard: React.FC<EnterpriseDashboardProps> = ({
           const dept = booking?.employee.department || 'Operations';
           const siteId = booking?.employee.siteId || 's1'; 
 
+          // --- COMPLIANCE CHECK ---
+          const isAsoValid = !!(req.asoExpiryDate && req.asoExpiryDate > today);
+          let allRacsMet = true;
+          Object.keys(req.requiredRacs).forEach(racKey => {
+              if (req.requiredRacs[racKey]) {
+                  const validBooking = bookings.find(b => {
+                      if (b.employee.id !== id) return false;
+                      if (b.status !== BookingStatus.PASSED) return false;
+                      if (!b.expiryDate || b.expiryDate <= today) return false;
+                      
+                      const bRacKey = b.sessionId.includes(' - ') ? b.sessionId.split(' - ')[0] : b.sessionId;
+                      return bRacKey.replace(/\s+/g, '') === racKey.replace(/\s+/g, '');
+                  });
+                  if (!validBooking) allRacsMet = false;
+              }
+          });
+          const isCompliant = isAsoValid && allRacsMet;
+
           // --- TENANT MATCHING LOGIC ---
           let belongsToSelectedTenant = true;
           if (selectedTenantId !== 'All') {
               const selectedTenant = companies.find(c => c.id === selectedTenantId);
               if (selectedTenant) {
-                  // Logic: Does this employee's company (e.g. "Elite Security") belong to the Selected Tenant (e.g. "Vulcan")?
                   const isDirect = selectedTenant.name === empCompany;
                   const isSub = (selectedTenant.subContractors || []).includes(empCompany);
-                  if (!isDirect && !isSub) belongsToSelectedTenant = false;
+                  
+                  // Loose matching
+                  const isDirectLoose = selectedTenant.name.toLowerCase() === empCompany.toLowerCase();
+                  const isSubLoose = (selectedTenant.subContractors || []).some(sc => sc.toLowerCase() === empCompany.toLowerCase());
+
+                  if (!isDirect && !isSub && !isDirectLoose && !isSubLoose) belongsToSelectedTenant = false;
               }
           }
 
@@ -93,101 +141,63 @@ const EnterpriseDashboard: React.FC<EnterpriseDashboardProps> = ({
           const matchesDept = selectedDept === 'All' || dept === selectedDept;
 
           if (belongsToSelectedTenant && matchesContractor && matchesSite && matchesDept) {
-              empMap.set(id, { id, company: empCompany, dept, siteId });
-          }
-      });
-
-      // 2. Second pass: Ensure any booking-only employees are caught
-      bookings.forEach(b => {
-          if (!empMap.has(b.employee.id)) {
-              const empCompany = b.employee.company;
-              
-              let belongsToSelectedTenant = true;
-              if (selectedTenantId !== 'All') {
-                  const selectedTenant = companies.find(c => c.id === selectedTenantId);
-                  if (selectedTenant) {
-                      const isDirect = selectedTenant.name === empCompany;
-                      const isSub = (selectedTenant.subContractors || []).includes(empCompany);
-                      if (!isDirect && !isSub) belongsToSelectedTenant = false;
-                  }
-              }
-
-              const matchesContractor = selectedContractor === 'All' || empCompany === selectedContractor;
-              const matchesSite = selectedSiteId === 'All' || (b.employee.siteId || 's1') === selectedSiteId;
-              const matchesDept = selectedDept === 'All' || b.employee.department === selectedDept;
-
-              if (belongsToSelectedTenant && matchesContractor && matchesSite && matchesDept) {
-                  empMap.set(b.employee.id, {
-                      id: b.employee.id,
-                      company: b.employee.company,
-                      dept: b.employee.department,
-                      siteId: b.employee.siteId || 's1'
-                  });
-              }
+              empMap.set(id, { id, company: empCompany, dept, siteId, isCompliant });
           }
       });
 
       return Array.from(empMap.values());
   }, [bookings, requirements, companies, selectedTenantId, selectedContractor, selectedSiteId, selectedDept]);
 
-  // 2. Calculate Compliance for Filtered Set
+  // 2. Calculate Compliance Stats (Aggregated from Filtered Data)
   const complianceStats = useMemo(() => {
-      const stats = {
-          total: filteredEmployeeData.length,
-          compliant: 0,
-          nonCompliant: 0,
-          byDept: {} as Record<string, { total: number, compliant: number }>,
-          byRac: {} as Record<string, { total: number, passed: number }>
-      };
+      let compliant = 0;
+      let nonCompliant = 0;
+      
+      const byDept: Record<string, { total: number, compliant: number }> = {};
+      const byRac: Record<string, { total: number, passed: number }> = {}; // Note: RAC breakdown is slightly different as it needs granularity
 
       filteredEmployeeData.forEach(emp => {
+          if (emp.isCompliant) compliant++;
+          else nonCompliant++;
+
+          // Dept Stats
+          if (!byDept[emp.dept]) byDept[emp.dept] = { total: 0, compliant: 0 };
+          byDept[emp.dept].total++;
+          if (emp.isCompliant) byDept[emp.dept].compliant++;
+      });
+
+      // Recalculate RAC specific stats (needs access to raw requirements/bookings but constrained to filtered employees)
+      const today = new Date().toISOString().split('T')[0];
+      filteredEmployeeData.forEach(emp => {
           const req = requirements.find(r => r.employeeId === emp.id);
-          
-          // Department Stats Init
-          if (!stats.byDept[emp.dept]) stats.byDept[emp.dept] = { total: 0, compliant: 0 };
-          stats.byDept[emp.dept].total++;
+          if (req) {
+              Object.keys(req.requiredRacs).forEach(racKey => {
+                  if (req.requiredRacs[racKey]) {
+                      if (!byRac[racKey]) byRac[racKey] = { total: 0, passed: 0 };
+                      byRac[racKey].total++;
 
-          if (!req) {
-              stats.nonCompliant++;
-              return;
-          }
+                      const validBooking = bookings.find(b => {
+                          if (b.employee.id !== emp.id) return false;
+                          if (b.status !== BookingStatus.PASSED) return false;
+                          if (!b.expiryDate || b.expiryDate <= today) return false;
+                          
+                          const bRacKey = b.sessionId.includes(' - ') ? b.sessionId.split(' - ')[0] : b.sessionId;
+                          return bRacKey.replace(/\s+/g, '') === racKey.replace(/\s+/g, '');
+                      });
 
-          const today = new Date().toISOString().split('T')[0];
-          const isAsoValid = !!(req.asoExpiryDate && req.asoExpiryDate > today);
-          let allRacsMet = true;
-
-          // Check RACs
-          Object.keys(req.requiredRacs).forEach(racKey => {
-              if (req.requiredRacs[racKey]) {
-                  if (!stats.byRac[racKey]) stats.byRac[racKey] = { total: 0, passed: 0 };
-                  stats.byRac[racKey].total++;
-
-                  const validBooking = bookings.find(b => {
-                      if (b.employee.id !== emp.id) return false;
-                      if (b.status !== BookingStatus.PASSED) return false;
-                      if (!b.expiryDate || b.expiryDate <= today) return false;
-                      
-                      const bRacKey = b.sessionId.includes(' - ') ? b.sessionId.split(' - ')[0] : b.sessionId;
-                      return bRacKey.replace(/\s+/g, '') === racKey.replace(/\s+/g, '');
-                  });
-
-                  if (validBooking) {
-                      stats.byRac[racKey].passed++;
-                  } else {
-                      allRacsMet = false;
+                      if (validBooking) byRac[racKey].passed++;
                   }
-              }
-          });
-
-          if (isAsoValid && allRacsMet) {
-              stats.compliant++;
-              stats.byDept[emp.dept].compliant++;
-          } else {
-              stats.nonCompliant++;
+              });
           }
       });
 
-      return stats;
+      return {
+          total: filteredEmployeeData.length,
+          compliant,
+          nonCompliant,
+          byDept,
+          byRac
+      };
   }, [filteredEmployeeData, requirements, bookings]);
 
   // 3. Platform Tenant Comparison (System Admin Only)
@@ -204,14 +214,13 @@ const EnterpriseDashboard: React.FC<EnterpriseDashboardProps> = ({
               const booking = bookings.find(b => b.employee.id === req.employeeId);
               const empCompany = booking?.employee.company || '';
               
-              // Check hierarchy
-              const isDirect = tenant.name === empCompany;
-              const isSub = (tenant.subContractors || []).includes(empCompany);
+              const isDirect = tenant.name.toLowerCase() === empCompany.toLowerCase();
+              const isSub = (tenant.subContractors || []).some(sc => sc.toLowerCase() === empCompany.toLowerCase());
               
               if (isDirect || isSub) {
                   tenantEmpCount++;
                   
-                  // Check compliance
+                  // Quick Compliance Check logic duplication for speed/independence
                   const today = new Date().toISOString().split('T')[0];
                   const isAsoValid = !!(req.asoExpiryDate && req.asoExpiryDate > today);
                   let allRacsMet = true;
@@ -238,41 +247,28 @@ const EnterpriseDashboard: React.FC<EnterpriseDashboardProps> = ({
 
   }, [companies, requirements, bookings, userRole, selectedTenantId]);
 
-  // 4. Contractor Comparison (Filtered View)
+  // 4. Contractor Comparison (Aggregated from filteredEmployeeData)
   const contractorComparisonData = useMemo(() => {
-      // Calculate based on `filteredEmployeeData` which already respects the filters
       const compMap = new Map<string, {total: number, compliant: number}>();
       
       filteredEmployeeData.forEach(emp => {
-          if (!compMap.has(emp.company)) compMap.set(emp.company, {total: 0, compliant: 0});
+          // Ensure map entry exists
+          if (!compMap.has(emp.company)) {
+              compMap.set(emp.company, {total: 0, compliant: 0});
+          }
+          
           const stats = compMap.get(emp.company)!;
           stats.total++;
-          
-          // Check compliance logic again for this subset
-          const req = requirements.find(r => r.employeeId === emp.id);
-          if (!req) return;
-          const today = new Date().toISOString().split('T')[0];
-          const isAsoValid = !!(req.asoExpiryDate && req.asoExpiryDate > today);
-          let allRacsMet = true;
-          Object.keys(req.requiredRacs).forEach(k => {
-              if (req.requiredRacs[k]) {
-                  const has = bookings.some(b => {
-                        if (b.employee.id !== emp.id || b.status !== 'Passed' || !b.expiryDate || b.expiryDate <= today) return false;
-                        const bRacKey = b.sessionId.includes(' - ') ? b.sessionId.split(' - ')[0] : b.sessionId;
-                        return bRacKey.replace(/\s+/g, '') === k.replace(/\s+/g, '');
-                  });
-                  if (!has) allRacsMet = false;
-              }
-          });
-          if (isAsoValid && allRacsMet) stats.compliant++;
+          if (emp.isCompliant) stats.compliant++;
       });
       
       return Array.from(compMap.entries()).map(([name, data]) => ({
           name,
-          rate: data.total > 0 ? ((data.compliant / data.total) * 100).toFixed(1) : '0.0',
+          rate: data.total > 0 ? Number(((data.compliant / data.total) * 100).toFixed(1)) : 0,
+          displayRate: data.total > 0 ? ((data.compliant / data.total) * 100).toFixed(1) : '0.0',
           total: data.total
-      })).sort((a, b) => parseFloat(b.rate) - parseFloat(a.rate));
-  }, [filteredEmployeeData, requirements, bookings]);
+      })).sort((a, b) => b.rate - a.rate);
+  }, [filteredEmployeeData]);
 
   // 5. Department Heatmap Data
   const deptHeatmapData = useMemo(() => {
@@ -306,7 +302,7 @@ const EnterpriseDashboard: React.FC<EnterpriseDashboardProps> = ({
           stats: {
               globalScore: globalHealthScore.toFixed(1) + '%',
               totalWorkforce: complianceStats.total,
-              contractorBreakdown: contractorComparisonData.map(c => `${c.name}: ${c.rate}%`),
+              contractorBreakdown: contractorComparisonData.map(c => `${c.name}: ${c.displayRate}%`),
               riskDepartments: deptHeatmapData.slice(0, 3).map(d => `${d.name} (${d.rate.toFixed(1)}%)`),
               trainingBottlenecks: racBottleneckData.map(r => `${r.name} (${r.failRate.toFixed(1)}% Fail)`)
           }
@@ -322,6 +318,8 @@ const EnterpriseDashboard: React.FC<EnterpriseDashboardProps> = ({
       return 'text-red-500';
   };
 
+  const selectedTenantName = companies.find(c => c.id === selectedTenantId)?.name || 'All Tenants';
+
   return (
     <div className="space-y-8 pb-20 animate-fade-in-up">
         
@@ -335,8 +333,13 @@ const EnterpriseDashboard: React.FC<EnterpriseDashboardProps> = ({
                     <h2 className="text-2xl font-black text-slate-800 dark:text-white tracking-tight">
                         {userRole === UserRole.SYSTEM_ADMIN ? 'Platform Command Center' : t.enterprise.title}
                     </h2>
-                    <p className="text-sm text-slate-600 dark:text-slate-400 font-medium">
+                    <p className="text-sm text-slate-600 dark:text-slate-400 font-medium flex items-center gap-2">
                         {userRole === UserRole.SYSTEM_ADMIN ? 'Multi-Tenant Aggregation Layer' : t.enterprise.subtitle}
+                        {userRole === UserRole.ENTERPRISE_ADMIN && (
+                            <span className="bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 px-2 py-0.5 rounded text-xs font-bold border border-indigo-200 dark:border-indigo-800">
+                                {selectedTenantName} Context
+                            </span>
+                        )}
                     </p>
                 </div>
             </div>
@@ -424,7 +427,7 @@ const EnterpriseDashboard: React.FC<EnterpriseDashboardProps> = ({
                 {contractorComparisonData.length > 0 ? (
                     <div className="flex flex-col">
                         <h3 className="text-xl font-black text-emerald-600 dark:text-emerald-400 truncate">{contractorComparisonData[0].name}</h3>
-                        <span className="text-sm font-bold text-slate-400">{contractorComparisonData[0].rate}% Compliance</span>
+                        <span className="text-sm font-bold text-slate-400">{contractorComparisonData[0].displayRate}% Compliance</span>
                     </div>
                 ) : (
                     <span className="text-sm text-slate-400 italic">No Data</span>
@@ -488,9 +491,10 @@ const EnterpriseDashboard: React.FC<EnterpriseDashboardProps> = ({
                                 <XAxis type="number" domain={[0, 100]} hide />
                                 <YAxis dataKey="name" type="category" width={100} tick={{ fontSize: 11, fontWeight: 'bold', fill: '#64748b' }} axisLine={false} tickLine={false} />
                                 <Tooltip cursor={{ fill: 'transparent' }} contentStyle={{ borderRadius: '12px' }} />
+                                {/* IMPORTANT: Use `rate` (number) for dataKey to ensure bars render height */}
                                 <Bar dataKey="rate" fill="#6366f1" radius={[0, 4, 4, 0]} barSize={20}>
                                     {contractorComparisonData.map((entry, index) => (
-                                        <Cell key={`cell-${index}`} fill={parseFloat(entry.rate) >= 90 ? '#10b981' : parseFloat(entry.rate) >= 75 ? '#f59e0b' : '#ef4444'} />
+                                        <Cell key={`cell-${index}`} fill={entry.rate >= 90 ? '#10b981' : entry.rate >= 75 ? '#f59e0b' : '#ef4444'} />
                                     ))}
                                 </Bar>
                             </BarChart>
@@ -549,7 +553,7 @@ const EnterpriseDashboard: React.FC<EnterpriseDashboardProps> = ({
                                     {userRole === UserRole.SYSTEM_ADMIN ? 'System AI Auditor' : 'Executive AI Director'}
                                 </h3>
                                 <p className="text-xs text-slate-500">
-                                    {userRole === UserRole.SYSTEM_ADMIN ? 'Platform-wide safety intelligence' : `Strategic insights for ${selectedTenantId !== 'All' ? selectedTenantId : 'Enterprise'}`}
+                                    {userRole === UserRole.SYSTEM_ADMIN ? 'Platform-wide safety intelligence' : `Strategic insights for ${selectedTenantName}`}
                                 </p>
                             </div>
                         </div>

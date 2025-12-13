@@ -8,6 +8,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { sanitizeInput } from '../utils/security';
 import { logger } from '../utils/logger';
 import { useLanguage } from '../contexts/LanguageContext';
+import { sendBrowserNotification } from '../utils/browserNotifications';
 
 interface BookingFormProps {
   addBookings: (newBookings: Booking[]) => void;
@@ -194,13 +195,13 @@ const BookingForm: React.FC<BookingFormProps> = ({ addBookings, sessions, userRo
       setRenewalQueue(newQueue);
       setSelectedSession(''); // Force user to pick new session
       
-      alert(`Batch Saved! Loading renewals for: ${nextBatch.racType}`);
+      sendBrowserNotification('Batch Loaded', `Loading renewals for: ${nextBatch.racType}`);
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedSession || !sessionData) {
-      alert("Please select a training session.");
+      sendBrowserNotification("Validation Error", "Please select a training session.");
       return;
     }
 
@@ -210,14 +211,14 @@ const BookingForm: React.FC<BookingFormProps> = ({ addBookings, sessions, userRo
     );
 
     if (hasPartialRows) {
-        alert("Found incomplete rows. Please ensure all employees have both an ID and a Name.");
+        sendBrowserNotification("Validation Error", "Found incomplete rows. Please ensure all employees have both an ID and a Name.");
         return;
     }
 
     const validRows = rows.filter(r => r.name.trim() !== '' && r.recordId.trim() !== '');
 
     if (validRows.length === 0) {
-      alert("Please enter at least one employee.");
+      sendBrowserNotification("Validation Error", "Please enter at least one employee.");
       return;
     }
 
@@ -231,7 +232,7 @@ const BookingForm: React.FC<BookingFormProps> = ({ addBookings, sessions, userRo
         const empRecord = employeeLookup.get(row.recordId.trim().toLowerCase());
         
         if (!empRecord) {
-            alert(`Booking Blocked: Employee "${row.name}" (${row.recordId}) is not registered in the system database.\n\nPlease register them in the Database page first to assign requirements.`);
+            sendBrowserNotification("Booking Blocked", `Employee "${row.name}" (${row.recordId}) is not registered in the system database. Register them in the Database page first.`);
             return; // Block entire batch
         }
 
@@ -240,7 +241,7 @@ const BookingForm: React.FC<BookingFormProps> = ({ addBookings, sessions, userRo
         
         // If no req object found OR racKey is false/undefined -> Block
         if (!empReq || !empReq.requiredRacs[racKey]) {
-            alert(`Booking Blocked: Employee "${row.name}" is NOT mapped for ${racKey} in the database.\n\nPlease contact the Department Manager to update their training matrix.`);
+            sendBrowserNotification("Compliance Alert", `Employee "${row.name}" is NOT mapped for ${racKey} in the database. Contact Manager to update matrix.`);
             return; // Block entire batch
         }
     }
@@ -248,7 +249,7 @@ const BookingForm: React.FC<BookingFormProps> = ({ addBookings, sessions, userRo
     if (isRac02Selected) {
         const incompleteDl = validRows.find(r => !r.driverLicenseNumber || !r.driverLicenseClass || !r.driverLicenseExpiry);
         if (incompleteDl) {
-            alert(`Driver License details are mandatory for RAC 02 bookings.\n\nPlease complete details for: ${incompleteDl.name}`);
+            sendBrowserNotification("Requirement Missing", `Driver License details are mandatory for RAC 02 bookings. Missing for: ${incompleteDl.name}`);
             return;
         }
     }
@@ -304,7 +305,7 @@ const BookingForm: React.FC<BookingFormProps> = ({ addBookings, sessions, userRo
         });
 
         if (duplicate) {
-            alert(`${t.notifications.duplicateMsg}: ${newBooking.employee.name} (${sessionData.racType})`);
+            sendBrowserNotification("Duplicate Booking", `${t.notifications.duplicateMsg}: ${newBooking.employee.name} (${sessionData.racType})`);
             return false;
         }
         return true;
@@ -341,9 +342,9 @@ const BookingForm: React.FC<BookingFormProps> = ({ addBookings, sessions, userRo
                     isRead: false
                 });
             }
-            alert(`Note: Session full. ${overflowEmployees.length} employees were auto-booked to next available session: ${nextSession.date}.`);
+            sendBrowserNotification("Capacity Warning", `Session full. ${overflowEmployees.length} employees were auto-booked to next available session: ${nextSession.date}.`);
         } else {
-            alert(`Session Full! Could not find a future session for ${overflowEmployees.length} employees. Please contact Admin.`);
+            sendBrowserNotification("Capacity Error", `Session Full! Could not find a future session for ${overflowEmployees.length} employees. Please contact Admin.`);
         }
     }
 
@@ -365,6 +366,9 @@ const BookingForm: React.FC<BookingFormProps> = ({ addBookings, sessions, userRo
                     isRead: false
                 });
             }
+            
+            // Browser Notification for success
+            sendBrowserNotification("Booking Success", `Successfully booked ${uniqueBookings.length} employees.`);
 
             setTimeout(() => {
                 setSubmitted(false);
@@ -383,7 +387,7 @@ const BookingForm: React.FC<BookingFormProps> = ({ addBookings, sessions, userRo
 
         } catch (err) {
             logger.error('Error submitting booking', err);
-            alert('An error occurred while processing the booking.');
+            sendBrowserNotification("System Error", "An error occurred while processing the booking.");
         }
     }
   };
