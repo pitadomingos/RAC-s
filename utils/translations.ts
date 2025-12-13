@@ -35,8 +35,7 @@ export const translations = {
       logs: 'System Logs',
       proposal: 'Project Proposal',
       presentation: 'Presentation Mode',
-      alcohol: 'Alcohol Control',
-      systemHealth: 'System Health'
+      alcohol: 'Alcohol Control'
     },
     common: {
       vulcan: 'CARS Manager',
@@ -59,18 +58,6 @@ export const translations = {
       submit: 'Submit',
       search: 'Search...',
       all: 'All',
-      allTenants: 'All Tenants',
-      allCompanies: 'All Companies',
-      allContractors: 'All Contractors',
-      allSites: 'All Sites',
-      allDepts: 'All Departments',
-      allRacs: 'All RACs',
-      allStatus: 'All Status',
-      allTrainers: 'All Trainers',
-      selectSite: 'Select Site',
-      selectRoom: 'Select Room',
-      selectInstructor: 'Select Instructor',
-      unknown: 'Unknown',
       date: 'Date',
       time: 'Time',
       status: 'Status',
@@ -95,11 +82,7 @@ export const translations = {
       page: 'Page',
       of: 'of',
       siteContext: 'Site Context',
-      enterpriseView: 'Enterprise View (All Sites)',
-      tenants: 'Tenants',
-      contractors: 'Contractors',
-      sites: 'Sites',
-      depts: 'Departments'
+      enterpriseView: 'Enterprise View (All Sites)'
     },
     verification: {
       title: 'Digital Safety Passport',
@@ -159,24 +142,6 @@ export const translations = {
         subPart2: 'and reserved slots to prevent lockout. Approve to finalize.'
       }
     },
-    systemHealth: {
-        title: 'System Health Monitor',
-        subtitle: 'Real-time infrastructure telemetry & error tracking.',
-        uptime: 'System Uptime',
-        latency: 'Avg Latency',
-        errors: 'Error Rate',
-        services: 'Service Status',
-        database: 'Database',
-        ai: 'AI Engine',
-        auth: 'Auth Provider',
-        storage: 'Blob Storage',
-        cpu: 'CPU Usage',
-        memory: 'Memory Usage',
-        recentAlerts: 'Recent System Alerts',
-        online: 'Online',
-        degraded: 'Degraded',
-        offline: 'Offline'
-    },
     enterprise: {
         title: 'Corporate Command Center',
         subtitle: 'Global Safety Compliance Overview',
@@ -191,22 +156,7 @@ export const translations = {
         governanceTitle: 'Site Governance',
         governanceSubtitle: 'Define mandatory safety training policies per location.',
         pushPolicy: 'Save & Push Policy',
-        policyApplied: 'Policy Applied',
-        deptHeatmap: 'Department Risk Heatmap',
-        tenantMatrix: 'Tenant Performance Matrix',
-        systemView: 'SYSTEM VIEW',
-        bottlenecks: 'Training Bottlenecks',
-        noBottlenecks: 'No bottlenecks detected.',
-        clickToGen: 'Click generate to receive',
-        safetyIntel: 'enterprise-level safety intelligence.',
-        multiTenantDiag: 'multi-tenant safety diagnostics.'
-    },
-    siteGovernance: {
-      title: 'Site Governance',
-      subtitle: 'Define mandatory safety training policies per location.',
-      selectSite: 'Select Operation Site',
-      configure: 'Configure Mandatory RACs',
-      policyUpdate: 'Policy updated for {site}. Requirements pushed to employees.'
+        policyApplied: 'Policy Applied'
     },
     database: {
       title: 'Master Employee Database',
@@ -301,349 +251,256 @@ export const translations = {
         }
     },
     trainer: { title: 'Trainer Input', subtitle: 'Enter grades.', passMark: 'Pass: 70%', loggedInAs: 'Logged in as', selectSession: 'Select Session', noSessions: 'No sessions.', chooseSession: 'Choose session...', dlWarning: 'Verify DL for RAC 02.', saveResults: 'Save Results', table: { employee: 'Employee', attendance: 'Attended', dlCheck: 'DL Check', verified: 'Verified', theory: 'Theory', practical: 'Practical', rac02Only: '(RAC 02)', status: 'Status' } },
-    users: { 
-        title: 'User Management', 
-        subtitle: 'Manage access and roles.', 
-        addUser: 'Add User', 
-        table: { user: 'User', role: 'Role', status: 'Status', actions: 'Actions' }, 
-        modal: { title: 'Add User', name: 'Name', email: 'Email', createUser: 'Create', selectSite: 'Assign Site', siteRequired: 'Site assignment required for this role', count: 'Current Admins' },
-        limitError: 'Limit Reached: Maximum 3 RAC Admins allowed per site. Please contact the System Admin to request an increase for this Enterprise.'
-    },
+    users: { title: 'User Management', subtitle: 'Manage access.', addUser: 'Add User', table: { user: 'User', role: 'Role', status: 'Status', actions: 'Actions' }, modal: { title: 'Add User', name: 'Name', email: 'Email', createUser: 'Create' } },
     schedule: { title: 'Training Schedule', subtitle: 'Manage sessions.', newSession: 'New Session', table: { date: 'Date/Time', rac: 'RAC', room: 'Location', trainer: 'Instructor' }, modal: { title: 'Schedule', racType: 'RAC', date: 'Date', startTime: 'Start', location: 'Loc', capacity: 'Cap', instructor: 'Instr', saveSession: 'Save', language: 'Language', english: 'English', portuguese: 'Portuguese' } },
-    settings: { title: 'Settings', subtitle: 'Config.', saveAll: 'Save', saving: 'Saving...', tabs: { general: 'Geral', trainers: 'Trainers', racs: 'RACs', sites: 'Sites', companies: 'Companies', branding: 'Branding', contractors: 'Contractors' }, rooms: { title: 'Rooms', name: 'Name', capacity: 'Cap', new: 'New Room' }, trainers: { title: 'Trainers', name: 'Name', qualifiedRacs: 'RACs', new: 'New Trainer' }, racs: { title: 'RACs', code: 'Code', description: 'Desc', new: 'New RAC' } },
-    reports: { title: 'Reports', subtitle: 'Analytics.', printReport: 'Print', filters: { period: 'Period', department: 'Dept', racType: 'RAC', startDate: 'Início', endDate: 'Fim' }, periods: { weekly: 'Weekly', monthly: 'Monthly', ytd: 'YTD', custom: 'Custom' }, generate: 'Generate AI', analyzing: 'Analyzing...', stats: { totalTrained: 'Total', passRate: 'Pass Rate', attendance: 'Attendance', noShows: 'No Shows' }, charts: { performance: 'Performance' }, executiveAnalysis: 'Executive AI Analysis', trainerMetrics: { title: 'Trainer Metrics', name: 'Trainer', sessions: 'Sessions', passRate: 'Pass Rate', avgTheory: 'Theory', avgPrac: 'Prática' } },
+    settings: { title: 'Settings', subtitle: 'Config.', saveAll: 'Save', saving: 'Saving...', tabs: { general: 'General', trainers: 'Trainers', racs: 'RACs', sites: 'Sites', companies: 'Companies' }, rooms: { title: 'Rooms', name: 'Name', capacity: 'Cap', new: 'New Room' }, trainers: { title: 'Trainers', name: 'Name', qualifiedRacs: 'RACs', new: 'New Trainer' }, racs: { title: 'RACs', code: 'Code', description: 'Desc', new: 'New RAC' } },
+    reports: { title: 'Reports', subtitle: 'Analytics.', printReport: 'Print', filters: { period: 'Period', department: 'Dept', racType: 'RAC', startDate: 'Start', endDate: 'End' }, periods: { weekly: 'Semanal', monthly: 'Monthly', ytd: 'YTD', custom: 'Custom' }, generate: 'Generate AI', analyzing: 'Analyzing...', stats: { totalTrained: 'Total', passRate: 'Pass Rate', attendance: 'Attendance', noShows: 'No Shows' }, charts: { performance: 'Performance' }, executiveAnalysis: 'Executive AI Analysis', trainerMetrics: { title: 'Trainer Metrics', name: 'Trainer', sessions: 'Sessions', passRate: 'Pass Rate', avgTheory: 'Theory', avgPrac: 'Prac' } },
     logs: { title: 'System Logs', levels: { all: 'All Levels', info: 'Info', warn: 'Warning', error: 'Error', audit: 'Audit' }, table: { level: 'Level', timestamp: 'Timestamp', user: 'User', message: 'Message' } },
-    manuals: {
-      title: 'User Manuals',
-      subtitle: 'Role-based guides for system usage.',
-      sysAdmin: {
-        title: 'System Administrator',
-        subtitle: 'Full System Control',
-        configTitle: 'System Configuration',
-        configDesc: 'Setup initial parameters for the entire platform.',
-        rooms: 'Define Training Rooms',
-        trainers: 'Register Trainers',
-        racs: 'Configure RAC Definitions',
-        dbTitle: 'Database Management',
-        dbDesc: 'Manage the master employee records.',
-        restrictionWarning: 'Ensure Matrix Columns align with RAC definitions.',
-        csv: 'Use the import template for bulk data.',
-        active: 'Toggle Active Status to manage licenses.'
-      },
-      racAdmin: {
-        title: 'RAC Administrator',
-        subtitle: 'Training Schedule Management',
-        schedTitle: 'Scheduling',
-        schedDesc: 'Create and manage training sessions.',
-        create: 'Create Session',
-        lang: 'Set Language (PT/EN)',
-        autoTitle: 'Auto-Booking',
-        autoDesc: 'Handle system-generated bookings.',
-        approve: 'Review and approve auto-bookings promptly.',
-        renewTitle: 'Renewals',
-        renewDesc: 'Process expiring certifications.'
-      },
-      racTrainer: {
-        title: 'RAC Trainer',
-        subtitle: 'Grading & Attendance',
-        inputTitle: 'Result Input',
-        inputDesc: 'Enter scores and verify attendance.',
-        grading: 'Mark Attendance & Scores',
-        rac02: 'RAC 02 requires Driver License Verification.',
-        save: 'Save Results to update Database.'
-      },
-      deptAdmin: {
-        title: 'Department Admin',
-        subtitle: 'View & Request',
-        reqTitle: 'Card Requests',
-        reqDesc: 'Request physical cards for compliant staff.',
-        search: 'Filter by Department',
-        print: 'Generate Print Batch',
-        repTitle: 'Reporting',
-        repDesc: 'View department compliance stats.'
-      },
-      user: {
-        title: 'General User',
-        subtitle: 'Self-Service Portal',
-        statusTitle: 'My Status',
-        statusDesc: 'Check your current compliance status.',
-        filterAlert: 'You can only view your own records.',
-        green: 'Access Granted',
-        red: 'Access Denied',
-        qr: 'Download Digital Passport'
-      }
-    },
-    alcohol: {
-      banner: {
-        title: 'IoT Alcohol Integration',
-        desc: 'Automated access control via breathalyzer integration.',
-        status: 'System Ready'
-      },
-      features: {
-        title: 'Core Features',
-        iotTitle: 'IoT Connectivity',
-        iotDesc: 'Direct connection to breathalyzer devices.',
-        accessTitle: 'Access Control',
-        accessDesc: 'Auto-block on positive reading.',
-        complianceTitle: 'Compliance Log',
-        complianceDesc: 'Historical record of all tests.'
-      },
-      protocol: {
-        title: 'Safety Protocol',
-        positiveTitle: 'Positive Reading',
-        positiveDesc: 'Immediate gate lockout and notification to supervisor.',
-        resetTitle: 'Reset Procedure',
-        resetDesc: 'Manual reset required by HSE officer after secondary test.'
-      },
-      challenges: {
-        title: 'Integration Challenges',
-        oemIssue: 'Legacy hardware compatibility.',
-        gateSetup: 'Physical turnstile latency.'
-      },
-      proposal: {
-        title: 'Implementation Plan',
-        faceCap: 'Facial Recognition Integration',
-        integration: 'API Development',
-        projectScope: 'Hardware & Cabling'
-      }
-    },
-    proposal: {
-      title: 'Digital Safety Orbit',
-      subtitle: 'Technical & Commercial Proposal',
-      header: {
-        ref: 'Ref: VUL-DSO-2024',
-        date: 'May 2024',
-        subject: 'Subject: Digital Safety Transformation Proposal'
-      },
-      foreword: {
-        title: 'Executive Summary',
-        intro: 'We are pleased to present this proposal for the complete digitization of Vulcan Mining\'s Safety Training Management System. Our solution, "CARS Manager", streamlines compliance tracking, automates scheduling, and leverages AI for predictive safety insights.',
-        overviewTitle: 'Project Overview',
-        overviewText: 'The goal is to replace legacy spreadsheets with a centralized, multi-tenant cloud platform that enforces critical safety rules (RACs) and provides real-time visibility into workforce readiness.'
-      },
-      objectives: {
-        title: 'Project Objectives',
-        problem: 'Current manual processes lead to compliance gaps, lost records, and training bottlenecks.',
-        items: [
-          { title: 'Centralization', desc: 'Single source of truth for all safety data.' },
-          { title: 'Automation', desc: 'Auto-renewal and expiry notifications.' },
-          { title: 'Intelligence', desc: 'AI-driven reporting and risk analysis.' },
-          { title: 'Mobility', desc: 'Digital ID cards and mobile verification.' }
-        ]
-      },
-      organogram: {
-        title: 'Project Organogram',
-        pm: 'Project Manager',
-        tech1: 'Technician 1',
-        tech2: 'Technician 2'
-      },
-      roles: {
-        title: 'Key Roles & Responsibilities',
-        items: [
-          { role: 'Project Manager', desc: 'Overall delivery ownership, client liaison, and timeline management.' },
-          { role: 'Lead Developer', desc: 'System architecture, backend logic, and security implementation.' },
-          { role: 'Support Technician', desc: 'On-site deployment, user training, and hardware integration.' }
-        ]
-      },
-      timeline: {
-        title: 'Implementation Timeline',
-        subtitle: 'Phased rollout strategy',
-        phases: [
-          { title: 'Phase 1: Discovery & Setup', weeks: 'Weeks 1-2', desc: 'Requirements gathering and environment provisioning.' },
-          { title: 'Phase 2: Development', weeks: 'Weeks 3-8', desc: 'Core module development and integration.' },
-          { title: 'Phase 3: Testing & Training', weeks: 'Weeks 9-10', desc: 'UAT and user onboarding sessions.' },
-          { title: 'Phase 4: Go Live', weeks: 'Week 11', desc: 'Production deployment and handover.' }
-        ]
-      },
-      techStack: {
-        title: 'Technology Stack',
-        items: [
-          { name: 'React', desc: 'Frontend Framework' },
-          { name: 'TypeScript', desc: 'Type Safety' },
-          { name: 'Tailwind CSS', desc: 'Styling Engine' },
-          { name: 'Gemini AI', desc: 'Artificial Intelligence' }
-        ]
-      },
-      costs: {
-        title: 'Investment Summary',
-        subtitle: 'Proposed Budget',
-        items: [
-          { item: 'Software License (Annual)', type: 'SaaS Subscription', cost: '$12,000' },
-          { item: 'Implementation & Setup', type: 'One-time Fee', cost: '$5,000' },
-          { item: 'Custom Development', type: 'Professional Services', cost: '$3,500' },
-          { item: 'Training & Onboarding', type: 'Professional Services', cost: '$2,000' }
-        ]
-      },
-      roadmap: {
-        title: 'Future Roadmap',
-        items: [
-          { title: 'IoT Integration', desc: 'Connect breathalyzers and access gates.' },
-          { title: 'Mobile App', desc: 'Native iOS and Android application.' },
-          { title: 'Advanced Analytics', desc: 'Predictive safety modeling.' },
-          { title: 'Global Expansion', desc: 'Multi-region support.' }
-        ]
-      },
-      ai: {
-        title: 'AI Integration Strategy',
-        items: [
-          { title: 'Predictive Analysis', desc: 'Forecast training needs and bottlenecks.' },
-          { title: 'Automated Support', desc: '24/7 AI Safety Advisor chatbot.' },
-          { title: 'Smart Reporting', desc: 'Natural language report generation.' }
-        ]
-      },
-      alcohol: {
-        title: 'Alcohol Control Module',
-        items: [
-          { title: 'Real-time Monitoring', desc: 'Instant breathalyzer results sync.' },
-          { title: 'Access Lockout', desc: 'Auto-block gate access on positive test.' },
-          { title: 'Audit Trail', desc: 'Immutable log of all tests.' }
-        ]
-      },
-      enhanced: {
-        title: 'Enhanced Capabilities',
-        items: [
-          { title: 'Offline Mode', desc: 'PWA support for low connectivity.' },
-          { title: 'Biometric Auth', desc: 'Secure login via fingerprint/face.' }
-        ]
-      },
-      conclusion: {
-        title: 'Conclusion',
-        text: 'This proposal outlines a comprehensive path to modernizing Vulcan\'s safety operations. By adopting the CARS Manager, you ensure not just compliance, but a safer, more efficient working environment for all.'
-      },
-      thankYou: {
-        title: 'Thank You',
-        company: 'DigiSol Orbit',
-        contact: 'Pita Domingos',
-        phone: '+258 84 123 4567',
-        address: 'Tete, Mozambique'
-      }
-    },
     adminManual: {
-      title: 'Administrator Manual',
-      subtitle: 'Comprehensive System Documentation',
+      title: 'System Manual',
+      subtitle: 'Administrator Guide for System Configuration & Logic',
       slides: {
         intro: 'Introduction',
-        hierarchy: 'System Hierarchy',
-        objectives: 'Key Objectives',
-        logic: 'Core Logic',
-        workflow: 'System Workflow',
-        config: 'Configuration',
+        objectives: 'Objectives & Scope',
+        logic: 'Compliance Logic',
+        workflow: 'Core Data Flow',
+        config: 'System Configuration',
         booking: 'Booking Rules',
-        advanced: 'Advanced Features',
-        troubleshoot: 'Troubleshooting'
+        advanced: 'Advanced Capabilities',
+        troubleshoot: 'Troubleshooting',
+        hierarchy: 'Hierarchy & Billing'
       },
       content: {
-        confidential: 'Confidential',
-        production: 'Production Ready',
-        hierarchy: {
-          title: 'System Hierarchy & Roles',
-          roles: {
-            sysAdmin: 'System Admin',
-            entAdmin: 'Enterprise Admin',
-            siteAdmin: 'Site Admin',
-            ops: 'Operational Roles',
-            user: 'End User'
-          },
-          billingTitle: 'Licensing Model',
-          billingDesc: 'Flexible tiered pricing based on active users.',
-          cost: '$2.00',
-          perUser: 'Per Active User / Month'
-        },
+        confidential: 'CONFIDENTIAL',
+        production: 'PRODUCTION v2.5',
         objectives: {
-          title: 'Operational Objectives',
+          title: 'Objectives & Scope',
           problemTitle: 'Current Challenges',
-          p1Title: 'Fragmented Data',
-          p1Desc: 'Information siloed across spreadsheets.',
-          p2Title: 'Manual Compliance',
-          p2Desc: 'Risk of human error in checking requirements.',
-          p3Title: 'Reactive Reporting',
-          p3Desc: 'Delayed insights into safety gaps.',
           solutionTitle: 'System Solutions',
-          s1Title: 'Centralized DB',
-          s1Desc: 'Unified employee records.',
-          s2Title: 'Auto-Compliance',
-          s2Desc: 'System-enforced rules for booking and access.',
-          s3Title: 'Proactive AI',
-          s3Desc: 'Predictive analytics for decision support.'
+          p1Title: 'Data Integrity',
+          p1Desc: 'Fragmented Excel sheets lead to compliance gaps and lost records.',
+          p2Title: 'Compliance Timing',
+          p2Desc: 'Manual tracking fails to catch expiries before site lockout occurs.',
+          p3Title: 'Administrative Load',
+          p3Desc: 'HSE teams spend 40% of time cross-referencing lists manually.',
+          s1Title: 'Central Truth',
+          s1Desc: 'Single immutable database for all training, health, and operational data.',
+          s2Title: 'Auto-Enforcement',
+          s2Desc: 'Logic gate automatically blocks access if any requirement expires.',
+          s3Title: 'Efficiency',
+          s3Desc: 'Reduced admin time by 85% via batch processing and auto-booking.'
         },
-        formulaTitle: 'Compliance Logic',
+        formulaTitle: 'The Compliance Formula',
         formulaLogic: {
           active: 'Active Status',
           aso: 'Valid ASO',
           racs: 'Required RACs',
           result: 'ACCESS GRANTED'
         },
-        formulaDesc: 'Access is only granted when the employee is Active, has a valid Medical Certificate (ASO), and has passed ALL mandatory RAC trainings defined for their role.',
-        flowTitle: 'Workflow Process',
+        flowTitle: 'Core Data Flow',
         flowSteps: {
           db: 'Database',
-          dbDesc: 'Define requirements & import staff.',
+          dbDesc: 'Define Employee Requirements',
           book: 'Booking',
-          bookDesc: 'Schedule training sessions.',
+          bookDesc: 'Schedule Training Session',
           res: 'Results',
-          resDesc: 'Input grades & attendance.',
+          resDesc: 'Capture Score & Attendance',
           stat: 'Status',
-          statDesc: 'System updates compliance.'
+          statDesc: 'Auto-Calculate Compliance'
         },
         configTitle: 'System Configuration',
         configCards: {
-          racs: 'RAC Modules',
-          racsDesc: 'Define the Critical Safety Rules available for training.',
-          rooms: 'Rooms',
-          roomsDesc: 'Manage training locations and capacities.',
-          trainers: 'Trainers',
-          trainersDesc: 'Authorize staff to conduct specific modules.'
+          racs: 'RAC Definitions',
+          racsDesc: 'Define the modules (e.g., RAC 01, PTS). Warning: Deleting a RAC here removes the column from the database matrix.',
+          rooms: 'Rooms & Capacity',
+          roomsDesc: 'Set physical limits for classrooms to prevent overbooking during the scheduling phase.',
+          trainers: 'Trainers & Auth',
+          trainersDesc: 'Register instructors and authorize them for specific modules. Only authorized trainers appear in dropdowns.'
         },
-        bookingTitle: 'Booking Restrictions',
+        bookingTitle: 'Booking Rules',
         matrixLock: 'Matrix Lock',
-        matrixDesc: 'Bookings are restricted based on the Employee Requirements Matrix.',
-        gradingTitle: 'Grading Logic',
-        gradingText: 'Pass mark is 70%. Attendance is mandatory.',
-        rac02Title: 'RAC 02 Rule',
-        rac02Text: 'Requires Driver License verification.',
-        expiryTitle: 'Expiry Rules',
-        expiryText: 'Certifications valid for 2 years.',
-        advancedTitle: 'Advanced Features',
-        autoBook: 'Auto-Booking',
-        autoBookDesc: 'Automatically reserves slots for expiring staff.',
+        matrixDesc: 'The system prevents booking trainings that are not required by the employee profile.',
+        gradingTitle: 'Grading Standards',
+        gradingText: 'Pass mark is 70%. Attendance is mandatory. Failed attempts require re-booking.',
+        rac02Title: 'RAC 02 Specifics',
+        rac02Text: 'Requires Driver License verification. If DL is expired, the system auto-fails the student.',
+        expiryTitle: 'Auto-Expiry',
+        expiryText: 'Certifications are valid for 2 years. Re-training is flagged 30 days prior.',
+        advancedTitle: 'Advanced Capabilities',
+        autoBook: 'Auto-Booking Engine',
+        autoBookDesc: 'System detects employees expiring in < 7 days and auto-reserves next available slot to prevent lockout.',
         aiRep: 'AI Reporting',
-        aiRepDesc: 'Generates executive summaries using Gemini.',
-        alc: 'Alcohol Integration',
-        alcDesc: 'Connects with IoT breathalyzers.',
+        aiRepDesc: 'Generates executive summaries using Gemini 1.5 Pro to identify high-risk departments.',
+        alc: 'Alcohol Control',
+        alcDesc: 'IoT integration roadmap for breathalyzer interlock with turnstiles.',
         tsTitle: 'Troubleshooting',
-        ts1: 'User Not Found',
-        ts1Desc: 'Check spelling or import status.',
-        ts2: 'Access Denied',
-        ts2Desc: 'Verify ASO date and RAC completion.',
-        ts3: 'System Error',
-        ts3Desc: 'Check internet connection and server logs.'
+        ts1: 'Search Not Found?',
+        ts1Desc: 'Ensure Employee ID matches the CSV import exactly.',
+        ts2: 'Status Blocked?',
+        ts2Desc: 'Check ASO (Medical) date. Expired ASO blocks access regardless of training.',
+        ts3: 'QR Scan Error?',
+        ts3Desc: 'Verify the device has internet access to query the live database.',
+        hierarchy: {
+            title: 'System Organogram & Billing',
+            billingTitle: 'SaaS Billing Model',
+            billingDesc: 'The platform uses a role-based billing structure. Administrative seats are free. Charges apply only to end-users tracked in the system.',
+            cost: '$2.00',
+            perUser: 'per General User / Month',
+            roles: {
+                sysAdmin: 'System Admin (SaaS Owner)',
+                entAdmin: 'Enterprise Admin (Client HQ)',
+                siteAdmin: 'Site Admin (Location Manager)',
+                ops: 'Operational Admins (RAC/Dept/Trainers)',
+                user: 'General User (Billable)'
+            }
+        }
+      }
+    },
+    proposal: {
+      digitalTrans: 'Enterprise SaaS Platform',
+      aboutMe: {
+        title: 'About DigiSols',
+        name: 'Pita Domingos',
+        preferred: 'Lead Architect',
+        role: 'Full Stack Developer',
+        cert: 'Certified Solutions Architect',
+        bio: 'DigiSols specializes in enterprise-grade safety systems and digital transformation for the mining sector. Focused on zero-downtime compliance architectures and scalable SaaS solutions.'
+      },
+      letter: {
+        date: "12/11/2025",
+        to: "The Management Team\nVulcan Mining Operations\nTete, Mozambique",
+        subject: "Proposal for Digital Safety Management System Implementation",
+        greeting: "Dear Management Team,",
+        body1: "We are pleased to submit this proposal for the development and implementation of the Vulcan Safety Manager (CARs Manager). This comprehensive digital solution is designed to streamline your Critical Activity Requisitions (RAC) training management, ensuring 100% compliance visibility and operational efficiency.",
+        body2: "Our solution addresses the current challenges of manual tracking, fragmented data, and delayed reporting. By centralizing employee data, training records, and issuance of digital credentials, we aim to significantly reduce administrative overhead and improve site safety standards.",
+        body3: "The proposed system includes advanced features such as AI-driven reporting, real-time dashboards, and secure role-based access control, tailored specifically for the mining environment context.",
+        closing: "We look forward to the opportunity to partner with Vulcan Mining on this critical safety initiative.",
+        signOff: "Sincerely,\nDigiSols Team\nPITA DOMINGOS",
+        address: "Perto de O Puarrou - Bairro Chingodzi, Tete"
+      },
+      execSummary: {
+        title: 'Executive Summary',
+        text: 'The CARS Manager is a specialized web application meticulously engineered to revolutionize the safety training lifecycle for Critical Activity Requisitions (RAC 01 - RAC 10). This innovative system directly addresses the inefficiencies inherent in traditional, manual processes, such as disparate spreadsheets and fragmented communication channels. By consolidating these into a centralized digital platform, the CARS Manager provides a comprehensive solution for managing every aspect of safety training, from initial booking and rigorous results tracking to the seamless issuance of certifications (CARs) and continuous compliance monitoring. This integrated approach ensures that all critical safety training data is readily accessible, accurate, and up-to-date, significantly enhancing operational safety and regulatory adherence. The system\'s design prioritizes user experience while delivering robust functionality, making it an indispensable tool for organizations committed to maintaining the highest standards of workplace safety.',
+        quote: '"Safety is not just a priority, it is a core value. Our digital tools must reflect the same standard of excellence as our operational machinery."'
+      },
+      objectives: {
+        title: 'Core Objectives',
+        problemTitle: 'Key Goals',
+        problemText: 'The CARS Manager is driven by a set of clearly defined core objectives, each meticulously designed to transform and elevate the safety training management process. The primary goal is Digitalization, aiming to completely eliminate reliance on cumbersome paper-based booking systems and manual card issuance. This transition to a fully digital workflow not only enhances efficiency but also significantly reduces human error.',
+        solutionTitle: 'Benefits',
+        goals: [
+          'Digitalization: Eliminate paper-based booking & manual cards.',
+          'Compliance: 100% visibility into validity/expiry.',
+          'Role-Based Security: Segregation of duties (Admin/Trainer/Viewer).',
+          'Efficiency: 90% reduction in admin time for card generation.'
+        ]
+      },
+      organogram: {
+        title: 'Project Organogram',
+        pm: 'Project Manager',
+        delivery: 'Service Delivery',
+        tech1: 'Frontend Engineer',
+        tech2: 'Backend Engineer',
+        regime: 'Hybrid Regime'
+      },
+      timeline: {
+        title: '11-Week Implementation Plan',
+        phase1: 'Phase 1: Discovery & Prototype (Weeks 1-2)',
+        phase1desc: 'Comprehensive requirement gathering, review of existing high-fidelity prototype with stakeholders, and finalization of database schema.',
+        phase2: 'Phase 2: Core Development (Weeks 3-6)',
+        phase2desc: 'Implementation of critical functionalities: Role-Based Access Control (RBAC), Booking Logic, and Trainer Input modules.',
+        phase3: 'Phase 3: Advanced Features (Weeks 7-8)',
+        phase3desc: 'PDF Card Generation, Automated Email Notifications, and Reporting/KPI Dashboards.',
+        phase4: 'Phase 4: UAT & Deployment (Weeks 9-10)',
+        phase4desc: 'User Acceptance Testing (UAT) by end-users, bug fixing, and production deployment.',
+        phase5: 'Phase 5: Training & Handover (Week 11)',
+        phase5desc: 'Staff training sessions tailored for all user roles and distribution of comprehensive User Manuals.'
+      },
+      techStack: {
+        title: 'Technical Architecture',
+        frontendTitle: 'Frontend Application',
+        frontend: 'Built on React.js (JavaScript library) with Tailwind CSS for utility-first styling. Features Client-Side PDF Generation for instant cards.',
+        backendTitle: 'Backend & Database',
+        backend: 'Serverless Cloud Architecture (Node.js Functions) for event-driven processing and cost efficiency.',
+        databaseTitle: 'Data Persistence',
+        database: 'NoSQL Realtime Database for high performance, low latency, and handling large datasets efficiently.',
+        securityTitle: 'Infrastructure & Security',
+        security: 'Global CDN for low-latency access. Secure Authentication (Email/SSO) and granular Role-Based Access Control (RBAC).'
+      },
+      financials: {
+        title: 'Financial Investment',
+        items: [
+          { name: 'Software Architecture & Development', type: 'Once-off', cost: '$20,000.00' },
+          { name: 'UI/UX Design & Prototyping', type: 'Once-off', cost: '$8,000.00' },
+          { name: 'Cloud Structure Setup & Subscription', type: 'Monthly', cost: '$5,000.00' },
+          { name: 'Training & Documentation', type: 'Once-off', cost: '$10,000.00' },
+          { name: 'Maintenance/Support & Management Fee', type: 'Monthly', cost: '$15,000.00' }
+        ]
+      },
+      roadmap: {
+        title: 'Future Roadmap',
+        auth: 'SSO Integration',
+        authDesc: 'Connect with Azure AD for Single Sign-On.',
+        db: 'Cloud Migration',
+        dbDesc: 'Move from on-premise to Azure/AWS for scalability.',
+        email: 'Automated Emails',
+        emailDesc: 'Send PDF certificates directly to employee email.',
+        hosting: 'Mobile App',
+        hostingDesc: 'Native Android/iOS app for field verification.'
+      },
+      aiFeatures: {
+        title: 'AI & Smart Features',
+        chatbot: 'Safety Advisor Chatbot: Embedded AI assistant for RAC standards questions.',
+        reporting: 'Automated Reporting: AI analyzes monthly trends to identify high-risk departments.'
+      },
+      futureUpdates: {
+        title: 'Alcohol & IoT Integration Scope',
+        moduleA: 'Module A: Software Integration - API Endpoints for Breathalyzer Data, "Fitness-for-Duty" Dashboard Widget, Logic to block card issuance.',
+        moduleB: 'Module B: Infrastructure (Independent Project) - Civil Works (Turnstiles), Cabling, Face-ID Breathalyzer Hardware.'
+      },
+      enhancedCaps: {
+        title: 'Enhanced Operational Capabilities',
+        mobileVerify: { title: 'Mobile Verification (Digital Passport)', desc: 'Field safety officers can verify employee compliance instantly by scanning the QR code on the safety card using any smartphone. Returns secure, real-time "Digital Passport".' },
+        autoBooking: { title: 'Intelligent Auto-Booking', desc: 'System proactively monitors expiry dates. When a certification is < 7 days from expiring, the system automatically books a slot. Includes Admin Approval Workflow.' },
+        massData: { title: 'Mass Data Management', desc: 'Efficiently handle large workforce datasets with bulk import/export capabilities via CSV. Includes Automated Record Matching.' },
+        auditLogs: { title: 'System Audit Trails', desc: 'Comprehensive logging of all system activities ensures accountability and security. Includes Timestamped Change Logs.' },
+        smartBatching: { title: 'SaaS Scalability', desc: 'Multi-tenant architecture allows managing multiple client companies and sites from a single dashboard.' },
+        matrixCompliance: { title: 'Site Governance', desc: 'Define and enforce mandatory training policies specific to each operational site.' }
+      },
+      conclusion: {
+        title: 'Conclusion',
+        text: 'The Vulcan Safety Manager represents a significant step forward for operational safety excellence. By digitizing these critical workflows, Vulcan Mining will not only ensure compliance but also foster a culture of transparency and efficiency. We are committed to delivering a world-class solution that meets your rigorous standards.'
+      },
+      thankYou: {
+        title: 'Contact Us',
+        contact: 'pita.domingos@zd044.onmicrosoft.com',
+        phone: '+258 84 547 9481'
       }
     }
   },
   pt: {
     nav: {
-      dashboard: 'Painel',
+      dashboard: 'Painel Operacional',
       enterpriseDashboard: 'Painel Corporativo',
-      siteGovernance: 'Governança de Sites',
-      database: 'Banco de Dados',
+      siteGovernance: 'Governança de Site',
+      database: 'Base de Dados',
       reports: 'Relatórios e Análises',
       booking: 'Agendar Treinamento',
-      trainerInput: 'Entrada do Instrutor',
-      records: 'Registros',
+      trainerInput: 'Área do Formador',
+      records: 'Histórico',
       users: 'Gestão de Usuários',
-      schedule: 'Agendar Treinamentos',
+      schedule: 'Cronograma de Aulas',
       settings: 'Configurações do Sistema',
-      requestCards: 'Solicitar Cartões CARs',
+      requestCards: 'Solicitar Cartões',
       manuals: 'Manuais do Usuário',
       adminGuide: 'Guia do Administrador',
       logs: 'Logs do Sistema',
-      proposal: 'Proposta de Projeto',
+      proposal: 'Proposta do Projeto',
       presentation: 'Modo Apresentação',
-      alcohol: 'Controle de Álcool',
-      systemHealth: 'Saúde do Sistema'
+      alcohol: 'Controle de Álcool'
     },
     common: {
-      vulcan: 'Gestor CARS',
+      vulcan: 'Gestor de RACS',
       safetySystem: 'Sistema de Gestão de Segurança',
       role: 'Função',
       activeSession: 'Sessão Ativa',
@@ -652,7 +509,7 @@ export const translations = {
       noNotifications: 'Sem novas notificações',
       viewProposal: 'Ver Proposta',
       simulateRole: 'Simular Função',
-      superuser: 'Acesso Superusuário',
+      superuser: 'Acesso de Superusuário',
       restricted: 'Acesso Restrito',
       loading: 'Carregando...',
       save: 'Salvar',
@@ -663,21 +520,9 @@ export const translations = {
       submit: 'Enviar',
       search: 'Pesquisar...',
       all: 'Todos',
-      allTenants: 'Todos Locatários',
-      allCompanies: 'Todas Empresas',
-      allContractors: 'Todas Contratadas',
-      allSites: 'Todos Locais',
-      allDepts: 'Todos Departamentos',
-      allRacs: 'Todos RACs',
-      allStatus: 'Todos Status',
-      allTrainers: 'Todos Instrutores',
-      selectSite: 'Selecionar Local',
-      selectRoom: 'Selecionar Sala',
-      selectInstructor: 'Selecionar Instrutor',
-      unknown: 'Desconhecido',
       date: 'Data',
       time: 'Hora',
-      status: 'Status',
+      status: 'Estado',
       name: 'Nome',
       email: 'Email',
       id: 'ID',
@@ -689,7 +534,7 @@ export const translations = {
       required: 'Obrigatório',
       optional: 'Opcional',
       download: 'Baixar',
-      upload: 'Enviar',
+      upload: 'Carregar',
       template: 'Modelo',
       import: 'Importar Dados',
       print: 'Imprimir',
@@ -699,62 +544,58 @@ export const translations = {
       page: 'Página',
       of: 'de',
       siteContext: 'Contexto do Site',
-      enterpriseView: 'Visão Empresarial (Todos os Sites)',
-      tenants: 'Locatários',
-      contractors: 'Contratadas',
-      sites: 'Locais',
-      depts: 'Departamentos'
+      enterpriseView: 'Visão Empresarial (Todos os Sites)'
     },
     verification: {
-      title: 'Digital Safety Passport',
+      title: 'Passaporte Digital de Segurança',
       verified: 'VERIFICADO',
-      notVerified: 'NÃO CONFORME',
+      notVerified: 'NÃO COMPLIANTE',
       notFound: 'REGISTRO NÃO ENCONTRADO',
       employeeDetails: 'Detalhes do Funcionário',
       activeRacs: 'Certificações Ativas',
       asoStatus: 'Médico (ASO)',
       dlStatus: 'Carta de Condução',
       validUntil: 'Válido Até',
-      scanTime: 'Escaneado em'
+      scanTime: 'Verificado às'
     },
     dashboard: {
       title: 'Visão Geral Operacional',
       subtitle: 'Métricas de treinamento de segurança em tempo real.',
       kpi: {
-        adherence: 'Adesão HSE',
+        adherence: 'Aderência HSE',
         certifications: 'Total de Certificações',
-        pending: 'Correção Pendente',
+        pending: 'Avaliação Pendente',
         expiring: 'Expirando (30 Dias)',
         scheduled: 'Sessões Agendadas'
       },
       charts: {
         complianceTitle: 'Conformidade de Treinamento por RAC & ASO',
-        complianceSubtitle: 'Mostra status obrigatório. Verde = Válido. Vermelho = Ausente/Expirado.',
+        complianceSubtitle: 'Mostra status obrigatório. Verde = Válido. Vermelho = Faltante/Expirado.',
         accessTitle: 'Status Geral de Acesso da Força de Trabalho',
         compliant: 'Conforme',
-        missing: 'Ausente / Expirado',
+        missing: 'Faltante / Expirado',
         nonCompliant: 'Não Conforme'
       },
       upcoming: {
         title: 'Próximas Sessões',
-        viewSchedule: 'Ver Agenda',
+        viewSchedule: 'Ver Cronograma',
         capacity: 'Capacidade',
-        status: 'Status',
+        status: 'Estado',
         date: 'Data / Hora',
         session: 'Info da Sessão'
       },
       booked: {
         title: 'Funcionários Agendados',
         tableEmployee: 'Funcionário / Empresa',
-        tableRac: 'RAC Agendado',
+        tableRac: 'RAC Agendada',
         tableDate: 'Data',
         tableRoom: 'Sala',
-        tableTrainer: 'Instrutor',
-        noData: 'Nenhum agendamento correspondente aos filtros'
+        tableTrainer: 'Formador',
+        noData: 'Nenhum agendamento corresponde aos filtros'
       },
       renewal: {
         title: 'Ação Necessária: Renovação de Treinamento',
-        message: 'funcionários têm treinamentos críticos expirando em 30 dias.',
+        message: 'funcionários têm treinamento crítico expirando em 30 dias.',
         button: 'Agendar Renovações'
       },
       autoBooking: {
@@ -763,63 +604,30 @@ export const translations = {
         subPart2: 'e reservou vagas para evitar bloqueio. Aprove para finalizar.'
       }
     },
-    systemHealth: {
-        title: 'Monitor de Saúde do Sistema',
-        subtitle: 'Telemetria de infraestrutura em tempo real e rastreamento de erros.',
-        uptime: 'Tempo de Atividade',
-        latency: 'Latência Média',
-        errors: 'Taxa de Erros',
-        services: 'Status do Serviço',
-        database: 'Banco de Dados',
-        ai: 'Motor de IA',
-        auth: 'Provedor de Autenticação',
-        storage: 'Armazenamento Blob',
-        cpu: 'Uso de CPU',
-        memory: 'Uso de Memória',
-        recentAlerts: 'Alertas Recentes do Sistema',
-        online: 'Online',
-        degraded: 'Degradado',
-        offline: 'Offline'
-    },
     enterprise: {
-        title: 'Painel de Comando Corporativo',
+        title: 'Centro de Comando Corporativo',
         subtitle: 'Visão Geral Global de Conformidade de Segurança',
         globalHealth: 'Pontuação Global de Saúde',
         totalWorkforce: 'Força de Trabalho Total',
         topPerformer: 'Melhor Desempenho',
-        needsAttention: 'Requer Atenção',
+        needsAttention: 'Precisa de Atenção',
         siteComparison: 'Comparação de Desempenho do Site',
-        operationsOverview: 'Visão Geral de Operações',
+        operationsOverview: 'Visão Geral das Operações',
         siteName: 'Nome do Site',
         staff: 'Equipe',
-        governanceTitle: 'Governança de Sites',
+        governanceTitle: 'Governança do Site',
         governanceSubtitle: 'Definir políticas de treinamento de segurança obrigatórias por local.',
-        pushPolicy: 'Salvar e Enviar Política',
-        policyApplied: 'Política Aplicada',
-        deptHeatmap: 'Mapa de Calor de Risco por Departamento',
-        tenantMatrix: 'Matriz de Desempenho do Locatário',
-        systemView: 'VISÃO DO SISTEMA',
-        bottlenecks: 'Gargalos de Treinamento',
-        noBottlenecks: 'Nenhum gargalo detectado.',
-        clickToGen: 'Clique em gerar para receber',
-        safetyIntel: 'inteligência de segurança em nível empresarial.',
-        multiTenantDiag: 'diagnóstico de segurança multi-locatário.'
-    },
-    siteGovernance: {
-      title: 'Governança de Sites',
-      subtitle: 'Definir políticas de treinamento de segurança obrigatórias por local.',
-      selectSite: 'Selecionar Local de Operação',
-      configure: 'Configurar RACs Obrigatórios',
-      policyUpdate: 'Política atualizada para {site}. Requisitos enviados para funcionários.'
+        pushPolicy: 'Salvar e Aplicar Política',
+        policyApplied: 'Política Aplicada'
     },
     database: {
-      title: 'Banco de Dados Mestre de Funcionários',
-      subtitle: 'Gerenciar requisitos. RAC 02 é desativado automaticamente se DL estiver expirado.',
+      title: 'Base de Dados Mestra de Funcionários',
+      subtitle: 'Gerenciar requisitos. RAC 02 é desativado automaticamente se a Carta estiver expirada.',
       filters: 'Filtros',
       accessStatus: 'Status de Acesso',
       granted: 'Concedido',
       blocked: 'Bloqueado',
-      employeeInfo: 'Informações do Funcionário e DL',
+      employeeInfo: 'Info do Funcionário & Carta',
       aso: 'ASO (Médico)',
       license: 'Carta',
       class: 'Classe',
@@ -831,7 +639,7 @@ export const translations = {
       opsMatrix: 'Matriz Operacional',
       transfer: {
         title: 'Editar / Transferir Funcionário',
-        subtitle: 'Atualizar detalhes do funcionário. Mudar a Empresa/Depto manterá registros históricos de treinamento sob a nova entidade.',
+        subtitle: 'Atualizar detalhes. Mudar a Empresa/Depto manterá o histórico de treinamento sob a nova entidade.',
         update: 'Atualizar Funcionário'
       },
       ops: {
@@ -848,8 +656,8 @@ export const translations = {
     booking: {
       title: 'Agendar Sessão de Treinamento',
       secureMode: 'Modo de Entrada de Dados Seguro',
-      manageSchedule: 'Gerenciar Agenda',
-      dlRequired: 'Detalhes da Carta de Condução necessários para RAC 02',
+      manageSchedule: 'Gerenciar Cronograma',
+      dlRequired: 'Detalhes da Carta de Condução obrigatórios para RAC 02',
       success: 'Agendamento enviado com sucesso!',
       selectSession: 'Selecionar Sessão de Treinamento',
       chooseSession: 'Escolha uma sessão...',
@@ -857,8 +665,8 @@ export const translations = {
         no: 'Nº',
         nameId: 'Nome / ID',
         details: 'Empresa / Depto',
-        dlNoClass: 'Nº DL / Classe',
-        dlExpiry: 'Validade DL',
+        dlNoClass: 'Nº Carta / Classe',
+        dlExpiry: 'Validade Carta',
         action: 'Ação'
       },
       addRow: 'Adicionar Linha',
@@ -866,11 +674,11 @@ export const translations = {
     },
     notifications: {
         expiryTitle: 'Treinamento Expirando',
-        expiryMsg: 'Treinamento para {name} ({rac}) expira em {days} dias.',
+        expiryMsg: 'O treinamento de {name} ({rac}) expira em {days} dias.',
         autoBookTitle: 'Auto-Agendamento Criado',
-        autoBookMsg: '{name} foi agendado automaticamente para {rac} em {date} (expira em {days} dias).',
+        autoBookMsg: '{name} foi auto-agendado para {rac} em {date} (expira em {days} dias).',
         autoBookFailTitle: 'Falha no Auto-Agendamento',
-        autoBookFailMsg: 'Não foi possível agendar automaticamente {name} para {rac}. Nenhuma sessão disponível encontrada.',
+        autoBookFailMsg: 'Não foi possível auto-agendar {name} para {rac}. Nenhuma sessão disponível encontrada.',
         capacityTitle: 'Sessão Cheia - Alocação Automática',
         capacityMsg: 'funcionários foram movidos para a próxima sessão disponível em',
         demandTitle: 'Alerta de Alta Demanda',
@@ -879,349 +687,291 @@ export const translations = {
         duplicateMsg: 'Usuário já agendado para este tipo de treinamento.'
     },
     ai: {
-        systemPromptAdvice: "Você é um Consultor de Segurança especialista para a Vulcan Mining. Você se especializa nas Regras de Atividade Crítica (RACs). Responda à pergunta do usuário sobre {rac}. Forneça conselhos concisos e acionáveis. Mantenha menos de 100 palavras. Idioma: {language}.",
-        systemPromptReport: "Você é um Analista de Dados de HSE. Analise as seguintes estatísticas de treinamento para o período {language}. Destaque as principais tendências, riscos e recomendações. Mantenha executivo e conciso."
+        systemPromptAdvice: "Você é um Consultor de Segurança especialista para a Mineração Vulcan. Você se especializa nas Regras Críticas de Segurança (RACs). Responda à pergunta do usuário sobre {rac}. Forneça conselhos concisos e acionáveis. Mantenha menos de 100 palavras. Idioma: {language}.",
+        systemPromptReport: "Você é um Analista de Dados HSE. Analise as seguintes estatísticas de treinamento para o período {language}. Destaque as principais tendências, riscos e recomendações. Mantenha executivo e conciso."
     },
-    advisor: { button: 'Consultor de Segurança', title: 'Consultor de Segurança IA CARS', sender: 'Consultor CARS', emptyState: 'Como posso ajudar?', placeholder: 'Pergunte sobre padrões RAC...' },
-    results: { title: 'Registros de Treinamento', subtitle: 'Ver resultados.', searchPlaceholder: 'Pesquisar...', table: { employee: 'Funcionário', session: 'Sessão', date: 'Data', trainer: 'Instrutor', room: 'Sala', dlRac02: 'DL (RAC 02)', theory: 'Teoria', prac: 'Prática', status: 'Status', expiry: 'Validade' } },
+    advisor: { button: 'Consultor de Segurança', title: 'Consultor IA CARS', sender: 'Consultor CARS', emptyState: 'Como posso ajudar?', placeholder: 'Pergunte sobre padrões RAC...' },
+    results: { title: 'Registros de Treinamento', subtitle: 'Ver resultados.', searchPlaceholder: 'Pesquisar...', table: { employee: 'Funcionário', session: 'Sessão', date: 'Data', trainer: 'Formador', room: 'Sala', dlRac02: 'Carta (RAC 02)', theory: 'Teoria', prac: 'Prática', status: 'Estado', expiry: 'Validade' } },
     cards: { 
         title: 'Cartões de Segurança', 
-        showing: 'Exibindo', 
+        showing: 'Mostrando', 
         subtitle: 'Selecione funcionários.', 
-        goToPrint: 'Ir para Visualização de Impressão', 
+        goToPrint: 'Ir para Impressão', 
         selected: 'Selecionado', 
         successTitle: 'Solicitação Enviada', 
         successMsg: 'Solicitação de cartão encaminhada.', 
         noRecords: 'Nenhum Registro Elegível', 
         noRecordsSub: 'Apenas registros aprovados aparecem aqui.', 
-        selectAll: 'Selecionar Todos', 
+        selectAll: 'Selecionar Tudo', 
         sending: 'Enviando...', 
         requestButton: 'Solicitar Cartões', 
         validation: { ineligible: 'Funcionário inelegível.', maxSelection: 'Máx 8 cartões.', incomplete: 'Incompleto' },
         eligibility: {
             failedTitle: 'Falha na Verificação de Elegibilidade',
-            failedMsg: 'Você não atende atualmente aos requisitos para um cartão de segurança. Certifique-se de que seu ASO é válido e que você passou em todos os treinamentos obrigatórios.',
+            failedMsg: 'Você não atende atualmente aos requisitos para um cartão de segurança. Certifique-se de que seu ASO é válido e que você passou em todos os treinamentos necessários.',
             checkReqs: 'Verificar Requisitos'
         }
     },
-    trainer: { title: 'Entrada do Instrutor', subtitle: 'Inserir notas.', passMark: 'Aprovação: 70%', loggedInAs: 'Logado como', selectSession: 'Selecionar Sessão', noSessions: 'Nenhuma sessão.', chooseSession: 'Escolha a sessão...', dlWarning: 'Verificar DL para RAC 02.', saveResults: 'Salvar Resultados', table: { employee: 'Funcionário', attendance: 'Presente', dlCheck: 'Verif. DL', verified: 'Verificado', theory: 'Teoria', practical: 'Prática', rac02Only: '(RAC 02)', status: 'Status' } },
-    users: { 
-        title: 'Gestão de Usuários', 
-        subtitle: 'Gerenciar acesso e funções.', 
-        addUser: 'Adicionar Usuário', 
-        table: { user: 'Usuário', role: 'Função', status: 'Status', actions: 'Ações' }, 
-        modal: { title: 'Adicionar Usuário', name: 'Nome', email: 'Email', createUser: 'Criar', selectSite: 'Atribuir Site', siteRequired: 'Atribuição de site necessária para esta função', count: 'Admins Atuais' },
-        limitError: 'Limite Alcançado: Máximo de 3 Admins de RAC permitidos por site. Entre em contato com o Admin do Sistema para solicitar um aumento para esta Empresa.'
-    },
-    schedule: { title: 'Agenda de Treinamento', subtitle: 'Gerenciar sessões.', newSession: 'Nova Sessão', table: { date: 'Data/Hora', rac: 'RAC', room: 'Local', trainer: 'Instrutor' }, modal: { title: 'Agendar', racType: 'RAC', date: 'Data', startTime: 'Início', location: 'Local', capacity: 'Cap', instructor: 'Instr', saveSession: 'Salvar', language: 'Idioma', english: 'Inglês', portuguese: 'Português' } },
-    settings: { title: 'Configurações', subtitle: 'Config.', saveAll: 'Salvar', saving: 'Salvando...', tabs: { general: 'Geral', trainers: 'Trainers', racs: 'RACs', sites: 'Locais', companies: 'Empresas', branding: 'Branding', contractors: 'Contratadas' }, rooms: { title: 'Salas', name: 'Nome', capacity: 'Cap', new: 'Nova Sala' }, trainers: { title: 'Instrutores', name: 'Nome', qualifiedRacs: 'RACs', new: 'Novo Instrutor' }, racs: { title: 'RACs', code: 'Código', description: 'Desc', new: 'Novo RAC' } },
-    reports: { title: 'Relatórios', subtitle: 'Análises.', printReport: 'Imprimir', filters: { period: 'Período', department: 'Depto', racType: 'RAC', startDate: 'Início', endDate: 'Fim' }, periods: { weekly: 'Semanal', monthly: 'Mensal', ytd: 'Anual', custom: 'Personalizado' }, generate: 'Gerar IA', analyzing: 'Analisando...', stats: { totalTrained: 'Total', passRate: 'Taxa Aprov.', attendance: 'Presença', noShows: 'Ausências' }, charts: { performance: 'Desempenho' }, executiveAnalysis: 'Análise Executiva IA', trainerMetrics: { title: 'Métricas do Instrutor', name: 'Instrutor', sessions: 'Sessões', passRate: 'Taxa Aprov.', avgTheory: 'Teoria', avgPrac: 'Prática' } },
-    logs: { title: 'Logs do Sistema', levels: { all: 'Todos Níveis', info: 'Info', warn: 'Aviso', error: 'Erro', audit: 'Auditoria' }, table: { level: 'Nível', timestamp: 'Carimbo de Data/Hora', user: 'Usuário', message: 'Mensagem' } },
-    manuals: {
-      title: 'Manuais do Usuário',
-      subtitle: 'Guias baseados em função para uso do sistema.',
-      sysAdmin: {
-        title: 'Administrador do Sistema',
-        subtitle: 'Controle Total do Sistema',
+    trainer: { title: 'Área do Formador', subtitle: 'Inserir notas.', passMark: 'Aprovação: 70%', loggedInAs: 'Logado como', selectSession: 'Selecionar Sessão', noSessions: 'Nenhuma sessão.', chooseSession: 'Escolha a sessão...', dlWarning: 'Verificar Carta para RAC 02.', saveResults: 'Salvar Resultados', table: { employee: 'Funcionário', attendance: 'Presente', dlCheck: 'Verif. Carta', verified: 'Verificado', theory: 'Teoria', practical: 'Prática', rac02Only: '(RAC 02)', status: 'Estado' } },
+    users: { title: 'Gestão de Usuários', subtitle: 'Gerenciar acesso.', addUser: 'Adicionar Usuário', table: { user: 'Usuário', role: 'Função', status: 'Estado', actions: 'Ações' }, modal: { title: 'Adicionar Usuário', name: 'Nome', email: 'Email', createUser: 'Criar' } },
+    schedule: { title: 'Cronograma de Treinamento', subtitle: 'Gerenciar sessões.', newSession: 'Nova Sessão', table: { date: 'Data/Hora', rac: 'RAC', room: 'Local', trainer: 'Instrutor' }, modal: { title: 'Agendar', racType: 'RAC', date: 'Data', startTime: 'Início', location: 'Local', capacity: 'Cap', instructor: 'Instr', saveSession: 'Salvar Sessão', language: 'Idioma', english: 'Inglês', portuguese: 'Português' } },
+    settings: { title: 'Configurações', subtitle: 'Config.', saveAll: 'Salvar Tudo', saving: 'Salvando...', tabs: { general: 'Geral', trainers: 'Formadores', racs: 'RACs', sites: 'Sites', companies: 'Empresas' }, rooms: { title: 'Salas', name: 'Nome', capacity: 'Cap', new: 'Nova Sala' }, trainers: { title: 'Formadores', name: 'Nome', qualifiedRacs: 'RACs', new: 'Novo Formador' }, racs: { title: 'RACs', code: 'Código', description: 'Desc', new: 'Nova RAC' } },
+    reports: { title: 'Relatórios', subtitle: 'Análises.', printReport: 'Imprimir', filters: { period: 'Período', department: 'Depto', racType: 'RAC', startDate: 'Início', endDate: 'Fim' }, periods: { weekly: 'Semanal', monthly: 'Mensal', ytd: 'YTD', custom: 'Personalizado' }, generate: 'Gerar IA', analyzing: 'Analisando...', stats: { totalTrained: 'Total', passRate: 'Taxa Aprov.', attendance: 'Presença', noShows: 'Ausências' }, charts: { performance: 'Desempenho' }, executiveAnalysis: 'Análise Executiva IA', trainerMetrics: { title: 'Métricas do Formador', name: 'Formador', sessions: 'Sessões', passRate: 'Taxa Aprov.', avgTheory: 'Teoria', avgPrac: 'Prática' } },
+    logs: { title: 'Logs do Sistema', levels: { all: 'Todos os Níveis', info: 'Info', warn: 'Aviso', error: 'Erro', audit: 'Auditoria' }, table: { level: 'Nível', timestamp: 'Carimbo de data/hora', user: 'Usuário', message: 'Mensagem' } },
+    adminManual: {
+      title: 'Manual do Sistema',
+      subtitle: 'Guia do Administrador para Configuração e Lógica do Sistema',
+      slides: {
+        intro: 'Introdução',
+        objectives: 'Objetivos e Escopo',
+        logic: 'Lógica de Conformidade',
+        workflow: 'Fluxo de Dados Principal',
+        config: 'Configuração do Sistema',
+        booking: 'Regras de Agendamento',
+        advanced: 'Capacidades Avançadas',
+        troubleshoot: 'Solução de Problemas',
+        hierarchy: 'Hierarquia e Faturamento'
+      },
+      content: {
+        confidential: 'CONFIDENCIAL',
+        production: 'PRODUÇÃO v2.5',
+        objectives: {
+          title: 'Objetivos e Escopo',
+          problemTitle: 'Desafios Atuais',
+          solutionTitle: 'Soluções do Sistema',
+          p1Title: 'Integridade de Dados',
+          p1Desc: 'Planilhas fragmentadas levam a lacunas de conformidade e registros perdidos.',
+          p2Title: 'Tempo de Conformidade',
+          p2Desc: 'O rastreamento manual falha em detectar expirações antes que ocorra o bloqueio do site.',
+          p3Title: 'Carga Administrativa',
+          p3Desc: 'As equipes de HSE gastam 40% do tempo cruzando listas manualmente.',
+          s1Title: 'Verdade Central',
+          s1Desc: 'Banco de dados imutável único para todos os dados de treinamento, saúde e operacionais.',
+          s2Title: 'Auto-Aplicação',
+          s2Desc: 'Porta lógica bloqueia automaticamente o acesso se qualquer requisito expirar.',
+          s3Title: 'Eficiência',
+          s3Desc: 'Tempo administrativo reduzido em 85% via processamento em lote e auto-agendamento.'
+        },
+        formulaTitle: 'A Fórmula de Conformidade',
+        formulaLogic: {
+          active: 'Status Ativo',
+          aso: 'ASO Válido',
+          racs: 'RACs Necessárias',
+          result: 'ACESSO CONCEDIDO'
+        },
+        flowTitle: 'Fluxo de Dados Principal',
+        flowSteps: {
+          db: 'Banco de Dados',
+          dbDesc: 'Definir Requisitos do Funcionário',
+          book: 'Agendamento',
+          bookDesc: 'Agendar Sessão de Treinamento',
+          res: 'Resultados',
+          resDesc: 'Capturar Nota e Presença',
+          stat: 'Status',
+          statDesc: 'Auto-Calcular Conformidade'
+        },
         configTitle: 'Configuração do Sistema',
-        configDesc: 'Configurar parâmetros iniciais para toda a plataforma.',
-        rooms: 'Definir Salas de Treinamento',
-        trainers: 'Registrar Instrutores',
-        racs: 'Configurar Definições de RAC',
-        dbTitle: 'Gestão de Banco de Dados',
-        dbDesc: 'Gerenciar os registros mestres de funcionários.',
-        restrictionWarning: 'Garanta que as Colunas da Matriz estejam alinhadas com as definições de RAC.',
-        csv: 'Use o modelo de importação para dados em massa.',
-        active: 'Alternar Status Ativo para gerenciar licenças.'
-      },
-      racAdmin: {
-        title: 'Administrador de RAC',
-        subtitle: 'Gestão de Cronograma de Treinamento',
-        schedTitle: 'Agendamento',
-        schedDesc: 'Criar e gerenciar sessões de treinamento.',
-        create: 'Criar Sessão',
-        lang: 'Definir Idioma (PT/EN)',
-        autoTitle: 'Auto-Agendamento',
-        autoDesc: 'Lidar com agendamentos gerados pelo sistema.',
-        approve: 'Revisar e aprovar auto-agendamentos prontamente.',
-        renewTitle: 'Renovações',
-        renewDesc: 'Processar certificações expirando.'
-      },
-      racTrainer: {
-        title: 'Instrutor RAC',
-        subtitle: 'Avaliação & Presença',
-        inputTitle: 'Entrada de Resultados',
-        inputDesc: 'Inserir notas e verificar presença.',
-        grading: 'Marcar Presença & Notas',
-        rac02: 'RAC 02 requer Verificação de Carta de Condução.',
-        save: 'Salvar Resultados para atualizar Banco de Dados.'
-      },
-      deptAdmin: {
-        title: 'Admin de Departamento',
-        subtitle: 'Visualizar & Solicitar',
-        reqTitle: 'Solicitações de Cartão',
-        reqDesc: 'Solicitar cartões físicos para equipe conforme.',
-        search: 'Filtrar por Departamento',
-        print: 'Gerar Lote de Impressão',
-        repTitle: 'Relatórios',
-        repDesc: 'Ver estatísticas de conformidade do departamento.'
-      },
-      user: {
-        title: 'Usuário Geral',
-        subtitle: 'Portal de Autoatendimento',
-        statusTitle: 'Meu Status',
-        statusDesc: 'Verifique seu status atual de conformidade.',
-        filterAlert: 'Você só pode visualizar seus próprios registros.',
-        green: 'Acesso Concedido',
-        red: 'Acesso Negado',
-        qr: 'Baixar Passaporte Digital'
-      }
-    },
-    alcohol: {
-      banner: {
-        title: 'Integração de Álcool IoT',
-        desc: 'Controle de acesso automatizado via integração de bafômetro.',
-        status: 'Sistema Pronto'
-      },
-      features: {
-        title: 'Recursos Principais',
-        iotTitle: 'Conectividade IoT',
-        iotDesc: 'Conexão direta com dispositivos de bafômetro.',
-        accessTitle: 'Controle de Acesso',
-        accessDesc: 'Bloqueio automático em leitura positiva.',
-        complianceTitle: 'Log de Conformidade',
-        complianceDesc: 'Registro histórico de todos os testes.'
-      },
-      protocol: {
-        title: 'Protocolo de Segurança',
-        positiveTitle: 'Leitura Positiva',
-        positiveDesc: 'Bloqueio imediato do portão e notificação ao supervisor.',
-        resetTitle: 'Procedimento de Redefinição',
-        resetDesc: 'Redefinição manual necessária pelo oficial de HSE após teste secundário.'
-      },
-      challenges: {
-        title: 'Desafios de Integração',
-        oemIssue: 'Compatibilidade de hardware legado.',
-        gateSetup: 'Latência física do torniquete.'
-      },
-      proposal: {
-        title: 'Plano de Implementação',
-        faceCap: 'Integração de Reconhecimento Facial',
-        integration: 'Desenvolvimento de API',
-        projectScope: 'Hardware e Cabeamento'
+        configCards: {
+          racs: 'Definições de RAC',
+          racsDesc: 'Defina os módulos (ex: RAC 01, PTS). Aviso: Excluir uma RAC aqui remove a coluna da matriz do banco de dados.',
+          rooms: 'Salas e Capacidade',
+          roomsDesc: 'Defina limites físicos para salas de aula para evitar overbooking durante a fase de agendamento.',
+          trainers: 'Formadores e Aut',
+          trainersDesc: 'Registre instrutores e autorize-os para módulos específicos. Apenas formadores autorizados aparecem nos menus suspensos.'
+        },
+        bookingTitle: 'Regras de Agendamento',
+        matrixLock: 'Bloqueio de Matriz',
+        matrixDesc: 'O sistema impede o agendamento de treinamentos que não são exigidos pelo perfil do funcionário.',
+        gradingTitle: 'Padrões de Avaliação',
+        gradingText: 'A nota de aprovação é 70%. A presença é obrigatória. Tentativas falhas exigem re-agendamento.',
+        rac02Title: 'Específicos da RAC 02',
+        rac02Text: 'Requer verificação da Carta de Condução. Se a Carta estiver expirada, o sistema reprova automaticamente o aluno.',
+        expiryTitle: 'Auto-Expiração',
+        expiryText: 'Certificações são válidas por 2 anos. O re-treinamento é sinalizado 30 dias antes.',
+        advancedTitle: 'Capacidades Avançadas',
+        autoBook: 'Motor de Auto-Agendamento',
+        autoBookDesc: 'O sistema detecta funcionários expirando em < 7 dias e auto-reserva a próxima vaga disponível para evitar bloqueio.',
+        aiRep: 'Relatórios IA',
+        aiRepDesc: 'Gera resumos executivos usando Gemini 1.5 Pro para identificar departamentos de alto risco.',
+        alc: 'Controle de Álcool',
+        alcDesc: 'Roteiro de integração IoT para intertravamento de bafômetro com catracas.',
+        tsTitle: 'Solução de Problemas',
+        ts1: 'Pesquisa Não Encontrada?',
+        ts1Desc: 'Certifique-se de que o ID do Funcionário corresponda exatamente à importação do CSV.',
+        ts2: 'Status Bloqueado?',
+        ts2Desc: 'Verifique a data do ASO (Médico). ASO expirado bloqueia o acesso independentemente do treinamento.',
+        ts3: 'Erro de Scan QR?',
+        ts3Desc: 'Verifique se o dispositivo tem acesso à internet para consultar o banco de dados ao vivo.',
+        hierarchy: {
+            title: 'Organograma do Sistema e Faturamento',
+            billingTitle: 'Modelo de Faturamento SaaS',
+            billingDesc: 'A plataforma usa uma estrutura de faturamento baseada em funções. Assentos administrativos são gratuitos. Cobranças aplicam-se apenas aos usuários finais rastreados no sistema.',
+            cost: '$2.00',
+            perUser: 'por Usuário Geral / Mês',
+            roles: {
+                sysAdmin: 'Admin do Sistema (Dono SaaS)',
+                entAdmin: 'Admin Empresarial (Sede Cliente)',
+                siteAdmin: 'Admin do Site (Gerente Local)',
+                ops: 'Admins Operacionais (RAC/Depto/Formadores)',
+                user: 'Usuário Geral (Faturável)'
+            }
+        }
       }
     },
     proposal: {
-      title: 'Órbita de Segurança Digital',
-      subtitle: 'Proposta Técnica e Comercial',
-      header: {
-        ref: 'Ref: VUL-DSO-2024',
-        date: 'Maio 2024',
-        subject: 'Assunto: Proposta de Transformação de Segurança Digital'
+      digitalTrans: 'Plataforma SaaS Empresarial',
+      aboutMe: {
+        title: 'Sobre a DigiSols',
+        name: 'Pita Domingos',
+        preferred: 'Arquiteto Líder',
+        role: 'Desenvolvedor Full Stack',
+        cert: 'Arquiteto de Soluções Certificado',
+        bio: 'A DigiSols é especializada em sistemas de segurança de nível empresarial e transformação digital para o setor de mineração. Focada em arquiteturas de conformidade sem tempo de inatividade e soluções SaaS escaláveis.'
       },
-      foreword: {
+      letter: {
+        date: "12/11/2025",
+        to: "A Equipe de Gestão\nOperações de Mineração Vulcan\nTete, Moçambique",
+        subject: "Proposta para Implementação do Sistema de Gestão de Segurança Digital",
+        greeting: "Prezada Equipe de Gestão,",
+        body1: "Temos o prazer de submeter esta proposta para o desenvolvimento e implementação do Gestor de Segurança Vulcan (Gestor de RACS). Esta solução digital abrangente foi projetada para otimizar a gestão de treinamentos de Requisitos de Atividade Crítica (RAC), garantindo 100% de visibilidade de conformidade e eficiência operacional.",
+        body2: "Nossa solução aborda os desafios atuais de rastreamento manual, dados fragmentados e relatórios atrasados. Ao centralizar dados de funcionários, registros de treinamento e emissão de credenciais digitais, visamos reduzir significativamente a sobrecarga administrativa e melhorar os padrões de segurança do local.",
+        body3: "O sistema proposto inclui recursos avançados como relatórios impulsionados por IA, painéis em tempo real e controle de acesso seguro baseado em função, adaptados especificamente para o contexto do ambiente de mineração.",
+        closing: "Aguardamos a oportunidade de fazer parceria com a Mineração Vulcan nesta iniciativa crítica de segurança.",
+        signOff: "Atenciosamente,\nEquipe DigiSols\nPITA DOMINGOS",
+        address: "Perto de O Puarrou - Bairro Chingodzi, Tete"
+      },
+      execSummary: {
         title: 'Resumo Executivo',
-        intro: 'Temos o prazer de apresentar esta proposta para a completa digitalização do Sistema de Gestão de Treinamento de Segurança da Vulcan Mining. Nossa solução, "Gestor CARS", agiliza o rastreamento de conformidade, automatiza o agendamento e utiliza IA para insights de segurança preditiva.',
-        overviewTitle: 'Visão Geral do Projeto',
-        overviewText: 'O objetivo é substituir planilhas legadas por uma plataforma centralizada na nuvem multi-locatário que aplica regras críticas de segurança (RACs) e fornece visibilidade em tempo real sobre a prontidão da força de trabalho.'
+        text: 'O Gestor de RACS é uma aplicação web especializada meticulosamente projetada para revolucionar o ciclo de vida do treinamento de segurança para Requisitos de Atividade Crítica (RAC 01 - RAC 10). Este sistema inovador aborda diretamente as ineficiências inerentes aos processos manuais tradicionais, como planilhas díspares e canais de comunicação fragmentados. Ao consolidar isso em uma plataforma digital centralizada, o Gestor de RACS fornece uma solução abrangente para gerenciar todos os aspectos do treinamento de segurança, desde o agendamento inicial e rastreamento rigoroso de resultados até a emissão perfeita de certificações (CARs) e monitoramento contínuo de conformidade. Essa abordagem integrada garante que todos os dados críticos de treinamento de segurança sejam facilmente acessíveis, precisos e atualizados, melhorando significativamente a segurança operacional e a adesão regulatória. O design do sistema prioriza a experiência do usuário enquanto oferece funcionalidade robusta, tornando-o uma ferramenta indispensável para organizações comprometidas em manter os mais altos padrões de segurança no local de trabalho.',
+        quote: '"Segurança não é apenas uma prioridade, é um valor fundamental. Nossas ferramentas digitais devem refletir o mesmo padrão de excelência de nosso maquinário operacional."'
       },
       objectives: {
-        title: 'Objetivos do Projeto',
-        problem: 'Processos manuais atuais levam a lacunas de conformidade, perda de registros e gargalos de treinamento.',
-        items: [
-          { title: 'Centralização', desc: 'Fonte única de verdade para todos os dados de segurança.' },
-          { title: 'Automação', desc: 'Renovação automática e notificações de expiração.' },
-          { title: 'Inteligência', desc: 'Relatórios e análise de risco baseados em IA.' },
-          { title: 'Mobilidade', desc: 'Cartões de identificação digitais e verificação móvel.' }
+        title: 'Objetivos Principais',
+        problemTitle: 'Metas Chave',
+        problemText: 'O Gestor de RACS é impulsionado por um conjunto de objetivos principais claramente definidos, cada um meticulosamente projetado para transformar e elevar o processo de gestão de treinamento de segurança. O objetivo principal é a Digitalização, visando eliminar completamente a dependência de sistemas de agendamento baseados em papel e emissão manual de cartões. Essa transição para um fluxo de trabalho totalmente digital não apenas aumenta a eficiência, mas também reduz significativamente o erro humano.',
+        solutionTitle: 'Benefícios',
+        goals: [
+          'Digitalização: Eliminar agendamento em papel e cartões manuais.',
+          'Conformidade: 100% de visibilidade sobre validade/expiração.',
+          'Segurança Baseada em Função: Segregação de deveres (Admin/Formador/Visualizador).',
+          'Eficiência: Redução de 90% no tempo administrativo para geração de cartões.'
         ]
       },
       organogram: {
         title: 'Organograma do Projeto',
         pm: 'Gerente de Projeto',
-        tech1: 'Técnico 1',
-        tech2: 'Técnico 2'
-      },
-      roles: {
-        title: 'Papéis e Responsabilidades Chave',
-        items: [
-          { role: 'Gerente de Projeto', desc: 'Propriedade geral da entrega, contato com cliente e gestão de cronograma.' },
-          { role: 'Desenvolvedor Líder', desc: 'Arquitetura do sistema, lógica de backend e implementação de segurança.' },
-          { role: 'Técnico de Suporte', desc: 'Implantação no local, treinamento de usuários e integração de hardware.' }
-        ]
+        delivery: 'Entrega de Serviço',
+        tech1: 'Engenheiro Frontend',
+        tech2: 'Engenheiro Backend',
+        regime: 'Regime Híbrido'
       },
       timeline: {
-        title: 'Cronograma de Implementação',
-        subtitle: 'Estratégia de lançamento em fases',
-        phases: [
-          { title: 'Fase 1: Descoberta e Configuração', weeks: 'Semanas 1-2', desc: 'Levantamento de requisitos e provisionamento de ambiente.' },
-          { title: 'Fase 2: Desenvolvimento', weeks: 'Semanas 3-8', desc: 'Desenvolvimento de módulos principais e integração.' },
-          { title: 'Fase 3: Testes e Treinamento', weeks: 'Semanas 9-10', desc: 'UAT e sessões de integração de usuários.' },
-          { title: 'Fase 4: Go Live', weeks: 'Semana 11', desc: 'Implantação em produção e entrega.' }
-        ]
+        title: 'Plano de Implementação de 11 Semanas',
+        phase1: 'Fase 1: Descoberta e Protótipo (Semanas 1-2)',
+        phase1desc: 'Levantamento abrangente de requisitos, revisão do protótipo de alta fidelidade existente com as partes interessadas e finalização do esquema do banco de dados.',
+        phase2: 'Fase 2: Desenvolvimento Principal (Semanas 3-6)',
+        phase2desc: 'Implementação de funcionalidades críticas: Controle de Acesso Baseado em Função (RBAC), Lógica de Agendamento e módulos de Entrada do Formador.',
+        phase3: 'Fase 3: Recursos Avançados (Semanas 7-8)',
+        phase3desc: 'Geração de Cartão PDF, Notificações por Email Automatizadas e Painéis de Relatórios/KPI.',
+        phase4: 'Fase 4: UAT e Implantação (Semanas 9-10)',
+        phase4desc: 'Teste de Aceitação do Usuário (UAT) pelos usuários finais, correção de bugs e implantação em produção.',
+        phase5: 'Fase 5: Treinamento e Entrega (Semana 11)',
+        phase5desc: 'Sessões de treinamento da equipe adaptadas para todas as funções de usuário e distribuição de Manuais do Usuário abrangentes.'
       },
       techStack: {
-        title: 'Pilha Tecnológica',
-        items: [
-          { name: 'React', desc: 'Framework Frontend' },
-          { name: 'TypeScript', desc: 'Segurança de Tipo' },
-          { name: 'Tailwind CSS', desc: 'Motor de Estilo' },
-          { name: 'Gemini IA', desc: 'Inteligência Artificial' }
-        ]
+        title: 'Arquitetura Técnica',
+        frontendTitle: 'Aplicação Frontend',
+        frontend: 'Construído em React.js (biblioteca JavaScript) com Tailwind CSS para estilo utilitário. Apresenta Geração de PDF no Lado do Cliente para cartões instantâneos.',
+        backendTitle: 'Backend e Banco de Dados',
+        backend: 'Arquitetura de Nuvem Serverless (Funções Node.js) para processamento orientado a eventos e eficiência de custos.',
+        databaseTitle: 'Persistência de Dados',
+        database: 'Banco de Dados NoSQL em Tempo Real para alto desempenho, baixa latência e manuseio eficiente de grandes conjuntos de dados.',
+        securityTitle: 'Infraestrutura e Segurança',
+        security: 'CDN Global para acesso de baixa latência. Autenticação Segura (Email/SSO) e Controle de Acesso Baseado em Função (RBAC) granular.'
       },
-      costs: {
-        title: 'Resumo de Investimento',
-        subtitle: 'Orçamento Proposto',
+      financials: {
+        title: 'Investimento Financeiro',
         items: [
-          { item: 'Licença de Software (Anual)', type: 'Assinatura SaaS', cost: '$12,000' },
-          { item: 'Implementação e Configuração', type: 'Taxa Única', cost: '$5,000' },
-          { item: 'Desenvolvimento Personalizado', type: 'Serviços Profissionais', cost: '$3,500' },
-          { item: 'Treinamento e Integração', type: 'Serviços Profissionais', cost: '$2,000' }
+          { name: 'Arquitetura de Software e Desenvolvimento', type: 'Único', cost: '$20,000.00' },
+          { name: 'Design UI/UX e Prototipagem', type: 'Único', cost: '$8,000.00' },
+          { name: 'Configuração e Assinatura da Estrutura de Nuvem', type: 'Mensal', cost: '$5,000.00' },
+          { name: 'Treinamento e Documentação', type: 'Único', cost: '$10,000.00' },
+          { name: 'Manutenção/Suporte e Taxa de Gestão', type: 'Mensal', cost: '$15,000.00' }
         ]
       },
       roadmap: {
         title: 'Roteiro Futuro',
-        items: [
-          { title: 'Integração IoT', desc: 'Conectar bafômetros e portões de acesso.' },
-          { title: 'Aplicativo Móvel', desc: 'Aplicativo nativo iOS e Android.' },
-          { title: 'Análise Avançada', desc: 'Modelagem de segurança preditiva.' },
-          { title: 'Expansão Global', desc: 'Suporte multi-região.' }
-        ]
+        auth: 'Integração SSO',
+        authDesc: 'Conectar com Azure AD para Single Sign-On.',
+        db: 'Migração para Nuvem',
+        dbDesc: 'Mover de local para Azure/AWS para escalabilidade.',
+        email: 'Emails Automatizados',
+        emailDesc: 'Enviar certificados PDF diretamente para o email do funcionário.',
+        hosting: 'App Móvel',
+        hostingDesc: 'App nativo Android/iOS para verificação em campo.'
       },
-      ai: {
-        title: 'Estratégia de Integração de IA',
-        items: [
-          { title: 'Análise Preditiva', desc: 'Prever necessidades de treinamento e gargalos.' },
-          { title: 'Suporte Automatizado', desc: 'Chatbot Consultor de Segurança IA 24/7.' },
-          { title: 'Relatórios Inteligentes', desc: 'Geração de relatórios em linguagem natural.' }
-        ]
+      aiFeatures: {
+        title: 'IA e Recursos Inteligentes',
+        chatbot: 'Chatbot Consultor de Segurança: Assistente de IA incorporado para perguntas sobre padrões RAC.',
+        reporting: 'Relatórios Automatizados: A IA analisa tendências mensais para identificar departamentos de alto risco.'
       },
-      alcohol: {
-        title: 'Módulo de Controle de Álcool',
-        items: [
-          { title: 'Monitoramento em Tempo Real', desc: 'Sincronização instantânea de resultados de bafômetro.' },
-          { title: 'Bloqueio de Acesso', desc: 'Bloqueio automático de portão em teste positivo.' },
-          { title: 'Trilha de Auditoria', desc: 'Registro imutável de todos os testes.' }
-        ]
+      futureUpdates: {
+        title: 'Escopo de Integração de Álcool e IoT',
+        moduleA: 'Módulo A: Integração de Software - Endpoints de API para Dados do Bafômetro, Widget de Painel "Aptidão para o Trabalho", Lógica para bloquear emissão de cartão.',
+        moduleB: 'Módulo B: Infraestrutura (Projeto Independente) - Obras Civis (Catracas), Cabeamento, Hardware de Bafômetro com Face-ID.'
       },
-      enhanced: {
-        title: 'Capacidades Aprimoradas',
-        items: [
-          { title: 'Modo Offline', desc: 'Suporte PWA para baixa conectividade.' },
-          { title: 'Auth Biométrica', desc: 'Login seguro via impressão digital/rosto.' }
-        ]
+      enhancedCaps: {
+        title: 'Capacidades Operacionais Aprimoradas',
+        mobileVerify: { title: 'Verificação Móvel (Passaporte Digital)', desc: 'Oficiais de segurança de campo podem verificar a conformidade do funcionário instantaneamente escaneando o código QR no cartão de segurança usando qualquer smartphone. Retorna "Passaporte Digital" seguro em tempo real.' },
+        autoBooking: { title: 'Auto-Agendamento Inteligente', desc: 'O sistema monitora proativamente as datas de expiração. Quando uma certificação está a < 7 dias de expirar, o sistema agenda automaticamente uma vaga. Inclui Fluxo de Aprovação de Admin.' },
+        massData: { title: 'Gestão de Dados em Massa', desc: 'Lide eficientemente com grandes conjuntos de dados da força de trabalho com recursos de importação/exportação em massa via CSV. Inclui Correspondência Automática de Registros.' },
+        auditLogs: { title: 'Trilhas de Auditoria do Sistema', desc: 'Registro abrangente de todas as atividades do sistema garante responsabilidade e segurança. Inclui Logs de Alteração com Carimbo de Data/Hora.' },
+        smartBatching: { title: 'Escalabilidade SaaS', desc: 'A arquitetura multi-tenant permite gerenciar várias empresas clientes e sites a partir de um único painel.' },
+        matrixCompliance: { title: 'Governança do Site', desc: 'Definir e aplicar políticas de treinamento obrigatórias específicas para cada site operacional.' }
       },
       conclusion: {
         title: 'Conclusão',
-        text: 'Esta proposta delineia um caminho abrangente para modernizar as operações de segurança da Vulcan. Ao adotar o Gestor CARS, você garante não apenas a conformidade, mas um ambiente de trabalho mais seguro e eficiente para todos.'
+        text: 'O Gestor de Segurança Vulcan representa um passo significativo para a excelência em segurança operacional. Ao digitalizar esses fluxos de trabalho críticos, a Mineração Vulcan não apenas garantirá a conformidade, mas também promoverá uma cultura de transparência e eficiência. Estamos comprometidos em entregar uma solução de classe mundial que atenda aos seus rigorosos padrões.'
       },
       thankYou: {
-        title: 'Obrigado',
-        company: 'DigiSol Orbit',
-        contact: 'Pita Domingos',
-        phone: '+258 84 123 4567',
-        address: 'Tete, Moçambique'
+        title: 'Contate-nos',
+        contact: 'pita.domingos@zd044.onmicrosoft.com',
+        phone: '+258 84 547 9481'
       }
     },
-    adminManual: {
-      title: 'Manual do Administrador',
-      subtitle: 'Documentação Abrangente do Sistema',
-      slides: {
-        intro: 'Introdução',
-        hierarchy: 'Hierarquia do Sistema',
-        objectives: 'Objetivos Chave',
-        logic: 'Lógica Central',
-        workflow: 'Fluxo de Trabalho do Sistema',
-        config: 'Configuração',
-        booking: 'Regras de Agendamento',
-        advanced: 'Recursos Avançados',
-        troubleshoot: 'Solução de Problemas'
-      },
-      content: {
-        confidential: 'Confidencial',
-        production: 'Pronto para Produção',
-        hierarchy: {
-          title: 'Hierarquia do Sistema e Funções',
-          roles: {
-            sysAdmin: 'Admin do Sistema',
-            entAdmin: 'Admin da Empresa',
-            siteAdmin: 'Admin do Local',
-            ops: 'Funções Operacionais',
-            user: 'Usuário Final'
-          },
-          billingTitle: 'Modelo de Licenciamento',
-          billingDesc: 'Preços flexíveis por níveis baseados em usuários ativos.',
-          cost: '$2.00',
-          perUser: 'Por Usuário Ativo / Mês'
+    alcohol: {
+        banner: {
+            title: 'Controle de Álcool IoT',
+            desc: 'Integração em tempo real com hardware de bafômetro industrial e sistemas de controle de acesso de catraca.',
+            status: 'Roadmap v3.0'
         },
-        objectives: {
-          title: 'Objetivos Operacionais',
-          problemTitle: 'Desafios Atuais',
-          p1Title: 'Dados Fragmentados',
-          p1Desc: 'Informações isoladas em planilhas.',
-          p2Title: 'Conformidade Manual',
-          p2Desc: 'Risco de erro humano na verificação de requisitos.',
-          p3Title: 'Relatórios Reativos',
-          p3Desc: 'Insights atrasados sobre lacunas de segurança.',
-          solutionTitle: 'Soluções do Sistema',
-          s1Title: 'BD Centralizado',
-          s1Desc: 'Registros unificados de funcionários.',
-          s2Title: 'Auto-Conformidade',
-          s2Desc: 'Regras aplicadas pelo sistema para agendamento e acesso.',
-          s3Title: 'IA Proativa',
-          s3Desc: 'Análise preditiva para suporte à decisão.'
+        features: {
+            title: 'Recursos Principais',
+            iotTitle: 'Conectividade IoT',
+            iotDesc: 'Comunicação MQTT direta com dispositivos de bafômetro AlcoCheck.',
+            accessTitle: 'Negação de Acesso',
+            accessDesc: 'Resultados positivos (>0.00) acionam bloqueio imediato do site.',
+            complianceTitle: 'Conformidade de Dados',
+            complianceDesc: 'Armazenamento de logs criptografados para auditorias legais e RH.'
         },
-        formulaTitle: 'Lógica de Conformidade',
-        formulaLogic: {
-          active: 'Status Ativo',
-          aso: 'ASO Válido',
-          racs: 'RACs Obrigatórios',
-          result: 'ACESSO CONCEDIDO'
+        protocol: {
+            title: 'Protocolo de Segurança',
+            positiveTitle: 'Positivo Detectado',
+            positiveDesc: 'Se o nível de álcool exceder 0.00%, a catraca trava e o acesso do cartão é suspenso.',
+            resetTitle: 'Reset Automático',
+            resetDesc: 'O acesso permanece revogado até as 02:00 AM do dia seguinte ou cancelamento manual do Admin.'
         },
-        formulaDesc: 'O acesso é concedido apenas quando o funcionário está Ativo, possui um Certificado Médico (ASO) válido e passou em TODOS os treinamentos RAC obrigatórios definidos para sua função.',
-        flowTitle: 'Processo de Fluxo de Trabalho',
-        flowSteps: {
-          db: 'Banco de Dados',
-          dbDesc: 'Definir requisitos e importar equipe.',
-          book: 'Agendamento',
-          bookDesc: 'Agendar sessões de treinamento.',
-          res: 'Resultados',
-          resDesc: 'Inserir notas e presença.',
-          stat: 'Status',
-          statDesc: 'O sistema atualiza a conformidade.'
+        challenges: {
+            title: 'Desafios & Mitigações',
+            oemIssue: 'Restrições de Nuvem OEM: O hardware atual requer middleware proprietário.',
+            gateSetup: 'Configuração Física do Portão: Requer infraestrutura de rede LAN dedicada no portão.'
         },
-        configTitle: 'Configuração do Sistema',
-        configCards: {
-          racs: 'Módulos RAC',
-          racsDesc: 'Definir as Regras de Atividade Crítica disponíveis para treinamento.',
-          rooms: 'Salas',
-          roomsDesc: 'Gerenciar locais de treinamento e capacidades.',
-          trainers: 'Instrutores',
-          trainersDesc: 'Autorizar funcionários a conduzir módulos específicos.'
-        },
-        bookingTitle: 'Restrições de Agendamento',
-        matrixLock: 'Bloqueio de Matriz',
-        matrixDesc: 'Agendamentos são restritos com base na Matriz de Requisitos do Funcionário.',
-        gradingTitle: 'Lógica de Avaliação',
-        gradingText: 'Nota de aprovação é 70%. Presença é obrigatória.',
-        rac02Title: 'Regra RAC 02',
-        rac02Text: 'Requer verificação de Carta de Condução.',
-        expiryTitle: 'Regras de Expiração',
-        expiryText: 'Certificações válidas por 2 anos.',
-        advancedTitle: 'Recursos Avançados',
-        autoBook: 'Auto-Agendamento',
-        autoBookDesc: 'Reserva automaticamente vagas para equipe expirando.',
-        aiRep: 'Relatórios IA',
-        aiRepDesc: 'Gera resumos executivos usando Gemini.',
-        alc: 'Integração de Álcool',
-        alcDesc: 'Conecta com bafômetros IoT.',
-        tsTitle: 'Solução de Problemas',
-        ts1: 'Usuário Não Encontrado',
-        ts1Desc: 'Verifique a ortografia ou status de importação.',
-        ts2: 'Acesso Negado',
-        ts2Desc: 'Verifique a data do ASO e conclusão do RAC.',
-        ts3: 'Erro do Sistema',
-        ts3Desc: 'Verifique a conexão com a internet e logs do servidor.'
-      }
+        proposal: {
+            title: 'Nossa Solução Proposta',
+            faceCap: 'Captura Facial: Verificar identidade durante o teste de sopro.',
+            integration: 'Integração via API Direta: Ignorar nuvem OEM para dados em tempo real.',
+            projectScope: 'Escopo do Projeto: Requer contrato separado para instalação de hardware.'
+        }
     }
   }
 };

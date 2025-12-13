@@ -1,7 +1,8 @@
 
 import React, { useState } from 'react';
-import { TrainingSession, Room, Trainer, RacDef } from '../types';
-import { Calendar, Plus, Settings, X, Save, Clock, MapPin, User, CalendarDays, ChevronLeft, ChevronRight, Globe, Trash2, Search } from 'lucide-react';
+import { TrainingSession, Room, Trainer } from '../types';
+import { RAC_KEYS } from '../constants';
+import { Calendar, Plus, Settings, X, Save, Clock, MapPin, User, CalendarDays, ChevronLeft, ChevronRight, Globe, Trash2, Search, Filter } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { v4 as uuidv4 } from 'uuid';
 import { useLanguage } from '../contexts/LanguageContext';
@@ -12,10 +13,9 @@ interface ScheduleTrainingProps {
     setSessions: React.Dispatch<React.SetStateAction<TrainingSession[]>>;
     rooms: Room[];
     trainers: Trainer[];
-    racDefinitions: RacDef[];
 }
 
-const ScheduleTraining: React.FC<ScheduleTrainingProps> = ({ sessions, setSessions, rooms, trainers, racDefinitions }) => {
+const ScheduleTraining: React.FC<ScheduleTrainingProps> = ({ sessions, setSessions, rooms, trainers }) => {
   const navigate = useNavigate();
   const { t } = useLanguage();
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -23,7 +23,7 @@ const ScheduleTraining: React.FC<ScheduleTrainingProps> = ({ sessions, setSessio
   
   // New Session State
   const [newSession, setNewSession] = useState<Partial<TrainingSession>>({
-      racType: racDefinitions[0]?.code ? `${racDefinitions[0].code} - ${racDefinitions[0].name}` : '',
+      racType: 'RAC01 - Working at Height',
       date: '',
       startTime: '08:00',
       location: '',
@@ -172,9 +172,9 @@ const ScheduleTraining: React.FC<ScheduleTrainingProps> = ({ sessions, setSessio
                           onChange={handlePageSizeChange}
                           className="text-sm font-bold bg-transparent outline-none text-slate-800 dark:text-white cursor-pointer"
                       >
-                          <option className="dark:bg-slate-800" value={10}>10</option>
-                          <option className="dark:bg-slate-800" value={20}>20</option>
-                          <option className="dark:bg-slate-800" value={50}>50</option>
+                          <option value={10}>10</option>
+                          <option value={20}>20</option>
+                          <option value={50}>50</option>
                       </select>
                   </div>
               </div>
@@ -294,9 +294,7 @@ const ScheduleTraining: React.FC<ScheduleTrainingProps> = ({ sessions, setSessio
                                 value={String(newSession.racType)}
                                 onChange={e => setNewSession({...newSession, racType: e.target.value})}
                             >
-                                {racDefinitions.map(def => (
-                                    <option className="dark:bg-slate-800" key={def.id} value={`${def.code} - ${def.name}`}>{def.code} - {def.name}</option>
-                                ))}
+                                {RAC_KEYS.map(k => <option key={String(k)} value={`${k} - General`}>{String(k)}</option>)}
                             </select>
                             <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
                                 <ChevronRight size={16} className="rotate-90" />
@@ -341,9 +339,9 @@ const ScheduleTraining: React.FC<ScheduleTrainingProps> = ({ sessions, setSessio
                                         });
                                     }}
                                 >
-                                    <option className="dark:bg-slate-800" value="">Select Room</option>
+                                    <option value="">Select Room</option>
                                     {rooms.map(room => (
-                                        <option className="dark:bg-slate-800" key={room.id} value={room.name}>{room.name}</option>
+                                        <option key={room.id} value={room.name}>{room.name}</option>
                                     ))}
                                 </select>
                                 <MapPin size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
@@ -371,9 +369,9 @@ const ScheduleTraining: React.FC<ScheduleTrainingProps> = ({ sessions, setSessio
                                     value={String(newSession.instructor)}
                                     onChange={e => setNewSession({...newSession, instructor: e.target.value})}
                                 >
-                                    <option className="dark:bg-slate-800" value="">Select Instructor</option>
+                                    <option value="">Select Instructor</option>
                                     {trainers.map(trainer => (
-                                        <option className="dark:bg-slate-800" key={trainer.id} value={trainer.name}>
+                                        <option key={trainer.id} value={trainer.name}>
                                             {trainer.name}
                                         </option>
                                     ))}
@@ -389,8 +387,8 @@ const ScheduleTraining: React.FC<ScheduleTrainingProps> = ({ sessions, setSessio
                                     value={String(newSession.sessionLanguage)}
                                     onChange={e => setNewSession({...newSession, sessionLanguage: e.target.value as any})}
                                 >
-                                    <option className="dark:bg-slate-800" value="Portuguese">{t.schedule.modal.portuguese}</option>
-                                    <option className="dark:bg-slate-800" value="English">{t.schedule.modal.english}</option>
+                                    <option value="Portuguese">{t.schedule.modal.portuguese}</option>
+                                    <option value="English">{t.schedule.modal.english}</option>
                                 </select>
                                 <Globe size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
                             </div>

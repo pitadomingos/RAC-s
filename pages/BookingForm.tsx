@@ -1,14 +1,13 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { Employee, BookingStatus, Booking, UserRole, TrainingSession, SystemNotification, EmployeeRequirement } from '../types';
-import { DEPARTMENTS, ROLES } from '../constants';
+import { COMPANIES, DEPARTMENTS, ROLES } from '../constants';
 import { Plus, Trash2, Save, Settings, ShieldCheck, Calendar, UserPlus, FileSignature, CheckCircle2, AlertCircle, Search, UserCheck, RefreshCw, Lock, Layers } from 'lucide-react';
 import { v4 as uuidv4 } from 'uuid';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { sanitizeInput } from '../utils/security';
 import { logger } from '../utils/logger';
 import { useLanguage } from '../contexts/LanguageContext';
-import { sendBrowserNotification } from '../utils/browserNotifications';
 
 interface BookingFormProps {
   addBookings: (newBookings: Booking[]) => void;
@@ -18,7 +17,6 @@ interface BookingFormProps {
   addNotification?: (notification: SystemNotification) => void; 
   currentEmployeeId?: string; // Passed from App.tsx
   requirements?: EmployeeRequirement[]; // Added requirements prop
-  contractors?: string[]; // Dynamic List from App
 }
 
 interface RenewalBatch {
@@ -26,7 +24,7 @@ interface RenewalBatch {
     employees: Employee[];
 }
 
-const BookingForm: React.FC<BookingFormProps> = ({ addBookings, sessions, userRole, existingBookings = [], addNotification, currentEmployeeId, requirements = [], contractors = [] }) => {
+const BookingForm: React.FC<BookingFormProps> = ({ addBookings, sessions, userRole, existingBookings = [], addNotification, currentEmployeeId, requirements = [] }) => {
   const navigate = useNavigate();
   const location = useLocation();
   const { t } = useLanguage();
@@ -43,7 +41,7 @@ const BookingForm: React.FC<BookingFormProps> = ({ addBookings, sessions, userRo
     id: uuidv4(),
     name: '',
     recordId: '',
-    company: contractors[0] || 'Unknown',
+    company: COMPANIES[0],
     department: DEPARTMENTS[0],
     role: ROLES[0],
     driverLicenseNumber: '',
@@ -86,6 +84,9 @@ const BookingForm: React.FC<BookingFormProps> = ({ addBookings, sessions, userRo
       }
 
       // 2. ADMIN/MANAGER VIEW: Full visibility of all sessions
+      // System Admins, RAC Admins, and Dept Admins can see the entire schedule.
+      // Note: The 'handleSubmit' validation will still prevent them from booking 
+      // an unmapped employee, but they can view and select any session here.
       return sessions;
   }, [sessions, isSelfService, currentEmployeeId, requirements]);
 
@@ -163,7 +164,7 @@ const BookingForm: React.FC<BookingFormProps> = ({ addBookings, sessions, userRo
       id: uuidv4(),
       name: '',
       recordId: '',
-      company: contractors[0] || 'Unknown',
+      company: COMPANIES[0],
       department: DEPARTMENTS[0],
       role: ROLES[0],
       driverLicenseNumber: '',
@@ -195,13 +196,13 @@ const BookingForm: React.FC<BookingFormProps> = ({ addBookings, sessions, userRo
       setRenewalQueue(newQueue);
       setSelectedSession(''); // Force user to pick new session
       
-      sendBrowserNotification('Batch Loaded', `Loading renewals for: ${nextBatch.racType}`);
+      alert(`Batch Saved! Loading renewals for: ${nextBatch.racType}`);
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedSession || !sessionData) {
-      sendBrowserNotification("Validation Error", "Please select a training session.");
+      alert("Please select a training session.");
       return;
     }
 
@@ -211,14 +212,14 @@ const BookingForm: React.FC<BookingFormProps> = ({ addBookings, sessions, userRo
     );
 
     if (hasPartialRows) {
-        sendBrowserNotification("Validation Error", "Found incomplete rows. Please ensure all employees have both an ID and a Name.");
+        alert("Found incomplete rows. Please ensure all employees have both an ID and a Name.");
         return;
     }
 
     const validRows = rows.filter(r => r.name.trim() !== '' && r.recordId.trim() !== '');
 
     if (validRows.length === 0) {
-      sendBrowserNotification("Validation Error", "Please enter at least one employee.");
+      alert("Please enter at least one employee.");
       return;
     }
 
@@ -232,7 +233,7 @@ const BookingForm: React.FC<BookingFormProps> = ({ addBookings, sessions, userRo
         const empRecord = employeeLookup.get(row.recordId.trim().toLowerCase());
         
         if (!empRecord) {
-            sendBrowserNotification("Booking Blocked", `Employee "${row.name}" (${row.recordId}) is not registered in the system database. Register them in the Database page first.`);
+            alert(`Booking Blocked: Employee "${row.name}" (${row.recordId}) is not registered in the system database.\n\nPlease register them in the Database page first to assign requirements.`);
             return; // Block entire batch
         }
 
@@ -241,7 +242,7 @@ const BookingForm: React.FC<BookingFormProps> = ({ addBookings, sessions, userRo
         
         // If no req object found OR racKey is false/undefined -> Block
         if (!empReq || !empReq.requiredRacs[racKey]) {
-            sendBrowserNotification("Compliance Alert", `Employee "${row.name}" is NOT mapped for ${racKey} in the database. Contact Manager to update matrix.`);
+            alert(`Booking Blocked: Employee "${row.name}" is NOT mapped for ${racKey} in the database.\n\nPlease contact the Department Manager to update their training matrix.`);
             return; // Block entire batch
         }
     }
@@ -249,7 +250,7 @@ const BookingForm: React.FC<BookingFormProps> = ({ addBookings, sessions, userRo
     if (isRac02Selected) {
         const incompleteDl = validRows.find(r => !r.driverLicenseNumber || !r.driverLicenseClass || !r.driverLicenseExpiry);
         if (incompleteDl) {
-            sendBrowserNotification("Requirement Missing", `Driver License details are mandatory for RAC 02 bookings. Missing for: ${incompleteDl.name}`);
+            alert(`Driver License details are mandatory for RAC 02 bookings.\n\nPlease complete details for: ${incompleteDl.name}`);
             return;
         }
     }
@@ -305,7 +306,7 @@ const BookingForm: React.FC<BookingFormProps> = ({ addBookings, sessions, userRo
         });
 
         if (duplicate) {
-            sendBrowserNotification("Duplicate Booking", `${t.notifications.duplicateMsg}: ${newBooking.employee.name} (${sessionData.racType})`);
+            alert(`${t.notifications.duplicateMsg}: ${newBooking.employee.name} (${sessionData.racType})`);
             return false;
         }
         return true;
@@ -342,9 +343,9 @@ const BookingForm: React.FC<BookingFormProps> = ({ addBookings, sessions, userRo
                     isRead: false
                 });
             }
-            sendBrowserNotification("Capacity Warning", `Session full. ${overflowEmployees.length} employees were auto-booked to next available session: ${nextSession.date}.`);
+            alert(`Note: Session full. ${overflowEmployees.length} employees were auto-booked to next available session: ${nextSession.date}.`);
         } else {
-            sendBrowserNotification("Capacity Error", `Session Full! Could not find a future session for ${overflowEmployees.length} employees. Please contact Admin.`);
+            alert(`Session Full! Could not find a future session for ${overflowEmployees.length} employees. Please contact Admin.`);
         }
     }
 
@@ -366,9 +367,6 @@ const BookingForm: React.FC<BookingFormProps> = ({ addBookings, sessions, userRo
                     isRead: false
                 });
             }
-            
-            // Browser Notification for success
-            sendBrowserNotification("Booking Success", `Successfully booked ${uniqueBookings.length} employees.`);
 
             setTimeout(() => {
                 setSubmitted(false);
@@ -387,7 +385,7 @@ const BookingForm: React.FC<BookingFormProps> = ({ addBookings, sessions, userRo
 
         } catch (err) {
             logger.error('Error submitting booking', err);
-            sendBrowserNotification("System Error", "An error occurred while processing the booking.");
+            alert('An error occurred while processing the booking.');
         }
     }
   };
@@ -485,7 +483,7 @@ const BookingForm: React.FC<BookingFormProps> = ({ addBookings, sessions, userRo
                       `}
                       required
                     >
-                      <option className="dark:bg-slate-800" value="">-- {t.booking.chooseSession} --</option>
+                      <option value="">-- {t.booking.chooseSession} --</option>
                       {availableSessions.map(session => {
                         const count = existingBookings.filter(b => b.sessionId === session.id).length;
                         const isFull = count >= session.capacity;
@@ -499,7 +497,7 @@ const BookingForm: React.FC<BookingFormProps> = ({ addBookings, sessions, userRo
                             <option 
                                 key={session.id} 
                                 value={session.id} 
-                                className={`${isFull ? 'text-red-500' : 'dark:bg-slate-800'} ${isMatch ? 'bg-blue-100 font-black' : ''}`}
+                                className={`${isFull ? 'text-red-500' : ''} ${isMatch ? 'bg-blue-100 font-black' : ''}`}
                             >
                             {isMatch ? '★ ' : ''}{session.racType} {displayLang} • {session.date} • {session.location} • (Cap: {count}/{session.capacity}) {isFull ? '(FULL)' : ''}
                             </option>
@@ -654,11 +652,7 @@ const BookingForm: React.FC<BookingFormProps> = ({ addBookings, sessions, userRo
                           onChange={(e) => handleRowChange(index, 'company', e.target.value)}
                           disabled={isKnownId || isLocked}
                         >
-                          {contractors.length > 0 ? (
-                              contractors.map(c => <option className="dark:bg-slate-800" key={c} value={c}>{c}</option>)
-                          ) : (
-                              <option className="dark:bg-slate-800" value="Unknown">Unknown</option>
-                          )}
+                          {COMPANIES.map(c => <option key={c} value={c}>{c}</option>)}
                         </select>
                       </td>
 
@@ -670,7 +664,7 @@ const BookingForm: React.FC<BookingFormProps> = ({ addBookings, sessions, userRo
                           onChange={(e) => handleRowChange(index, 'department', e.target.value)}
                           disabled={isKnownId || isLocked}
                         >
-                          {DEPARTMENTS.map(d => <option className="dark:bg-slate-800" key={d} value={d}>{d}</option>)}
+                          {DEPARTMENTS.map(d => <option key={d} value={d}>{d}</option>)}
                         </select>
                       </td>
 
@@ -682,7 +676,7 @@ const BookingForm: React.FC<BookingFormProps> = ({ addBookings, sessions, userRo
                           onChange={(e) => handleRowChange(index, 'role', e.target.value)}
                           disabled={isKnownId || isLocked}
                         >
-                          {ROLES.map(r => <option className="dark:bg-slate-800" key={r} value={r}>{r}</option>)}
+                          {ROLES.map(r => <option key={r} value={r}>{r}</option>)}
                         </select>
                       </td>
 

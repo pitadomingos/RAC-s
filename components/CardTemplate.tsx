@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { memo } from 'react';
 import { Booking, EmployeeRequirement, RacDef, TrainingSession } from '../types';
 import { OPS_KEYS, PERMISSION_KEYS, INITIAL_RAC_DEFINITIONS } from '../constants';
 import { Phone, Scissors } from 'lucide-react';
@@ -14,7 +14,7 @@ interface CardTemplateProps {
   printedBy?: string;
 }
 
-const CardTemplate: React.FC<CardTemplateProps> = ({ 
+const CardTemplate: React.FC<CardTemplateProps> = memo(({ 
   booking, 
   requirement, 
   allBookings,
@@ -351,6 +351,6 @@ const CardTemplate: React.FC<CardTemplateProps> = ({
         </div>
     </div>
   );
-};
+});
 
 export default CardTemplate;

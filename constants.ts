@@ -1,17 +1,9 @@
 
 import { RAC, RacDef, TrainingSession } from './types';
 
-export const COMPANIES = [
-    'Vulcan Mining', 
-    'Global Logistics', 
-    'Safety First Contractors', 
-    'Elite Security', 
-    'TechSolutions Inc', 
-    'Catering Corp', 
-    'Heavy Haulage Ltd'
-];
-export const DEPARTMENTS = ['Mine Operations', 'Plant Maintenance', 'HSE', 'Logistics', 'Administration', 'Security', 'IT'];
-export const ROLES = ['Operator', 'Technician', 'Engineer', 'Supervisor', 'General Helper', 'Driver', 'Manager'];
+export const COMPANIES = ['Vulcan Mining', 'Global Logistics', 'Safety First Contractors'];
+export const DEPARTMENTS = ['Mine Operations', 'Plant Maintenance', 'HSE', 'Logistics', 'Administration'];
+export const ROLES = ['Operator', 'Technician', 'Engineer', 'Supervisor', 'General Helper'];
 
 export const RAC_LIST = Object.values(RAC);
 

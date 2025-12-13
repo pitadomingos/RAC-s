@@ -1,11 +1,11 @@
 
 import React, { useState, useMemo, useEffect } from 'react';
 import { Booking, BookingStatus, EmployeeRequirement, Employee, TrainingSession, RacDef } from '../types';
-import { OPS_KEYS, PERMISSION_KEYS, DEPARTMENTS } from '../constants';
-import { Search, CheckCircle, XCircle, Edit, ChevronLeft, ChevronRight, Download, X, Trash2, Filter, QrCode, Printer, Archive, Loader2, AlertTriangle } from 'lucide-react';
+import { COMPANIES, OPS_KEYS, PERMISSION_KEYS, DEPARTMENTS } from '../constants';
+import { Search, CheckCircle, XCircle, Edit, ChevronLeft, ChevronRight, Download, X, Trash2, QrCode, Printer, Phone, AlertTriangle, Loader2, Archive, Filter } from 'lucide-react';
 import { useLanguage } from '../contexts/LanguageContext';
-import ConfirmModal from '../components/ConfirmModal';
 import JSZip from 'jszip';
+import ConfirmModal from '../components/ConfirmModal';
 
 interface DatabasePageProps {
   bookings: Booking[];
@@ -15,24 +15,31 @@ interface DatabasePageProps {
   onUpdateEmployee: (id: string, updates: Partial<Employee>) => void;
   onDeleteEmployee: (id: string) => void;
   racDefinitions: RacDef[];
-  contractors?: string[];
 }
 
-const DatabasePage: React.FC<DatabasePageProps> = ({ bookings, requirements, updateRequirements, sessions, onUpdateEmployee, onDeleteEmployee, racDefinitions, contractors = [] }) => {
+const DatabasePage: React.FC<DatabasePageProps> = ({ bookings, requirements, updateRequirements, sessions, onUpdateEmployee, onDeleteEmployee, racDefinitions }) => {
   const { t } = useLanguage();
   
+  // -- State --
   const [selectedCompany, setSelectedCompany] = useState<string>('All');
   const [selectedDepartment, setSelectedDepartment] = useState<string>('All');
   const [accessStatusFilter, setAccessStatusFilter] = useState<'All' | 'Granted' | 'Blocked'>('All');
   const [searchTerm, setSearchTerm] = useState('');
   
+  // Pagination State
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(20);
 
+  // Editing / Transfer State
   const [editingEmployee, setEditingEmployee] = useState<Employee | null>(null);
+  
+  // QR / Back of Card State
   const [qrEmployee, setQrEmployee] = useState<Employee | null>(null);
+  
+  // Mass Download State
   const [isZipping, setIsZipping] = useState(false);
 
+  // Confirmation Modal State
   const [confirmState, setConfirmState] = useState<{
     isOpen: boolean;
     title: string;
@@ -47,17 +54,24 @@ const DatabasePage: React.FC<DatabasePageProps> = ({ bookings, requirements, upd
     isDestructive: false
   });
 
+  // -- Date Validation Helper --
   const validateDateInput = (dateStr: string): boolean => {
-      if (!dateStr) return true;
+      if (!dateStr) return true; // Allow clearing
+      
+      // Handle Excel formats or DD/MM/YYYY if accidentally pasted
       if (dateStr.includes('/')) return false; 
+
       const parts = dateStr.split('-');
       if (parts.length !== 3) return false;
+      
       const year = parseInt(parts[0]);
       if (year < 1900 || year > 2100) return false;
       if (parts[0].length > 4) return false;
+
       return true;
   };
 
+  // -- ESC Key Listener for Modals --
   useEffect(() => {
     const handleEsc = (e: KeyboardEvent) => {
         if (e.key === 'Escape') {
@@ -68,8 +82,11 @@ const DatabasePage: React.FC<DatabasePageProps> = ({ bookings, requirements, upd
     };
     window.addEventListener('keydown', handleEsc);
     return () => window.removeEventListener('keydown', handleEsc);
-  }, [editingEmployee, qrEmployee, confirmState.isOpen]);
+  }, [qrEmployee, editingEmployee, confirmState.isOpen]);
 
+  // -- Derived Data Logic --
+
+  // 1. Unify Employees
   const uniqueEmployees = useMemo(() => {
     const map = new Map<string, Employee>();
     bookings.forEach(b => {
@@ -88,6 +105,7 @@ const DatabasePage: React.FC<DatabasePageProps> = ({ bookings, requirements, upd
     };
   };
 
+  // --- CRITICAL FIX: Robust RAC Matching (Case Insensitive for (imp)) ---
   const getTrainingStatus = (empId: string, racKey: string): string | null => {
     const relevantBookings = bookings.filter(b => {
         if (b.employee.id !== empId) return false;
@@ -97,14 +115,25 @@ const DatabasePage: React.FC<DatabasePageProps> = ({ bookings, requirements, upd
         const session = sessions.find(s => s.id === b.sessionId);
         
         if (session) {
+            // Case 1: Linked to a real session -> "RAC 01 - Height"
             racCode = session.racType;
         } else {
+            // Case 2: Imported Record -> "RAC01|Historical" OR "RAC 01 (Imp)" OR "RAC01"
             racCode = b.sessionId;
         }
 
+        // --- NORMALIZATION LOGIC ---
+        // 1. Remove Pipe metadata (e.g. "|Historical...")
         if (racCode.includes('|')) racCode = racCode.split('|')[0];
+        
+        // 2. Remove (Imp) suffix if present (CASE INSENSITIVE Regex, flexible spacing)
+        // Matches "(imp)", "(Imp)", "(IMP)", " (imp)", etc.
         racCode = racCode.replace(/\s*\(imp\)\s*/gi, '');
+        
+        // 3. Remove dashes (e.g. "RAC 01 - Name" -> "RAC 01  Name")
         if (racCode.includes('-')) racCode = racCode.split('-')[0];
+        
+        // 4. Remove ALL spaces to ensure "RAC 01" matches "RAC01"
         racCode = racCode.replace(/\s+/g, '').trim().toUpperCase();
         
         const targetKey = racKey.replace(/\s+/g, '').trim().toUpperCase();
@@ -112,10 +141,11 @@ const DatabasePage: React.FC<DatabasePageProps> = ({ bookings, requirements, upd
         return racCode === targetKey;
     });
 
+    // STRICT SORT: Latest expiry date first
     relevantBookings.sort((a, b) => {
         const dateA = new Date(a.expiryDate || '1970-01-01').getTime();
         const dateB = new Date(b.expiryDate || '1970-01-01').getTime();
-        return dateB - dateA;
+        return dateB - dateA; // Descending (Newest first)
     });
 
     return relevantBookings.length > 0 ? relevantBookings[0].expiryDate || null : null;
@@ -192,6 +222,86 @@ const DatabasePage: React.FC<DatabasePageProps> = ({ bookings, requirements, upd
       }
   };
 
+  // --- QR Helper Functions ---
+  const getQrUrl = (recordId: string) => {
+      const appOrigin = window.location.origin + window.location.pathname;
+      const verificationUrl = `${appOrigin}#/verify/${recordId}`;
+      return `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(verificationUrl)}`;
+  };
+
+  const handleDownloadQr = async (recordId: string, name: string) => {
+      const url = getQrUrl(recordId);
+      try {
+          const response = await fetch(url);
+          const blob = await response.blob();
+          const downloadLink = document.createElement("a");
+          downloadLink.href = URL.createObjectURL(blob);
+          downloadLink.download = `QR_${name.replace(/\s+/g, '_')}_${recordId}.png`;
+          document.body.appendChild(downloadLink);
+          downloadLink.click();
+          document.body.removeChild(downloadLink);
+      } catch (e) {
+          alert("Error downloading QR Code. Please try printing instead.");
+      }
+  };
+
+  // --- MASS DOWNLOAD LOGIC ---
+  const handleBulkQrDownload = async () => {
+      if (processedData.length === 0) {
+          alert("No records to download.");
+          return;
+      }
+      
+      const confirmMsg = `This will generate and download QR codes for ${processedData.length} employees currently visible in the table. This might take a moment. Continue?`;
+      if (!confirm(confirmMsg)) return;
+
+      setIsZipping(true);
+      const zip = new JSZip();
+      const folder = zip.folder("vulkan_safety_qrs");
+
+      try {
+          // Limit to prevent browser crash on huge datasets, though standard use is fine
+          const limit = 500; 
+          const dataToProcess = processedData.slice(0, limit);
+          
+          if (processedData.length > limit) {
+              alert(`Note: Dataset too large. Downloading first ${limit} records to prevent browser timeout.`);
+          }
+
+          // Fetch sequentially to avoid rate limiting or browser connection limits
+          for (const item of dataToProcess) {
+              const { emp } = item;
+              const url = getQrUrl(emp.recordId);
+              try {
+                  const response = await fetch(url);
+                  if (response.ok) {
+                      const blob = await response.blob();
+                      // Sanitize filename
+                      const safeName = emp.name.replace(/[^a-z0-9]/gi, '_').toLowerCase();
+                      const safeId = emp.recordId.replace(/[^a-z0-9]/gi, '_');
+                      folder?.file(`${safeName}_${safeId}.png`, blob);
+                  }
+              } catch (e) {
+                  console.error(`Failed to fetch QR for ${emp.recordId}`, e);
+              }
+          }
+
+          const content = await zip.generateAsync({ type: "blob" });
+          const downloadLink = document.createElement("a");
+          downloadLink.href = URL.createObjectURL(content);
+          downloadLink.download = `vulkan_qr_batch_${new Date().toISOString().split('T')[0]}.zip`;
+          document.body.appendChild(downloadLink);
+          downloadLink.click();
+          document.body.removeChild(downloadLink);
+
+      } catch (err) {
+          console.error("Zip Error", err);
+          alert("An error occurred while generating the bulk archive.");
+      } finally {
+          setIsZipping(false);
+      }
+  };
+
   const handleExportDatabase = () => {
       const baseHeaders = [
           "Full Name", "Record ID", "Company", "Department", "Role", "Active", "Access Status",
@@ -234,86 +344,7 @@ const DatabasePage: React.FC<DatabasePageProps> = ({ bookings, requirements, upd
       document.body.removeChild(link);
   };
 
-  // --- QR FUNCTIONS ---
-  const getQrUrl = (recordId: string) => {
-      const appOrigin = window.location.origin + window.location.pathname;
-      const verificationUrl = `${appOrigin}#/verify/${recordId}`;
-      return `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(verificationUrl)}`;
-  };
-
-  const handleDownloadQr = async (recordId: string, name: string) => {
-      const url = getQrUrl(recordId);
-      try {
-          const response = await fetch(url);
-          const blob = await response.blob();
-          const downloadLink = document.createElement("a");
-          downloadLink.href = URL.createObjectURL(blob);
-          downloadLink.download = `QR_${name.replace(/\s+/g, '_')}_${recordId}.png`;
-          document.body.appendChild(downloadLink);
-          downloadLink.click();
-          document.body.removeChild(downloadLink);
-      } catch (e) {
-          alert("Error downloading QR Code. Please try printing instead.");
-      }
-  };
-
-  const handleBulkQrDownload = async () => {
-      if (processedData.length === 0) {
-          alert("No records to download.");
-          return;
-      }
-      
-      const confirmMsg = `This will generate and download QR codes for ${processedData.length} employees currently visible in the table. This might take a moment. Continue?`;
-      if (!confirm(confirmMsg)) return;
-
-      setIsZipping(true);
-      const zip = new JSZip();
-      const folder = zip.folder("vulkan_safety_qrs");
-
-      try {
-          const limit = 50; 
-          const dataToProcess = processedData.slice(0, limit);
-          
-          if (processedData.length > limit) {
-              alert(`Note: Dataset too large. Downloading first ${limit} records to prevent browser timeout.`);
-          }
-
-          for (const item of dataToProcess) {
-              const { emp } = item;
-              await new Promise(r => setTimeout(r, 100)); // Delay to respect API limits
-              
-              const url = getQrUrl(emp.recordId);
-              try {
-                  const response = await fetch(url);
-                  if (response.ok) {
-                      const blob = await response.blob();
-                      const safeName = emp.name.replace(/[^a-z0-9]/gi, '_').toLowerCase();
-                      const safeId = emp.recordId.replace(/[^a-z0-9]/gi, '_');
-                      folder?.file(`${safeName}_${safeId}.png`, blob);
-                  } else {
-                      console.warn(`Failed to fetch QR for ${emp.recordId}`);
-                  }
-              } catch (e) {
-                  console.error(`Failed to fetch QR for ${emp.recordId}`, e);
-              }
-          }
-
-          const content = await zip.generateAsync({ type: "blob" });
-          const downloadLink = document.createElement("a");
-          downloadLink.href = URL.createObjectURL(content);
-          downloadLink.download = `vulkan_qr_batch_${new Date().toISOString().split('T')[0]}.zip`;
-          document.body.appendChild(downloadLink);
-          downloadLink.click();
-          document.body.removeChild(downloadLink);
-
-      } catch (err) {
-          console.error("Zip Error", err);
-          alert("An error occurred while generating the bulk archive.");
-      } finally {
-          setIsZipping(false);
-      }
-  };
-
+  // -- Processing & Filtering --
   const processedData = useMemo(() => {
     return uniqueEmployees.map(emp => {
       const req = getRequirement(emp.id);
@@ -327,6 +358,7 @@ const DatabasePage: React.FC<DatabasePageProps> = ({ bookings, requirements, upd
       let allRacsMet = true;
       let hasRac02Req = false;
 
+      // Check standard RACs
       racDefinitions.forEach(def => {
           const key = def.code;
           if (req.requiredRacs[key]) {
@@ -369,6 +401,7 @@ const DatabasePage: React.FC<DatabasePageProps> = ({ bookings, requirements, upd
     });
   }, [uniqueEmployees, requirements, bookings, sessions, selectedCompany, selectedDepartment, accessStatusFilter, searchTerm, racDefinitions]);
 
+  // -- Pagination Logic --
   const totalPages = Math.ceil(processedData.length / itemsPerPage);
   const paginatedData = processedData.slice(
       (currentPage - 1) * itemsPerPage,
@@ -400,31 +433,36 @@ const DatabasePage: React.FC<DatabasePageProps> = ({ bookings, requirements, upd
                  <p className="text-xs text-gray-500 dark:text-gray-400 hidden md:block">{t.database.subtitle}</p>
              </div>
              
+             {/* Filters & Actions */}
              <div className="flex flex-wrap items-center gap-2">
+                 
+                 {/* Company Filter */}
                  <div className="relative group">
                      <select 
                         value={selectedCompany} 
                         onChange={(e) => { setSelectedCompany(e.target.value); setCurrentPage(1); }}
                         className="pl-3 pr-8 py-1.5 border border-gray-300 dark:border-slate-600 dark:bg-slate-700 text-black dark:text-white rounded-md text-xs font-medium outline-none focus:ring-yellow-500 focus:border-yellow-500 cursor-pointer appearance-none hover:bg-white dark:hover:bg-slate-600 transition-colors"
                      >
-                        <option className="dark:bg-slate-800" value="All">{t.common.allCompanies}</option>
-                        {contractors.map(c => <option className="dark:bg-slate-800" key={c} value={c}>{c}</option>)}
+                        <option value="All">All Companies</option>
+                        {COMPANIES.map(c => <option key={c} value={c}>{c}</option>)}
                      </select>
                      <Filter size={12} className="absolute right-2.5 top-2.5 text-gray-400 pointer-events-none" />
                  </div>
 
+                 {/* Department Filter */}
                  <div className="relative group">
                      <select 
                         value={selectedDepartment} 
                         onChange={(e) => { setSelectedDepartment(e.target.value); setCurrentPage(1); }}
                         className="pl-3 pr-8 py-1.5 border border-gray-300 dark:border-slate-600 dark:bg-slate-700 text-black dark:text-white rounded-md text-xs font-medium outline-none focus:ring-yellow-500 focus:border-yellow-500 cursor-pointer appearance-none hover:bg-white dark:hover:bg-slate-600 transition-colors"
                      >
-                        <option className="dark:bg-slate-800" value="All">{t.common.allDepts}</option>
-                        {DEPARTMENTS.map(d => <option className="dark:bg-slate-800" key={d} value={d}>{d}</option>)}
+                        <option value="All">All Depts</option>
+                        {DEPARTMENTS.map(d => <option key={d} value={d}>{d}</option>)}
                      </select>
                      <Filter size={12} className="absolute right-2.5 top-2.5 text-gray-400 pointer-events-none" />
                  </div>
 
+                 {/* Search Box */}
                  <div className="relative">
                      <Search size={14} className="absolute left-3 top-2.5 text-gray-400" />
                      <input 
@@ -435,7 +473,7 @@ const DatabasePage: React.FC<DatabasePageProps> = ({ bookings, requirements, upd
                         onChange={e => { setSearchTerm(e.target.value); setCurrentPage(1); }}
                      />
                  </div>
-
+                 
                  <button 
                     onClick={handleBulkQrDownload}
                     disabled={isZipping || processedData.length === 0}
@@ -456,6 +494,7 @@ const DatabasePage: React.FC<DatabasePageProps> = ({ bookings, requirements, upd
              </div>
         </div>
 
+        {/* High Density Table */}
         <div className="flex-1 overflow-auto">
              <table className="min-w-full divide-y divide-gray-200 dark:divide-slate-700">
                  <thead className="bg-gray-100 dark:bg-slate-700 md:sticky md:top-0 z-10 shadow-sm">
@@ -508,23 +547,22 @@ const DatabasePage: React.FC<DatabasePageProps> = ({ bookings, requirements, upd
                                      <div className="flex flex-wrap gap-1 w-full min-w-[250px]">
                                          {racDefinitions.map(def => {
                                              const key = def.code;
+                                             // AUTOMATICALLY ENABLE CHECK IF A VALID RECORD EXISTS (Visual Fix)
                                              const trainingDate = getTrainingStatus(emp.id, key);
                                              const today = new Date().toISOString().split('T')[0];
                                              const isValid = trainingDate && trainingDate > today;
                                              
+                                             // IMPORTANT: "Required" logic visual update.
+                                             // If it's valid, it should show Green regardless of "requiredRacs" state, implying it's "Mapped"
                                              const isRequired = req.requiredRacs[key] || isValid; 
                                              
                                              const isRac02Blocked = key === 'RAC02' && isDlExpired;
-                                             
                                              let bgClass = 'bg-gray-100 dark:bg-slate-700 text-gray-300';
                                              if (isRequired) {
-                                                if (isValid && !isRac02Blocked) {
-                                                    bgClass = 'bg-green-500 text-white shadow-sm hover:bg-green-600'; 
-                                                } else {
-                                                    bgClass = 'bg-red-500 text-white shadow-sm hover:bg-red-600';     
-                                                }
+                                                if (isValid && !isRac02Blocked) bgClass = 'bg-green-500 text-white shadow-sm';
+                                                else bgClass = 'bg-red-500 text-white shadow-sm';
                                              } else {
-                                                 bgClass = 'bg-gray-100 dark:bg-slate-800 text-gray-400 dark:text-gray-600 border border-gray-200 dark:border-slate-700 hover:bg-gray-200 dark:hover:bg-slate-700';
+                                                 bgClass = 'bg-gray-100 dark:bg-slate-800 text-gray-400 dark:text-gray-600 border border-gray-200 dark:border-slate-700';
                                              }
                                              return <button key={key} onClick={() => handleRequirementChange(emp.id, key, !req.requiredRacs[key])} className={`text-[9px] font-bold w-10 h-6 rounded flex items-center justify-center transition-all ${bgClass}`} title={def.name}>{key.replace('RAC', 'R')}</button>;
                                          })}
@@ -543,19 +581,16 @@ const DatabasePage: React.FC<DatabasePageProps> = ({ bookings, requirements, upd
                                                  isValid = !!(trainingDate && trainingDate > today);
                                              }
                                              
+                                             // Same logic: If Valid record found (for non-permissions), implied mapped
                                              const isRequired = req.requiredRacs[key] || (!isPermission && isValid);
 
                                              let bgClass = 'bg-gray-100 dark:bg-slate-700 text-gray-300';
                                              if (isRequired) {
-                                                 if (isPermission) {
-                                                     if (isValid) bgClass = 'bg-blue-500 text-white shadow-sm hover:bg-blue-600';
-                                                     else bgClass = 'bg-red-500 text-white shadow-sm hover:bg-red-600'; 
-                                                 } else {
-                                                     if (isValid) bgClass = 'bg-green-500 text-white shadow-sm hover:bg-green-600';
-                                                     else bgClass = 'bg-red-500 text-white shadow-sm hover:bg-red-600';
-                                                 }
+                                                 if (isPermission && isValid) bgClass = 'bg-blue-600 text-white shadow-sm';
+                                                 else if (!isPermission && isValid) bgClass = 'bg-green-500 text-white shadow-sm';
+                                                 else bgClass = 'bg-red-500 text-white shadow-sm';
                                              } else {
-                                                 bgClass = 'bg-gray-100 dark:bg-slate-800 text-gray-400 dark:text-gray-600 border border-gray-200 dark:border-slate-700 hover:bg-gray-200 dark:hover:bg-slate-700';
+                                                 bgClass = 'bg-gray-100 dark:bg-slate-800 text-gray-400 dark:text-gray-600 border border-gray-200 dark:border-slate-700';
                                              }
                                              const label = t.database.ops[key as keyof typeof t.database.ops] || key;
                                              return <button key={key} onClick={() => handleRequirementChange(emp.id, key, !req.requiredRacs[key])} className={`text-[9px] font-bold px-2 h-6 min-w-[2.5rem] rounded flex items-center justify-center transition-all whitespace-nowrap ${bgClass}`} title={label}>{label}</button>;
@@ -584,12 +619,12 @@ const DatabasePage: React.FC<DatabasePageProps> = ({ bookings, requirements, upd
                         onChange={handlePageSizeChange}
                         className="text-xs border border-slate-300 dark:border-slate-600 rounded bg-white dark:bg-slate-700 text-slate-800 dark:text-white px-2 py-1 outline-none focus:ring-1 focus:ring-yellow-500"
                      >
-                         <option className="dark:bg-slate-800" value={10}>10</option>
-                         <option className="dark:bg-slate-800" value={20}>20</option>
-                         <option className="dark:bg-slate-800" value={30}>30</option>
-                         <option className="dark:bg-slate-800" value={50}>50</option>
-                         <option className="dark:bg-slate-800" value={100}>100</option>
-                         <option className="dark:bg-slate-800" value={120}>120</option>
+                         <option value={10}>10</option>
+                         <option value={20}>20</option>
+                         <option value={30}>30</option>
+                         <option value={50}>50</option>
+                         <option value={100}>100</option>
+                         <option value={120}>120</option>
                      </select>
                  </div>
                  
@@ -605,6 +640,7 @@ const DatabasePage: React.FC<DatabasePageProps> = ({ bookings, requirements, upd
              </div>
         </div>
 
+        {/* --- CONFIRMATION MODAL --- */}
         <ConfirmModal 
             isOpen={confirmState.isOpen}
             title={confirmState.title}
@@ -615,6 +651,7 @@ const DatabasePage: React.FC<DatabasePageProps> = ({ bookings, requirements, upd
             confirmText={confirmState.isDestructive ? 'Delete' : 'Confirm'}
         />
 
+        {/* --- EDIT MODAL --- */}
         {editingEmployee && (
             <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4" onClick={() => setEditingEmployee(null)}>
                 <div className="bg-white dark:bg-slate-800 rounded-xl shadow-2xl w-full max-w-lg p-6 relative" onClick={(e) => e.stopPropagation()}>
@@ -625,27 +662,23 @@ const DatabasePage: React.FC<DatabasePageProps> = ({ bookings, requirements, upd
                         </button>
                     </div>
                     <div className="space-y-3">
-                        <input className="w-full border rounded p-2 text-black dark:bg-slate-700 dark:text-white dark:border-slate-600" value={editingEmployee.name} onChange={e => setEditingEmployee({...editingEmployee, name: e.target.value})} placeholder="Name" />
+                        <input className="w-full border rounded p-2 text-black" value={editingEmployee.name} onChange={e => setEditingEmployee({...editingEmployee, name: e.target.value})} placeholder="Name" />
                         <div className="flex gap-2">
-                            <input className="flex-1 border rounded p-2 text-black dark:bg-slate-700 dark:text-white dark:border-slate-600" value={editingEmployee.recordId} onChange={e => setEditingEmployee({...editingEmployee, recordId: e.target.value})} placeholder="ID" />
-                            <select className="flex-1 border rounded p-2 text-black dark:bg-slate-700 dark:text-white dark:border-slate-600" value={editingEmployee.company} onChange={e => setEditingEmployee({...editingEmployee, company: e.target.value})}>
-                                {contractors.length > 0 ? (
-                                    contractors.map(c => <option className="dark:bg-slate-700" key={c} value={c}>{c}</option>)
-                                ) : (
-                                    <option className="dark:bg-slate-700" value="Unknown">Unknown</option>
-                                )}
+                            <input className="flex-1 border rounded p-2 text-black" value={editingEmployee.recordId} onChange={e => setEditingEmployee({...editingEmployee, recordId: e.target.value})} placeholder="ID" />
+                            <select className="flex-1 border rounded p-2 text-black" value={editingEmployee.company} onChange={e => setEditingEmployee({...editingEmployee, company: e.target.value})}>
+                                {COMPANIES.map(c => <option key={c} value={c}>{c}</option>)}
                             </select>
                         </div>
-                        <div className="border-t pt-2 mt-2 dark:border-slate-600">
-                            <p className="text-xs font-bold text-gray-500 dark:text-slate-400 uppercase mb-2">Driver License Details</p>
+                        <div className="border-t pt-2 mt-2">
+                            <p className="text-xs font-bold text-gray-500 uppercase mb-2">Driver License Details</p>
                             <div className="grid grid-cols-3 gap-2">
-                                <input className="border rounded p-2 text-xs text-black dark:bg-slate-700 dark:text-white dark:border-slate-600" placeholder="Number" value={editingEmployee.driverLicenseNumber || ''} onChange={e => setEditingEmployee({...editingEmployee, driverLicenseNumber: e.target.value})} />
-                                <input className="border rounded p-2 text-xs text-black dark:bg-slate-700 dark:text-white dark:border-slate-600" placeholder="Class" value={editingEmployee.driverLicenseClass || ''} onChange={e => setEditingEmployee({...editingEmployee, driverLicenseClass: e.target.value})} />
+                                <input className="border rounded p-2 text-xs text-black" placeholder="Number" value={editingEmployee.driverLicenseNumber || ''} onChange={e => setEditingEmployee({...editingEmployee, driverLicenseNumber: e.target.value})} />
+                                <input className="border rounded p-2 text-xs text-black" placeholder="Class" value={editingEmployee.driverLicenseClass || ''} onChange={e => setEditingEmployee({...editingEmployee, driverLicenseClass: e.target.value})} />
                                 <input 
                                     type="date" 
                                     min="1900-01-01"
                                     max="2100-12-31"
-                                    className="border rounded p-2 text-xs text-black dark:bg-slate-700 dark:text-white dark:border-slate-600" 
+                                    className="border rounded p-2 text-xs text-black" 
                                     value={editingEmployee.driverLicenseExpiry || ''} 
                                     onChange={e => {
                                         if (validateDateInput(e.target.value)) {
@@ -656,18 +689,20 @@ const DatabasePage: React.FC<DatabasePageProps> = ({ bookings, requirements, upd
                             </div>
                         </div>
                     </div>
-                    <div className="flex justify-between gap-2 mt-6 border-t pt-4 dark:border-slate-600">
-                        <button onClick={handleDelete} className="bg-red-50 text-red-600 px-4 py-2 rounded text-sm font-bold flex items-center gap-2 hover:bg-red-100 dark:bg-red-900/20 dark:text-red-400 dark:hover:bg-red-900/40"><Trash2 size={16}/> Delete</button>
-                        <button onClick={handleSaveEdit} className="bg-blue-600 text-white px-6 py-2 rounded text-sm font-bold hover:bg-blue-500">Save Changes</button>
+                    <div className="flex justify-between gap-2 mt-6 border-t pt-4">
+                        <button onClick={handleDelete} className="bg-red-50 text-red-600 px-4 py-2 rounded text-sm font-bold flex items-center gap-2"><Trash2 size={16}/> Delete</button>
+                        <button onClick={handleSaveEdit} className="bg-blue-600 text-white px-6 py-2 rounded text-sm font-bold">Save Changes</button>
                     </div>
                 </div>
             </div>
         )}
 
+        {/* --- ID CARD BACK MODAL (QR & Emergency) --- */}
         {qrEmployee && (
             <div className="fixed inset-0 z-[60] bg-black/80 backdrop-blur-md flex items-center justify-center p-4" onClick={() => setQrEmployee(null)}>
                 <div className="bg-white rounded-3xl shadow-2xl p-0 overflow-hidden max-w-2xl w-full flex flex-col md:flex-row relative" onClick={(e) => e.stopPropagation()}>
                     
+                    {/* Close X (Absolute) */}
                     <button 
                         onClick={() => setQrEmployee(null)} 
                         className="absolute top-4 right-4 z-50 p-2 bg-gray-100 hover:bg-gray-200 rounded-full text-gray-600 transition-colors md:hidden"
@@ -675,21 +710,27 @@ const DatabasePage: React.FC<DatabasePageProps> = ({ bookings, requirements, upd
                         <X size={20} />
                     </button>
 
+                    {/* Left: Preview */}
                     <div className="p-8 bg-slate-100 flex-1 flex flex-col items-center justify-center border-r border-slate-200">
                         <h3 className="text-sm font-bold text-slate-500 uppercase tracking-widest mb-6">Card Back Preview</h3>
                         
+                        {/* THE CARD BACK (CR80 Aspect Ratio ~ 85.6 x 54) -> Scaled up for screen */}
                         <div id="card-back-print" className="bg-white w-[85.6mm] h-[54mm] rounded-lg shadow-xl border border-slate-200 relative overflow-hidden flex flex-col" style={{ transform: 'scale(1.2)' }}>
+                            {/* Header */}
                             <div className="bg-slate-900 text-white h-[8mm] flex items-center justify-center">
                                 <span className="text-[10px] font-black tracking-widest">SAFETY PASSPORT / PASSAPORTE</span>
                             </div>
                             
+                            {/* Body */}
                             <div className="flex-1 flex items-center justify-center p-2 relative">
+                                {/* Large QR */}
                                 <img 
                                     src={getQrUrl(qrEmployee.recordId)} 
                                     alt="QR Code"
                                     className="w-[28mm] h-[28mm]" 
                                 />
                                 
+                                {/* Right Side Info */}
                                 <div className="ml-4 flex flex-col justify-center h-full space-y-2">
                                     <div className="text-[8px] font-bold text-slate-400 uppercase">Employee ID</div>
                                     <div className="text-sm font-black text-slate-900">{qrEmployee.recordId}</div>
@@ -704,13 +745,16 @@ const DatabasePage: React.FC<DatabasePageProps> = ({ bookings, requirements, upd
                                 </div>
                             </div>
 
+                            {/* Footer */}
                             <div className="bg-gray-100 border-t border-gray-300 h-[6mm] flex items-center justify-center text-[6px] text-gray-500 text-center px-2">
                                 IF FOUND PLEASE RETURN TO VULCAN SECURITY DEPARTMENT
                             </div>
                         </div>
                     </div>
 
+                    {/* Right: Controls */}
                     <div className="p-8 w-full md:w-72 bg-white flex flex-col justify-center space-y-4 relative">
+                        {/* Desktop Close X */}
                         <button 
                             onClick={() => setQrEmployee(null)} 
                             className="absolute top-4 right-4 hidden md:flex p-2 bg-gray-50 hover:bg-gray-100 rounded-full text-gray-400 hover:text-gray-700 transition-colors"
@@ -779,6 +823,13 @@ const DatabasePage: React.FC<DatabasePageProps> = ({ bookings, requirements, upd
                             className="w-full py-3 px-4 bg-slate-900 hover:bg-slate-800 text-white rounded-xl font-bold flex items-center justify-center gap-2 transition-colors shadow-lg"
                         >
                             <Printer size={18} /> Print Card Back
+                        </button>
+
+                        <button 
+                            onClick={() => setQrEmployee(null)}
+                            className="w-full py-3 px-4 text-slate-400 hover:text-slate-600 font-bold flex items-center justify-center gap-2 transition-colors"
+                        >
+                            Close
                         </button>
                     </div>
                 </div>

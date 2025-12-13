@@ -1,11 +1,10 @@
 
-import React, { useState, useMemo, useEffect } from 'react';
-import { Booking, BookingStatus, EmployeeRequirement, RacDef, TrainingSession, UserRole, Employee } from '../types';
+import React, { useState, useMemo } from 'react';
+import { Booking, BookingStatus, EmployeeRequirement, RacDef, TrainingSession, UserRole } from '../types';
 import CardTemplate from '../components/CardTemplate';
 import { Mail, AlertCircle, CheckCircle2, Printer, Search, X, ZoomIn, Filter, Trash2, User, Sparkles, CreditCard, Layers } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useLanguage } from '../contexts/LanguageContext';
-import { sendBrowserNotification } from '../utils/browserNotifications';
 
 interface RequestCardsPageProps {
   bookings: Booking[];
@@ -14,11 +13,6 @@ interface RequestCardsPageProps {
   sessions: TrainingSession[];
   userRole: UserRole;
   currentEmployeeId?: string; // Passed from App.tsx
-}
-
-interface ComplianceResult {
-    isCompliant: boolean;
-    reasons: string[];
 }
 
 const RequestCardsPage: React.FC<RequestCardsPageProps> = ({ bookings, requirements, racDefinitions, sessions, userRole, currentEmployeeId }) => {
@@ -39,27 +33,17 @@ const RequestCardsPage: React.FC<RequestCardsPageProps> = ({ bookings, requireme
   
   const isSelfService = userRole === UserRole.USER;
 
-  // --- COMPLIANCE ENGINE ---
-  const checkCompliance = (empId: string): ComplianceResult => {
-      const reasons: string[] = [];
+  // Function to check strict compliance using DYNAMIC RAC definitions AND Sessions lookup
+  const isEmployeeCompliant = (empId: string): boolean => {
       const req = requirements.find(r => r.employeeId === empId);
-      
-      // 1. Check if Requirements Exist
-      if (!req) {
-          reasons.push("No training requirements defined in Database.");
-          return { isCompliant: false, reasons };
-      }
+      if (!req) return false;
 
       const today = new Date().toISOString().split('T')[0];
       
-      // 2. ASO Valid
-      if (!req.asoExpiryDate) {
-          reasons.push("Missing Medical (ASO) Expiry Date.");
-      } else if (req.asoExpiryDate <= today) {
-          reasons.push(`ASO Expired on ${req.asoExpiryDate}.`);
-      }
+      // 1. ASO Valid
+      if (!req.asoExpiryDate || req.asoExpiryDate <= today) return false;
 
-      // 3. RACs Valid (Iterate over ALL defined RACs)
+      // 2. RACs Valid (Iterate over ALL defined RACs)
       let allRacsMet = true;
       let hasRac02Req = false;
 
@@ -69,7 +53,7 @@ const RequestCardsPage: React.FC<RequestCardsPageProps> = ({ bookings, requireme
              if (key === 'RAC02') hasRac02Req = true;
              
              // Check if they have a passed booking for this RAC
-             const passedBookings = safeBookings.filter(b => {
+             const passedBooking = safeBookings.find(b => {
                  if (b.employee.id !== empId) return false;
                  if (b.status !== BookingStatus.PASSED) return false;
                  
@@ -90,98 +74,60 @@ const RequestCardsPage: React.FC<RequestCardsPageProps> = ({ bookings, requireme
                  return racCode === key;
              });
 
-             // Sort by expiry desc
-             passedBookings.sort((a, b) => new Date(b.expiryDate || '').getTime() - new Date(a.expiryDate || '').getTime());
-             const latest = passedBookings[0];
-
-             if (!latest) {
-                 reasons.push(`Missing valid training for ${key}.`);
-                 allRacsMet = false;
-             } else if (!latest.expiryDate || latest.expiryDate <= today) {
-                 reasons.push(`${key} expired on ${latest.expiryDate || 'Unknown'}.`);
+             if (!passedBooking || !passedBooking.expiryDate || passedBooking.expiryDate <= today) {
                  allRacsMet = false;
              }
          }
       });
 
-      // 4. DL Valid if RAC 02 required
+      if (!allRacsMet) return false;
+
+      // 3. DL Valid if RAC 02 required
       if (hasRac02Req) {
-          const empBooking = safeBookings.find(b => b.employee.id === empId); // Get any booking to find generic emp data
-          if (empBooking && empBooking.employee) {
+          const empBooking = safeBookings.find(b => b.employee.id === empId);
+          if (empBooking) {
               const dlExpiry = empBooking.employee.driverLicenseExpiry;
-              if (!dlExpiry) {
-                  reasons.push("Driver License details missing.");
-              } else if (dlExpiry <= today) {
-                  reasons.push(`Driver License expired on ${dlExpiry}.`);
-              }
+              if (!dlExpiry || dlExpiry <= today) return false;
           } else {
-              // Should be caught above, but safety check
-              reasons.push("Driver License data unavailable.");
+              return false;
           }
       }
 
-      return {
-          isCompliant: reasons.length === 0,
-          reasons
-      };
+      return true;
   };
 
-  // Build a searchable map of ALL known employees (from bookings)
-  // We want to allow searching ANYONE to show why they fail
-  const allEmployeesMap = useMemo(() => {
-     const map = new Map<string, { employee: Employee, booking?: Booking }>();
+  const allEligibleBookings = useMemo(() => {
+     const uniqueMap = new Map<string, Booking>();
      safeBookings.forEach(b => {
-         if (b.employee && !map.has(b.employee.id)) {
-             map.set(b.employee.id, { employee: b.employee, booking: b });
+         if (b && b.status === BookingStatus.PASSED && b.employee && !uniqueMap.has(b.employee.id)) {
+             uniqueMap.set(b.employee.id, b);
          }
      });
-     return Array.from(map.values());
-  }, [safeBookings]);
+     return Array.from(uniqueMap.values()).filter(b => isEmployeeCompliant(b.employee.id));
+  }, [safeBookings, requirements, racDefinitions, sessions]);
 
   // SELF-SERVICE LOGIC: Override slots if user
   const slots = useMemo(() => {
       if (isSelfService && currentEmployeeId) {
-          const match = allEmployeesMap.find(m => m.employee.id === currentEmployeeId);
-          if (match) {
-              const compliance = checkCompliance(match.employee.id);
-              return [{ 
-                  ...match, 
-                  compliance 
-              }];
-          }
-          return [];
+          // Find if current user is eligible
+          const myBooking = allEligibleBookings.find(b => b.employee.id === currentEmployeeId);
+          return myBooking ? [myBooking] : [];
       }
 
       return slotInputs.map(input => {
           if (!input.trim()) return null;
           const lower = input.toLowerCase();
-          
           // Flexible Search: ID or Name
-          const match = allEmployeesMap.find(item => 
-              item.employee.recordId.toLowerCase() === lower ||
-              item.employee.name.toLowerCase() === lower || 
-              item.employee.recordId.toLowerCase().includes(lower) ||
-              item.employee.name.toLowerCase().includes(lower)
-          );
-
-          if (match) {
-              const compliance = checkCompliance(match.employee.id);
-              return { ...match, compliance };
-          }
-          return null;
+          return allEligibleBookings.find(b => 
+              b.employee.recordId.toLowerCase() === lower ||
+              b.employee.name.toLowerCase() === lower || 
+              b.employee.recordId.toLowerCase().includes(lower) ||
+              b.employee.name.toLowerCase().includes(lower)
+          ) || null;
       });
-  }, [slotInputs, allEmployeesMap, isSelfService, currentEmployeeId, requirements]); // Added requirements dep to refresh on change
+  }, [slotInputs, allEligibleBookings, isSelfService, currentEmployeeId]);
 
-  // Side Effect: Trigger Notification when an ineligible user is selected
-  useEffect(() => {
-      slots.forEach(slot => {
-          if (slot && !slot.compliance.isCompliant) {
-              // We'll rely on browser notifications if needed, but avoid spamming on render
-          }
-      });
-  }, [slots]);
-
-  const activeCount = slots.filter(s => s !== null && s.compliance.isCompliant).length;
+  const activeCount = slots.filter(s => s !== null).length;
 
   const handleSlotChange = (index: number, value: string) => {
       const newInputs = [...slotInputs];
@@ -205,12 +151,10 @@ const RequestCardsPage: React.FC<RequestCardsPageProps> = ({ bookings, requireme
   };
 
   const handleGoToPrint = () => {
-      // ONLY send COMPLIANT slots
-      const selectedBookings = slots
-        .filter(s => s !== null && s.compliance.isCompliant && s.booking)
-        .map(s => s!.booking!);
-        
+      // ONLY send selected slots
+      const selectedBookings = slots.filter(b => b !== null) as Booking[];
       if (selectedBookings.length > 0) {
+          // Pass the current state of inputs to preserve them
           navigate('/print-cards', { 
               state: { 
                   selectedBookings, 
@@ -218,14 +162,8 @@ const RequestCardsPage: React.FC<RequestCardsPageProps> = ({ bookings, requireme
               } 
           });
       } else {
-          alert("Please select at least one eligible employee to print.");
+          alert("Please select at least one employee to print.");
       }
-  };
-
-  const handleIneligibleClick = (name: string, reasons: string[]) => {
-      const msg = `Eligibility Check Failed for ${name}:\n\n- ${reasons.join('\n- ')}`;
-      sendBrowserNotification("Eligibility Check Failed", `${name} is not eligible for a card.`); // Browser native
-      alert(msg); // Direct Interrupt
   };
 
   const getRequirement = (empId: string) => {
@@ -257,8 +195,8 @@ const RequestCardsPage: React.FC<RequestCardsPageProps> = ({ bookings, requireme
               {isSelfService ? "Review and request your digital safety credential." : "Curate your print batch. Select up to 8 eligible personnel."}
             </p>
             
-            <div className="mt-6 flex items-center gap-4">
-                {!isSelfService && (
+            {!isSelfService && (
+                <div className="mt-6 flex items-center gap-4">
                     <div className="flex flex-col">
                         <span className="text-[10px] text-slate-400 uppercase font-bold tracking-wider">Batch Capacity</span>
                         <div className="flex items-baseline gap-1">
@@ -266,21 +204,20 @@ const RequestCardsPage: React.FC<RequestCardsPageProps> = ({ bookings, requireme
                             <span className="text-slate-400 text-sm font-medium">/ 8</span>
                         </div>
                     </div>
-                )}
-                
-                {(activeCount > 0) && (
-                    <>
-                        {!isSelfService && <div className="h-8 w-px bg-slate-200 dark:bg-slate-700 mx-2"></div>}
+                    {activeCount > 0 && (
+                        <div className="h-8 w-px bg-slate-200 dark:bg-slate-700 mx-2"></div>
+                    )}
+                    {activeCount > 0 && (
                         <button 
                             onClick={handleGoToPrint}
                             className="group flex items-center gap-2 bg-slate-900 dark:bg-white text-white dark:text-slate-900 px-5 py-3 rounded-xl hover:shadow-lg hover:shadow-slate-900/20 transition-all transform hover:-translate-y-0.5 font-bold text-sm"
                         >
                             <Printer size={18} className="group-hover:scale-110 transition-transform"/>
-                            <span>{isSelfService ? "Print Passport" : "Print Preview"}</span>
+                            <span>Print Preview</span>
                         </button>
-                    </>
-                )}
-            </div>
+                    )}
+                </div>
+            )}
           </div>
 
           {/* BATCH GRID (HIDDEN FOR SELF SERVICE) */}
@@ -290,78 +227,52 @@ const RequestCardsPage: React.FC<RequestCardsPageProps> = ({ bookings, requireme
                       {slotInputs.map((input, idx) => {
                           const match = slots[idx];
                           const hasInput = input.length > 0;
-                          const isError = match && !match.compliance.isCompliant;
-
                           return (
                               <div 
                                 key={idx} 
                                 className={`
-                                    relative flex items-center p-1.5 rounded-xl border-2 transition-all duration-300 group h-[52px]
+                                    relative flex items-center p-1.5 rounded-xl border-2 transition-all duration-300 group
                                     ${match 
-                                        ? isError
-                                            ? 'border-red-400 bg-red-50 dark:bg-red-900/20 cursor-pointer'
-                                            : 'border-green-400 bg-green-50 dark:bg-green-900/10 shadow-sm shadow-green-200/50 dark:shadow-none' 
+                                        ? 'border-green-400 bg-green-50 dark:bg-green-900/10 shadow-sm shadow-green-200/50 dark:shadow-none' 
                                         : hasInput 
-                                            ? 'border-orange-300 bg-orange-50 dark:bg-orange-900/10' 
+                                            ? 'border-red-300 bg-red-50 dark:bg-red-900/10' 
                                             : 'border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 hover:border-blue-300 dark:hover:border-blue-500'}
                                 `}
-                                onClick={() => isError && handleIneligibleClick(match.employee.name, match.compliance.reasons)}
                               >
                                   <div className={`
                                       absolute -left-2 -top-2 w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold shadow-sm z-10 transition-colors
-                                      ${match ? (isError ? 'bg-red-500 text-white' : 'bg-green-500 text-white') : 'bg-slate-200 dark:bg-slate-700 text-slate-500'}
+                                      ${match ? 'bg-green-500 text-white' : 'bg-slate-200 dark:bg-slate-700 text-slate-500'}
                                   `}>
                                       {idx + 1}
                                   </div>
                                   
-                                  {match ? (
-                                      // MATCH FOUND STATE
-                                      <div className="flex-1 flex justify-between items-center px-2 min-w-0">
-                                          <div className="flex flex-col min-w-0 overflow-hidden pr-2">
-                                              <span className={`text-xs font-black truncate ${isError ? 'text-red-700 dark:text-red-300' : 'text-slate-800 dark:text-white'}`}>{match.employee.name}</span>
-                                              <span className={`text-[10px] font-mono truncate ${isError ? 'text-red-500' : 'text-slate-500 dark:text-slate-400'}`}>
-                                                  {isError ? 'NOT ELIGIBLE' : match.employee.recordId}
-                                              </span>
-                                          </div>
-                                          <button 
-                                            onClick={(e) => { e.stopPropagation(); clearSlot(idx); }} 
-                                            className="p-1 hover:bg-red-100 dark:hover:bg-red-900/30 text-slate-400 hover:text-red-500 rounded transition-colors"
-                                            title="Clear Slot"
-                                          >
-                                              <X size={14} />
-                                          </button>
-                                      </div>
-                                  ) : (
-                                      // SEARCH INPUT STATE
-                                      <>
-                                        <div className="flex-shrink-0 pl-2 pr-2 text-slate-400">
-                                            <Search size={14} />
-                                        </div>
-                                        <input 
-                                            type="text"
-                                            autoComplete="off"
-                                            className="w-full bg-transparent text-sm font-bold outline-none text-slate-800 dark:text-slate-200 placeholder-slate-400/70"
-                                            placeholder="Search ID/Name..."
-                                            value={input}
-                                            onChange={(e) => handleSlotChange(idx, e.target.value)}
-                                        />
-                                        <div className="pr-2">
-                                            {hasInput ? (
-                                                <div className="w-4 h-4 rounded-full border-2 border-orange-300 border-t-orange-600 animate-spin" />
-                                            ) : (
-                                                <div className="w-4 h-4 rounded-full border-2 border-slate-200 dark:border-slate-600" />
-                                            )}
-                                        </div>
-                                      </>
-                                  )}
+                                  <div className="flex-shrink-0 pl-2 pr-2 text-slate-400">
+                                      {match ? <User size={14} className="text-green-600"/> : <Search size={14} />}
+                                  </div>
+
+                                  <input 
+                                      type="text"
+                                      autoComplete="off"
+                                      className="w-full bg-transparent text-sm font-bold outline-none text-slate-800 dark:text-slate-200 placeholder-slate-400/70"
+                                      placeholder="Search ID..."
+                                      value={input}
+                                      onChange={(e) => handleSlotChange(idx, e.target.value)}
+                                  />
+                                  
+                                  <div className="pr-2">
+                                      {match ? (
+                                          <CheckCircle2 size={16} className="text-green-500 animate-bounce-in" />
+                                      ) : hasInput ? (
+                                          <AlertCircle size={16} className="text-red-400" />
+                                      ) : (
+                                          <div className="w-4 h-4 rounded-full border-2 border-slate-200 dark:border-slate-600" />
+                                      )}
+                                  </div>
                               </div>
                           );
                       })}
                   </div>
-                  <div className="mt-3 flex justify-between items-center">
-                      <p className="text-[10px] text-slate-400 italic">
-                          * Red slots indicate non-compliant employees. Click them for details.
-                      </p>
+                  <div className="mt-3 flex justify-end">
                       <button onClick={() => setSlotInputs(Array(8).fill(''))} className="text-[10px] font-bold text-slate-400 hover:text-red-500 flex items-center gap-1 transition-colors">
                           <Trash2 size={12} /> CLEAR BATCH
                       </button>
@@ -404,7 +315,7 @@ const RequestCardsPage: React.FC<RequestCardsPageProps> = ({ bookings, requireme
                    </div>
                    <h3 className="text-xl font-black text-slate-800 dark:text-white mb-2">{t.cards.eligibility.failedTitle}</h3>
                    <p className="text-sm text-slate-500 dark:text-slate-400 mb-6 leading-relaxed">
-                       {slots[0]?.compliance.reasons.join(' ') || t.cards.eligibility.failedMsg}
+                       {t.cards.eligibility.failedMsg}
                    </p>
                    <button onClick={() => navigate('/manuals')} className="w-full py-3 rounded-xl bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 font-bold text-sm hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors">
                        {t.cards.eligibility.checkReqs}
@@ -414,16 +325,14 @@ const RequestCardsPage: React.FC<RequestCardsPageProps> = ({ bookings, requireme
                 <div className="opacity-40 flex flex-col items-center">
                     <Layers size={64} className="text-slate-400 mb-4 animate-pulse" />
                     <h3 className="text-xl font-bold text-slate-500">Canvas Empty</h3>
-                    <p className="text-sm text-slate-400">Add eligible employees to the batch above to preview cards.</p>
+                    <p className="text-sm text-slate-400">Add employees to the batch above to preview cards.</p>
                 </div>
             )}
           </div>
         ) : (
           <div className={`relative z-10 grid gap-8 p-8 ${isSelfService ? 'place-items-center' : 'grid-cols-1 md:grid-cols-2 xl:grid-cols-4'}`}>
-               {slots.map((match, idx) => {
-                   if (!match || !match.compliance.isCompliant || !match.booking) return null;
-                   
-                   const booking = match.booking;
+               {slots.map((booking, idx) => {
+                   if (!booking) return null;
 
                    return (
                    <div 

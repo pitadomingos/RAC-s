@@ -3,7 +3,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import DashboardStats from '../components/DashboardStats';
 import { Booking, UserRole, EmployeeRequirement, TrainingSession, BookingStatus, RacDef } from '../types';
 import { COMPANIES, DEPARTMENTS, OPS_KEYS, RAC_KEYS } from '../constants';
-import { Calendar, Clock, MapPin, ChevronRight, Filter, Timer, User, CheckCircle, XCircle, ChevronLeft, Zap, Layers, Briefcase, Printer, ShieldCheck } from 'lucide-react';
+import { Calendar, Clock, MapPin, ChevronRight, Filter, Timer, User, CheckCircle, XCircle, ChevronLeft, Zap, Layers, Briefcase, Printer } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { v4 as uuidv4 } from 'uuid';
 import { useLanguage } from '../contexts/LanguageContext';
@@ -16,7 +16,6 @@ interface DashboardProps {
   onApproveAutoBooking?: (bookingId: string) => void;
   onRejectAutoBooking?: (bookingId: string) => void;
   racDefinitions?: RacDef[];
-  contractors?: string[];
 }
 
 const Dashboard: React.FC<DashboardProps> = ({ 
@@ -26,15 +25,11 @@ const Dashboard: React.FC<DashboardProps> = ({
   userRole, 
   onApproveAutoBooking,
   onRejectAutoBooking,
-  racDefinitions = [],
-  contractors = []
+  racDefinitions = []
 }) => {
   const navigate = useNavigate();
   const { t } = useLanguage();
   
-  // Use passed contractors list if available, otherwise fallback to constants
-  const companyList = contractors.length > 0 ? contractors : COMPANIES;
-
   // -- GLOBAL FILTERS --
   const [selectedCompany, setSelectedCompany] = useState<string>('All');
   const [selectedDepartment, setSelectedDepartment] = useState<string>('All');
@@ -74,6 +69,11 @@ const Dashboard: React.FC<DashboardProps> = ({
           if (!empMap.has(b.employee.id)) {
               empMap.set(b.employee.id, b.employee);
           }
+      });
+      // Also check requirements incase employee has no bookings yet
+      requirements.forEach(r => {
+          // If we can't find employee object, we skip (bookings usually populate employee data)
+          // In a real app, we'd have a separate 'users' table.
       });
 
       const uniqueEmployees = Array.from(empMap.values());
@@ -216,11 +216,15 @@ const Dashboard: React.FC<DashboardProps> = ({
     } catch (e) { return null; }
   };
 
+  // Identify expiring bookings for the auto-fill feature (Use filtered set?)
+  // Usually expiring alerts should show ALL, but maybe filter by company context.
+  // For safety, we'll check ALL bookings for expiry, but button will only prefill filtered if we wanted (kept simple for now).
   const expiringBookings = useMemo(() => {
     const today = new Date();
     const thirtyDaysFromNow = new Date();
     thirtyDaysFromNow.setDate(today.getDate() + 30);
     
+    // Filtered by dashboard context
     return filteredBookingsForStats.filter(b => {
       if (!b.expiryDate) return false;
       const expDate = new Date(b.expiryDate);
@@ -264,319 +268,394 @@ const Dashboard: React.FC<DashboardProps> = ({
           });
       });
 
-      const batches = Object.keys(groupedBatch).map(key => ({
-          racType: key,
-          employees: groupedBatch[key]
-      }));
-
-      const firstBatch = batches[0];
-      const remaining = batches.slice(1);
-
-      navigate('/booking', { 
-          state: { 
-              prefill: firstBatch.employees,
-              targetRac: firstBatch.racType,
-              remainingBatches: remaining
-          } 
-      });
+      const batchQueue = Object.entries(groupedBatch).map(([racType, employees]) => ({ racType, employees }));
+      if (batchQueue.length > 0) {
+          navigate('/booking', { state: { prefill: batchQueue[0].employees, targetRac: batchQueue[0].racType, remainingBatches: batchQueue.slice(1) } });
+      }
   };
 
-  const filteredBookingsTable = useMemo(() => {
-      return bookings.filter(b => {
-          const session = sessions.find(s => s.id === b.sessionId);
-          const racType = session ? session.racType : (b.sessionId.includes('RAC') ? b.sessionId.split(' - ')[0] : b.sessionId);
-          
-          if (empFilterCompany !== 'All' && b.employee.company !== empFilterCompany) return false;
-          if (empFilterRac !== 'All' && !racType.includes(empFilterRac)) return false;
-          if (empFilterDate && session?.date !== empFilterDate && b.resultDate !== empFilterDate) return false;
-          return true;
-      }).slice(0, 10);
-  }, [bookings, sessions, empFilterCompany, empFilterRac, empFilterDate]);
+  const employeeBookingsList = useMemo(() => {
+    // Only show bookings for filtered employees
+    return filteredBookingsForStats.map(b => {
+      const session = sessions.find(s => s.id === b.sessionId);
+      let racName = session ? session.racType : b.sessionId;
+      const racCode = racName.split(' - ')[0].replace(' ', '');
+      
+      return {
+        ...b,
+        racName,
+        racCode,
+        sessionDate: session ? session.date : '',
+        sessionRoom: session ? session.location : 'TBD',
+        sessionTrainer: session ? session.instructor : 'TBD'
+      };
+    });
+  }, [filteredBookingsForStats, sessions]);
+
+  // Local table filters on top of global filters
+  const finalFilteredBookings = employeeBookingsList.filter(item => {
+    if (empFilterCompany !== 'All' && item.employee.company !== empFilterCompany) return false;
+    if (empFilterRac !== 'All' && item.racCode !== empFilterRac) return false;
+    if (empFilterDate && item.sessionDate !== empFilterDate) return false;
+    return true;
+  });
+
+  const canManageAutoBookings = userRole === UserRole.SYSTEM_ADMIN || userRole === UserRole.RAC_ADMIN;
 
   return (
-    <div className="space-y-8 pb-20 animate-fade-in-up">
-      {/* Filters & Header */}
-      <div className="flex flex-col md:flex-row justify-between items-end md:items-center gap-4 bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-lg border border-slate-100 dark:border-slate-700 transition-colors">
+    <div className="space-y-6 pb-20">
+      
+      {/* Print-specific Styles */}
+      <style>{`
+        @media print {
+          @page { size: landscape; margin: 10mm; }
+          body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+          .no-print, .sticky { display: none !important; }
+          .overflow-hidden { overflow: visible !important; }
+          .overflow-auto { overflow: visible !important; height: auto !important; }
+          .h-\[500px\] { height: auto !important; }
+          /* Charts often don't print well, maybe hide or adjust */
+          .recharts-responsive-container { width: 100% !important; min-height: 300px !important; }
+        }
+      `}</style>
+
+      {/* --- FILTER CONTROL BAR --- */}
+      <div className="md:sticky md:top-0 z-20 bg-white dark:bg-slate-800 p-4 rounded-xl shadow-md border border-slate-200 dark:border-slate-700 transition-colors backdrop-blur-sm bg-opacity-95 dark:bg-opacity-95 flex flex-col xl:flex-row justify-between items-start xl:items-center gap-4 no-print">
         <div>
-          <h2 className="text-2xl font-black tracking-tight text-slate-900 dark:text-white mb-2">{t.dashboard.title}</h2>
-          <p className="text-sm text-slate-500 dark:text-slate-400 font-medium">{t.dashboard.subtitle}</p>
+          <h2 className="text-lg font-bold text-slate-800 dark:text-white">{t.dashboard.title}</h2>
+          <p className="text-sm text-slate-700 dark:text-gray-400">{t.dashboard.subtitle}</p>
         </div>
         
-        <div className="flex flex-wrap gap-3 w-full md:w-auto">
-            {/* Company Select */}
-            <div className="relative group flex-1 md:flex-none">
+        {/* GLOBAL FILTER GROUP */}
+        <div className="flex flex-wrap gap-3 items-center w-full xl:w-auto">
+            <div className="flex items-center gap-2 bg-slate-50 dark:bg-slate-700 p-1.5 rounded-lg border border-slate-200 dark:border-slate-600 flex-1 min-w-[200px]">
+                <Filter size={16} className="text-slate-400 ml-2" />
                 <select 
                     value={selectedCompany} 
                     onChange={(e) => setSelectedCompany(e.target.value)}
-                    className="w-full appearance-none bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 text-slate-700 dark:text-slate-200 py-2.5 pl-4 pr-10 rounded-xl text-xs font-bold focus:ring-2 focus:ring-blue-500 outline-none cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-600 transition-colors"
+                    className="w-full bg-transparent text-sm font-medium text-slate-800 dark:text-white outline-none cursor-pointer"
                 >
-                    <option className="dark:bg-slate-800" value="All">{t.common.allCompanies}</option>
-                    {companyList.map(c => <option className="dark:bg-slate-800" key={c} value={c}>{c}</option>)}
+                    <option value="All">All Companies</option>
+                    {COMPANIES.map(c => <option key={c} value={c}>{c}</option>)}
                 </select>
-                <Briefcase className="absolute right-3 top-2.5 text-slate-400 group-hover:text-blue-500 transition-colors pointer-events-none" size={14} />
             </div>
 
-            {/* Department Select */}
-            <div className="relative group flex-1 md:flex-none">
+            <div className="flex items-center gap-2 bg-slate-50 dark:bg-slate-700 p-1.5 rounded-lg border border-slate-200 dark:border-slate-600 flex-1 min-w-[200px]">
+                <Briefcase size={16} className="text-slate-400 ml-2" />
                 <select 
                     value={selectedDepartment} 
                     onChange={(e) => setSelectedDepartment(e.target.value)}
-                    className="w-full appearance-none bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 text-slate-700 dark:text-slate-200 py-2.5 pl-4 pr-10 rounded-xl text-xs font-bold focus:ring-2 focus:ring-blue-500 outline-none cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-600 transition-colors"
+                    className="w-full bg-transparent text-sm font-medium text-slate-800 dark:text-white outline-none cursor-pointer"
                 >
-                    <option className="dark:bg-slate-800" value="All">{t.common.allDepts}</option>
-                    {DEPARTMENTS.map(d => <option className="dark:bg-slate-800" key={d} value={d}>{d}</option>)}
+                    <option value="All">All Departments</option>
+                    {DEPARTMENTS.map(d => <option key={d} value={d}>{d}</option>)}
                 </select>
-                <Layers className="absolute right-3 top-2.5 text-slate-400 group-hover:text-blue-500 transition-colors pointer-events-none" size={14} />
             </div>
 
-            {/* Access Status Select */}
-            <div className="relative group flex-1 md:flex-none">
+            <div className="flex items-center gap-2 bg-slate-50 dark:bg-slate-700 p-1.5 rounded-lg border border-slate-200 dark:border-slate-600 flex-1 min-w-[150px]">
+                {selectedAccessStatus === 'Granted' ? <CheckCircle size={16} className="text-green-500 ml-2"/> : selectedAccessStatus === 'Blocked' ? <XCircle size={16} className="text-red-500 ml-2"/> : <Layers size={16} className="text-slate-400 ml-2" />}
                 <select 
                     value={selectedAccessStatus} 
                     onChange={(e) => setSelectedAccessStatus(e.target.value as any)}
-                    className="w-full appearance-none bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 text-slate-700 dark:text-slate-200 py-2.5 pl-4 pr-10 rounded-xl text-xs font-bold focus:ring-2 focus:ring-blue-500 outline-none cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-600 transition-colors"
+                    className="w-full bg-transparent text-sm font-medium text-slate-800 dark:text-white outline-none cursor-pointer"
                 >
-                    <option className="dark:bg-slate-800" value="All">{t.common.allStatus}</option>
-                    <option className="dark:bg-slate-800" value="Granted">{t.database.granted}</option>
-                    <option className="dark:bg-slate-800" value="Blocked">{t.database.blocked}</option>
+                    <option value="All">All Status</option>
+                    <option value="Granted">Granted Only</option>
+                    <option value="Blocked">Blocked Only</option>
                 </select>
-                <Filter className="absolute right-3 top-2.5 text-slate-400 group-hover:text-blue-500 transition-colors pointer-events-none" size={14} />
             </div>
+
+            <button 
+                onClick={() => window.print()}
+                className="p-2 bg-slate-100 dark:bg-slate-700 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors text-slate-600 dark:text-slate-300"
+                title="Print Dashboard"
+            >
+                <Printer size={20} />
+            </button>
         </div>
       </div>
 
-      {/* --- USER ROLE PASSPORT SHORTCUT --- */}
-      {userRole === UserRole.USER && (
-          <div className="bg-indigo-600 rounded-2xl p-6 text-white shadow-lg flex flex-col md:flex-row items-center justify-between gap-6 animate-fade-in-down">
-              <div className="flex items-center gap-4">
-                  <div className="p-3 bg-white/20 rounded-xl backdrop-blur-sm shadow-inner">
-                      <ShieldCheck size={32} className="text-white" />
-                  </div>
-                  <div>
-                      <h3 className="text-xl font-bold">My Digital Passport</h3>
-                      <p className="text-indigo-100 text-sm">View, print, or download your verified safety credentials.</p>
-                  </div>
-              </div>
-              <button 
-                onClick={() => navigate('/request-cards')}
-                className="px-6 py-3 bg-white text-indigo-600 rounded-xl font-bold hover:bg-indigo-50 transition-colors shadow-sm flex items-center gap-2"
-              >
-                  <Printer size={18} />
-                  Access Passport
-              </button>
-          </div>
-      )}
+      <div className="print:block">
+        <DashboardStats 
+            bookings={filteredBookingsForStats} 
+            requirements={filteredRequirements} 
+            onBookRenewals={handleBookRenewals}
+        />
+      </div>
 
-      {/* --- Notification Banner: Auto-Booking Approval --- */}
-      {autoBookings.length > 0 && (userRole === UserRole.RAC_ADMIN || userRole === UserRole.SYSTEM_ADMIN) && (
-          <div className="bg-gradient-to-r from-orange-500 to-amber-500 rounded-2xl p-6 text-white shadow-xl flex flex-col lg:flex-row items-center justify-between gap-6 animate-fade-in-down">
-              <div className="flex items-center gap-4">
-                  <div className="p-3 bg-white/20 rounded-xl backdrop-blur-sm">
-                      <Zap size={32} className="animate-pulse" />
-                  </div>
-                  <div>
-                      <h3 className="text-xl font-bold">{t.dashboard.autoBooking.title}</h3>
-                      <p className="text-white/90 text-sm">
-                          {t.dashboard.autoBooking.subPart1} <span className="font-black bg-white/20 px-1 rounded">{autoBookings.length}</span> {t.dashboard.autoBooking.subPart2}
-                      </p>
-                  </div>
-              </div>
-              
-              <div className="w-full lg:w-auto bg-white/10 rounded-xl p-4 border border-white/20 backdrop-blur-md">
-                  <div className="flex justify-between items-center mb-2">
-                      <span className="text-xs font-bold uppercase tracking-wider opacity-80">Pending Queue</span>
-                      <div className="flex gap-2">
-                          <button onClick={() => setAbPage(Math.max(1, abPage - 1))} disabled={abPage === 1} className="p-1 hover:bg-white/20 rounded disabled:opacity-50"><ChevronLeft size={16}/></button>
-                          <span className="text-xs font-mono">{abPage}/{totalAbPages}</span>
-                          <button onClick={() => setAbPage(Math.min(totalAbPages, abPage + 1))} disabled={abPage === totalAbPages} className="p-1 hover:bg-white/20 rounded disabled:opacity-50"><ChevronRight size={16}/></button>
+      {/* --- OPERATIONAL MATRIX BREAKDOWN --- */}
+      <div className="bg-slate-100 dark:bg-slate-800/50 p-4 rounded-xl border border-slate-200 dark:border-slate-700">
+          <h3 className="text-sm font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-3 flex items-center gap-2">
+              <Layers size={14} /> Operational Matrix Breakdown
+          </h3>
+          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-3">
+              {Object.entries(matrixCounts).map(([key, count]) => {
+                  let label = key;
+                  if (key === 'LIB_OPS') label = 'LIB-OPS';
+                  if (key === 'LIB_MOV') label = 'LIB-MOV';
+                  if (key === 'DONO_AREA_PTS') label = 'Owner';
+                  
+                  return (
+                      <div key={key} className="bg-white dark:bg-slate-700 rounded-lg p-3 shadow-sm border border-slate-200 dark:border-slate-600 flex flex-col items-center">
+                          <span className="text-[10px] font-bold text-slate-400 uppercase truncate w-full text-center" title={key}>{label}</span>
+                          <span className="text-xl font-black text-slate-800 dark:text-white">{count}</span>
                       </div>
-                  </div>
-                  <div className="space-y-2">
-                      {paginatedAutoBookings.map(b => (
-                          <div key={b.id} className="flex items-center gap-3 bg-white/10 p-2 rounded-lg text-xs">
-                              <span className="font-bold flex-1 truncate">{b.employee.name}</span>
-                              <span className="opacity-75">{b.sessionId}</span>
-                              <div className="flex gap-1">
-                                  <button onClick={() => onApproveAutoBooking?.(b.id)} className="p-1 bg-green-500 hover:bg-green-400 rounded text-white"><CheckCircle size={14}/></button>
-                                  <button onClick={() => onRejectAutoBooking?.(b.id)} className="p-1 bg-red-500 hover:bg-red-400 rounded text-white"><XCircle size={14}/></button>
-                              </div>
-                          </div>
-                      ))}
-                  </div>
-              </div>
+                  );
+              })}
           </div>
-      )}
+      </div>
 
-      {/* --- DASHBOARD METRICS --- */}
-      <DashboardStats 
-        bookings={filteredBookingsForStats} 
-        requirements={filteredRequirements} 
-        onBookRenewals={handleBookRenewals}
-        racDefinitions={racDefinitions}
-      />
+       {/* Auto-Booking Approval Table (Paginated) */}
+       {canManageAutoBookings && autoBookings.length > 0 && onApproveAutoBooking && onRejectAutoBooking && (
+          <div className="bg-white dark:bg-slate-800 rounded-xl shadow-lg border-2 border-orange-300 dark:border-orange-700 overflow-hidden ring-4 ring-orange-100 dark:ring-orange-900/20 animate-pulse-slow no-print">
+             <div className="p-4 bg-gradient-to-r from-orange-50 to-amber-50 dark:from-orange-900/40 dark:to-amber-900/40 border-b border-orange-200 dark:border-orange-800 flex justify-between items-center">
+                 <div>
+                     <div className="flex items-center gap-2 text-orange-700 dark:text-orange-400">
+                        <Zap size={20} className="fill-orange-500 text-orange-600" />
+                        <h3 className="font-black text-lg uppercase tracking-tight">{t.dashboard.autoBooking.title}</h3>
+                        <span className="bg-red-500 text-white text-xs px-2 py-0.5 rounded-full font-bold shadow-sm animate-bounce">
+                            {autoBookings.length}
+                        </span>
+                     </div>
+                     <p className="text-xs text-orange-800 dark:text-orange-300 mt-1 font-medium">
+                        {t.dashboard.autoBooking.subPart1} (<strong className="underline">{"< 7 days"}</strong>) {t.dashboard.autoBooking.subPart2}
+                     </p>
+                 </div>
+                 
+                 {/* Pagination Controls */}
+                 {totalAbPages > 1 && (
+                     <div className="flex items-center gap-2">
+                         <button 
+                             onClick={() => setAbPage(p => Math.max(1, p - 1))}
+                             disabled={abPage === 1}
+                             className="p-1 rounded hover:bg-orange-200 dark:hover:bg-orange-800 disabled:opacity-30 text-orange-700 dark:text-orange-400"
+                         >
+                             <ChevronLeft size={16} />
+                         </button>
+                         <span className="text-xs font-mono font-bold text-orange-700 dark:text-orange-400">
+                             {abPage} / {totalAbPages}
+                         </span>
+                         <button 
+                             onClick={() => setAbPage(p => Math.min(totalAbPages, p + 1))}
+                             disabled={abPage === totalAbPages}
+                             className="p-1 rounded hover:bg-orange-200 dark:hover:bg-orange-800 disabled:opacity-30 text-orange-700 dark:text-orange-400"
+                         >
+                             <ChevronRight size={16} />
+                         </button>
+                     </div>
+                 )}
+             </div>
 
-      <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
+             <div className="overflow-x-auto">
+                 <table className="min-w-full divide-y divide-orange-100 dark:divide-orange-900/30">
+                     <thead className="bg-orange-50/50 dark:bg-orange-900/10 md:sticky md:top-0 z-10">
+                         <tr>
+                             <th className="px-4 py-3 text-left text-xs font-bold text-orange-800 dark:text-orange-300 uppercase">Employee</th>
+                             <th className="px-4 py-3 text-left text-xs font-bold text-orange-800 dark:text-orange-300 uppercase">Session / RAC</th>
+                             <th className="px-4 py-3 text-left text-xs font-bold text-orange-800 dark:text-orange-300 uppercase">Scheduled Date</th>
+                             <th className="px-4 py-3 text-right text-xs font-bold text-orange-800 dark:text-orange-300 uppercase">Action</th>
+                         </tr>
+                     </thead>
+                     <tbody className="bg-white dark:bg-slate-800 divide-y divide-gray-50 dark:divide-slate-700">
+                         {paginatedAutoBookings.map(booking => {
+                             const session = sessions.find(s => s.id === booking.sessionId);
+                             return (
+                                 <tr key={booking.id} className="hover:bg-orange-50/50 dark:hover:bg-orange-900/10 transition-colors">
+                                     <td className="px-4 py-3">
+                                         <div className="text-sm font-black text-slate-900 dark:text-slate-200">{booking.employee.name}</div>
+                                         <div className="text-xs text-slate-500 dark:text-gray-400 font-mono">{booking.employee.company} • {booking.employee.recordId}</div>
+                                     </td>
+                                     <td className="px-4 py-3">
+                                         <span className="inline-block bg-orange-100 dark:bg-orange-900/40 text-orange-800 dark:text-orange-200 px-2 py-1 rounded text-xs font-bold border border-orange-200 dark:border-orange-800">
+                                            {session ? session.racType : booking.sessionId}
+                                         </span>
+                                     </td>
+                                     <td className="px-4 py-3">
+                                         <div className="text-sm font-bold text-slate-700 dark:text-slate-300">
+                                            {session ? session.date : 'TBD'}
+                                         </div>
+                                         <div className="text-xs text-slate-500 dark:text-gray-400">
+                                            {session ? session.startTime : ''}
+                                         </div>
+                                     </td>
+                                     <td className="px-4 py-3 text-right">
+                                         <div className="flex justify-end gap-2">
+                                            <button 
+                                                onClick={() => onApproveAutoBooking(booking.id)} 
+                                                className="flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-500 text-white rounded-lg shadow-md hover:shadow-lg transition-all transform hover:-translate-y-0.5"
+                                                title="Approve Booking"
+                                            >
+                                                <CheckCircle size={16} />
+                                                <span className="text-xs font-bold">Approve</span>
+                                            </button>
+                                            <button 
+                                                onClick={() => onRejectAutoBooking(booking.id)} 
+                                                className="flex items-center gap-1 px-3 py-2 bg-white text-red-600 border border-red-200 rounded-lg hover:bg-red-50 transition-colors"
+                                                title="Reject & Delete"
+                                            >
+                                                <XCircle size={16} />
+                                            </button>
+                                         </div>
+                                     </td>
+                                 </tr>
+                             );
+                         })}
+                     </tbody>
+                 </table>
+             </div>
+          </div>
+       )}
+
+      {/* Main Content Grid: Upcoming Sessions (Left) vs Employee Bookings (Right) */}
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 print:grid-cols-1">
         
-        {/* --- UPCOMING SESSIONS (Left Col) --- */}
-        <div className="xl:col-span-1 bg-white dark:bg-slate-800 rounded-2xl shadow-lg border border-slate-100 dark:border-slate-700 flex flex-col h-[500px]">
-            <div className="p-6 border-b border-slate-100 dark:border-slate-700 flex justify-between items-center bg-slate-50 dark:bg-slate-800/50">
-                <h3 className="font-bold text-lg text-slate-800 dark:text-white flex items-center gap-2">
-                    <Calendar size={20} className="text-blue-500" />
-                    {t.dashboard.upcoming.title}
-                </h3>
-                {userRole === UserRole.SYSTEM_ADMIN && (
-                    <button onClick={() => navigate('/schedule')} className="text-xs text-blue-600 dark:text-blue-400 font-bold hover:underline">
-                        {t.dashboard.upcoming.viewSchedule}
-                    </button>
-                )}
-            </div>
-            
-            <div className="flex-1 overflow-y-auto p-4 space-y-3 scrollbar-hide">
-                {upcomingSessions.length === 0 ? (
-                    <div className="h-full flex flex-col items-center justify-center text-slate-400">
-                        <Calendar size={48} className="mb-2 opacity-20" />
-                        <p className="text-sm">No upcoming sessions</p>
-                    </div>
-                ) : (
-                    upcomingSessions.map(session => {
-                        const bookedCount = getBookingCount(session.id);
-                        const isFull = bookedCount >= session.capacity;
-                        const statusBadge = getSessionStatus(session.date, session.startTime);
-
-                        return (
-                            <div key={session.id} className="group relative bg-slate-50 dark:bg-slate-700/30 rounded-xl p-4 border border-slate-100 dark:border-slate-700 hover:border-blue-300 dark:hover:border-blue-500 transition-all hover:shadow-md">
-                                <div className="absolute left-0 top-0 bottom-0 w-1 bg-blue-500 rounded-l-xl opacity-0 group-hover:opacity-100 transition-opacity"></div>
-                                <div className="flex justify-between items-start mb-2">
-                                    <h4 className="font-bold text-slate-800 dark:text-white text-sm line-clamp-1">{session.racType}</h4>
-                                    {statusBadge}
-                                </div>
-                                
-                                <div className="flex items-center gap-4 text-xs text-slate-500 dark:text-slate-400 mb-3">
-                                    <span className="flex items-center gap-1 bg-white dark:bg-slate-800 px-2 py-1 rounded border border-slate-200 dark:border-slate-600">
-                                        <Clock size={12} /> {session.date} • {session.startTime}
-                                    </span>
-                                    <span className="flex items-center gap-1">
-                                        <MapPin size={12} /> {session.location}
-                                    </span>
-                                </div>
-
-                                <div className="flex items-center justify-between text-xs">
-                                    <div className="flex items-center gap-2">
-                                        <div className="w-16 h-2 bg-slate-200 dark:bg-slate-600 rounded-full overflow-hidden">
-                                            <div 
-                                                className={`h-full rounded-full ${isFull ? 'bg-red-500' : 'bg-blue-500'}`} 
-                                                style={{ width: `${(bookedCount / session.capacity) * 100}%` }}
-                                            ></div>
-                                        </div>
-                                        <span className={`font-bold ${isFull ? 'text-red-500' : 'text-slate-600 dark:text-slate-300'}`}>
-                                            {bookedCount}/{session.capacity}
-                                        </span>
-                                    </div>
-                                    {userRole !== UserRole.USER && !isFull && (
-                                        <button 
-                                            onClick={() => navigate('/booking')}
-                                            className="text-blue-600 dark:text-blue-400 font-bold hover:underline flex items-center gap-1"
-                                        >
-                                            Book <ChevronRight size={12} />
-                                        </button>
-                                    )}
-                                </div>
-                            </div>
-                        );
-                    })
-                )}
-            </div>
+        {/* Left Column: Upcoming Sessions (Session Centric) */}
+        <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden flex flex-col transition-colors h-[500px]">
+          <div className="px-6 py-4 border-b border-slate-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-800/50 flex justify-between items-center shrink-0">
+             <div className="flex items-center gap-2">
+                <Calendar className="text-yellow-600 dark:text-yellow-500" size={20} />
+                <h3 className="font-bold text-slate-800 dark:text-white text-lg">{t.dashboard.upcoming.title}</h3>
+             </div>
+             <button onClick={() => navigate('/schedule')} className="text-xs text-blue-600 dark:text-blue-400 font-semibold flex items-center hover:underline no-print">
+               {t.dashboard.upcoming.viewSchedule} <ChevronRight size={14} />
+             </button>
+          </div>
+          
+          <div className="overflow-auto flex-1">
+            <table className="min-w-full divide-y divide-gray-200 dark:divide-slate-700">
+              <thead className="bg-white dark:bg-slate-800 md:sticky md:top-0 z-10 shadow-sm">
+                 <tr>
+                   <th className="px-4 py-3 text-left text-xs font-bold text-black dark:text-gray-400 uppercase tracking-wider">{t.dashboard.upcoming.date}</th>
+                   <th className="px-4 py-3 text-left text-xs font-bold text-black dark:text-gray-400 uppercase tracking-wider">{t.dashboard.upcoming.session}</th>
+                   <th className="px-4 py-3 text-center text-xs font-bold text-black dark:text-gray-400 uppercase tracking-wider">{t.dashboard.upcoming.capacity}</th>
+                   <th className="px-4 py-3 text-center text-xs font-bold text-black dark:text-gray-400 uppercase tracking-wider">{t.dashboard.upcoming.status}</th>
+                 </tr>
+              </thead>
+              <tbody className="bg-white dark:bg-slate-800 divide-y divide-gray-200 dark:divide-slate-700">
+                {upcomingSessions.map((session) => (
+                  <tr key={session.id} className="hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors">
+                    <td className="px-4 py-3 whitespace-nowrap">
+                      <div className="text-sm font-medium text-slate-900 dark:text-white">{String(session.date)}</div>
+                      <div className="text-xs text-slate-600 dark:text-gray-400 flex items-center gap-1 mt-1">
+                         <Clock size={12} /> {String(session.startTime)}
+                      </div>
+                    </td>
+                    <td className="px-4 py-3">
+                      <div className="text-sm font-bold text-slate-800 dark:text-slate-200">{String(session.racType)}</div>
+                      <div className="flex items-center gap-3 text-xs text-slate-600 dark:text-gray-400 mt-1">
+                        <span className="flex items-center gap-1"><MapPin size={12} /> {String(session.location)}</span>
+                        <span className="flex items-center gap-1"><User size={12} /> {String(session.instructor)}</span>
+                      </div>
+                    </td>
+                    <td className="px-4 py-3 text-center whitespace-nowrap">
+                       <span className="text-sm font-bold text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-700 px-2 py-1 rounded border border-slate-200 dark:border-slate-600">
+                           {getBookingCount(session.id)}/{String(session.capacity)}
+                       </span>
+                    </td>
+                    <td className="px-4 py-3 whitespace-nowrap text-center">
+                      {getSessionStatus(session.date, session.startTime)}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
 
-        {/* --- BOOKED EMPLOYEES TABLE (Right Col) --- */}
-        <div className="xl:col-span-2 bg-white dark:bg-slate-800 rounded-2xl shadow-lg border border-slate-100 dark:border-slate-700 flex flex-col h-[500px]">
-            <div className="p-6 border-b border-slate-100 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                <h3 className="font-bold text-lg text-slate-800 dark:text-white flex items-center gap-2">
-                    <User size={20} className="text-purple-500" />
-                    {t.dashboard.booked.title}
-                </h3>
-                
-                <div className="flex gap-2">
-                    {/* Small Filters for Table */}
-                    <div className="relative group">
-                        <select 
-                            value={empFilterCompany}
-                            onChange={(e) => setEmpFilterCompany(e.target.value)}
-                            className="bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 text-slate-700 dark:text-slate-200 text-xs rounded-lg py-1.5 pl-2 pr-6 outline-none focus:ring-2 focus:ring-purple-500 cursor-pointer"
-                        >
-                            <option className="dark:bg-slate-800" value="All">{t.common.allCompanies}</option>
-                            {companyList.map(c => <option className="dark:bg-slate-800" key={c} value={c}>{c}</option>)}
-                        </select>
-                    </div>
-                    
-                    <div className="relative group">
-                        <select 
-                            value={empFilterRac}
-                            onChange={(e) => setEmpFilterRac(e.target.value)}
-                            className="bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 text-slate-700 dark:text-slate-200 text-xs rounded-lg py-1.5 pl-2 pr-6 outline-none focus:ring-2 focus:ring-purple-500 cursor-pointer"
-                        >
-                            <option className="dark:bg-slate-800" value="All">{t.common.allRacs}</option>
-                            {racDefinitions.length > 0 ? (
-                                racDefinitions.map(def => <option className="dark:bg-slate-800" key={def.code} value={def.code}>{def.code}</option>)
-                            ) : (
-                                RAC_KEYS.map(r => <option className="dark:bg-slate-800" key={r} value={r}>{r}</option>)
-                            )}
-                        </select>
-                    </div>
-
-                    <input 
-                        type="date" 
-                        className="bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 text-slate-700 dark:text-slate-200 text-xs rounded-lg py-1.5 px-2 outline-none focus:ring-2 focus:ring-purple-500"
-                        value={empFilterDate}
-                        onChange={(e) => setEmpFilterDate(e.target.value)}
-                    />
+        {/* Right Column: Employees Booked (Person Centric) */}
+        <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden flex flex-col h-[500px] transition-colors">
+           <div className="px-6 py-4 border-b border-slate-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-800/50 shrink-0">
+             <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-2">
+                   <User className="text-blue-600 dark:text-blue-500" size={20} />
+                   <h3 className="font-bold text-slate-800 dark:text-white text-lg">{t.dashboard.booked.title}</h3>
                 </div>
-            </div>
+                <div className="text-xs text-gray-400">
+                  {finalFilteredBookings.length} records
+                </div>
+             </div>
+             
+             {/* Filters for Employee Table */}
+             <div className="flex flex-wrap gap-2 no-print">
+                <select 
+                   value={empFilterCompany}
+                   onChange={(e) => setEmpFilterCompany(e.target.value)}
+                   className="text-xs border-gray-300 dark:border-slate-600 dark:bg-slate-700 text-black dark:text-white rounded focus:ring-blue-500 focus:border-blue-500 py-1"
+                >
+                   <option value="All">All Companies</option>
+                   {COMPANIES.map(c => <option key={c} value={c}>{c}</option>)}
+                </select>
 
-            <div className="flex-1 overflow-auto">
-                <table className="w-full text-left border-collapse">
-                    <thead className="bg-slate-50 dark:bg-slate-700/50 sticky top-0 z-10 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                        <tr>
-                            <th className="p-4 border-b border-slate-100 dark:border-slate-700">{t.dashboard.booked.tableEmployee}</th>
-                            <th className="p-4 border-b border-slate-100 dark:border-slate-700">{t.dashboard.booked.tableRac}</th>
-                            <th className="p-4 border-b border-slate-100 dark:border-slate-700">{t.dashboard.booked.tableDate}</th>
-                            <th className="p-4 border-b border-slate-100 dark:border-slate-700 hidden sm:table-cell">{t.dashboard.booked.tableRoom}</th>
-                            <th className="p-4 border-b border-slate-100 dark:border-slate-700">{t.dashboard.booked.tableTrainer}</th>
+                <select 
+                   value={empFilterRac}
+                   onChange={(e) => setEmpFilterRac(e.target.value)}
+                   className="text-xs border-gray-300 dark:border-slate-600 dark:bg-slate-700 text-black dark:text-white rounded focus:ring-blue-500 focus:border-blue-500 py-1"
+                >
+                   <option value="All">All RACs</option>
+                   {RAC_KEYS.map(r => <option key={r} value={r}>{r}</option>)}
+                </select>
+
+                <input 
+                   type="date"
+                   value={empFilterDate}
+                   onChange={(e) => setEmpFilterDate(e.target.value)}
+                   className="text-xs border-gray-300 dark:border-slate-600 dark:bg-slate-700 text-black dark:text-white rounded focus:ring-blue-500 focus:border-blue-500 py-1"
+                   placeholder="Filter Date"
+                />
+             </div>
+           </div>
+
+           <div className="overflow-auto flex-1 relative">
+              <table className="min-w-full divide-y divide-gray-200 dark:divide-slate-700">
+                <thead className="bg-gray-50 dark:bg-slate-800 md:sticky md:top-0 shadow-sm z-10">
+                   <tr>
+                     <th className="px-3 py-2 text-left text-[10px] font-bold text-black dark:text-gray-400 uppercase tracking-wider">ID</th>
+                     <th className="px-3 py-2 text-left text-[10px] font-bold text-black dark:text-gray-400 uppercase tracking-wider">{t.dashboard.booked.tableEmployee}</th>
+                     <th className="px-3 py-2 text-left text-[10px] font-bold text-black dark:text-gray-400 uppercase tracking-wider">{t.dashboard.booked.tableRac}</th>
+                     <th className="px-3 py-2 text-left text-[10px] font-bold text-black dark:text-gray-400 uppercase tracking-wider">{t.dashboard.booked.tableDate}</th>
+                     <th className="px-3 py-2 text-left text-[10px] font-bold text-black dark:text-gray-400 uppercase tracking-wider">{t.dashboard.booked.tableRoom}</th>
+                     <th className="px-3 py-2 text-left text-[10px] font-bold text-black dark:text-gray-400 uppercase tracking-wider">{t.dashboard.booked.tableTrainer}</th>
+                   </tr>
+                </thead>
+                <tbody className="bg-white dark:bg-slate-800 divide-y divide-gray-200 dark:divide-slate-700">
+                   {finalFilteredBookings.length === 0 ? (
+                      <tr>
+                        <td colSpan={6} className="px-6 py-8 text-center text-gray-400 dark:text-gray-500 text-sm">
+                          {t.dashboard.booked.noData}
+                        </td>
+                      </tr>
+                   ) : (
+                      finalFilteredBookings.map((item) => (
+                        <tr key={item.id} className="hover:bg-slate-50 dark:hover:bg-slate-700/50">
+                           <td className="px-3 py-2 whitespace-nowrap text-xs font-mono text-black dark:text-gray-400">
+                             {String(item.employee.recordId)}
+                           </td>
+                           <td className="px-3 py-2 whitespace-nowrap">
+                             <div className="text-xs font-bold text-slate-900 dark:text-white">{String(item.employee.name)}</div>
+                             <div className="text-[10px] text-slate-500 dark:text-gray-400 truncate max-w-[120px]" title={item.employee.company}>{String(item.employee.company)}</div>
+                           </td>
+                           <td className="px-3 py-2 whitespace-nowrap">
+                             <span className="text-xs font-medium text-blue-700 dark:text-blue-300 bg-blue-50 dark:bg-blue-900/30 px-1.5 py-0.5 rounded border border-blue-100 dark:border-blue-800">
+                               {String(item.racCode)}
+                             </span>
+                           </td>
+                           <td className="px-3 py-2 whitespace-nowrap text-xs text-slate-800 dark:text-gray-400">
+                             {item.sessionDate ? String(item.sessionDate) : <span className="text-gray-300 italic">--</span>}
+                           </td>
+                           <td className="px-3 py-2 whitespace-nowrap text-xs text-slate-800 dark:text-gray-400">
+                             {item.sessionRoom ? String(item.sessionRoom) : <span className="text-gray-300 italic">--</span>}
+                           </td>
+                           <td className="px-3 py-2 whitespace-nowrap text-xs text-slate-800 dark:text-gray-400">
+                             {item.sessionTrainer ? String(item.sessionTrainer) : <span className="text-gray-300 italic">--</span>}
+                           </td>
                         </tr>
-                    </thead>
-                    <tbody className="text-xs text-slate-700 dark:text-slate-300">
-                        {filteredBookingsTable.length > 0 ? (
-                            filteredBookingsTable.map((booking) => {
-                                const session = sessions.find(s => s.id === booking.sessionId);
-                                const rac = session ? session.racType : booking.sessionId;
-                                const date = session ? session.date : (booking.resultDate || '-');
-                                const room = session ? session.location : '-';
-                                const trainer = session ? session.instructor : '-';
-
-                                return (
-                                    <tr key={booking.id} className="hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors border-b border-slate-100 dark:border-slate-700 last:border-0">
-                                        <td className="p-4">
-                                            <div className="font-bold text-slate-900 dark:text-white">{booking.employee.name}</div>
-                                            <div className="text-[10px] text-slate-500 dark:text-slate-400">{booking.employee.company}</div>
-                                        </td>
-                                        <td className="p-4 font-medium">{rac}</td>
-                                        <td className="p-4">{date}</td>
-                                        <td className="p-4 hidden sm:table-cell">{room}</td>
-                                        <td className="p-4">{trainer}</td>
-                                    </tr>
-                                );
-                            })
-                        ) : (
-                            <tr>
-                                <td colSpan={5} className="p-8 text-center text-slate-400 italic">
-                                    {t.dashboard.booked.noData}
-                                </td>
-                            </tr>
-                        )}
-                    </tbody>
-                </table>
-            </div>
+                      ))
+                   )}
+                </tbody>
+              </table>
+           </div>
         </div>
+
       </div>
     </div>
   );

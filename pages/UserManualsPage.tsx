@@ -15,12 +15,10 @@ const UserManualsPage: React.FC<UserManualsPageProps> = ({ userRole }) => {
   const { t } = useLanguage();
   const [activeTab, setActiveTab] = useState<UserRole>(userRole);
 
-  // Sync active tab only on mount or if props drastically change, but allow user override
-  // REMOVED rigid dependency on `userRole` to prevent state reset on re-render
+  // Sync active tab when userRole changes (e.g. simulation)
   useEffect(() => {
-      // Logic to ensure the user doesn't access tabs they shouldn't see
-      // For now, we trust the `availableRoles` list rendering
-  }, []);
+      setActiveTab(userRole);
+  }, [userRole]);
 
   // Safety check to ensure nested properties exist
   if (!t || !t.manuals || !t.manuals.sysAdmin || !t.manuals.user) {
@@ -35,12 +33,6 @@ const UserManualsPage: React.FC<UserManualsPageProps> = ({ userRole }) => {
   const getAvailableRoles = () => {
       if (userRole === UserRole.SYSTEM_ADMIN) {
           return [UserRole.SYSTEM_ADMIN, UserRole.RAC_ADMIN, UserRole.RAC_TRAINER, UserRole.DEPT_ADMIN, UserRole.USER];
-      }
-      if (userRole === UserRole.ENTERPRISE_ADMIN) {
-          return [UserRole.ENTERPRISE_ADMIN, UserRole.RAC_ADMIN, UserRole.RAC_TRAINER, UserRole.DEPT_ADMIN, UserRole.USER];
-      }
-      if (userRole === UserRole.SITE_ADMIN) {
-          return [UserRole.SITE_ADMIN, UserRole.RAC_ADMIN, UserRole.RAC_TRAINER, UserRole.USER];
       }
       if (userRole === UserRole.RAC_ADMIN) {
           return [UserRole.RAC_ADMIN, UserRole.RAC_TRAINER, UserRole.USER];
@@ -228,33 +220,33 @@ const UserManualsPage: React.FC<UserManualsPageProps> = ({ userRole }) => {
             </div>
          )}
 
-         {/* General User Manual */}
-         {(activeTab === UserRole.USER || activeTab === UserRole.ENTERPRISE_ADMIN) && (
+         {/* User Manual */}
+         {activeTab === UserRole.USER && (
             <div className="max-w-4xl mx-auto animate-fade-in-up space-y-12">
                <Header title={t.manuals.user.title} icon={UserCog} color="gray" subtitle={t.manuals.user.subtitle} />
                
                <Section title={t.manuals.user.statusTitle}>
                   <p>{t.manuals.user.statusDesc}</p>
-                  <AlertBox type="info">
+                  
+                  {/* NEW FILTER ALERT */}
+                  <AlertBox type="warning">
                       {t.manuals.user.filterAlert}
                   </AlertBox>
-               </Section>
 
-               <Section title="Access Indicators">
-                  <div className="grid grid-cols-2 gap-4">
-                      <div className="p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg flex items-center gap-3">
-                          <CheckCircle className="text-green-500" />
-                          <span className="font-bold text-green-700 dark:text-green-300">{t.manuals.user.green}</span>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                      <div className="p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
+                          <h4 className="font-bold text-green-700 dark:text-green-400 flex items-center gap-2"><CheckCircle size={16}/> Compliant</h4>
+                          <p className="text-xs text-slate-600 dark:text-slate-300 mt-1">{t.manuals.user.green}</p>
                       </div>
-                      <div className="p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg flex items-center gap-3">
-                          <AlertTriangle className="text-red-500" />
-                          <span className="font-bold text-red-700 dark:text-red-300">{t.manuals.user.red}</span>
+                      <div className="p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+                          <h4 className="font-bold text-red-700 dark:text-red-400 flex items-center gap-2"><AlertTriangle size={16}/> Non-Compliant</h4>
+                          <p className="text-xs text-slate-600 dark:text-slate-300 mt-1">{t.manuals.user.red}</p>
                       </div>
                   </div>
                </Section>
 
-               <Section title="Digital ID">
-                  <p>{t.manuals.user.qr}</p>
+               <Section title="Digital Verification">
+                  <Step num="QR" text={t.manuals.user.qr} />
                </Section>
             </div>
          )}
@@ -264,67 +256,68 @@ const UserManualsPage: React.FC<UserManualsPageProps> = ({ userRole }) => {
   );
 };
 
-// --- Sub-Components ---
+// --- Helper Components for Styling ---
 
 const Header = ({ title, icon: Icon, color, subtitle }: any) => {
-    const colorMap: any = {
-        blue: 'text-blue-600 bg-blue-50',
-        yellow: 'text-yellow-600 bg-yellow-50',
-        green: 'text-green-600 bg-green-50',
-        purple: 'text-purple-600 bg-purple-50',
-        gray: 'text-gray-600 bg-gray-50',
+    const colorMap: Record<string, string> = {
+        blue: 'bg-blue-50 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400',
+        yellow: 'bg-yellow-50 text-yellow-600 dark:bg-yellow-900/30 dark:text-yellow-400',
+        green: 'bg-green-50 text-green-600 dark:bg-green-900/30 dark:text-green-400',
+        purple: 'bg-purple-50 text-purple-600 dark:bg-purple-900/30 dark:text-purple-400',
+        gray: 'bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-300'
     };
+
     return (
-        <div className="flex items-center gap-4 border-b border-slate-200 dark:border-slate-700 pb-6">
-            <div className={`p-4 rounded-2xl ${colorMap[color]} shadow-sm`}>
+        <div className="flex items-center gap-4 mb-8 pb-6 border-b border-slate-100 dark:border-slate-700">
+            <div className={`p-4 rounded-xl shadow-sm ${colorMap[color]}`}>
                 <Icon size={32} />
             </div>
             <div>
-                <h1 className="text-3xl font-black text-slate-800 dark:text-white tracking-tight">{title}</h1>
-                <p className="text-lg text-slate-500 dark:text-slate-400">{subtitle}</p>
+                <h1 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight">{title}</h1>
+                <p className="text-slate-500 dark:text-slate-400 font-medium">{subtitle}</p>
             </div>
         </div>
     );
 };
 
 const Section = ({ title, children }: any) => (
-    <div className="space-y-4">
-        <h3 className="text-xl font-bold text-slate-800 dark:text-white border-l-4 border-slate-300 pl-3">{title}</h3>
-        <div className="text-slate-600 dark:text-slate-300 leading-relaxed text-sm pl-4">
-            {children}
-        </div>
-    </div>
+   <div className="mb-10">
+      <h3 className="text-xl font-bold text-slate-800 dark:text-white mb-4 flex items-center gap-2">
+          {title}
+      </h3>
+      <div className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed space-y-4">
+         {children}
+      </div>
+   </div>
+);
+
+const Step = ({ num, text, visual }: any) => (
+   <li className="flex items-start gap-4 p-4 rounded-xl bg-slate-50 dark:bg-slate-900/50 border border-slate-100 dark:border-slate-700 transition-colors">
+      <div className="flex-shrink-0 w-8 h-8 rounded-full bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-white flex items-center justify-center text-sm font-bold mt-0.5 shadow-inner">
+         {num}
+      </div>
+      <div className="flex-1">
+         <p className="text-sm font-medium text-slate-800 dark:text-slate-200">{text}</p>
+         {visual && <div className="mt-3 p-3 bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-600 shadow-sm">{visual}</div>}
+      </div>
+   </li>
 );
 
 const AlertBox = ({ type, children }: any) => {
-    const styles: any = {
-        info: 'bg-blue-50 text-blue-800 border-blue-200 dark:bg-blue-900/20 dark:text-blue-300 dark:border-blue-800',
-        warning: 'bg-yellow-50 text-yellow-800 border-yellow-200 dark:bg-yellow-900/20 dark:text-yellow-300 dark:border-yellow-800',
-        error: 'bg-red-50 text-red-800 border-red-200 dark:bg-red-900/20 dark:text-red-300 dark:border-red-800'
-    };
-    const Icons: any = {
-        info: Info,
-        warning: Bell,
-        error: AlertTriangle
-    };
-    const Icon = Icons[type];
-
-    return (
-        <div className={`p-4 rounded-xl border flex gap-3 my-4 ${styles[type]}`}>
-            <Icon className="shrink-0 mt-0.5" size={18} />
-            <div className="text-sm font-medium">{children}</div>
-        </div>
-    );
+   const styles = type === 'error' 
+    ? 'bg-red-50 border-red-200 text-red-800 dark:bg-red-900/20 dark:border-red-900/50 dark:text-red-300' 
+    : type === 'warning'
+        ? 'bg-orange-50 border-orange-200 text-orange-800 dark:bg-orange-900/20 dark:border-orange-900/50 dark:text-orange-300'
+        : 'bg-blue-50 border-blue-200 text-blue-800 dark:bg-blue-900/20 dark:border-blue-900/50 dark:text-blue-300';
+   
+   const Icon = type === 'error' ? AlertTriangle : type === 'warning' ? Bell : Info;
+   
+   return (
+      <div className={`p-4 rounded-xl border flex gap-3 text-sm my-4 shadow-sm ${styles}`}>
+         <Icon size={20} className="flex-shrink-0 mt-0.5" />
+         <div>{children}</div>
+      </div>
+   );
 };
-
-const Step = ({ num, text, visual }: any) => (
-    <li className="flex items-center gap-4 p-3 bg-slate-50 dark:bg-slate-700/50 rounded-lg border border-slate-100 dark:border-slate-600">
-        <span className="w-8 h-8 rounded-full bg-white dark:bg-slate-600 flex items-center justify-center font-bold text-slate-700 dark:text-slate-200 shadow-sm text-xs border border-slate-200 dark:border-slate-500">
-            {num}
-        </span>
-        <span className="flex-1 font-medium">{text}</span>
-        {visual && <div className="p-2 bg-white dark:bg-slate-600 rounded-md border border-slate-200 dark:border-slate-500">{visual}</div>}
-    </li>
-);
 
 export default UserManualsPage;

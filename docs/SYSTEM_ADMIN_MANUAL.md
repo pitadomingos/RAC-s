@@ -1,6 +1,6 @@
 
 # CARS Manager - System Administrator Manual
-**Version:** 2.6.0  
+**Version:** 2.5.0  
 **Target Audience:** System Administrators, HSE Managers
 
 ---
@@ -108,19 +108,9 @@ Navigate to **Request Cards**.
 
 ---
 
-## 5. Enterprise Management (Multi-Tenancy)
+## 5. Enterprise Management (New)
 
-The system now supports Multi-Tenancy, allowing a single deployment to manage multiple client companies (Tenants) and their hierarchy.
-
-### The Platform Dashboard
-When logged in as **System Admin**, the "Corporate Dashboard" transforms into a **Platform Command Center**.
-
-*   **Tenant Selector:** A filter bar allowing you to toggle between "All Tenants" or a specific Enterprise (e.g., "Vulcan").
-*   **Cascading Filters:**
-    *   Selecting a Tenant dynamically updates the "Contractor" dropdown to show only sub-contractors belonging to that enterprise.
-    *   The "Department" and "Site" filters also respect the selected Tenant context.
-*   **Tenant Matrix:** A dedicated view comparing the compliance health of different Enterprises side-by-side. This allows you to spot which client requires intervention.
-*   **Employee Aggregation:** The system calculates KPIs (Compliance %, Total Workforce) by mapping individual employees to their parent Tenant via the `Company` field.
+The system now supports Multi-Tenancy, allowing a single deployment to manage multiple client companies and sites.
 
 ### Creating a New Enterprise
 1.  Go to **System Settings** > **Companies** (Only available to `System Admin`).
@@ -141,6 +131,12 @@ Enterprise Admins can manage mandatory requirements per site.
 3.  Toggle the RACs that are mandatory for *all* employees at that site.
 4.  Click **Save & Push Policy**.
 5.  **Result:** The system updates the requirements matrix for every employee assigned to that site, ensuring they are flagged for the required training.
+
+### Corporate Dashboard
+Navigate to **Corporate Dashboard** to view a high-level summary of all sites under your management, including:
+*   Global Health Score (Average compliance across sites).
+*   Top Performing Site vs Needs Attention.
+*   Comparative charts for workforce compliance.
 
 ---
 

@@ -1,6 +1,6 @@
 
-import React, { useState, useEffect } from 'react';
-import { Link, useLocation, useNavigate, Outlet } from 'react-router-dom';
+import React, { useState, useEffect, memo } from 'react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { 
   LayoutDashboard, 
   CalendarPlus, 
@@ -37,7 +37,6 @@ import {
   Building2,
   BarChart,
   GanttChart,
-  Activity,
   FileText
 } from 'lucide-react';
 import { UserRole, SystemNotification, Site } from '../types';
@@ -45,7 +44,7 @@ import { useLanguage } from '../contexts/LanguageContext';
 import { useTheme } from '../contexts/ThemeContext';
 
 interface LayoutProps {
-  children?: React.ReactNode;
+  children: React.ReactNode;
   userRole: UserRole;
   setUserRole: (role: UserRole) => void;
   notifications?: SystemNotification[];
@@ -53,10 +52,9 @@ interface LayoutProps {
   sites?: Site[];
   currentSiteId?: string;
   setCurrentSiteId?: (id: string) => void;
-  appName?: string; // NEW: Dynamic App Name for Branding
 }
 
-const Layout: React.FC<LayoutProps> = ({ 
+const Layout: React.FC<LayoutProps> = memo(({ 
   children, 
   userRole, 
   setUserRole, 
@@ -64,8 +62,7 @@ const Layout: React.FC<LayoutProps> = ({
   clearNotifications,
   sites = [],
   currentSiteId = 'all',
-  setCurrentSiteId,
-  appName = 'CARS Manager' // Default fallback
+  setCurrentSiteId
 }) => {
   const [isSidebarOpen, setSidebarOpen] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(false);
@@ -77,11 +74,6 @@ const Layout: React.FC<LayoutProps> = ({
   const { theme, setTheme } = useTheme();
 
   const unreadCount = notifications.filter(n => !n.isRead).length;
-
-  // Update Document Title based on App Name
-  useEffect(() => {
-      document.title = appName;
-  }, [appName]);
 
   // Safety check for translations
   if (!t || !t.nav) {
@@ -153,18 +145,18 @@ const Layout: React.FC<LayoutProps> = ({
       icon: GanttChart,
       visible: [UserRole.SYSTEM_ADMIN, UserRole.ENTERPRISE_ADMIN].includes(userRole)
     },
+    // Project Proposal Link (For System Admin Access primarily)
     {
-      path: '/system-health',
-      label: t.nav.systemHealth,
-      icon: Activity,
+      path: '/proposal',
+      label: t.nav.proposal,
+      icon: FileText,
       visible: userRole === UserRole.SYSTEM_ADMIN
     },
     { 
       path: '/', 
       label: t.nav.dashboard, 
       icon: LayoutDashboard, 
-      // HIDE FOR TRAINERS
-      visible: userRole !== UserRole.USER && userRole !== UserRole.ENTERPRISE_ADMIN && userRole !== UserRole.RAC_TRAINER
+      visible: userRole !== UserRole.USER && userRole !== UserRole.ENTERPRISE_ADMIN
     },
     {
       path: '/database',
@@ -206,7 +198,7 @@ const Layout: React.FC<LayoutProps> = ({
       path: '/users', 
       label: t.nav.users, 
       icon: Users, 
-      visible: [UserRole.SYSTEM_ADMIN, UserRole.ENTERPRISE_ADMIN, UserRole.SITE_ADMIN].includes(userRole) 
+      visible: userRole === UserRole.SYSTEM_ADMIN 
     },
     { 
       path: '/schedule', 
@@ -218,14 +210,13 @@ const Layout: React.FC<LayoutProps> = ({
       path: '/settings', 
       label: t.nav.settings, 
       icon: Settings, 
-      visible: [UserRole.SYSTEM_ADMIN, UserRole.ENTERPRISE_ADMIN].includes(userRole)
+      visible: userRole === UserRole.SYSTEM_ADMIN
     },
     { 
       path: '/request-cards', 
       label: t.nav.requestCards, 
       icon: Mail, 
-      // HIDE FOR TRAINERS
-      visible: userRole !== UserRole.ENTERPRISE_ADMIN && userRole !== UserRole.RAC_TRAINER
+      visible: userRole !== UserRole.ENTERPRISE_ADMIN
     },
     {
       path: '/manuals',
@@ -251,7 +242,6 @@ const Layout: React.FC<LayoutProps> = ({
       icon: ScrollText,
       visible: [UserRole.SYSTEM_ADMIN, UserRole.ENTERPRISE_ADMIN].includes(userRole)
     },
-    // Presentation is now accessed via Sidebar OR Header, kept in sidebar for quick access
     {
         path: '/presentation',
         label: t.nav.presentation,
@@ -263,7 +253,7 @@ const Layout: React.FC<LayoutProps> = ({
   const navItems = allNavItems.filter(item => item.visible);
 
   const currentNavItem = navItems.find(i => i.path === location.pathname);
-  let pageTitle = appName; // Default title to App Name
+  let pageTitle = String(t.common.vulcan);
   if (currentNavItem && currentNavItem.label) {
     pageTitle = String(currentNavItem.label);
   } else if (location.pathname === '/proposal') {
@@ -289,9 +279,9 @@ const Layout: React.FC<LayoutProps> = ({
       >
         {/* Header */}
         <div className={`flex items-center h-16 border-b border-slate-700 dark:border-slate-800 ${isCollapsed ? 'justify-center p-0' : 'justify-between p-4'}`}>
-          <div className="flex items-center space-x-2 overflow-hidden">
-            <ShieldCheck className={`${isCollapsed ? 'w-8 h-8' : 'w-8 h-8'} text-yellow-500 flex-shrink-0`} />
-            {!isCollapsed && <span className="text-lg font-bold tracking-wider truncate" title={appName}>{appName}</span>}
+          <div className="flex items-center space-x-2">
+            <ShieldCheck className={`${isCollapsed ? 'w-8 h-8' : 'w-8 h-8'} text-yellow-500`} />
+            {!isCollapsed && <span className="text-xl font-bold tracking-wider">{t.common.vulcan}</span>}
           </div>
           <button onClick={() => setSidebarOpen(false)} className="md:hidden text-gray-400 hover:text-white">
             <X size={24} />
@@ -313,7 +303,7 @@ const Layout: React.FC<LayoutProps> = ({
             const Icon = item.icon;
             const isActive = location.pathname === item.path;
             const isEnterprise = item.path === '/enterprise-dashboard' || item.path === '/site-governance';
-            const isSystem = item.path === '/system-health';
+            const isProposal = item.path === '/proposal';
             
             return (
               <Link
@@ -324,7 +314,7 @@ const Layout: React.FC<LayoutProps> = ({
                 className={`
                   flex items-center rounded-lg transition-colors
                   ${isActive 
-                    ? (isEnterprise ? 'bg-indigo-600 text-white font-medium shadow-lg shadow-indigo-500/30' : isSystem ? 'bg-cyan-700 text-white font-medium shadow-lg shadow-cyan-500/30' : 'bg-yellow-500 text-slate-900 font-medium') 
+                    ? (isEnterprise || isProposal ? 'bg-indigo-600 text-white font-medium shadow-lg shadow-indigo-500/30' : 'bg-yellow-500 text-slate-900 font-medium') 
                     : 'text-gray-300 hover:bg-slate-800 hover:text-white'
                   }
                   ${isCollapsed ? 'justify-center p-3' : 'space-x-3 px-4 py-3'}
@@ -358,11 +348,11 @@ const Layout: React.FC<LayoutProps> = ({
                     onChange={(e) => setUserRole(e.target.value as UserRole)}
                     className="w-full bg-slate-800 dark:bg-slate-900 text-white text-xs p-2 rounded border border-slate-600 dark:border-slate-700 focus:border-yellow-500 outline-none"
                   >
-                    <option className="bg-slate-800 dark:bg-slate-900" value={UserRole.SYSTEM_ADMIN}>System Admin</option>
-                    <option className="bg-slate-800 dark:bg-slate-900" value={UserRole.ENTERPRISE_ADMIN}>Enterprise Admin</option>
-                    <option className="bg-slate-800 dark:bg-slate-900" value={UserRole.SITE_ADMIN}>Site Admin</option>
-                    <option className="bg-slate-800 dark:bg-slate-900" value={UserRole.RAC_TRAINER}>RAC Trainer</option>
-                    <option className="bg-slate-800 dark:bg-slate-900" value={UserRole.USER}>User</option>
+                    <option value={UserRole.SYSTEM_ADMIN}>System Admin</option>
+                    <option value={UserRole.ENTERPRISE_ADMIN}>Enterprise Admin</option>
+                    <option value={UserRole.SITE_ADMIN}>Site Admin</option>
+                    <option value={UserRole.RAC_TRAINER}>RAC Trainer</option>
+                    <option value={UserRole.USER}>User</option>
                   </select>
                   <div className="text-[10px] text-gray-500 text-center mt-1">
                     {userRole === UserRole.SYSTEM_ADMIN ? t.common.superuser : t.common.restricted}
@@ -396,32 +386,33 @@ const Layout: React.FC<LayoutProps> = ({
 
           <div className="flex items-center space-x-2 md:space-x-4">
             
-            {/* --- RESTORED PROPOSAL BUTTON --- */}
-            {userRole === UserRole.SYSTEM_ADMIN && (
-                <button 
-                    onClick={() => navigate('/proposal')}
-                    className="hidden md:flex items-center gap-2 px-3 py-1.5 bg-yellow-50 dark:bg-yellow-900/20 text-yellow-700 dark:text-yellow-400 rounded-lg text-xs font-bold border border-yellow-200 dark:border-yellow-800 hover:bg-yellow-100 dark:hover:bg-yellow-900/40 transition-colors"
-                    title={t.common.viewProposal}
-                >
-                    <FileText size={16} />
-                    <span>{t.common.viewProposal}</span>
-                </button>
-            )}
-
-            {/* SITE SELECTOR (MULTI-TENANCY) */}
+            {/* SITE SELECTOR & PROPOSAL BUTTON (MULTI-TENANCY) */}
             {setCurrentSiteId && (userRole === UserRole.SYSTEM_ADMIN || userRole === UserRole.ENTERPRISE_ADMIN) && (
-                <div className="hidden md:flex items-center gap-2 bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg px-2 py-1">
-                    {currentSiteId === 'all' ? <Building2 size={16} className="text-blue-500" /> : <Map size={16} className="text-green-500" />}
-                    <select 
-                        value={currentSiteId}
-                        onChange={(e) => setCurrentSiteId(e.target.value)}
-                        className="bg-transparent dark:bg-slate-700 text-xs font-bold text-slate-700 dark:text-slate-200 outline-none cursor-pointer"
-                    >
-                        <option className="dark:bg-slate-700" value="all">{t.common.enterpriseView}</option>
-                        {sites.map(s => (
-                            <option className="dark:bg-slate-700" key={s.id} value={s.id}>{s.name}</option>
-                        ))}
-                    </select>
+                <div className="flex items-center gap-2">
+                    {/* Proposal Link in Header */}
+                    {userRole === UserRole.SYSTEM_ADMIN && (
+                        <button 
+                            onClick={() => navigate('/proposal')}
+                            className="hidden md:flex items-center gap-2 bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-900/30 dark:hover:bg-indigo-900/50 text-indigo-700 dark:text-indigo-300 px-3 py-1.5 rounded-lg text-xs font-bold transition-colors border border-indigo-200 dark:border-indigo-800"
+                            title="View Proposal Document"
+                        >
+                            <FileText size={16} /> Proposal
+                        </button>
+                    )}
+
+                    <div className="hidden md:flex items-center gap-2 bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg px-2 py-1">
+                        {currentSiteId === 'all' ? <Building2 size={16} className="text-blue-500" /> : <Map size={16} className="text-green-500" />}
+                        <select 
+                            value={currentSiteId}
+                            onChange={(e) => setCurrentSiteId(e.target.value)}
+                            className="bg-transparent text-xs font-bold text-slate-700 dark:text-slate-200 outline-none cursor-pointer"
+                        >
+                            <option value="all">{t.common.enterpriseView}</option>
+                            {sites.map(s => (
+                                <option key={s.id} value={s.id}>{s.name}</option>
+                            ))}
+                        </select>
+                    </div>
                 </div>
             )}
 
@@ -516,11 +507,11 @@ const Layout: React.FC<LayoutProps> = ({
         </header>
 
         <main className="flex-1 overflow-y-auto p-4 md:p-6 bg-gray-100 dark:bg-gray-900 relative scroll-smooth">
-           {children || <Outlet />}
+           {children}
         </main>
       </div>
     </div>
   );
-};
+});
 
 export default Layout;
