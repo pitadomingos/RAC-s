@@ -5,7 +5,7 @@ import { DEPARTMENTS, RAC_KEYS } from '../constants';
 import { generateSafetyReport } from '../services/geminiService';
 import { 
   FileText, Calendar, Sparkles, BarChart3, Printer, UserX, 
-  AlertCircle, UserCheck, TrendingUp, Users, CheckCircle2, XCircle,
+  AlertCircle, UserCheck, TrendingUp, Users, CheckCircle2,
   Award, Filter, Map
 } from 'lucide-react';
 import { 
@@ -37,7 +37,6 @@ const ReportsPage: React.FC<ReportsPageProps> = ({ bookings, sessions, racDefini
       bookings.forEach(b => {
           if (b.employee.siteId) sites.add(b.employee.siteId);
       });
-      // Map IDs to readable names if possible (using mock logic or passed props, here simplified)
       return Array.from(sites);
   }, [bookings]);
 
@@ -285,7 +284,8 @@ const ReportsPage: React.FC<ReportsPageProps> = ({ bookings, sessions, racDefini
                         {racDefinitions.length > 0 ? (
                             racDefinitions.map(def => <option className="dark:bg-slate-800" key={def.code} value={def.code}>{def.code}</option>)
                         ) : (
-                            RAC_KEYS.map(r => <option className="dark:bg-slate-800" key={r} value={r}>{r}</option>)}
+                            RAC_KEYS.map(r => <option className="dark:bg-slate-800" key={r} value={r}>{r}</option>)
+                        )}
                     </select>
                     <Filter className="absolute right-3 top-2.5 text-slate-400" size={16} />
                 </div>

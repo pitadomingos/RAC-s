@@ -32,8 +32,6 @@ import { UserRole, Booking, EmployeeRequirement, TrainingSession, Site, Company,
 import { v4 as uuidv4 } from 'uuid';
 
 // --- ROBUST MOCK DATA GENERATOR ---
-// This ensures charts, KPIs, and compliance logic have real data to work with.
-
 const addDays = (date: Date, days: number) => {
     const result = new Date(date);
     result.setDate(result.getDate() + days);
@@ -54,8 +52,10 @@ const generateInitialData = () => {
     // Create 60 Mock Employees
     for (let i = 1; i <= 60; i++) {
         const isVulcan = i <= 25; 
-        const company = isVulcan ? 'Vulcan Mining' : COMPANIES[i % COMPANIES.length];
+        // FIX: Use 'Vulcan' consistently to match Company ID 'c1' name
+        const company = isVulcan ? 'Vulcan' : COMPANIES[i % COMPANIES.length];
         const dept = DEPARTMENTS[i % DEPARTMENTS.length];
+        // Ensure consistent ID format. VUL-1001 is used for User Simulation.
         const recordId = isVulcan ? `VUL-${1000 + i}` : `CNT-${8000 + i}`;
         const name = isVulcan ? `Vulcan Staff ${i}` : `Contractor ${i}`;
         
@@ -118,7 +118,7 @@ const generateInitialData = () => {
 
             generatedBookings.push({
                 id: uuidv4(),
-                sessionId: `${racKey} - General Session`, // Logical link, not strict foreign key to MOCK_SESSIONS to simplify mock generation
+                sessionId: `${racKey} - General Session`,
                 employee: employee,
                 status: BookingStatus.PASSED,
                 resultDate: resultDate,
@@ -168,6 +168,10 @@ const App: React.FC = () => {
   const [notifications, setNotifications] = useState<SystemNotification[]>([]);
   const [currentSiteId, setCurrentSiteId] = useState<string>('all');
 
+  // SIMULATE LOGGED IN USER CONTEXT
+  // When 'User' role is selected, we pretend to be "VUL-1001" (A fully compliant mock employee)
+  const currentEmployeeId = userRole === UserRole.USER ? 'VUL-1001' : undefined;
+
   const addNotification = (n: SystemNotification) => {
       setNotifications(prev => [n, ...prev]);
   };
@@ -207,10 +211,6 @@ const App: React.FC = () => {
 
   const authorizedRoles = [UserRole.SYSTEM_ADMIN, UserRole.ENTERPRISE_ADMIN, UserRole.SITE_ADMIN, UserRole.RAC_ADMIN, UserRole.DEPT_ADMIN, UserRole.RAC_TRAINER];
 
-  const filteredBookings = bookings;
-  const filteredRequirements = requirements;
-  const filteredSessions = sessions;
-
   return (
     <AdvisorProvider>
       <HashRouter>
@@ -248,7 +248,8 @@ const App: React.FC = () => {
 
             <Route path="/database" element={<DatabasePage bookings={bookings} requirements={requirements} updateRequirements={updateRequirements} sessions={sessions} onUpdateEmployee={onUpdateEmployee} onDeleteEmployee={onDeleteEmployee} racDefinitions={racDefinitions} contractors={currentContractors} />} />
             
-            <Route path="/booking" element={<BookingForm addBookings={addBookings} sessions={sessions} userRole={userRole} existingBookings={bookings} addNotification={addNotification} requirements={requirements} contractors={currentContractors} />} />
+            {/* PASS REQUIREMENTS & CURRENT ID TO BOOKING FOR USER VIEW */}
+            <Route path="/booking" element={<BookingForm addBookings={addBookings} sessions={sessions} userRole={userRole} existingBookings={bookings} addNotification={addNotification} requirements={requirements} contractors={currentContractors} currentEmployeeId={currentEmployeeId} />} />
             
             <Route path="/trainer-input" element={<TrainerInputPage bookings={bookings} updateBookings={(updates) => {
                 setBookings(prev => prev.map(b => {
@@ -257,7 +258,7 @@ const App: React.FC = () => {
                 }));
             }} sessions={sessions} userRole={userRole} />} />
             
-            <Route path="/results" element={<ResultsPage bookings={bookings} updateBookingStatus={updateBookingStatus} userRole={userRole} sessions={sessions} racDefinitions={racDefinitions} />} />
+            <Route path="/results" element={<ResultsPage bookings={bookings} updateBookingStatus={updateBookingStatus} userRole={userRole} sessions={sessions} racDefinitions={racDefinitions} currentEmployeeId={currentEmployeeId} />} />
             
             <Route path="/reports" element={<ReportsPage bookings={bookings} sessions={sessions} racDefinitions={racDefinitions} />} />
             
@@ -277,9 +278,10 @@ const App: React.FC = () => {
                 : <Navigate to="/" replace />
             } />
             
-            <Route path="/request-cards" element={<RequestCardsPage bookings={bookings} requirements={requirements} racDefinitions={racDefinitions} sessions={sessions} userRole={userRole} />} />
+            {/* PASS REQUIREMENTS & CURRENT ID TO REQUEST CARDS */}
+            <Route path="/request-cards" element={<RequestCardsPage bookings={bookings} requirements={requirements} racDefinitions={racDefinitions} sessions={sessions} userRole={userRole} currentEmployeeId={currentEmployeeId} />} />
             
-            <Route path="/print-cards" element={authorizedRoles.concat(UserRole.USER).includes(userRole) && userRole !== UserRole.ENTERPRISE_ADMIN ? <CardsPage bookings={filteredBookings} requirements={filteredRequirements} racDefinitions={racDefinitions} sessions={filteredSessions} userRole={userRole} /> : <Navigate to="/" replace />} />
+            <Route path="/print-cards" element={authorizedRoles.concat(UserRole.USER).includes(userRole) && userRole !== UserRole.ENTERPRISE_ADMIN ? <CardsPage bookings={bookings} requirements={requirements} racDefinitions={racDefinitions} sessions={sessions} userRole={userRole} /> : <Navigate to="/" replace />} />
               
             <Route path="/users" element={
                 [UserRole.SYSTEM_ADMIN, UserRole.ENTERPRISE_ADMIN, UserRole.SITE_ADMIN].includes(userRole) 

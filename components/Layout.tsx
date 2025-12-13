@@ -163,7 +163,8 @@ const Layout: React.FC<LayoutProps> = ({
       path: '/', 
       label: t.nav.dashboard, 
       icon: LayoutDashboard, 
-      visible: userRole !== UserRole.USER && userRole !== UserRole.ENTERPRISE_ADMIN
+      // HIDE FOR TRAINERS
+      visible: userRole !== UserRole.USER && userRole !== UserRole.ENTERPRISE_ADMIN && userRole !== UserRole.RAC_TRAINER
     },
     {
       path: '/database',
@@ -205,7 +206,6 @@ const Layout: React.FC<LayoutProps> = ({
       path: '/users', 
       label: t.nav.users, 
       icon: Users, 
-      // UPDATED VISIBILITY: Now visible to Enterprise and Site Admins
       visible: [UserRole.SYSTEM_ADMIN, UserRole.ENTERPRISE_ADMIN, UserRole.SITE_ADMIN].includes(userRole) 
     },
     { 
@@ -224,7 +224,8 @@ const Layout: React.FC<LayoutProps> = ({
       path: '/request-cards', 
       label: t.nav.requestCards, 
       icon: Mail, 
-      visible: userRole !== UserRole.ENTERPRISE_ADMIN
+      // HIDE FOR TRAINERS
+      visible: userRole !== UserRole.ENTERPRISE_ADMIN && userRole !== UserRole.RAC_TRAINER
     },
     {
       path: '/manuals',

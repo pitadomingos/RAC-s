@@ -2,10 +2,10 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { Booking, BookingStatus, EmployeeRequirement, Employee, TrainingSession, RacDef } from '../types';
 import { OPS_KEYS, PERMISSION_KEYS, DEPARTMENTS } from '../constants';
-import { Search, CheckCircle, XCircle, Edit, ChevronLeft, ChevronRight, Download, X, Trash2, QrCode, Printer, Phone, AlertTriangle, Loader2, Archive, Filter } from 'lucide-react';
+import { Search, CheckCircle, XCircle, Edit, ChevronLeft, ChevronRight, Download, X, Trash2, Filter, QrCode, Printer, Archive, Loader2, AlertTriangle } from 'lucide-react';
 import { useLanguage } from '../contexts/LanguageContext';
-import JSZip from 'jszip';
 import ConfirmModal from '../components/ConfirmModal';
+import JSZip from 'jszip';
 
 interface DatabasePageProps {
   bookings: Booking[];
@@ -68,7 +68,7 @@ const DatabasePage: React.FC<DatabasePageProps> = ({ bookings, requirements, upd
     };
     window.addEventListener('keydown', handleEsc);
     return () => window.removeEventListener('keydown', handleEsc);
-  }, [qrEmployee, editingEmployee, confirmState.isOpen]);
+  }, [editingEmployee, qrEmployee, confirmState.isOpen]);
 
   const uniqueEmployees = useMemo(() => {
     const map = new Map<string, Employee>();
@@ -192,81 +192,6 @@ const DatabasePage: React.FC<DatabasePageProps> = ({ bookings, requirements, upd
       }
   };
 
-  const getQrUrl = (recordId: string) => {
-      const appOrigin = window.location.origin + window.location.pathname;
-      const verificationUrl = `${appOrigin}#/verify/${recordId}`;
-      return `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(verificationUrl)}`;
-  };
-
-  const handleDownloadQr = async (recordId: string, name: string) => {
-      const url = getQrUrl(recordId);
-      try {
-          const response = await fetch(url);
-          const blob = await response.blob();
-          const downloadLink = document.createElement("a");
-          downloadLink.href = URL.createObjectURL(blob);
-          downloadLink.download = `QR_${name.replace(/\s+/g, '_')}_${recordId}.png`;
-          document.body.appendChild(downloadLink);
-          downloadLink.click();
-          document.body.removeChild(downloadLink);
-      } catch (e) {
-          alert("Error downloading QR Code. Please try printing instead.");
-      }
-  };
-
-  const handleBulkQrDownload = async () => {
-      if (processedData.length === 0) {
-          alert("No records to download.");
-          return;
-      }
-      
-      const confirmMsg = `This will generate and download QR codes for ${processedData.length} employees currently visible in the table. This might take a moment. Continue?`;
-      if (!confirm(confirmMsg)) return;
-
-      setIsZipping(true);
-      const zip = new JSZip();
-      const folder = zip.folder("vulkan_safety_qrs");
-
-      try {
-          const limit = 500; 
-          const dataToProcess = processedData.slice(0, limit);
-          
-          if (processedData.length > limit) {
-              alert(`Note: Dataset too large. Downloading first ${limit} records to prevent browser timeout.`);
-          }
-
-          for (const item of dataToProcess) {
-              const { emp } = item;
-              const url = getQrUrl(emp.recordId);
-              try {
-                  const response = await fetch(url);
-                  if (response.ok) {
-                      const blob = await response.blob();
-                      const safeName = emp.name.replace(/[^a-z0-9]/gi, '_').toLowerCase();
-                      const safeId = emp.recordId.replace(/[^a-z0-9]/gi, '_');
-                      folder?.file(`${safeName}_${safeId}.png`, blob);
-                  }
-              } catch (e) {
-                  console.error(`Failed to fetch QR for ${emp.recordId}`, e);
-              }
-          }
-
-          const content = await zip.generateAsync({ type: "blob" });
-          const downloadLink = document.createElement("a");
-          downloadLink.href = URL.createObjectURL(content);
-          downloadLink.download = `vulkan_qr_batch_${new Date().toISOString().split('T')[0]}.zip`;
-          document.body.appendChild(downloadLink);
-          downloadLink.click();
-          document.body.removeChild(downloadLink);
-
-      } catch (err) {
-          console.error("Zip Error", err);
-          alert("An error occurred while generating the bulk archive.");
-      } finally {
-          setIsZipping(false);
-      }
-  };
-
   const handleExportDatabase = () => {
       const baseHeaders = [
           "Full Name", "Record ID", "Company", "Department", "Role", "Active", "Access Status",
@@ -307,6 +232,86 @@ const DatabasePage: React.FC<DatabasePageProps> = ({ bookings, requirements, upd
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
+  };
+
+  // --- QR FUNCTIONS ---
+  const getQrUrl = (recordId: string) => {
+      const appOrigin = window.location.origin + window.location.pathname;
+      const verificationUrl = `${appOrigin}#/verify/${recordId}`;
+      return `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(verificationUrl)}`;
+  };
+
+  const handleDownloadQr = async (recordId: string, name: string) => {
+      const url = getQrUrl(recordId);
+      try {
+          const response = await fetch(url);
+          const blob = await response.blob();
+          const downloadLink = document.createElement("a");
+          downloadLink.href = URL.createObjectURL(blob);
+          downloadLink.download = `QR_${name.replace(/\s+/g, '_')}_${recordId}.png`;
+          document.body.appendChild(downloadLink);
+          downloadLink.click();
+          document.body.removeChild(downloadLink);
+      } catch (e) {
+          alert("Error downloading QR Code. Please try printing instead.");
+      }
+  };
+
+  const handleBulkQrDownload = async () => {
+      if (processedData.length === 0) {
+          alert("No records to download.");
+          return;
+      }
+      
+      const confirmMsg = `This will generate and download QR codes for ${processedData.length} employees currently visible in the table. This might take a moment. Continue?`;
+      if (!confirm(confirmMsg)) return;
+
+      setIsZipping(true);
+      const zip = new JSZip();
+      const folder = zip.folder("vulkan_safety_qrs");
+
+      try {
+          const limit = 50; 
+          const dataToProcess = processedData.slice(0, limit);
+          
+          if (processedData.length > limit) {
+              alert(`Note: Dataset too large. Downloading first ${limit} records to prevent browser timeout.`);
+          }
+
+          for (const item of dataToProcess) {
+              const { emp } = item;
+              await new Promise(r => setTimeout(r, 100)); // Delay to respect API limits
+              
+              const url = getQrUrl(emp.recordId);
+              try {
+                  const response = await fetch(url);
+                  if (response.ok) {
+                      const blob = await response.blob();
+                      const safeName = emp.name.replace(/[^a-z0-9]/gi, '_').toLowerCase();
+                      const safeId = emp.recordId.replace(/[^a-z0-9]/gi, '_');
+                      folder?.file(`${safeName}_${safeId}.png`, blob);
+                  } else {
+                      console.warn(`Failed to fetch QR for ${emp.recordId}`);
+                  }
+              } catch (e) {
+                  console.error(`Failed to fetch QR for ${emp.recordId}`, e);
+              }
+          }
+
+          const content = await zip.generateAsync({ type: "blob" });
+          const downloadLink = document.createElement("a");
+          downloadLink.href = URL.createObjectURL(content);
+          downloadLink.download = `vulkan_qr_batch_${new Date().toISOString().split('T')[0]}.zip`;
+          document.body.appendChild(downloadLink);
+          downloadLink.click();
+          document.body.removeChild(downloadLink);
+
+      } catch (err) {
+          console.error("Zip Error", err);
+          alert("An error occurred while generating the bulk archive.");
+      } finally {
+          setIsZipping(false);
+      }
   };
 
   const processedData = useMemo(() => {
@@ -430,7 +435,7 @@ const DatabasePage: React.FC<DatabasePageProps> = ({ bookings, requirements, upd
                         onChange={e => { setSearchTerm(e.target.value); setCurrentPage(1); }}
                      />
                  </div>
-                 
+
                  <button 
                     onClick={handleBulkQrDownload}
                     disabled={isZipping || processedData.length === 0}

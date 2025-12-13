@@ -86,8 +86,6 @@ const EnterpriseDashboard: React.FC<EnterpriseDashboardProps> = ({
   }, [companies, selectedTenantId]);
 
   // --- FILTERING & COMPLIANCE LOGIC (Unified Pipeline) ---
-  // Calculates compliance ONCE for every employee, then filters.
-  // This guarantees that if an employee is in the "Total", they have a compliance status attached.
   const filteredEmployeeData = useMemo<AggregatedEmployee[]>(() => {
       const empMap = new Map<string, AggregatedEmployee>();
       const today = new Date().toISOString().split('T')[0];
@@ -125,14 +123,15 @@ const EnterpriseDashboard: React.FC<EnterpriseDashboardProps> = ({
           if (selectedTenantId !== 'All') {
               const selectedTenant = companies.find(c => c.id === selectedTenantId);
               if (selectedTenant) {
-                  const isDirect = selectedTenant.name === empCompany;
-                  const isSub = (selectedTenant.subContractors || []).includes(empCompany);
-                  
-                  // Loose matching
-                  const isDirectLoose = selectedTenant.name.toLowerCase() === empCompany.toLowerCase();
-                  const isSubLoose = (selectedTenant.subContractors || []).some(sc => sc.toLowerCase() === empCompany.toLowerCase());
+                  // Normalize for matching - Check if empCompany starts with or equals
+                  const tenantName = selectedTenant.name.toLowerCase();
+                  const currentCompName = empCompany.toLowerCase();
+                  const subs = (selectedTenant.subContractors || []).map(s => s.toLowerCase());
 
-                  if (!isDirect && !isSub && !isDirectLoose && !isSubLoose) belongsToSelectedTenant = false;
+                  const isDirect = currentCompName.includes(tenantName) || tenantName.includes(currentCompName);
+                  const isSub = subs.some(s => currentCompName.includes(s) || s.includes(currentCompName));
+
+                  if (!isDirect && !isSub) belongsToSelectedTenant = false;
               }
           }
 
@@ -205,7 +204,6 @@ const EnterpriseDashboard: React.FC<EnterpriseDashboardProps> = ({
       if (userRole !== UserRole.SYSTEM_ADMIN || selectedTenantId !== 'All') return [];
 
       return companies.map(tenant => {
-          // Find employees belonging to this tenant
           let tenantEmpCount = 0;
           let tenantCompliantCount = 0;
 
@@ -214,13 +212,13 @@ const EnterpriseDashboard: React.FC<EnterpriseDashboardProps> = ({
               const booking = bookings.find(b => b.employee.id === req.employeeId);
               const empCompany = booking?.employee.company || '';
               
-              const isDirect = tenant.name.toLowerCase() === empCompany.toLowerCase();
-              const isSub = (tenant.subContractors || []).some(sc => sc.toLowerCase() === empCompany.toLowerCase());
+              const isDirect = empCompany.toLowerCase().includes(tenant.name.toLowerCase());
+              const isSub = (tenant.subContractors || []).some(sc => empCompany.toLowerCase().includes(sc.toLowerCase()));
               
               if (isDirect || isSub) {
                   tenantEmpCount++;
                   
-                  // Quick Compliance Check logic duplication for speed/independence
+                  // Quick Compliance Check logic
                   const today = new Date().toISOString().split('T')[0];
                   const isAsoValid = !!(req.asoExpiryDate && req.asoExpiryDate > today);
                   let allRacsMet = true;
@@ -252,11 +250,9 @@ const EnterpriseDashboard: React.FC<EnterpriseDashboardProps> = ({
       const compMap = new Map<string, {total: number, compliant: number}>();
       
       filteredEmployeeData.forEach(emp => {
-          // Ensure map entry exists
           if (!compMap.has(emp.company)) {
               compMap.set(emp.company, {total: 0, compliant: 0});
           }
-          
           const stats = compMap.get(emp.company)!;
           stats.total++;
           if (emp.isCompliant) stats.compliant++;

@@ -176,15 +176,7 @@ const RequestCardsPage: React.FC<RequestCardsPageProps> = ({ bookings, requireme
   useEffect(() => {
       slots.forEach(slot => {
           if (slot && !slot.compliance.isCompliant) {
-              // Simple debounce check: we don't want to spam if it's already rendered
-              // But React hooks make this tricky without refs.
-              // We'll rely on the fact that this runs when 'slots' changes (i.e. user typing/selecting).
-              // Ideally we'd track "notifiedSlots" but for now let's just trigger.
-              
-              // We only want to notify if this is a "fresh" selection, but for simplicity in this demo:
-              // We will just allow it. The browser prevents duplicate notifications usually.
-              // Note: The prompt asks for "direct from system" notification.
-              // We'll use the browser notification helper.
+              // We'll rely on browser notifications if needed, but avoid spamming on render
           }
       });
   }, [slots]);
@@ -265,8 +257,8 @@ const RequestCardsPage: React.FC<RequestCardsPageProps> = ({ bookings, requireme
               {isSelfService ? "Review and request your digital safety credential." : "Curate your print batch. Select up to 8 eligible personnel."}
             </p>
             
-            {!isSelfService && (
-                <div className="mt-6 flex items-center gap-4">
+            <div className="mt-6 flex items-center gap-4">
+                {!isSelfService && (
                     <div className="flex flex-col">
                         <span className="text-[10px] text-slate-400 uppercase font-bold tracking-wider">Batch Capacity</span>
                         <div className="flex items-baseline gap-1">
@@ -274,20 +266,21 @@ const RequestCardsPage: React.FC<RequestCardsPageProps> = ({ bookings, requireme
                             <span className="text-slate-400 text-sm font-medium">/ 8</span>
                         </div>
                     </div>
-                    {activeCount > 0 && (
-                        <>
-                            <div className="h-8 w-px bg-slate-200 dark:bg-slate-700 mx-2"></div>
-                            <button 
-                                onClick={handleGoToPrint}
-                                className="group flex items-center gap-2 bg-slate-900 dark:bg-white text-white dark:text-slate-900 px-5 py-3 rounded-xl hover:shadow-lg hover:shadow-slate-900/20 transition-all transform hover:-translate-y-0.5 font-bold text-sm"
-                            >
-                                <Printer size={18} className="group-hover:scale-110 transition-transform"/>
-                                <span>Print Preview</span>
-                            </button>
-                        </>
-                    )}
-                </div>
-            )}
+                )}
+                
+                {(activeCount > 0) && (
+                    <>
+                        {!isSelfService && <div className="h-8 w-px bg-slate-200 dark:bg-slate-700 mx-2"></div>}
+                        <button 
+                            onClick={handleGoToPrint}
+                            className="group flex items-center gap-2 bg-slate-900 dark:bg-white text-white dark:text-slate-900 px-5 py-3 rounded-xl hover:shadow-lg hover:shadow-slate-900/20 transition-all transform hover:-translate-y-0.5 font-bold text-sm"
+                        >
+                            <Printer size={18} className="group-hover:scale-110 transition-transform"/>
+                            <span>{isSelfService ? "Print Passport" : "Print Preview"}</span>
+                        </button>
+                    </>
+                )}
+            </div>
           </div>
 
           {/* BATCH GRID (HIDDEN FOR SELF SERVICE) */}

@@ -3,7 +3,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import DashboardStats from '../components/DashboardStats';
 import { Booking, UserRole, EmployeeRequirement, TrainingSession, BookingStatus, RacDef } from '../types';
 import { COMPANIES, DEPARTMENTS, OPS_KEYS, RAC_KEYS } from '../constants';
-import { Calendar, Clock, MapPin, ChevronRight, Filter, Timer, User, CheckCircle, XCircle, ChevronLeft, Zap, Layers, Briefcase, Printer } from 'lucide-react';
+import { Calendar, Clock, MapPin, ChevronRight, Filter, Timer, User, CheckCircle, XCircle, ChevronLeft, Zap, Layers, Briefcase, Printer, ShieldCheck } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { v4 as uuidv4 } from 'uuid';
 import { useLanguage } from '../contexts/LanguageContext';
@@ -344,6 +344,28 @@ const Dashboard: React.FC<DashboardProps> = ({
             </div>
         </div>
       </div>
+
+      {/* --- USER ROLE PASSPORT SHORTCUT --- */}
+      {userRole === UserRole.USER && (
+          <div className="bg-indigo-600 rounded-2xl p-6 text-white shadow-lg flex flex-col md:flex-row items-center justify-between gap-6 animate-fade-in-down">
+              <div className="flex items-center gap-4">
+                  <div className="p-3 bg-white/20 rounded-xl backdrop-blur-sm shadow-inner">
+                      <ShieldCheck size={32} className="text-white" />
+                  </div>
+                  <div>
+                      <h3 className="text-xl font-bold">My Digital Passport</h3>
+                      <p className="text-indigo-100 text-sm">View, print, or download your verified safety credentials.</p>
+                  </div>
+              </div>
+              <button 
+                onClick={() => navigate('/request-cards')}
+                className="px-6 py-3 bg-white text-indigo-600 rounded-xl font-bold hover:bg-indigo-50 transition-colors shadow-sm flex items-center gap-2"
+              >
+                  <Printer size={18} />
+                  Access Passport
+              </button>
+          </div>
+      )}
 
       {/* --- Notification Banner: Auto-Booking Approval --- */}
       {autoBookings.length > 0 && (userRole === UserRole.RAC_ADMIN || userRole === UserRole.SYSTEM_ADMIN) && (

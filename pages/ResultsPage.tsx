@@ -38,6 +38,15 @@ const ResultsPage: React.FC<ResultsPageProps> = ({ bookings, updateBookingStatus
   
   const [showQrModal, setShowQrModal] = useState(false);
 
+  // Identify Current User Employee Data for Printing
+  const currentUserEmployee = useMemo(() => {
+      if (userRole === UserRole.USER && currentEmployeeId) {
+          const booking = bookings.find(b => b.employee.id === currentEmployeeId);
+          return booking?.employee;
+      }
+      return null;
+  }, [userRole, currentEmployeeId, bookings]);
+
   useEffect(() => {
     const query = searchParams.get('q');
     if (query) setFilter(query);
@@ -148,6 +157,30 @@ const ResultsPage: React.FC<ResultsPageProps> = ({ bookings, updateBookingStatus
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
+  };
+
+  // --- QR FUNCTIONS ---
+  const getQrUrl = (recordId: string) => {
+      const appOrigin = window.location.origin + window.location.pathname;
+      const verificationUrl = `${appOrigin}#/verify/${recordId}`;
+      return `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(verificationUrl)}`;
+  };
+
+  const handleDownloadQr = async () => {
+      if (!currentUserEmployee) return;
+      const url = getQrUrl(currentUserEmployee.recordId);
+      try {
+          const response = await fetch(url);
+          const blob = await response.blob();
+          const downloadLink = document.createElement("a");
+          downloadLink.href = URL.createObjectURL(blob);
+          downloadLink.download = `QR_${currentUserEmployee.name.replace(/\s+/g, '_')}_${currentUserEmployee.recordId}.png`;
+          document.body.appendChild(downloadLink);
+          downloadLink.click();
+          document.body.removeChild(downloadLink);
+      } catch (e) {
+          alert("Error downloading QR Code.");
+      }
   };
 
   const handleDownloadTemplate = () => {
@@ -274,12 +307,24 @@ const ResultsPage: React.FC<ResultsPageProps> = ({ bookings, updateBookingStatus
                         />
                     </>
                 )}
-                <button 
-                    onClick={handleExportData}
-                    className="flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-500 text-white rounded-lg text-xs font-bold transition-colors shadow-sm"
-                >
-                    <Download size={16} /> Export
-                </button>
+                
+                {userRole !== UserRole.USER && (
+                    <button 
+                        onClick={handleExportData}
+                        className="flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-500 text-white rounded-lg text-xs font-bold transition-colors shadow-sm"
+                    >
+                        <Download size={16} /> Export
+                    </button>
+                )}
+
+                {userRole === UserRole.USER && currentUserEmployee && (
+                    <button 
+                        onClick={() => setShowQrModal(true)}
+                        className="flex items-center gap-2 px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-lg text-xs font-bold transition-colors shadow-sm"
+                    >
+                        <Printer size={16} /> Print Card Back
+                    </button>
+                )}
             </div>
         </div>
 
@@ -439,6 +484,128 @@ const ResultsPage: React.FC<ResultsPageProps> = ({ bookings, updateBookingStatus
                 </div>
             </div>
         </div>
+
+        {/* QR Modal for User */}
+        {showQrModal && currentUserEmployee && (
+            <div className="fixed inset-0 z-[60] bg-black/80 backdrop-blur-md flex items-center justify-center p-4" onClick={() => setShowQrModal(false)}>
+                <div className="bg-white rounded-3xl shadow-2xl p-0 overflow-hidden max-w-2xl w-full flex flex-col md:flex-row relative" onClick={(e) => e.stopPropagation()}>
+                    
+                    <button 
+                        onClick={() => setShowQrModal(false)} 
+                        className="absolute top-4 right-4 z-50 p-2 bg-gray-100 hover:bg-gray-200 rounded-full text-gray-600 transition-colors md:hidden"
+                    >
+                        <X size={20} />
+                    </button>
+
+                    <div className="p-8 bg-slate-100 flex-1 flex flex-col items-center justify-center border-r border-slate-200">
+                        <h3 className="text-sm font-bold text-slate-500 uppercase tracking-widest mb-6">Card Back Preview</h3>
+                        
+                        <div id="card-back-print" className="bg-white w-[85.6mm] h-[54mm] rounded-lg shadow-xl border border-slate-200 relative overflow-hidden flex flex-col" style={{ transform: 'scale(1.2)' }}>
+                            <div className="bg-slate-900 text-white h-[8mm] flex items-center justify-center">
+                                <span className="text-[10px] font-black tracking-widest">SAFETY PASSPORT / PASSAPORTE</span>
+                            </div>
+                            
+                            <div className="flex-1 flex items-center justify-center p-2 relative">
+                                <img 
+                                    src={getQrUrl(currentUserEmployee.recordId)} 
+                                    alt="QR Code"
+                                    className="w-[28mm] h-[28mm]" 
+                                />
+                                
+                                <div className="ml-4 flex flex-col justify-center h-full space-y-2">
+                                    <div className="text-[8px] font-bold text-slate-400 uppercase">Employee ID</div>
+                                    <div className="text-sm font-black text-slate-900">{currentUserEmployee.recordId}</div>
+                                    
+                                    <div className="h-px bg-slate-200 w-full my-2"></div>
+                                    
+                                    <div className="flex items-center gap-1 text-red-600">
+                                        <AlertTriangle size={10} />
+                                        <span className="text-[7px] font-bold uppercase">Emergency / Emergência</span>
+                                    </div>
+                                    <div className="text-xs font-black text-slate-900">842030</div>
+                                </div>
+                            </div>
+
+                            <div className="bg-gray-100 border-t border-gray-300 h-[6mm] flex items-center justify-center text-[6px] text-gray-500 text-center px-2">
+                                IF FOUND PLEASE RETURN TO VULCAN SECURITY DEPARTMENT
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="p-8 w-full md:w-72 bg-white flex flex-col justify-center space-y-4 relative">
+                        <button 
+                            onClick={() => setShowQrModal(false)} 
+                            className="absolute top-4 right-4 hidden md:flex p-2 bg-gray-50 hover:bg-gray-100 rounded-full text-gray-400 hover:text-gray-700 transition-colors"
+                        >
+                            <X size={20} />
+                        </button>
+
+                        <div className="mb-4">
+                            <h2 className="text-xl font-black text-slate-900">{currentUserEmployee.name}</h2>
+                            <p className="text-sm text-slate-500 font-mono">{currentUserEmployee.recordId}</p>
+                        </div>
+
+                        <button 
+                            onClick={handleDownloadQr}
+                            className="w-full py-3 px-4 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-bold flex items-center justify-center gap-2 transition-colors"
+                        >
+                            <Download size={18} /> Download QR
+                        </button>
+
+                        <button 
+                            onClick={() => {
+                                const win = window.open('', '', 'width=800,height=600');
+                                if (win) {
+                                    win.document.write(`
+                                        <html>
+                                            <head>
+                                                <title>Print Back - ${currentUserEmployee.recordId}</title>
+                                                <style>
+                                                    @page { size: 85.6mm 54mm; margin: 0; }
+                                                    body { margin: 0; padding: 0; -webkit-print-color-adjust: exact; print-color-adjust: exact; font-family: sans-serif; }
+                                                    .card { width: 85.6mm; height: 54mm; position: relative; background: white; overflow: hidden; display: flex; flex-direction: column; }
+                                                    .header { background: #0f172a; color: white; height: 8mm; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 900; letter-spacing: 2px; }
+                                                    .body { flex: 1; display: flex; align-items: center; justify-content: center; padding: 2mm; }
+                                                    .qr { width: 28mm; height: 28mm; }
+                                                    .info { margin-left: 4mm; display: flex; flex-direction: column; justify-content: center; }
+                                                    .label { font-size: 8px; font-weight: bold; color: #94a3b8; text-transform: uppercase; }
+                                                    .value { font-size: 14px; font-weight: 900; color: #0f172a; }
+                                                    .divider { height: 1px; background: #e2e8f0; width: 100%; margin: 2mm 0; }
+                                                    .alert { display: flex; align-items: center; gap: 2px; color: #dc2626; font-size: 7px; font-weight: bold; text-transform: uppercase; }
+                                                    .emergency { font-size: 12px; font-weight: 900; color: #0f172a; }
+                                                    .footer { background: #f1f5f9; border-top: 1px solid #cbd5e1; height: 6mm; display: flex; align-items: center; justify-content: center; font-size: 6px; color: #64748b; text-align: center; padding: 0 2mm; }
+                                                </style>
+                                            </head>
+                                            <body>
+                                                <div class="card">
+                                                    <div class="header">SAFETY PASSPORT</div>
+                                                    <div class="body">
+                                                        <img src="${getQrUrl(currentUserEmployee.recordId)}" class="qr" />
+                                                        <div class="info">
+                                                            <div class="label">Employee ID</div>
+                                                            <div class="value">${currentUserEmployee.recordId}</div>
+                                                            <div class="divider"></div>
+                                                            <div class="alert">EMERGENCY / EMERGÊNCIA</div>
+                                                            <div class="emergency">842030</div>
+                                                        </div>
+                                                    </div>
+                                                    <div class="footer">IF FOUND PLEASE RETURN TO VULCAN SECURITY DEPARTMENT</div>
+                                                </div>
+                                                <script>window.onload = function() { window.print(); window.close(); }</script>
+                                            </body>
+                                        </html>
+                                    `);
+                                    win.document.close();
+                                }
+                            }}
+                            className="w-full py-3 px-4 bg-slate-900 hover:bg-slate-800 text-white rounded-xl font-bold flex items-center justify-center gap-2 transition-colors shadow-lg"
+                        >
+                            <Printer size={18} /> Print Card Back
+                        </button>
+                    </div>
+                </div>
+            </div>
+        )}
     </div>
   );
 };
