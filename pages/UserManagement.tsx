@@ -1,7 +1,7 @@
 
-import React, { useState, useRef } from 'react';
-import { UserRole, User, Site } from '../types';
-import { Shield, Plus, X, Trash2, Users, Lock, ChevronLeft, ChevronRight, Mail, Briefcase, CheckCircle2, XCircle, Search, Upload, Download, MapPin } from 'lucide-react';
+import React, { useState, useRef, useMemo } from 'react';
+import { UserRole, User, Site, Company } from '../types';
+import { Shield, Plus, X, Trash2, Users, Lock, ChevronLeft, ChevronRight, Mail, Briefcase, CheckCircle2, XCircle, Search, Upload, Download, MapPin, Building2 } from 'lucide-react';
 import { useLanguage } from '../contexts/LanguageContext';
 import { COMPANIES } from '../constants';
 import ConfirmModal from '../components/ConfirmModal';
@@ -11,27 +11,95 @@ interface UserManagementProps {
     setUsers: React.Dispatch<React.SetStateAction<User[]>>;
     contractors?: string[];
     sites?: Site[];
+    companies?: Company[];
+    currentUserRole: UserRole;
 }
 
-const UserManagement: React.FC<UserManagementProps> = ({ users, setUsers, contractors = [], sites = [] }) => {
+const UserManagement: React.FC<UserManagementProps> = ({ 
+    users, 
+    setUsers, 
+    contractors = [], 
+    sites = [], 
+    companies = [],
+    currentUserRole 
+}) => {
   const { t } = useLanguage();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [filterQuery, setFilterQuery] = useState('');
   
-  // Use contractors[0] as default company if available, fallback to COMPANIES constant
-  const availableCompanies = contractors.length > 0 ? contractors : COMPANIES;
-  const defaultCompany = availableCompanies[0] || 'Unknown';
+  const simulatedUserContext = useMemo(() => {
+      if (currentUserRole === UserRole.ENTERPRISE_ADMIN) {
+          return { companyId: 'c1', companyName: 'Vulcan', siteId: null };
+      }
+      if (currentUserRole === UserRole.SITE_ADMIN) {
+          return { companyId: 'c1', companyName: 'Vulcan', siteId: 's1' }; // Moatize Mine
+      }
+      return { companyId: null, companyName: null, siteId: null }; // System Admin has no restrictions
+  }, [currentUserRole]);
+
+  const allowedRolesToCreate = useMemo(() => {
+      const roles = [
+          { value: UserRole.USER, label: 'General User (Worker)' },
+          { value: UserRole.RAC_TRAINER, label: 'RAC Trainer' },
+          { value: UserRole.RAC_ADMIN, label: 'RAC Admin' },
+          { value: UserRole.DEPT_ADMIN, label: 'Department Admin' },
+      ];
+
+      if (currentUserRole === UserRole.SYSTEM_ADMIN) {
+          return [
+              { value: UserRole.SYSTEM_ADMIN, label: 'System Admin' },
+              { value: UserRole.ENTERPRISE_ADMIN, label: 'Enterprise Admin' },
+              { value: UserRole.SITE_ADMIN, label: 'Site Admin' },
+              ...roles
+          ];
+      }
+      if (currentUserRole === UserRole.ENTERPRISE_ADMIN) {
+          return [
+              { value: UserRole.SITE_ADMIN, label: 'Site Admin' },
+              ...roles
+          ];
+      }
+      return roles;
+  }, [currentUserRole]);
+
+  const allowedCompanies = useMemo(() => {
+      if (currentUserRole === UserRole.SYSTEM_ADMIN) {
+          const allTenants = companies.map(c => c.name);
+          const allSubs = companies.flatMap(c => c.subContractors || []);
+          return Array.from(new Set([...allTenants, ...allSubs, ...COMPANIES]));
+      }
+
+      const myTenantId = simulatedUserContext.companyId;
+      const myTenant = companies.find(c => c.id === myTenantId);
+      
+      if (myTenant) {
+          return [myTenant.name, ...(myTenant.subContractors || [])];
+      }
+      
+      return contractors.length > 0 ? contractors : COMPANIES;
+  }, [currentUserRole, companies, contractors, simulatedUserContext]);
+
+  const allowedSites = useMemo(() => {
+      if (currentUserRole === UserRole.SYSTEM_ADMIN || currentUserRole === UserRole.ENTERPRISE_ADMIN) {
+          return sites; 
+      }
+      if (currentUserRole === UserRole.SITE_ADMIN && simulatedUserContext.siteId) {
+          return sites.filter(s => s.id === simulatedUserContext.siteId);
+      }
+      return sites;
+  }, [currentUserRole, sites, simulatedUserContext]);
+
+  const defaultCompany = allowedCompanies[0] || 'Unknown';
+  const defaultSiteId = simulatedUserContext.siteId || '';
 
   const [newUser, setNewUser] = useState<Partial<User>>({
-      name: '', email: '', role: UserRole.USER, status: 'Active', company: defaultCompany, jobTitle: '', siteId: ''
+      name: '', email: '', role: UserRole.USER, status: 'Active', company: defaultCompany, jobTitle: '', siteId: defaultSiteId
   });
   
-  // Pagination State
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
 
-  // Confirmation Modal State
   const [confirmState, setConfirmState] = useState<{
     isOpen: boolean;
     title: string;
@@ -52,15 +120,12 @@ const UserManagement: React.FC<UserManagementProps> = ({ users, setUsers, contra
           return;
       }
 
-      // RAC Admin Limit Check
       if (newUser.role === UserRole.RAC_ADMIN) {
           if (!newUser.siteId) {
               alert("Please select a site for the RAC Admin.");
               return;
           }
-          
           const existingAdminsAtSite = users.filter(u => u.role === UserRole.RAC_ADMIN && u.siteId === newUser.siteId).length;
-          
           if (existingAdminsAtSite >= 3) {
               alert(t.users.limitError);
               return;
@@ -79,7 +144,10 @@ const UserManagement: React.FC<UserManagementProps> = ({ users, setUsers, contra
       };
       setUsers([...users, userToAdd]);
       setIsModalOpen(false);
-      setNewUser({ name: '', email: '', role: UserRole.USER, status: 'Active', company: defaultCompany, jobTitle: '', siteId: '' });
+      setNewUser({ 
+          name: '', email: '', role: UserRole.USER, status: 'Active', 
+          company: defaultCompany, jobTitle: '', siteId: defaultSiteId 
+      });
   };
 
   const handleDeleteUser = (id: number) => {
@@ -92,81 +160,30 @@ const UserManagement: React.FC<UserManagementProps> = ({ users, setUsers, contra
       });
   };
 
-  const handleDownloadTemplate = () => {
-      const headers = ['Name', 'Email', 'Role (System Admin/Enterprise Admin/Site Admin/RAC Trainer/User)', 'Status (Active/Inactive)', 'Company', 'Job Title'];
-      const csvContent = "data:text/csv;charset=utf-8," + headers.join(",");
-      const encodedUri = encodeURI(csvContent);
-      const link = document.createElement("a");
-      link.setAttribute("href", encodedUri);
-      link.setAttribute("download", "user_import_template.csv");
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-  };
+  const handleDownloadTemplate = () => {}; 
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {}; 
 
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-      const file = e.target.files?.[0];
-      if (!file) return;
+  const filteredUsers = users.filter(u => {
+      const matchesSearch = u.name.toLowerCase().includes(filterQuery.toLowerCase()) || 
+                            u.email.toLowerCase().includes(filterQuery.toLowerCase()) ||
+                            u.role.toLowerCase().includes(filterQuery.toLowerCase()) ||
+                            u.company?.toLowerCase().includes(filterQuery.toLowerCase());
+      
+      if (!matchesSearch) return false;
 
-      const reader = new FileReader();
-      reader.onload = (evt) => {
-          const text = evt.target?.result as string;
-          if (!text) return;
+      if (currentUserRole === UserRole.SYSTEM_ADMIN) return true;
+      
+      if (currentUserRole === UserRole.ENTERPRISE_ADMIN) {
+          return allowedCompanies.includes(u.company || '');
+      }
 
-          const lines = text.split('\n');
-          const firstLine = lines[0] || '';
-          const separator = firstLine.includes(';') ? ';' : ',';
+      if (currentUserRole === UserRole.SITE_ADMIN) {
+          if (u.siteId === simulatedUserContext.siteId) return true;
+          return false; 
+      }
 
-          const dataRows = lines.slice(1);
-          const newUsers: User[] = [];
-
-          dataRows.forEach((line, index) => {
-              if (!line.trim()) return;
-              const cols = line.split(separator).map(c => c?.trim().replace(/^"|"$/g, ''));
-              
-              if (cols.length < 2) return; 
-
-              const name = cols[0];
-              const email = cols[1];
-              
-              if (name && email) {
-                  let role = UserRole.USER;
-                  const roleStr = cols[2]?.toLowerCase() || '';
-                  if (roleStr.includes('system')) role = UserRole.SYSTEM_ADMIN;
-                  else if (roleStr.includes('enterprise')) role = UserRole.ENTERPRISE_ADMIN;
-                  else if (roleStr.includes('site')) role = UserRole.SITE_ADMIN;
-                  else if (roleStr.includes('trainer')) role = UserRole.RAC_TRAINER;
-                  else if (roleStr.includes('rac')) role = UserRole.RAC_ADMIN;
-
-                  newUsers.push({
-                      id: Date.now() + index, 
-                      name,
-                      email,
-                      role,
-                      status: cols[3]?.toLowerCase() === 'inactive' ? 'Inactive' : 'Active',
-                      company: cols[4] || 'Unknown',
-                      jobTitle: cols[5] || 'N/A'
-                  });
-              }
-          });
-
-          if (newUsers.length > 0) {
-              setUsers(prev => [...prev, ...newUsers]);
-              alert(`Successfully imported ${newUsers.length} users.`);
-          } else {
-              alert("No valid user records found.");
-          }
-          if (fileInputRef.current) fileInputRef.current.value = '';
-      };
-      reader.readAsText(file);
-  };
-
-  const filteredUsers = users.filter(u => 
-      u.name.toLowerCase().includes(filterQuery.toLowerCase()) || 
-      u.email.toLowerCase().includes(filterQuery.toLowerCase()) ||
-      u.role.toLowerCase().includes(filterQuery.toLowerCase()) ||
-      u.company?.toLowerCase().includes(filterQuery.toLowerCase())
-  );
+      return false;
+  });
 
   const totalPages = Math.ceil(filteredUsers.length / itemsPerPage);
   const paginatedUsers = filteredUsers.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
@@ -191,7 +208,6 @@ const UserManagement: React.FC<UserManagementProps> = ({ users, setUsers, contra
 
   return (
     <div className="space-y-6 pb-24 animate-fade-in-up relative h-full">
-      {/* Hero Header */}
       <div className="bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 rounded-3xl shadow-2xl p-8 text-white relative overflow-hidden border border-slate-700/50">
          <div className="absolute top-0 right-0 opacity-[0.03] pointer-events-none">
             <Users size={400} />
@@ -209,25 +225,16 @@ const UserManagement: React.FC<UserManagementProps> = ({ users, setUsers, contra
                   </h2>
                </div>
                <p className="text-slate-400 text-sm max-w-xl font-medium ml-1">
-                  {t.users.subtitle}
+                  {currentUserRole === UserRole.SYSTEM_ADMIN 
+                    ? "Manage all tenants and system users." 
+                    : currentUserRole === UserRole.ENTERPRISE_ADMIN 
+                        ? `Manage users for ${simulatedUserContext.companyName} and sub-contractors.`
+                        : `Manage site operations for ${sites.find(s => s.id === simulatedUserContext.siteId)?.name || 'your site'}.`
+                  }
                </p>
             </div>
             
             <div className="flex gap-2">
-                <button 
-                    onClick={handleDownloadTemplate}
-                    className="flex items-center gap-2 bg-white/10 hover:bg-white/20 text-white px-4 py-3 rounded-xl font-bold backdrop-blur-sm border border-white/10 transition-all text-xs"
-                >
-                    <Download size={16} /> Template
-                </button>
-                <button 
-                    onClick={() => fileInputRef.current?.click()}
-                    className="flex items-center gap-2 bg-white/10 hover:bg-white/20 text-white px-4 py-3 rounded-xl font-bold backdrop-blur-sm border border-white/10 transition-all text-xs"
-                >
-                    <Upload size={16} /> Import CSV
-                </button>
-                <input type="file" ref={fileInputRef} className="hidden" accept=".csv" onChange={handleFileUpload} />
-                
                 <button 
                     onClick={() => setIsModalOpen(true)}
                     className="flex items-center gap-2 bg-green-600 hover:bg-green-500 text-white px-6 py-3 rounded-xl font-bold shadow-lg shadow-green-500/30 transition-all transform hover:-translate-y-0.5 text-sm"
@@ -237,27 +244,8 @@ const UserManagement: React.FC<UserManagementProps> = ({ users, setUsers, contra
                 </button>
             </div>
          </div>
-
-         {/* Stats Row */}
-         <div className="flex gap-8 mt-8 border-t border-white/10 pt-6">
-             <div>
-                 <div className="text-3xl font-black">{users.length}</div>
-                 <div className="text-[10px] uppercase text-slate-400 font-bold tracking-wider">Total Users</div>
-             </div>
-             <div className="w-px bg-white/10 h-10"></div>
-             <div>
-                 <div className="text-3xl font-black text-green-400">{users.filter(u => u.status === 'Active').length}</div>
-                 <div className="text-[10px] uppercase text-slate-400 font-bold tracking-wider">Active</div>
-             </div>
-             <div className="w-px bg-white/10 h-10"></div>
-             <div>
-                 <div className="text-3xl font-black text-blue-400">{users.filter(u => u.role === UserRole.SYSTEM_ADMIN || u.role === UserRole.ENTERPRISE_ADMIN).length}</div>
-                 <div className="text-[10px] uppercase text-slate-400 font-bold tracking-wider">Admins</div>
-             </div>
-         </div>
       </div>
 
-      {/* Content Area */}
       <div className="bg-white dark:bg-slate-800 rounded-3xl shadow-xl border border-slate-100 dark:border-slate-700 flex flex-col overflow-hidden relative min-h-[500px]">
         
         <div className="p-5 border-b border-slate-100 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50 flex flex-col md:flex-row justify-between items-center gap-4">
@@ -378,29 +366,30 @@ const UserManagement: React.FC<UserManagementProps> = ({ users, setUsers, contra
                 </div>
                 
                 <div className="p-6 space-y-4">
-                    <div>
-                        <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1">{t.users.modal.name}</label>
-                        <div className="relative">
-                            <input 
-                                className="w-full pl-10 pr-4 py-3 bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-xl text-sm outline-none focus:ring-2 focus:ring-green-500 text-slate-900 dark:text-white"
-                                placeholder="Full Name"
-                                value={newUser.name}
-                                onChange={e => setNewUser({...newUser, name: e.target.value})}
-                            />
-                            <Users className="absolute left-3 top-3 text-slate-400" size={18} />
+                    <div className="grid grid-cols-2 gap-4">
+                        <div>
+                            <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1">{t.users.modal.name}</label>
+                            <div className="relative">
+                                <input 
+                                    className="w-full pl-10 pr-4 py-3 bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-xl text-sm outline-none focus:ring-2 focus:ring-green-500 text-slate-900 dark:text-white"
+                                    placeholder="Full Name"
+                                    value={newUser.name}
+                                    onChange={e => setNewUser({...newUser, name: e.target.value})}
+                                />
+                                <Users className="absolute left-3 top-3 text-slate-400" size={18} />
+                            </div>
                         </div>
-                    </div>
-
-                    <div>
-                        <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1">{t.users.modal.email}</label>
-                        <div className="relative">
-                            <input 
-                                className="w-full pl-10 pr-4 py-3 bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-xl text-sm outline-none focus:ring-2 focus:ring-green-500 text-slate-900 dark:text-white"
-                                placeholder="Email Address"
-                                value={newUser.email}
-                                onChange={e => setNewUser({...newUser, email: e.target.value})}
-                            />
-                            <Mail className="absolute left-3 top-3 text-slate-400" size={18} />
+                        <div>
+                            <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1">{t.users.modal.email}</label>
+                            <div className="relative">
+                                <input 
+                                    className="w-full pl-10 pr-4 py-3 bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-xl text-sm outline-none focus:ring-2 focus:ring-green-500 text-slate-900 dark:text-white"
+                                    placeholder="Email Address"
+                                    value={newUser.email}
+                                    onChange={e => setNewUser({...newUser, email: e.target.value})}
+                                />
+                                <Mail className="absolute left-3 top-3 text-slate-400" size={18} />
+                            </div>
                         </div>
                     </div>
 
@@ -413,16 +402,14 @@ const UserManagement: React.FC<UserManagementProps> = ({ users, setUsers, contra
                                     value={newUser.role}
                                     onChange={e => setNewUser({...newUser, role: e.target.value as UserRole})}
                                 >
-                                    <option className="dark:bg-slate-800" value={UserRole.USER}>General User</option>
-                                    <option className="dark:bg-slate-800" value={UserRole.RAC_TRAINER}>RAC Trainer</option>
-                                    <option className="dark:bg-slate-800" value={UserRole.RAC_ADMIN}>RAC Admin</option>
-                                    <option className="dark:bg-slate-800" value={UserRole.SITE_ADMIN}>Site Admin</option>
-                                    <option className="dark:bg-slate-800" value={UserRole.ENTERPRISE_ADMIN}>Enterprise Admin</option>
-                                    <option className="dark:bg-slate-800" value={UserRole.SYSTEM_ADMIN}>System Admin</option>
+                                    {allowedRolesToCreate.map(r => (
+                                        <option className="dark:bg-slate-800" key={r.value} value={r.value}>{r.label}</option>
+                                    ))}
                                 </select>
                                 <Lock className="absolute left-3 top-3 text-slate-400" size={18} />
                             </div>
                         </div>
+
                         <div>
                             <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1">Company</label>
                             <div className="relative">
@@ -431,15 +418,14 @@ const UserManagement: React.FC<UserManagementProps> = ({ users, setUsers, contra
                                     value={newUser.company}
                                     onChange={e => setNewUser({...newUser, company: e.target.value})}
                                 >
-                                    {availableCompanies.map(c => <option className="dark:bg-slate-800" key={c} value={c}>{c}</option>)}
+                                    {allowedCompanies.map(c => <option className="dark:bg-slate-800" key={c} value={c}>{c}</option>)}
                                 </select>
                                 <Briefcase className="absolute left-3 top-3 text-slate-400" size={18} />
                             </div>
                         </div>
                     </div>
 
-                    {/* Site Selector (Relevant for RAC_ADMIN limits) */}
-                    {(newUser.role === UserRole.RAC_ADMIN || newUser.role === UserRole.SITE_ADMIN) && (
+                    {(newUser.role === UserRole.RAC_ADMIN || newUser.role === UserRole.SITE_ADMIN || newUser.role === UserRole.RAC_TRAINER) && (
                         <div className="animate-fade-in-up">
                             <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1">{t.users.modal.selectSite}</label>
                             <div className="relative">
@@ -447,20 +433,24 @@ const UserManagement: React.FC<UserManagementProps> = ({ users, setUsers, contra
                                     className="w-full pl-10 pr-4 py-3 bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-xl text-sm outline-none focus:ring-2 focus:ring-green-500 text-slate-900 dark:text-white appearance-none cursor-pointer"
                                     value={newUser.siteId || ''}
                                     onChange={e => setNewUser({...newUser, siteId: e.target.value})}
+                                    disabled={currentUserRole === UserRole.SITE_ADMIN}
                                 >
                                     <option className="dark:bg-slate-800" value="">-- {t.users.modal.selectSite} --</option>
-                                    {sites.map(s => <option className="dark:bg-slate-800" key={s.id} value={s.id}>{s.name} ({s.location})</option>)}
+                                    {allowedSites.map(s => <option className="dark:bg-slate-800" key={s.id} value={s.id}>{s.name} ({s.location})</option>)}
                                 </select>
                                 <MapPin className="absolute left-3 top-3 text-slate-400" size={18} />
                             </div>
-                            <p className="text-[10px] text-slate-400 mt-1 ml-1 flex justify-between">
-                                <span>{t.users.modal.siteRequired}</span>
-                                {newUser.siteId && (
-                                    <span className={users.filter(u => u.role === UserRole.RAC_ADMIN && u.siteId === newUser.siteId).length >= 3 ? 'text-red-500 font-bold' : 'text-green-500 font-bold'}>
-                                        {t.users.modal.count}: {users.filter(u => u.role === UserRole.RAC_ADMIN && u.siteId === newUser.siteId).length}/3
-                                    </span>
-                                )}
-                            </p>
+                            
+                            {newUser.role === UserRole.RAC_ADMIN && (
+                                <p className="text-[10px] text-slate-400 mt-1 ml-1 flex justify-between">
+                                    <span>{t.users.modal.siteRequired}</span>
+                                    {newUser.siteId && (
+                                        <span className={users.filter(u => u.role === UserRole.RAC_ADMIN && u.siteId === newUser.siteId).length >= 3 ? 'text-red-500 font-bold' : 'text-green-500 font-bold'}>
+                                            {t.users.modal.count}: {users.filter(u => u.role === UserRole.RAC_ADMIN && u.siteId === newUser.siteId).length}/3
+                                        </span>
+                                    )}
+                                </p>
+                            )}
                         </div>
                     )}
                     

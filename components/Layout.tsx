@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate, Outlet } from 'react-router-dom';
 import { 
   LayoutDashboard, 
   CalendarPlus, 
@@ -45,7 +45,7 @@ import { useLanguage } from '../contexts/LanguageContext';
 import { useTheme } from '../contexts/ThemeContext';
 
 interface LayoutProps {
-  children: React.ReactNode;
+  children?: React.ReactNode;
   userRole: UserRole;
   setUserRole: (role: UserRole) => void;
   notifications?: SystemNotification[];
@@ -205,7 +205,8 @@ const Layout: React.FC<LayoutProps> = ({
       path: '/users', 
       label: t.nav.users, 
       icon: Users, 
-      visible: userRole === UserRole.SYSTEM_ADMIN 
+      // UPDATED VISIBILITY: Now visible to Enterprise and Site Admins
+      visible: [UserRole.SYSTEM_ADMIN, UserRole.ENTERPRISE_ADMIN, UserRole.SITE_ADMIN].includes(userRole) 
     },
     { 
       path: '/schedule', 
@@ -514,7 +515,7 @@ const Layout: React.FC<LayoutProps> = ({
         </header>
 
         <main className="flex-1 overflow-y-auto p-4 md:p-6 bg-gray-100 dark:bg-gray-900 relative scroll-smooth">
-           {children}
+           {children || <Outlet />}
         </main>
       </div>
     </div>
