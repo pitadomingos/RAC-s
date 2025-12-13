@@ -1,7 +1,7 @@
 
 import React, { useState, useRef } from 'react';
 import { UserRole, User } from '../types';
-import { Shield, MoreVertical, Plus, X, Trash2, Edit, Users, Lock, Key, ChevronLeft, ChevronRight, Mail, Briefcase, CheckCircle2, XCircle, Search, Upload, Download } from 'lucide-react';
+import { Shield, Plus, X, Trash2, Users, Lock, ChevronLeft, ChevronRight, Mail, Briefcase, CheckCircle2, XCircle, Search, Upload, Download } from 'lucide-react';
 import { useLanguage } from '../contexts/LanguageContext';
 import { COMPANIES } from '../constants';
 import ConfirmModal from '../components/ConfirmModal';
@@ -18,8 +18,9 @@ const UserManagement: React.FC<UserManagementProps> = ({ users, setUsers, contra
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [filterQuery, setFilterQuery] = useState('');
   
-  // Use contractors[0] as default company if available
-  const defaultCompany = contractors.length > 0 ? contractors[0] : (COMPANIES[0] || 'Unknown');
+  // Use contractors[0] as default company if available, fallback to COMPANIES constant
+  const availableCompanies = contractors.length > 0 ? contractors : COMPANIES;
+  const defaultCompany = availableCompanies[0] || 'Unknown';
 
   const [newUser, setNewUser] = useState<Partial<User>>({
       name: '', email: '', role: UserRole.USER, status: 'Active', company: defaultCompany, jobTitle: ''
@@ -74,7 +75,7 @@ const UserManagement: React.FC<UserManagementProps> = ({ users, setUsers, contra
   };
 
   const handleDownloadTemplate = () => {
-      const headers = ['Name', 'Email', 'Role (System Admin/RAC Admin/RAC Trainer/Departmental Admin/User)', 'Status (Active/Inactive)', 'Company', 'Job Title'];
+      const headers = ['Name', 'Email', 'Role (System Admin/Enterprise Admin/Site Admin/RAC Trainer/User)', 'Status (Active/Inactive)', 'Company', 'Job Title'];
       const csvContent = "data:text/csv;charset=utf-8," + headers.join(",");
       const encodedUri = encodeURI(csvContent);
       const link = document.createElement("a");
@@ -95,8 +96,6 @@ const UserManagement: React.FC<UserManagementProps> = ({ users, setUsers, contra
           if (!text) return;
 
           const lines = text.split('\n');
-          
-          // Region Proof: Detect Separator
           const firstLine = lines[0] || '';
           const separator = firstLine.includes(';') ? ';' : ',';
 
@@ -107,23 +106,21 @@ const UserManagement: React.FC<UserManagementProps> = ({ users, setUsers, contra
               if (!line.trim()) return;
               const cols = line.split(separator).map(c => c?.trim().replace(/^"|"$/g, ''));
               
-              if (cols.length < 2) return; // Need at least Name and Email
+              if (cols.length < 2) return; 
 
               const name = cols[0];
               const email = cols[1];
               
-              // Validate minimal data
               if (name && email) {
-                  // Resolve Role Enum
                   let role = UserRole.USER;
                   const roleStr = cols[2]?.toLowerCase() || '';
                   if (roleStr.includes('system')) role = UserRole.SYSTEM_ADMIN;
-                  else if (roleStr.includes('rac admin')) role = UserRole.RAC_ADMIN;
+                  else if (roleStr.includes('enterprise')) role = UserRole.ENTERPRISE_ADMIN;
+                  else if (roleStr.includes('site')) role = UserRole.SITE_ADMIN;
                   else if (roleStr.includes('trainer')) role = UserRole.RAC_TRAINER;
-                  else if (roleStr.includes('dept')) role = UserRole.DEPT_ADMIN;
 
                   newUsers.push({
-                      id: Date.now() + index, // Simple ID gen
+                      id: Date.now() + index, 
                       name,
                       email,
                       role,
@@ -145,14 +142,13 @@ const UserManagement: React.FC<UserManagementProps> = ({ users, setUsers, contra
       reader.readAsText(file);
   };
 
-  // Filter Logic
   const filteredUsers = users.filter(u => 
       u.name.toLowerCase().includes(filterQuery.toLowerCase()) || 
       u.email.toLowerCase().includes(filterQuery.toLowerCase()) ||
-      u.role.toLowerCase().includes(filterQuery.toLowerCase())
+      u.role.toLowerCase().includes(filterQuery.toLowerCase()) ||
+      u.company?.toLowerCase().includes(filterQuery.toLowerCase())
   );
 
-  // Pagination Logic
   const totalPages = Math.ceil(filteredUsers.length / itemsPerPage);
   const paginatedUsers = filteredUsers.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
@@ -166,22 +162,20 @@ const UserManagement: React.FC<UserManagementProps> = ({ users, setUsers, contra
   const getRoleColor = (role: UserRole) => {
       switch(role) {
           case UserRole.SYSTEM_ADMIN: return 'bg-blue-100 text-blue-700 border-blue-200 dark:bg-blue-900/30 dark:text-blue-300 dark:border-blue-800';
-          case UserRole.RAC_ADMIN: return 'bg-purple-100 text-purple-700 border-purple-200 dark:bg-purple-900/30 dark:text-purple-300 dark:border-purple-800';
+          case UserRole.ENTERPRISE_ADMIN: return 'bg-indigo-100 text-indigo-700 border-indigo-200 dark:bg-indigo-900/30 dark:text-indigo-300 dark:border-indigo-800';
+          case UserRole.SITE_ADMIN: return 'bg-orange-100 text-orange-700 border-orange-200 dark:bg-orange-900/30 dark:text-orange-300 dark:border-orange-800';
           case UserRole.RAC_TRAINER: return 'bg-green-100 text-green-700 border-green-200 dark:bg-green-900/30 dark:text-green-300 dark:border-green-800';
-          case UserRole.DEPT_ADMIN: return 'bg-orange-100 text-orange-700 border-orange-200 dark:bg-orange-900/30 dark:text-orange-300 dark:border-orange-800';
           default: return 'bg-slate-100 text-slate-700 border-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700';
       }
   };
 
   return (
     <div className="space-y-6 pb-24 animate-fade-in-up relative h-full">
-      
-      {/* --- HERO HEADER --- */}
+      {/* Hero Header */}
       <div className="bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 rounded-3xl shadow-2xl p-8 text-white relative overflow-hidden border border-slate-700/50">
          <div className="absolute top-0 right-0 opacity-[0.03] pointer-events-none">
             <Users size={400} />
          </div>
-         {/* Ambient Glow */}
          <div className="absolute -bottom-24 -left-24 w-64 h-64 bg-green-500/20 rounded-full blur-3xl pointer-events-none"></div>
 
          <div className="relative z-10 flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
@@ -237,16 +231,15 @@ const UserManagement: React.FC<UserManagementProps> = ({ users, setUsers, contra
              </div>
              <div className="w-px bg-white/10 h-10"></div>
              <div>
-                 <div className="text-3xl font-black text-blue-400">{users.filter(u => u.role === UserRole.SYSTEM_ADMIN).length}</div>
+                 <div className="text-3xl font-black text-blue-400">{users.filter(u => u.role === UserRole.SYSTEM_ADMIN || u.role === UserRole.ENTERPRISE_ADMIN).length}</div>
                  <div className="text-[10px] uppercase text-slate-400 font-bold tracking-wider">Admins</div>
              </div>
          </div>
       </div>
 
-      {/* --- CONTENT AREA --- */}
+      {/* Content Area */}
       <div className="bg-white dark:bg-slate-800 rounded-3xl shadow-xl border border-slate-100 dark:border-slate-700 flex flex-col overflow-hidden relative min-h-[500px]">
         
-        {/* Control Bar */}
         <div className="p-5 border-b border-slate-100 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50 flex flex-col md:flex-row justify-between items-center gap-4">
             <div className="relative w-full md:w-72">
                 <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
@@ -275,7 +268,6 @@ const UserManagement: React.FC<UserManagementProps> = ({ users, setUsers, contra
             </div>
         </div>
 
-        {/* User Table */}
         <div className="flex-1 overflow-auto">
             <table className="min-w-full divide-y divide-slate-100 dark:divide-slate-700">
             <thead className="bg-slate-50 dark:bg-slate-900/50">
@@ -341,7 +333,6 @@ const UserManagement: React.FC<UserManagementProps> = ({ users, setUsers, contra
             </table>
         </div>
 
-        {/* Footer */}
         <div className="p-4 border-t border-slate-100 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 flex justify-between items-center text-xs text-slate-500 dark:text-slate-400">
             <div>Page {currentPage} of {Math.max(1, totalPages)}</div>
             <div className="flex gap-2">
@@ -351,7 +342,6 @@ const UserManagement: React.FC<UserManagementProps> = ({ users, setUsers, contra
         </div>
       </div>
 
-      {/* --- ADD USER MODAL --- */}
       {isModalOpen && (
         <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in">
             <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden border border-slate-200 dark:border-slate-700">
@@ -415,11 +405,7 @@ const UserManagement: React.FC<UserManagementProps> = ({ users, setUsers, contra
                                     value={newUser.company}
                                     onChange={e => setNewUser({...newUser, company: e.target.value})}
                                 >
-                                    {contractors.length > 0 ? (
-                                        contractors.map(c => <option key={c} value={c}>{c}</option>)
-                                    ) : (
-                                        <option value="Unknown">Unknown</option>
-                                    )}
+                                    {availableCompanies.map(c => <option key={c} value={c}>{c}</option>)}
                                 </select>
                                 <Briefcase className="absolute left-3 top-3 text-slate-400" size={18} />
                             </div>
@@ -455,7 +441,6 @@ const UserManagement: React.FC<UserManagementProps> = ({ users, setUsers, contra
         </div>
       )}
 
-      {/* --- CONFIRMATION MODAL --- */}
       <ConfirmModal 
           isOpen={confirmState.isOpen}
           title={confirmState.title}

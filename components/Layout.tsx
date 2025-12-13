@@ -36,7 +36,8 @@ import {
   Map,
   Building2,
   BarChart,
-  GanttChart
+  GanttChart,
+  Activity
 } from 'lucide-react';
 import { UserRole, SystemNotification, Site } from '../types';
 import { useLanguage } from '../contexts/LanguageContext';
@@ -150,6 +151,12 @@ const Layout: React.FC<LayoutProps> = ({
       label: 'Site Governance',
       icon: GanttChart,
       visible: [UserRole.SYSTEM_ADMIN, UserRole.ENTERPRISE_ADMIN].includes(userRole)
+    },
+    {
+      path: '/system-health',
+      label: t.nav.systemHealth,
+      icon: Activity,
+      visible: userRole === UserRole.SYSTEM_ADMIN
     },
     { 
       path: '/', 
@@ -302,6 +309,7 @@ const Layout: React.FC<LayoutProps> = ({
             const Icon = item.icon;
             const isActive = location.pathname === item.path;
             const isEnterprise = item.path === '/enterprise-dashboard' || item.path === '/site-governance';
+            const isSystem = item.path === '/system-health';
             
             return (
               <Link
@@ -312,7 +320,7 @@ const Layout: React.FC<LayoutProps> = ({
                 className={`
                   flex items-center rounded-lg transition-colors
                   ${isActive 
-                    ? (isEnterprise ? 'bg-indigo-600 text-white font-medium shadow-lg shadow-indigo-500/30' : 'bg-yellow-500 text-slate-900 font-medium') 
+                    ? (isEnterprise ? 'bg-indigo-600 text-white font-medium shadow-lg shadow-indigo-500/30' : isSystem ? 'bg-cyan-700 text-white font-medium shadow-lg shadow-cyan-500/30' : 'bg-yellow-500 text-slate-900 font-medium') 
                     : 'text-gray-300 hover:bg-slate-800 hover:text-white'
                   }
                   ${isCollapsed ? 'justify-center p-3' : 'space-x-3 px-4 py-3'}

@@ -33,6 +33,7 @@ const VerificationPage = lazy(() => import('./pages/VerificationPage'));
 const TechnicalDocs = lazy(() => import('./pages/TechnicalDocs'));
 const EnterpriseDashboard = lazy(() => import('./pages/EnterpriseDashboard'));
 const SiteGovernancePage = lazy(() => import('./pages/SiteGovernancePage'));
+const SystemHealthPage = lazy(() => import('./pages/SystemHealthPage')); // NEW
 
 const App: React.FC = () => {
   // --- State Management ---
@@ -40,21 +41,20 @@ const App: React.FC = () => {
   const [notifications, setNotifications] = useState<SystemNotification[]>([]);
   
   // -- Multi-Tenancy State --
-  // Note: subContractors array allows the Enterprise (Vulcan) to manage its list of accepted companies.
   const [companies, setCompanies] = useState<Company[]>([
       { 
         id: 'c1', 
         name: 'Vulcan', // Enterprise Name
         status: 'Active', 
         appName: 'CARS Manager',
-        subContractors: ['Vulcan Mining', 'Global Logistics', 'Safety First Contractors', 'Elite Security'] 
+        subContractors: ['Vulcan Mining', 'Global Logistics', 'Safety First Contractors', 'Elite Security', 'Heavy Haulage Ltd'] 
       },
       { 
         id: 'c2', 
         name: 'Global Logistics', 
         status: 'Active', 
         appName: 'SafetyTrack',
-        subContractors: ['Global Logistics', 'Fast Haul'] 
+        subContractors: ['Global Logistics', 'Fast Haul', 'TechSolutions Inc'] 
       }
   ]);
   
@@ -68,32 +68,26 @@ const App: React.FC = () => {
   const [currentSiteId, setCurrentSiteId] = useState<string>('all');
 
   // Simulated logged-in user for self-service
-  const currentEmployeeId = 'emp-1';
+  const currentEmployeeId = 'emp-2027-1';
 
   // Branding Logic & Contractor List
   const { currentAppName, currentContractors } = useMemo(() => {
-      // Logic: Find the active Enterprise based on Role or context.
-      // For this demo, non-System Admins default to "Vulcan" (c1).
       let activeEnt = companies.find(c => c.id === 'c1');
       
       if (userRole === UserRole.SYSTEM_ADMIN) {
-          // System Admin sees default app name, and ALL possible contractors combined for now
-          // (In a real app, SysAdmin would switch contexts)
           return {
               currentAppName: 'CARS Manager',
               currentContractors: Array.from(new Set(companies.flatMap(c => c.subContractors || [])))
           };
       } else {
-          // Enterprise Admin / User view
           return {
               currentAppName: activeEnt?.appName || 'CARS Manager',
-              currentContractors: activeEnt?.subContractors || COMPANIES // Fallback to constant
+              currentContractors: activeEnt?.subContractors || COMPANIES 
           };
       }
   }, [userRole, companies]);
 
   // Data
-  // Assign initial data to a site for demo purposes (default s1)
   const stampedSessions = MOCK_SESSIONS.map(s => ({ ...s, siteId: 's1' }));
   const [sessions, setSessions] = useState<TrainingSession[]>(stampedSessions);
   const [racDefinitions, setRacDefinitions] = useState<RacDef[]>(INITIAL_RAC_DEFINITIONS);
@@ -110,190 +104,195 @@ const App: React.FC = () => {
       { id: '4', name: 'Sarah Connor', racs: ['RAC08'] },
   ]);
   
-  // Users
   const [users, setUsers] = useState<User[]>([
-    { id: 1, name: 'System Admin', email: 'admin@vulcan.com', role: UserRole.SYSTEM_ADMIN, status: 'Active', company: 'Vulcan' },
-    { id: 2, name: 'John Doe', email: 'john@vulcan.com', role: UserRole.RAC_TRAINER, status: 'Active', company: 'Vulcan' },
+    { id: 1, name: 'System Admin', email: 'admin@system.com', role: UserRole.SYSTEM_ADMIN, status: 'Active', company: 'System Owner', jobTitle: 'SaaS Administrator' },
+    { id: 2, name: 'Enterprise Director', email: 'director@vulcan.com', role: UserRole.ENTERPRISE_ADMIN, status: 'Active', company: 'Vulcan', jobTitle: 'HSE Director' },
+    { id: 3, name: 'Site Manager', email: 'manager@moatize.com', role: UserRole.SITE_ADMIN, status: 'Active', company: 'Vulcan', jobTitle: 'Site Manager' },
+    { id: 4, name: 'John Doe', email: 'trainer@vulcan.com', role: UserRole.RAC_TRAINER, status: 'Active', company: 'Vulcan', jobTitle: 'Lead Instructor' },
+    { id: 5, name: 'General User', email: 'user@worker.com', role: UserRole.USER, status: 'Active', company: 'Vulcan Mining', jobTitle: 'Operator' },
   ]);
 
-  // Bookings & Employees (Mock Data)
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [requirements, setRequirements] = useState<EmployeeRequirement[]>([]);
 
-  // Initialize some mock data if empty
+  // Initialize REAL WORLD SCENARIO Data
   useEffect(() => {
     if (bookings.length === 0) {
         const generatedBookings: Booking[] = [];
         const generatedRequirements: EmployeeRequirement[] = [];
         const today = new Date();
 
-        // Helper to format date
-        const fmtDate = (d: Date) => d.toISOString().split('T')[0];
-        
-        // 1. Create 8 FULLY GRANTED Employees (Perfect Batch)
-        for (let i = 1; i <= 8; i++) {
-            const empId = `emp-${i}`;
-            const siteId = i % 2 === 0 ? 's1' : 's2'; // Distribute across sites
-            
-            // Assign Sub-contractors from the constant list for initial seed
-            const assignedCompany = COMPANIES[i % COMPANIES.length];
-
-            const employee: Employee = {
-                id: empId,
-                name: `Safe Worker ${i}`,
-                recordId: `VUL-${1000 + i}`,
-                company: assignedCompany,
-                department: DEPARTMENTS[i % DEPARTMENTS.length],
-                role: ROLES[i % ROLES.length],
-                driverLicenseNumber: `DL-${202400 + i}`,
-                driverLicenseClass: 'C1',
-                driverLicenseExpiry: '2030-01-01', // Future Date
-                isActive: true,
-                siteId: siteId
-            };
-
-            // Requirements
-            generatedRequirements.push({
-                employeeId: empId,
-                asoExpiryDate: '2030-06-01', // Valid ASO
-                requiredRacs: { 
-                    'RAC01': true, 'RAC02': true, 'PTS': true, 'ART': true, 'LIB_OPS': true, 'LIB_MOV': true 
-                }
-            });
-
-            // Booking 1: RAC 01 (Passed, Valid)
-            generatedBookings.push({
-                id: uuidv4(),
-                sessionId: 'S001', 
-                employee: { ...employee },
-                status: BookingStatus.PASSED,
-                attendance: true,
-                theoryScore: 95,
-                resultDate: '2024-01-15',
-                expiryDate: '2026-01-15'
-            });
-        }
-
-        // --- SCENARIO 1: EXPIRING SOON (< 30 Days) ---
-        // This triggers the Yellow Alert on Dashboard
-        const expiringEmployees = [
-            { name: 'Joao Silva', days: 12 },
-            { name: 'Maria Santos', days: 18 },
-            { name: 'Pedro Jose', days: 25 }
+        // 1. Group 2027 (Excellent Compliance)
+        const excellentEmployees = [
+            { id: 'emp-2027-1', name: 'General User', role: 'Operator' }, 
+            { id: 'emp-2027-2', name: 'Sarah Best', role: 'Supervisor' },
+            { id: 'emp-2027-3', name: 'Mike Star', role: 'Technician' }
         ];
 
-        expiringEmployees.forEach((u, i) => {
-            const id = `exp-user-${i}`;
-            const expDate = new Date(today);
-            expDate.setDate(today.getDate() + u.days); // Expiring in X days
-
+        excellentEmployees.forEach(u => {
             const emp: Employee = {
-                id,
+                id: u.id,
                 name: u.name,
-                recordId: `EXP-${100 + i}`,
+                recordId: `VUL-${u.id.replace('emp-', '').toUpperCase()}`,
                 company: 'Vulcan Mining',
-                department: 'HSE',
-                role: 'Technician',
+                department: 'Mine Operations',
+                role: u.role,
                 isActive: true,
-                siteId: 's1'
+                siteId: 's1',
+                driverLicenseNumber: `DL-${u.id}`,
+                driverLicenseClass: 'C1',
+                driverLicenseExpiry: '2028-01-01'
             };
-
+            
             generatedRequirements.push({
-                employeeId: id,
-                asoExpiryDate: '2026-01-01',
-                requiredRacs: { 'RAC01': true }
+                employeeId: u.id,
+                asoExpiryDate: '2027-12-31',
+                requiredRacs: { 'RAC01': true, 'RAC02': true, 'RAC05': true }
             });
 
-            // Booking is PASSED but expiryDate is close
+            // Booking RAC01
             generatedBookings.push({
                 id: uuidv4(),
-                sessionId: 'S001', // RAC 01
-                employee: emp,
+                sessionId: 'S_HIST_2025_01',
+                employee: {...emp},
                 status: BookingStatus.PASSED,
-                resultDate: '2023-01-01', // Old result
-                expiryDate: fmtDate(expDate), // Expiring soon
+                resultDate: '2025-02-15',
+                expiryDate: '2027-02-15', 
                 attendance: true,
-                theoryScore: 88
+                theoryScore: 98
+            });
+            // Booking RAC02
+            generatedBookings.push({
+                id: uuidv4(),
+                sessionId: 'S_HIST_2025_02',
+                employee: {...emp},
+                status: BookingStatus.PASSED,
+                resultDate: '2025-03-10',
+                expiryDate: '2027-03-10', 
+                attendance: true,
+                theoryScore: 95,
+                practicalScore: 94,
+                driverLicenseVerified: true
+            });
+             // Booking RAC05
+             generatedBookings.push({
+                id: uuidv4(),
+                sessionId: 'S_HIST_2025_05',
+                employee: {...emp},
+                status: BookingStatus.PASSED,
+                resultDate: '2025-01-20',
+                expiryDate: '2027-01-20', 
+                attendance: true,
+                theoryScore: 92
             });
         });
 
+        // 2. Group 2026 (Good Compliance)
+        for(let i=1; i<=3; i++) {
+            const emp: Employee = {
+                id: `emp-2026-${i}`,
+                name: `Worker Good ${i}`,
+                recordId: `VUL-2026-0${i}`,
+                company: 'Global Logistics',
+                department: 'Logistics',
+                role: 'Driver',
+                isActive: true,
+                siteId: 's1',
+                driverLicenseNumber: `DL-2026-${i}`,
+                driverLicenseClass: 'C',
+                driverLicenseExpiry: '2026-12-31'
+            };
+            generatedRequirements.push({
+                employeeId: emp.id,
+                asoExpiryDate: '2026-06-30',
+                requiredRacs: { 'RAC02': true, 'RAC11': true }
+            });
+            generatedBookings.push({
+                id: uuidv4(),
+                sessionId: 'S_HIST_2024_02',
+                employee: emp,
+                status: BookingStatus.PASSED,
+                resultDate: '2024-05-15',
+                expiryDate: '2026-05-15',
+                attendance: true,
+                theoryScore: 85,
+                practicalScore: 80,
+                driverLicenseVerified: true
+            });
+        }
 
-        // --- SCENARIO 2: AUTO-BOOKED (< 7 Days) ---
-        // This triggers the Orange Table on Dashboard
-        
-        // 1. Paulo Manjate (Original)
-        const pauloEmp: Employee = {
-            id: 'emp-scenario-01',
+        // 3. Group 2025 (Risk / Expiring)
+        const nearFuture = new Date();
+        nearFuture.setDate(today.getDate() + 20); 
+        const expiry2025 = nearFuture.toISOString().split('T')[0];
+
+        const expiringEmployees = [
+            { name: 'Pedro Risk', dept: 'Maintenance' },
+            { name: 'Ana Alert', dept: 'HSE' },
+            { name: 'Carlos Critical', dept: 'Plant' }
+        ];
+
+        expiringEmployees.forEach((u, i) => {
+            const emp: Employee = {
+                id: `emp-2025-${i}`,
+                name: u.name,
+                recordId: `VUL-2025-0${i}`,
+                company: 'Safety First Contractors',
+                department: u.dept,
+                role: 'Technician',
+                isActive: true,
+                siteId: 's2'
+            };
+            generatedRequirements.push({
+                employeeId: emp.id,
+                asoExpiryDate: '2025-12-31', 
+                requiredRacs: { 'RAC01': true, 'RAC08': true }
+            });
+            
+            generatedBookings.push({
+                id: uuidv4(),
+                sessionId: 'S_HIST_2023_01',
+                employee: emp,
+                status: BookingStatus.PASSED,
+                resultDate: '2023-01-01',
+                expiryDate: expiry2025, 
+                attendance: true,
+                theoryScore: 78
+            });
+        });
+
+        // 4. Auto-Booked Scenario
+        const autoBookEmp: Employee = {
+            id: 'emp-auto-1',
             name: 'Paulo Manjate',
-            recordId: 'VUL-9999',
+            recordId: 'VUL-AUTO-99',
             company: 'Vulcan Mining',
             department: 'Mine Operations',
-            role: 'Heavy Equipment Operator',
+            role: 'Operator',
             isActive: true,
-            driverLicenseNumber: 'DL-98765432',
-            driverLicenseClass: 'G (Heavy)',
-            driverLicenseExpiry: '2025-12-31',
             siteId: 's1'
         };
         generatedRequirements.push({
-            employeeId: pauloEmp.id,
+            employeeId: autoBookEmp.id,
             asoExpiryDate: '2026-01-01',
             requiredRacs: { 'RAC02': true }
         });
         generatedBookings.push({
             id: uuidv4(),
-            sessionId: 'S005', // RAC02 Future
-            employee: pauloEmp,
+            sessionId: 'S005', 
+            employee: autoBookEmp,
             status: BookingStatus.PENDING,
             isAutoBooked: true
-        });
-
-        // 2. Three Additional Auto-Bookings
-        const autoBookingGroup = [
-            { name: 'Sofia Machel', rac: 'RAC01', session: 'S006', rec: 'VUL-8801' },
-            { name: 'Carlos Tamele', rac: 'RAC05', session: 'S003', rec: 'VUL-8802' },
-            { name: 'Ana Langa', rac: 'RAC08', session: 'S004', rec: 'VUL-8803' }
-        ];
-
-        autoBookingGroup.forEach((u, i) => {
-            const emp: Employee = {
-                id: `auto-${i}`,
-                name: u.name,
-                recordId: u.rec,
-                company: 'Global Logistics',
-                department: 'Logistics',
-                role: 'Driver',
-                isActive: true,
-                siteId: 's1'
-            };
-            
-            // Map requirement
-            const racKey = u.rac; 
-            generatedRequirements.push({
-                employeeId: emp.id,
-                asoExpiryDate: '2026-01-01',
-                requiredRacs: { [racKey]: true }
-            });
-
-            // Create Auto Booking
-            generatedBookings.push({
-                id: uuidv4(),
-                sessionId: u.session,
-                employee: emp,
-                status: BookingStatus.PENDING,
-                isAutoBooked: true
-            });
         });
 
         setBookings(generatedBookings);
         setRequirements(generatedRequirements);
         
-        // Push notification immediately
         setNotifications(prev => [{
             id: uuidv4(),
             type: 'alert',
             title: 'Auto-Booking Engine Active',
-            message: 'Detected 4 critical employees expiring in < 7 days. Auto-booked slots to prevent site lockout.',
+            message: 'Detected critical expiry risks. Auto-booked slots created.',
             timestamp: new Date(),
             isRead: false
         }]);
@@ -303,7 +302,7 @@ const App: React.FC = () => {
   // --- FILTER LOGIC (Site Context) ---
   const filteredBookings = useMemo(() => {
       if (currentSiteId === 'all') return bookings;
-      return bookings.filter(b => b.employee.siteId === currentSiteId || !b.employee.siteId); // Default to show if undefined for legacy
+      return bookings.filter(b => b.employee.siteId === currentSiteId || !b.employee.siteId); 
   }, [bookings, currentSiteId]);
 
   const filteredSessions = useMemo(() => {
@@ -312,8 +311,6 @@ const App: React.FC = () => {
   }, [sessions, currentSiteId]);
 
   const filteredRequirements = useMemo(() => {
-      // Requirements are linked to Employee IDs. 
-      // We first find eligible employees for the site.
       if (currentSiteId === 'all') return requirements;
       const validEmployeeIds = new Set(filteredBookings.map(b => b.employee.id));
       return requirements.filter(r => validEmployeeIds.has(r.employeeId));
@@ -322,13 +319,9 @@ const App: React.FC = () => {
 
   // --- DEMAND ANALYTICS ENGINE ---
   useEffect(() => {
-      // Calculate Demand vs Capacity per RAC Type
       const demandMap = new Map<string, number>();
-      
-      // 1. Count future bookings
       bookings.forEach(b => {
           if (b.status === BookingStatus.PENDING) {
-              // Find session type
               const session = sessions.find(s => s.id === b.sessionId);
               if (session) {
                   const type = session.racType;
@@ -337,20 +330,18 @@ const App: React.FC = () => {
           }
       });
 
-      // 2. Check Capacity
       demandMap.forEach((count, racType) => {
           const futureSessions = sessions.filter(s => s.racType === racType && new Date(s.date) > new Date());
           const totalCapacity = futureSessions.reduce((acc, s) => acc + s.capacity, 0);
 
-          if (count > totalCapacity * 0.9) { // If bookings exceed 90% of capacity
-              // Avoid duplicate notification spam
+          if (count > totalCapacity * 0.9) { 
               const existingNotif = notifications.find(n => n.title.includes('High Demand') && n.message.includes(racType));
               if (!existingNotif) {
                   setNotifications(prev => [{
                       id: uuidv4(),
                       type: 'alert',
                       title: 'High Training Demand Detected',
-                      message: `High demand for ${racType} (${count} bookings). Capacity is low. Please schedule more sessions.`,
+                      message: `High demand for ${racType} (${count} bookings). Capacity is low.`,
                       timestamp: new Date(),
                       isRead: false
                   }, ...prev]);
@@ -371,13 +362,10 @@ const App: React.FC = () => {
       setNotifications(prev => [n, ...prev]);
   };
 
-  // GENERIC HELPER: Sync Requirements from Bookings
   const syncRequirementsFromBookings = (bookingsToSync: Booking[]) => {
       setRequirements(prevReqs => {
           const newReqs = [...prevReqs];
-          
           bookingsToSync.forEach(b => {
-              // 1. Find or Create Requirement for Employee
               let reqIndex = newReqs.findIndex(r => r.employeeId === b.employee.id);
               if (reqIndex === -1) {
                   newReqs.push({ 
@@ -387,32 +375,25 @@ const App: React.FC = () => {
                   });
                   reqIndex = newReqs.length - 1;
               }
-              
-              // 2. Determine RAC Key from Session/Booking ID
               let racCode = '';
               const session = sessions.find(s => s.id === b.sessionId);
-              
               if (session) {
                   racCode = session.racType.split(' - ')[0]; 
               } else {
                   racCode = b.sessionId.split('|')[0];
               }
-              
               racCode = racCode.replace(/\(imp\)/gi, '').replace(/\s+/g, '').toUpperCase();
-              
               if (racCode) {
                   if (!newReqs[reqIndex].requiredRacs[racCode]) {
                       newReqs[reqIndex].requiredRacs[racCode] = true;
                   }
               }
           });
-          
           return newReqs;
       });
   };
 
   const addBookings = (newBookings: Booking[]) => {
-      // Force assign siteId if missing, defaulting to current selected or first site
       const targetSite = currentSiteId !== 'all' ? currentSiteId : 's1';
       const stampedBookings = newBookings.map(b => ({
           ...b,
@@ -421,7 +402,6 @@ const App: React.FC = () => {
               siteId: b.employee.siteId || targetSite
           }
       }));
-
       setBookings(prev => [...prev, ...stampedBookings]);
       syncRequirementsFromBookings(stampedBookings);
   };
@@ -439,7 +419,6 @@ const App: React.FC = () => {
   };
 
   const importBookings = (newBookings: Booking[], sideEffects?: { employee: Employee, aso: string, ops: Record<string, boolean> }[]) => {
-      // Assign site context to imports if not present
       const targetSite = currentSiteId !== 'all' ? currentSiteId : 's1';
       const stampedBookings = newBookings.map(b => ({
           ...b,
@@ -451,13 +430,10 @@ const App: React.FC = () => {
 
       if (sideEffects && sideEffects.length > 0) {
           const extraBookings: Booking[] = [];
-
           setRequirements(prevReqs => {
               const newReqs = [...prevReqs];
-              
               sideEffects.forEach(effect => {
                   let idx = newReqs.findIndex(r => r.employeeId === effect.employee.id);
-                  
                   if (idx === -1) {
                       newReqs.push({
                           employeeId: effect.employee.id,
@@ -465,7 +441,6 @@ const App: React.FC = () => {
                           requiredRacs: {}
                       });
                       idx = newReqs.length - 1;
-
                       const inMainImport = stampedBookings.some(b => b.employee.id === effect.employee.id);
                       if (!inMainImport) {
                           extraBookings.push({
@@ -477,14 +452,11 @@ const App: React.FC = () => {
                           });
                       }
                   }
-
                   if (effect.aso) newReqs[idx].asoExpiryDate = effect.aso;
                   if (effect.ops) newReqs[idx].requiredRacs = { ...newReqs[idx].requiredRacs, ...effect.ops };
               });
-              
               return newReqs;
           });
-
           if (extraBookings.length > 0) {
               setBookings(prev => {
                   const uniqueExtras = extraBookings.filter(eb => !prev.some(pb => pb.employee.id === eb.employee.id));
@@ -523,7 +495,7 @@ const App: React.FC = () => {
           id: uuidv4(),
           type: 'success',
           title: 'Booking Approved',
-          message: 'Employee confirmed for training. Notification sent to Dept Manager.',
+          message: 'Employee confirmed for training.',
           timestamp: new Date(),
           isRead: false
       });
@@ -546,14 +518,13 @@ const App: React.FC = () => {
         sites={sites}
         currentSiteId={currentSiteId}
         setCurrentSiteId={setCurrentSiteId}
-        appName={currentAppName} // PASS DYNAMIC NAME HERE
+        appName={currentAppName}
       >
         <Suspense fallback={<div className="flex items-center justify-center h-full text-slate-500">Loading...</div>}>
             <Routes>
-              {/* Enterprise Specific Routes */}
               <Route path="/enterprise-dashboard" element={
                   [UserRole.SYSTEM_ADMIN, UserRole.ENTERPRISE_ADMIN].includes(userRole) 
-                  ? <EnterpriseDashboard sites={sites} bookings={bookings} requirements={requirements} userRole={userRole} contractors={currentContractors} /> 
+                  ? <EnterpriseDashboard sites={sites} bookings={bookings} requirements={requirements} userRole={userRole} contractors={currentContractors} companies={companies} /> 
                   : <Navigate to="/" replace />
               } />
               
@@ -570,26 +541,27 @@ const App: React.FC = () => {
                   : <Navigate to="/" replace />
               } />
 
-              {/* Dashboard Redirect Logic */}
+              <Route path="/system-health" element={
+                  userRole === UserRole.SYSTEM_ADMIN 
+                  ? <SystemHealthPage /> 
+                  : <Navigate to="/" replace />
+              } />
+
               <Route path="/" element={
                   userRole === UserRole.USER 
                     ? <Navigate to="/manuals" replace /> 
-                    : (userRole === UserRole.ENTERPRISE_ADMIN || userRole === UserRole.SYSTEM_ADMIN)
+                    : userRole === UserRole.ENTERPRISE_ADMIN
                       ? <Navigate to="/enterprise-dashboard" replace />
                       : <Dashboard bookings={filteredBookings} requirements={filteredRequirements} sessions={filteredSessions} userRole={userRole} onApproveAutoBooking={onApproveAutoBooking} onRejectAutoBooking={onRejectAutoBooking} racDefinitions={racDefinitions} contractors={currentContractors} />
               } />
               
-              {/* Database is RESTRICTED for General User and RAC Trainer */}
               <Route path="/database" element={
                   (userRole === UserRole.USER || userRole === UserRole.RAC_TRAINER)
                     ? <Navigate to="/manuals" replace />
                     : <DatabasePage bookings={filteredBookings} requirements={filteredRequirements} updateRequirements={updateRequirements} sessions={filteredSessions} onUpdateEmployee={onUpdateEmployee} onDeleteEmployee={onDeleteEmployee} racDefinitions={racDefinitions} contractors={currentContractors} />
               } />
               
-              {/* Reports is RESTRICTED for RAC Trainer */}
               <Route path="/reports" element={authorizedRoles.includes(userRole) ? <ReportsPage bookings={filteredBookings} sessions={filteredSessions} /> : <Navigate to="/" replace />} />
-              
-              {/* Booking is RESTRICTED for RAC Trainer and Enterprise Admin */}
               <Route path="/booking" element={userRole === UserRole.RAC_TRAINER || userRole === UserRole.ENTERPRISE_ADMIN ? <Navigate to="/" replace /> : <BookingForm addBookings={addBookings} sessions={filteredSessions} userRole={userRole} existingBookings={filteredBookings} addNotification={addNotification} currentEmployeeId={currentEmployeeId} requirements={filteredRequirements} contractors={currentContractors} />} />
               
               <Route path="/trainer-input" element={
@@ -604,7 +576,6 @@ const App: React.FC = () => {
                   : <Navigate to="/" replace />
               } />
               
-              {/* Results is RESTRICTED for RAC Trainer and Enterprise Admin */}
               <Route path="/results" element={userRole === UserRole.RAC_TRAINER || userRole === UserRole.ENTERPRISE_ADMIN ? <Navigate to="/" replace /> : <ResultsPage bookings={filteredBookings} updateBookingStatus={updateBookingStatus} importBookings={importBookings} userRole={userRole} sessions={filteredSessions} currentEmployeeId={currentEmployeeId} />} />
               
               <Route path="/proposal" element={userRole === UserRole.SYSTEM_ADMIN ? <ProjectProposal /> : <Navigate to="/" replace />} />
@@ -612,7 +583,6 @@ const App: React.FC = () => {
               <Route path="/tech-docs" element={userRole === UserRole.SYSTEM_ADMIN ? <TechnicalDocs /> : <Navigate to="/" replace />} />
               <Route path="/admin-manual" element={userRole === UserRole.SYSTEM_ADMIN ? <AdminManualPage /> : <Navigate to="/" replace />} />
               
-              {/* Pass currentEmployeeId for Self-Service */}
               <Route path="/request-cards" element={authorizedRoles.concat(UserRole.USER).includes(userRole) && userRole !== UserRole.ENTERPRISE_ADMIN ? <RequestCardsPage bookings={filteredBookings} requirements={filteredRequirements} racDefinitions={racDefinitions} sessions={filteredSessions} userRole={userRole} currentEmployeeId={currentEmployeeId} /> : <Navigate to="/" replace />} />
               
               <Route path="/print-cards" element={authorizedRoles.concat(UserRole.USER).includes(userRole) && userRole !== UserRole.ENTERPRISE_ADMIN ? <CardsPage bookings={filteredBookings} requirements={filteredRequirements} racDefinitions={racDefinitions} sessions={filteredSessions} userRole={userRole} /> : <Navigate to="/" replace />} />
@@ -620,7 +590,6 @@ const App: React.FC = () => {
               <Route path="/users" element={userRole === UserRole.SYSTEM_ADMIN ? <UserManagement users={users} setUsers={setUsers} contractors={currentContractors} /> : <Navigate to="/" replace />} />
               <Route path="/schedule" element={[UserRole.SYSTEM_ADMIN, UserRole.SITE_ADMIN].includes(userRole) ? <ScheduleTraining sessions={sessions} setSessions={setSessions} rooms={rooms} trainers={trainers} /> : <Navigate to="/" replace />} />
               
-              {/* Settings now manages Sites/Companies too. Restricted to System Admin as requested for "System Settings". */}
               <Route path="/settings" element={[UserRole.SYSTEM_ADMIN, UserRole.ENTERPRISE_ADMIN].includes(userRole) ? 
                 <SettingsPage 
                   racDefinitions={racDefinitions} 
@@ -642,7 +611,6 @@ const App: React.FC = () => {
               
               <Route path="/manuals" element={<UserManualsPage userRole={userRole} />} />
               <Route path="/logs" element={[UserRole.SYSTEM_ADMIN, UserRole.ENTERPRISE_ADMIN].includes(userRole) ? <LogsPage /> : <Navigate to="/" replace />} />
-              
               <Route path="/alcohol-control" element={[UserRole.SYSTEM_ADMIN, UserRole.ENTERPRISE_ADMIN].includes(userRole) ? <AlcoholIntegration /> : <Navigate to="/" replace />} />
               
               <Route path="/verify/:recordId" element={<VerificationPage bookings={bookings} requirements={requirements} racDefinitions={racDefinitions} sessions={sessions} />} />
