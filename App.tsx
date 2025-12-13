@@ -3,6 +3,7 @@ import React, { useState, Suspense, lazy, useEffect, useMemo } from 'react';
 import { HashRouter, Routes, Route, Navigate } from 'react-router-dom';
 import Layout from './components/Layout';
 import GeminiAdvisor from './components/GeminiAdvisor';
+import ToastContainer from './components/ToastContainer';
 import { AdvisorProvider } from './contexts/AdvisorContext';
 import { 
   UserRole, Booking, EmployeeRequirement, TrainingSession, User, RacDef, 
@@ -34,7 +35,7 @@ const VerificationPage = lazy(() => import('./pages/VerificationPage'));
 const TechnicalDocs = lazy(() => import('./pages/TechnicalDocs'));
 const EnterpriseDashboard = lazy(() => import('./pages/EnterpriseDashboard'));
 const SiteGovernancePage = lazy(() => import('./pages/SiteGovernancePage'));
-const SystemHealthPage = lazy(() => import('./pages/SystemHealthPage')); // NEW
+const SystemHealthPage = lazy(() => import('./pages/SystemHealthPage'));
 
 const App: React.FC = () => {
   // --- State Management ---
@@ -118,7 +119,7 @@ const App: React.FC = () => {
 
   // Initialize System
   useEffect(() => {
-      // Request notification permission immediately on load
+      // Keep this for potential future PWA needs, but currently it just logs.
       requestNotificationPermission();
   }, []);
 
@@ -295,7 +296,7 @@ const App: React.FC = () => {
         setBookings(generatedBookings);
         setRequirements(generatedRequirements);
         
-        // Initial Notification check
+        // Initial Notification check - Use new toast system implicitly via addNotification
         addNotification({
             id: uuidv4(),
             type: 'alert',
@@ -367,13 +368,14 @@ const App: React.FC = () => {
   const clearNotifications = () => setNotifications([]);
 
   const addNotification = (n: SystemNotification) => {
-      // 1. Add to In-App State
+      // 1. Add to In-App History State
       setNotifications(prev => [n, ...prev]);
       
-      // 2. Trigger Browser System Notification
-      // Only for High Importance (Alert/Warning) or Success
-      if (n.type === 'alert' || n.type === 'warning' || n.type === 'success') {
-          sendBrowserNotification(n.title, n.message);
+      // 2. Trigger In-App Sexy Toast (Replaces Browser Notification)
+      // We map the notification type to the visual toast type
+      if (n.type === 'alert' || n.type === 'warning' || n.type === 'success' || n.type === 'info') {
+          // Use the utility to dispatch the event that ToastContainer listens to
+          sendBrowserNotification(n.title, n.message, n.type === 'alert' ? 'error' : n.type);
       }
   };
 
@@ -535,6 +537,7 @@ const App: React.FC = () => {
         setCurrentSiteId={setCurrentSiteId}
         appName={currentAppName}
       >
+        <ToastContainer />
         <Suspense fallback={<div className="flex items-center justify-center h-full text-slate-500">Loading...</div>}>
             <Routes>
               <Route path="/enterprise-dashboard" element={
