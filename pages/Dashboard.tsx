@@ -16,6 +16,7 @@ interface DashboardProps {
   onApproveAutoBooking?: (bookingId: string) => void;
   onRejectAutoBooking?: (bookingId: string) => void;
   racDefinitions?: RacDef[];
+  contractors?: string[];
 }
 
 const Dashboard: React.FC<DashboardProps> = ({ 
@@ -25,11 +26,15 @@ const Dashboard: React.FC<DashboardProps> = ({
   userRole, 
   onApproveAutoBooking,
   onRejectAutoBooking,
-  racDefinitions = []
+  racDefinitions = [],
+  contractors = []
 }) => {
   const navigate = useNavigate();
   const { t } = useLanguage();
   
+  // Use passed contractors list if available, otherwise fallback to constants
+  const companyList = contractors.length > 0 ? contractors : COMPANIES;
+
   // -- GLOBAL FILTERS --
   const [selectedCompany, setSelectedCompany] = useState<string>('All');
   const [selectedDepartment, setSelectedDepartment] = useState<string>('All');
@@ -69,11 +74,6 @@ const Dashboard: React.FC<DashboardProps> = ({
           if (!empMap.has(b.employee.id)) {
               empMap.set(b.employee.id, b.employee);
           }
-      });
-      // Also check requirements incase employee has no bookings yet
-      requirements.forEach(r => {
-          // If we can't find employee object, we skip (bookings usually populate employee data)
-          // In a real app, we'd have a separate 'users' table.
       });
 
       const uniqueEmployees = Array.from(empMap.values());
@@ -216,15 +216,11 @@ const Dashboard: React.FC<DashboardProps> = ({
     } catch (e) { return null; }
   };
 
-  // Identify expiring bookings for the auto-fill feature (Use filtered set?)
-  // Usually expiring alerts should show ALL, but maybe filter by company context.
-  // For safety, we'll check ALL bookings for expiry, but button will only prefill filtered if we wanted (kept simple for now).
   const expiringBookings = useMemo(() => {
     const today = new Date();
     const thirtyDaysFromNow = new Date();
     thirtyDaysFromNow.setDate(today.getDate() + 30);
     
-    // Filtered by dashboard context
     return filteredBookingsForStats.filter(b => {
       if (!b.expiryDate) return false;
       const expDate = new Date(b.expiryDate);
@@ -275,7 +271,6 @@ const Dashboard: React.FC<DashboardProps> = ({
   };
 
   const employeeBookingsList = useMemo(() => {
-    // Only show bookings for filtered employees
     return filteredBookingsForStats.map(b => {
       const session = sessions.find(s => s.id === b.sessionId);
       let racName = session ? session.racType : b.sessionId;
@@ -314,7 +309,6 @@ const Dashboard: React.FC<DashboardProps> = ({
           .overflow-hidden { overflow: visible !important; }
           .overflow-auto { overflow: visible !important; height: auto !important; }
           .h-\[500px\] { height: auto !important; }
-          /* Charts often don't print well, maybe hide or adjust */
           .recharts-responsive-container { width: 100% !important; min-height: 300px !important; }
         }
       `}</style>
@@ -336,7 +330,7 @@ const Dashboard: React.FC<DashboardProps> = ({
                     className="w-full bg-transparent text-sm font-medium text-slate-800 dark:text-white outline-none cursor-pointer"
                 >
                     <option value="All">All Companies</option>
-                    {COMPANIES.map(c => <option key={c} value={c}>{c}</option>)}
+                    {companyList.map(c => <option key={c} value={c}>{c}</option>)}
                 </select>
             </div>
 
@@ -583,7 +577,7 @@ const Dashboard: React.FC<DashboardProps> = ({
                    className="text-xs border-gray-300 dark:border-slate-600 dark:bg-slate-700 text-black dark:text-white rounded focus:ring-blue-500 focus:border-blue-500 py-1"
                 >
                    <option value="All">All Companies</option>
-                   {COMPANIES.map(c => <option key={c} value={c}>{c}</option>)}
+                   {companyList.map(c => <option key={c} value={c}>{c}</option>)}
                 </select>
 
                 <select 

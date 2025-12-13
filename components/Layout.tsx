@@ -37,7 +37,8 @@ import {
   Building2,
   BarChart,
   GanttChart,
-  Activity
+  Activity,
+  FileText
 } from 'lucide-react';
 import { UserRole, SystemNotification, Site } from '../types';
 import { useLanguage } from '../contexts/LanguageContext';
@@ -248,6 +249,7 @@ const Layout: React.FC<LayoutProps> = ({
       icon: ScrollText,
       visible: [UserRole.SYSTEM_ADMIN, UserRole.ENTERPRISE_ADMIN].includes(userRole)
     },
+    // Presentation is now accessed via Sidebar OR Header, kept in sidebar for quick access
     {
         path: '/presentation',
         label: t.nav.presentation,
@@ -392,6 +394,18 @@ const Layout: React.FC<LayoutProps> = ({
 
           <div className="flex items-center space-x-2 md:space-x-4">
             
+            {/* --- RESTORED PROPOSAL BUTTON --- */}
+            {userRole === UserRole.SYSTEM_ADMIN && (
+                <button 
+                    onClick={() => navigate('/proposal')}
+                    className="hidden md:flex items-center gap-2 px-3 py-1.5 bg-yellow-50 dark:bg-yellow-900/20 text-yellow-700 dark:text-yellow-400 rounded-lg text-xs font-bold border border-yellow-200 dark:border-yellow-800 hover:bg-yellow-100 dark:hover:bg-yellow-900/40 transition-colors"
+                    title={t.common.viewProposal}
+                >
+                    <FileText size={16} />
+                    <span>{t.common.viewProposal}</span>
+                </button>
+            )}
+
             {/* SITE SELECTOR (MULTI-TENANCY) */}
             {setCurrentSiteId && (userRole === UserRole.SYSTEM_ADMIN || userRole === UserRole.ENTERPRISE_ADMIN) && (
                 <div className="hidden md:flex items-center gap-2 bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg px-2 py-1">

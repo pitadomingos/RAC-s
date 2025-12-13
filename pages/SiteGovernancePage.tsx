@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { Site, RacDef, Booking, EmployeeRequirement, Employee } from '../types';
-import { Shield, CheckSquare, Save, Building2, MapPin, AlertCircle, Info, RefreshCw } from 'lucide-react';
+import { Shield, CheckSquare, Save, Building2, MapPin, AlertCircle, Info, RefreshCw, ChevronDown } from 'lucide-react';
 import { useLanguage } from '../contexts/LanguageContext';
 
 interface SiteGovernancePageProps {
@@ -100,32 +100,41 @@ const SiteGovernancePage: React.FC<SiteGovernancePageProps> = ({
             </div>
         </div>
 
-        <div className="flex flex-col lg:flex-row gap-8">
+        <div className="flex flex-col gap-6">
             
-            {/* Sidebar: Site Selector */}
-            <div className="lg:w-80 space-y-4">
-                <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 p-4">
-                    <h3 className="text-sm font-bold text-slate-500 uppercase tracking-wider mb-4 px-2">{t.siteGovernance.selectSite}</h3>
-                    <div className="space-y-2">
-                        {sites.map(site => (
-                            <button
-                                key={site.id}
-                                onClick={() => setSelectedSiteId(site.id)}
-                                className={`w-full flex items-center gap-3 p-3 rounded-xl transition-all text-left border ${
-                                    selectedSiteId === site.id 
-                                    ? 'bg-indigo-50 border-indigo-200 text-indigo-700 dark:bg-indigo-900/30 dark:border-indigo-800 dark:text-indigo-300 shadow-sm' 
-                                    : 'bg-transparent border-transparent hover:bg-slate-50 dark:hover:bg-slate-700/50 text-slate-600 dark:text-slate-400'
-                                }`}
+            {/* Site Selector Dropdown Area */}
+            <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 flex flex-col md:flex-row items-center gap-4">
+                <div className="flex items-center gap-3 w-full md:w-auto">
+                    <div className="p-2 bg-indigo-50 dark:bg-indigo-900/30 rounded-lg text-indigo-600 dark:text-indigo-400">
+                        <Building2 size={24} />
+                    </div>
+                    <div className="flex-1">
+                        <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">
+                            {t.siteGovernance.selectSite}
+                        </label>
+                        <div className="relative group min-w-[280px]">
+                            <select
+                                value={selectedSiteId}
+                                onChange={(e) => setSelectedSiteId(e.target.value)}
+                                className="w-full appearance-none bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 text-slate-900 dark:text-white text-sm font-bold rounded-xl py-3 pl-4 pr-10 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-600"
                             >
-                                <div className={`p-2 rounded-lg ${selectedSiteId === site.id ? 'bg-indigo-200 dark:bg-indigo-800' : 'bg-slate-200 dark:bg-slate-700'}`}>
-                                    <Building2 size={18} />
-                                </div>
-                                <div>
-                                    <div className="font-bold text-sm">{site.name}</div>
-                                    <div className="text-xs opacity-70 flex items-center gap-1"><MapPin size={10}/> {site.location}</div>
-                                </div>
-                            </button>
-                        ))}
+                                {sites.map(site => (
+                                    <option key={site.id} value={site.id}>
+                                        {site.name} ({site.location})
+                                    </option>
+                                ))}
+                            </select>
+                            <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none group-hover:text-indigo-500 transition-colors" size={18} />
+                        </div>
+                    </div>
+                </div>
+
+                <div className="flex-1 w-full md:border-l border-slate-200 dark:border-slate-700 md:pl-6">
+                    <div className="flex items-start gap-2 text-sm text-slate-600 dark:text-slate-300">
+                        <Info size={16} className="text-blue-500 mt-0.5 flex-shrink-0" />
+                        <p>
+                            Defining mandatory RACs for <strong>{selectedSite.name}</strong> will automatically flag these requirements for all personnel assigned to this location.
+                        </p>
                     </div>
                 </div>
             </div>
@@ -134,16 +143,19 @@ const SiteGovernancePage: React.FC<SiteGovernancePageProps> = ({
             <div className="flex-1 bg-white dark:bg-slate-800 rounded-3xl shadow-lg border border-slate-200 dark:border-slate-700 p-8">
                 <div className="flex justify-between items-center mb-6 pb-6 border-b border-slate-100 dark:border-slate-700">
                     <div>
-                        <h2 className="text-2xl font-black text-slate-800 dark:text-white">{selectedSite.name}</h2>
-                        <p className="text-sm text-slate-500">{t.siteGovernance.configure}</p>
+                        <h2 className="text-2xl font-black text-slate-800 dark:text-white flex items-center gap-2">
+                            <MapPin size={24} className="text-indigo-500" />
+                            {selectedSite.name} Policy
+                        </h2>
+                        <p className="text-sm text-slate-500 mt-1">{t.siteGovernance.configure}</p>
                     </div>
-                    <div className="flex items-center gap-2 px-4 py-2 bg-yellow-50 dark:bg-yellow-900/10 text-yellow-700 dark:text-yellow-400 rounded-lg text-xs font-bold border border-yellow-200 dark:border-yellow-800">
+                    <div className="hidden md:flex items-center gap-2 px-4 py-2 bg-yellow-50 dark:bg-yellow-900/10 text-yellow-700 dark:text-yellow-400 rounded-lg text-xs font-bold border border-yellow-200 dark:border-yellow-800">
                         <AlertCircle size={16} />
-                        Changes affect all site personnel
+                        Changes apply immediately upon save
                     </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
                     {racDefinitions.map(rac => {
                         const isSelected = localRequirements.includes(rac.code);
                         return (
@@ -157,7 +169,7 @@ const SiteGovernancePage: React.FC<SiteGovernancePageProps> = ({
                                 }`}
                             >
                                 <div className={`mt-0.5 w-5 h-5 rounded border flex items-center justify-center transition-colors ${
-                                    isSelected ? 'bg-indigo-600 border-indigo-600' : 'border-slate-300 bg-white'
+                                    isSelected ? 'bg-indigo-600 border-indigo-600' : 'border-slate-300 bg-white dark:bg-slate-700'
                                 }`}>
                                     {isSelected && <CheckSquare size={14} className="text-white" />}
                                 </div>

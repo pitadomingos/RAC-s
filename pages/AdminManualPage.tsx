@@ -90,7 +90,7 @@ const AdminManualPage: React.FC = () => {
               <div className="absolute inset-0 bg-blue-500 blur-[80px] opacity-30 animate-pulse-slow"></div>
               <Shield size={180} className="text-white relative z-10 drop-shadow-[0_0_50px_rgba(59,130,246,0.6)] animate-float" />
               <div className="absolute bottom-0 right-0 bg-yellow-500 text-slate-900 text-sm font-black px-4 py-1.5 rounded-full border-4 border-slate-900 transform translate-x-4 translate-y-4">
-                  v2.5.0
+                  v2.6.0
               </div>
           </div>
           
@@ -171,7 +171,7 @@ const AdminManualPage: React.FC = () => {
                   </div>
               </div>
 
-              {/* BILLING MODEL */}
+              {/* ACCESS & INVESTMENT MODEL */}
               <div className="flex flex-col gap-8">
                   <div className="bg-gradient-to-br from-slate-900 to-slate-800 p-10 rounded-[2.5rem] border border-green-500/30 shadow-2xl relative overflow-hidden group">
                       <div className="absolute top-0 right-0 p-10 opacity-5 group-hover:opacity-10 transition-opacity">
@@ -180,7 +180,7 @@ const AdminManualPage: React.FC = () => {
                       <div className="relative z-10">
                           <div className="flex items-center gap-4 mb-6">
                               <div className="p-3 bg-green-500/20 rounded-2xl text-green-400 border border-green-500/30 shadow-lg">
-                                  <DollarSign size={32} />
+                                  <Layers size={32} />
                               </div>
                               <h3 className="text-2xl font-black text-white">{t.adminManual.content.hierarchy.billingTitle}</h3>
                           </div>
@@ -190,10 +190,10 @@ const AdminManualPage: React.FC = () => {
                           </p>
 
                           <div className="flex items-end gap-3 bg-slate-950/50 p-6 rounded-2xl border border-slate-700">
-                              <span className="text-6xl font-black text-green-400 tracking-tighter drop-shadow-md">
+                              <span className="text-4xl font-black text-green-400 tracking-tighter drop-shadow-md">
                                   {t.adminManual.content.hierarchy.cost}
                               </span>
-                              <span className="text-sm text-slate-400 font-bold uppercase tracking-wide mb-2">
+                              <span className="text-sm text-slate-400 font-bold uppercase tracking-wide mb-2 ml-2">
                                   {t.adminManual.content.hierarchy.perUser}
                               </span>
                           </div>
@@ -202,10 +202,10 @@ const AdminManualPage: React.FC = () => {
 
                   <div className="bg-blue-900/20 p-6 rounded-2xl border border-blue-500/30">
                       <h4 className="text-blue-300 font-bold flex items-center gap-2 mb-2">
-                          <CheckCircle2 size={18} /> Admin Seats are Free
+                          <CheckCircle2 size={18} /> Integrated Admin Access
                       </h4>
                       <p className="text-sm text-blue-200/80">
-                          System Administrators, Enterprise Admins, Site Managers, and Trainers do not count towards the monthly billing cycle.
+                          System management roles (Admins, Managers, Trainers) are essential for successful deployment and are included in the foundational investment package.
                       </p>
                   </div>
               </div>
@@ -213,6 +213,8 @@ const AdminManualPage: React.FC = () => {
       </div>
   );
 
+  // ... (Rest of component remains same)
+  // ...
   const ObjectivesSlide = () => (
       <div className="flex flex-col justify-center h-full max-w-[1600px] mx-auto px-6 relative z-10 animate-fade-in-up">
           <h2 className="text-4xl md:text-6xl font-black text-white mb-12 text-center tracking-tight">{t.adminManual.content.objectives.title}</h2>

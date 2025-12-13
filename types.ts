@@ -66,6 +66,7 @@ export interface User {
     status: 'Active' | 'Inactive';
     company?: string;
     jobTitle?: string;
+    siteId?: string; // Optional: Link admin to specific site for quota limits
 }
 
 export interface Employee {

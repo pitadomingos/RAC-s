@@ -534,7 +534,7 @@ const App: React.FC = () => {
                       sites={sites} 
                       setSites={setSites} 
                       racDefinitions={racDefinitions} 
-                      bookings={bookings}
+                      bookings={bookings} 
                       requirements={requirements}
                       updateRequirements={updateRequirements}
                     /> 
@@ -587,7 +587,7 @@ const App: React.FC = () => {
               
               <Route path="/print-cards" element={authorizedRoles.concat(UserRole.USER).includes(userRole) && userRole !== UserRole.ENTERPRISE_ADMIN ? <CardsPage bookings={filteredBookings} requirements={filteredRequirements} racDefinitions={racDefinitions} sessions={filteredSessions} userRole={userRole} /> : <Navigate to="/" replace />} />
               
-              <Route path="/users" element={userRole === UserRole.SYSTEM_ADMIN ? <UserManagement users={users} setUsers={setUsers} contractors={currentContractors} /> : <Navigate to="/" replace />} />
+              <Route path="/users" element={userRole === UserRole.SYSTEM_ADMIN ? <UserManagement users={users} setUsers={setUsers} contractors={currentContractors} sites={sites} /> : <Navigate to="/" replace />} />
               <Route path="/schedule" element={[UserRole.SYSTEM_ADMIN, UserRole.SITE_ADMIN].includes(userRole) ? <ScheduleTraining sessions={sessions} setSessions={setSessions} rooms={rooms} trainers={trainers} /> : <Navigate to="/" replace />} />
               
               <Route path="/settings" element={[UserRole.SYSTEM_ADMIN, UserRole.ENTERPRISE_ADMIN].includes(userRole) ? 
@@ -606,6 +606,7 @@ const App: React.FC = () => {
                   users={users}
                   onUpdateUsers={setUsers}
                   contractors={currentContractors}
+                  addNotification={addNotification}
                 /> : <Navigate to="/" replace />} 
               />
               

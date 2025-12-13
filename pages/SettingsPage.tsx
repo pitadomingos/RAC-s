@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { Settings, Users, Box, Save, Plus, Trash2, Tag, Edit2, Check, X, AlertCircle, Sliders, MapPin, User as UserIcon, Hash, LayoutGrid, Building2, Map, ShieldCheck, Mail, Palette, Briefcase } from 'lucide-react';
-import { RacDef, Room, Trainer, Site, Company, UserRole, User } from '../types';
+import { RacDef, Room, Trainer, Site, Company, UserRole, User, SystemNotification } from '../types';
 import { v4 as uuidv4 } from 'uuid';
 import { logger } from '../utils/logger';
 import { useLanguage } from '../contexts/LanguageContext';
@@ -22,6 +22,7 @@ interface SettingsPageProps {
     users?: User[];
     onUpdateUsers?: (newUsers: User[]) => void;
     contractors?: string[];
+    addNotification?: (n: SystemNotification) => void;
 }
 
 const SettingsPage: React.FC<SettingsPageProps> = ({ 
@@ -32,7 +33,8 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
     companies = [], onUpdateCompanies,
     userRole = UserRole.SYSTEM_ADMIN,
     users = [], onUpdateUsers,
-    contractors = []
+    contractors = [],
+    addNotification
 }) => {
   const { t } = useLanguage();
   const [activeTab, setActiveTab] = useState<'General' | 'Trainers' | 'RACs' | 'Sites' | 'Companies' | 'Branding' | 'Contractors'>('General');
@@ -172,6 +174,18 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
       setNewCompany({ name: '', adminName: '', adminEmail: '', appName: '' });
       setProvisionSuccess(`Enterprise "${company.name}" provisioned successfully. Admin "${adminUser.name}" created with AI & Reporting access.`);
       
+      // Send Notification
+      if (addNotification) {
+          addNotification({
+              id: uuidv4(),
+              type: 'info',
+              title: 'Invitation Sent',
+              message: `Welcome email sent to ${adminUser.email}.`,
+              timestamp: new Date(),
+              isRead: false
+          });
+      }
+
       setTimeout(() => setProvisionSuccess(null), 5000);
   };
 

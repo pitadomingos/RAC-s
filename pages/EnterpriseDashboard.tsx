@@ -354,7 +354,7 @@ const EnterpriseDashboard: React.FC<EnterpriseDashboardProps> = ({
                             }}
                             className="bg-transparent text-sm font-bold outline-none cursor-pointer pr-2"
                         >
-                            <option value="All">All Tenants</option>
+                            <option value="All">{t.common.all} {t.common.tenants}</option>
                             {companies.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
                         </select>
                     </div>
@@ -368,7 +368,7 @@ const EnterpriseDashboard: React.FC<EnterpriseDashboardProps> = ({
                         onChange={(e) => setSelectedContractor(e.target.value)}
                         className="bg-transparent text-sm font-bold text-slate-700 dark:text-slate-200 outline-none cursor-pointer pr-2"
                     >
-                        <option value="All">All Contractors</option>
+                        <option value="All">{t.common.all} {t.common.contractors}</option>
                         {availableContractors.map(c => <option key={c} value={c}>{c}</option>)}
                     </select>
                 </div>
@@ -381,7 +381,7 @@ const EnterpriseDashboard: React.FC<EnterpriseDashboardProps> = ({
                         onChange={(e) => setSelectedSiteId(e.target.value)}
                         className="bg-transparent text-sm font-bold text-slate-700 dark:text-slate-200 outline-none cursor-pointer pr-2"
                     >
-                        <option value="All">All Sites</option>
+                        <option value="All">{t.common.all} {t.common.sites}</option>
                         {sites.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
                     </select>
                 </div>
@@ -394,7 +394,7 @@ const EnterpriseDashboard: React.FC<EnterpriseDashboardProps> = ({
                         onChange={(e) => setSelectedDept(e.target.value)}
                         className="bg-transparent text-sm font-bold text-slate-700 dark:text-slate-200 outline-none cursor-pointer pr-2"
                     >
-                        <option value="All">All Depts</option>
+                        <option value="All">{t.common.all} {t.common.depts}</option>
                         {DEPARTMENTS.map(d => <option key={d} value={d}>{d}</option>)}
                     </select>
                 </div>

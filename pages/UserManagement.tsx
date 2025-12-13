@@ -1,7 +1,7 @@
 
 import React, { useState, useRef } from 'react';
-import { UserRole, User } from '../types';
-import { Shield, Plus, X, Trash2, Users, Lock, ChevronLeft, ChevronRight, Mail, Briefcase, CheckCircle2, XCircle, Search, Upload, Download } from 'lucide-react';
+import { UserRole, User, Site } from '../types';
+import { Shield, Plus, X, Trash2, Users, Lock, ChevronLeft, ChevronRight, Mail, Briefcase, CheckCircle2, XCircle, Search, Upload, Download, MapPin } from 'lucide-react';
 import { useLanguage } from '../contexts/LanguageContext';
 import { COMPANIES } from '../constants';
 import ConfirmModal from '../components/ConfirmModal';
@@ -10,9 +10,10 @@ interface UserManagementProps {
     users: User[];
     setUsers: React.Dispatch<React.SetStateAction<User[]>>;
     contractors?: string[];
+    sites?: Site[];
 }
 
-const UserManagement: React.FC<UserManagementProps> = ({ users, setUsers, contractors = [] }) => {
+const UserManagement: React.FC<UserManagementProps> = ({ users, setUsers, contractors = [], sites = [] }) => {
   const { t } = useLanguage();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -23,7 +24,7 @@ const UserManagement: React.FC<UserManagementProps> = ({ users, setUsers, contra
   const defaultCompany = availableCompanies[0] || 'Unknown';
 
   const [newUser, setNewUser] = useState<Partial<User>>({
-      name: '', email: '', role: UserRole.USER, status: 'Active', company: defaultCompany, jobTitle: ''
+      name: '', email: '', role: UserRole.USER, status: 'Active', company: defaultCompany, jobTitle: '', siteId: ''
   });
   
   // Pagination State
@@ -50,6 +51,22 @@ const UserManagement: React.FC<UserManagementProps> = ({ users, setUsers, contra
           alert("Name and Email required");
           return;
       }
+
+      // RAC Admin Limit Check
+      if (newUser.role === UserRole.RAC_ADMIN) {
+          if (!newUser.siteId) {
+              alert("Please select a site for the RAC Admin.");
+              return;
+          }
+          
+          const existingAdminsAtSite = users.filter(u => u.role === UserRole.RAC_ADMIN && u.siteId === newUser.siteId).length;
+          
+          if (existingAdminsAtSite >= 3) {
+              alert(t.users.limitError);
+              return;
+          }
+      }
+
       const userToAdd: User = {
           id: Date.now(),
           name: newUser.name,
@@ -57,11 +74,12 @@ const UserManagement: React.FC<UserManagementProps> = ({ users, setUsers, contra
           role: newUser.role || UserRole.USER,
           status: newUser.status || 'Active',
           company: newUser.company || defaultCompany,
-          jobTitle: newUser.jobTitle || 'N/A'
+          jobTitle: newUser.jobTitle || 'N/A',
+          siteId: newUser.siteId || undefined
       };
       setUsers([...users, userToAdd]);
       setIsModalOpen(false);
-      setNewUser({ name: '', email: '', role: UserRole.USER, status: 'Active', company: defaultCompany, jobTitle: '' });
+      setNewUser({ name: '', email: '', role: UserRole.USER, status: 'Active', company: defaultCompany, jobTitle: '', siteId: '' });
   };
 
   const handleDeleteUser = (id: number) => {
@@ -118,6 +136,7 @@ const UserManagement: React.FC<UserManagementProps> = ({ users, setUsers, contra
                   else if (roleStr.includes('enterprise')) role = UserRole.ENTERPRISE_ADMIN;
                   else if (roleStr.includes('site')) role = UserRole.SITE_ADMIN;
                   else if (roleStr.includes('trainer')) role = UserRole.RAC_TRAINER;
+                  else if (roleStr.includes('rac')) role = UserRole.RAC_ADMIN;
 
                   newUsers.push({
                       id: Date.now() + index, 
@@ -165,6 +184,7 @@ const UserManagement: React.FC<UserManagementProps> = ({ users, setUsers, contra
           case UserRole.ENTERPRISE_ADMIN: return 'bg-indigo-100 text-indigo-700 border-indigo-200 dark:bg-indigo-900/30 dark:text-indigo-300 dark:border-indigo-800';
           case UserRole.SITE_ADMIN: return 'bg-orange-100 text-orange-700 border-orange-200 dark:bg-orange-900/30 dark:text-orange-300 dark:border-orange-800';
           case UserRole.RAC_TRAINER: return 'bg-green-100 text-green-700 border-green-200 dark:bg-green-900/30 dark:text-green-300 dark:border-green-800';
+          case UserRole.RAC_ADMIN: return 'bg-purple-100 text-purple-700 border-purple-200 dark:bg-purple-900/30 dark:text-purple-300 dark:border-purple-800';
           default: return 'bg-slate-100 text-slate-700 border-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700';
       }
   };
@@ -310,6 +330,11 @@ const UserManagement: React.FC<UserManagementProps> = ({ users, setUsers, contra
                         <span className={`px-2 py-1 inline-flex text-[10px] leading-5 font-bold rounded-full uppercase border ${getRoleColor(user.role)}`}>
                             {user.role}
                         </span>
+                        {user.siteId && (
+                            <div className="text-[9px] text-slate-400 mt-1 flex items-center gap-1">
+                                <MapPin size={8} /> {sites.find(s => s.id === user.siteId)?.name || 'Unknown Site'}
+                            </div>
+                        )}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-center">
                         {user.status === 'Active' ? (
@@ -390,6 +415,7 @@ const UserManagement: React.FC<UserManagementProps> = ({ users, setUsers, contra
                                 >
                                     <option value={UserRole.USER}>General User</option>
                                     <option value={UserRole.RAC_TRAINER}>RAC Trainer</option>
+                                    <option value={UserRole.RAC_ADMIN}>RAC Admin</option>
                                     <option value={UserRole.SITE_ADMIN}>Site Admin</option>
                                     <option value={UserRole.ENTERPRISE_ADMIN}>Enterprise Admin</option>
                                     <option value={UserRole.SYSTEM_ADMIN}>System Admin</option>
@@ -411,6 +437,32 @@ const UserManagement: React.FC<UserManagementProps> = ({ users, setUsers, contra
                             </div>
                         </div>
                     </div>
+
+                    {/* Site Selector (Relevant for RAC_ADMIN limits) */}
+                    {(newUser.role === UserRole.RAC_ADMIN || newUser.role === UserRole.SITE_ADMIN) && (
+                        <div className="animate-fade-in-up">
+                            <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1">{t.users.modal.selectSite}</label>
+                            <div className="relative">
+                                <select 
+                                    className="w-full pl-10 pr-4 py-3 bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-xl text-sm outline-none focus:ring-2 focus:ring-green-500 text-slate-900 dark:text-white appearance-none cursor-pointer"
+                                    value={newUser.siteId || ''}
+                                    onChange={e => setNewUser({...newUser, siteId: e.target.value})}
+                                >
+                                    <option value="">-- {t.users.modal.selectSite} --</option>
+                                    {sites.map(s => <option key={s.id} value={s.id}>{s.name} ({s.location})</option>)}
+                                </select>
+                                <MapPin className="absolute left-3 top-3 text-slate-400" size={18} />
+                            </div>
+                            <p className="text-[10px] text-slate-400 mt-1 ml-1 flex justify-between">
+                                <span>{t.users.modal.siteRequired}</span>
+                                {newUser.siteId && (
+                                    <span className={users.filter(u => u.role === UserRole.RAC_ADMIN && u.siteId === newUser.siteId).length >= 3 ? 'text-red-500 font-bold' : 'text-green-500 font-bold'}>
+                                        {t.users.modal.count}: {users.filter(u => u.role === UserRole.RAC_ADMIN && u.siteId === newUser.siteId).length}/3
+                                    </span>
+                                )}
+                            </p>
+                        </div>
+                    )}
                     
                     <div>
                         <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1">Job Title</label>
