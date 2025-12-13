@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo } from 'react';
 import { Booking, BookingStatus, TrainingSession, RacDef } from '../types';
 import { DEPARTMENTS, RAC_KEYS } from '../constants';
@@ -224,11 +225,11 @@ const ReportsPage: React.FC<ReportsPageProps> = ({ bookings, sessions, racDefini
                      onChange={(e) => setPeriod(e.target.value as ReportPeriod)}
                      className="w-full bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 text-slate-900 dark:text-white rounded-xl px-4 py-2.5 text-sm font-bold focus:ring-2 focus:ring-blue-500 outline-none appearance-none cursor-pointer hover:bg-white dark:hover:bg-slate-600 transition-colors"
                    >
-                      <option value="All Time">All Time</option>
-                      <option value="Weekly">{t.reports.periods.weekly}</option>
-                      <option value="Monthly">{t.reports.periods.monthly}</option>
-                      <option value="YTD">{t.reports.periods.ytd}</option>
-                      <option value="Custom">{t.reports.periods.custom}</option>
+                      <option className="dark:bg-slate-800" value="All Time">All Time</option>
+                      <option className="dark:bg-slate-800" value="Weekly">{t.reports.periods.weekly}</option>
+                      <option className="dark:bg-slate-800" value="Monthly">{t.reports.periods.monthly}</option>
+                      <option className="dark:bg-slate-800" value="YTD">{t.reports.periods.ytd}</option>
+                      <option className="dark:bg-slate-800" value="Custom">{t.reports.periods.custom}</option>
                    </select>
                    <Calendar className="absolute right-3 top-2.5 text-slate-400 group-hover:text-blue-500 transition-colors" size={16} />
                 </div>
@@ -244,8 +245,8 @@ const ReportsPage: React.FC<ReportsPageProps> = ({ bookings, sessions, racDefini
                             onChange={(e) => setSelectedSite(e.target.value)} 
                             className="w-full bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 text-slate-900 dark:text-white rounded-xl px-4 py-2.5 text-sm font-bold focus:ring-2 focus:ring-blue-500 outline-none appearance-none cursor-pointer"
                         >
-                            <option value="All">{t.common.all}</option>
-                            {availableSites.map(s => <option key={s} value={s}>{s === 's1' ? 'Moatize' : s === 's2' ? 'Maputo' : s}</option>)}
+                            <option className="dark:bg-slate-800" value="All">{t.common.all}</option>
+                            {availableSites.map(s => <option className="dark:bg-slate-800" key={s} value={s}>{s === 's1' ? 'Moatize' : s === 's2' ? 'Maputo' : s}</option>)}
                         </select>
                         <Map className="absolute right-3 top-2.5 text-slate-400" size={16} />
                     </div>
@@ -269,8 +270,8 @@ const ReportsPage: React.FC<ReportsPageProps> = ({ bookings, sessions, racDefini
                 <label className="text-[10px] font-bold text-slate-900 dark:text-slate-400 uppercase tracking-wider mb-1 block ml-1">{t.reports.filters.department}</label>
                 <div className="relative">
                     <select value={selectedDept} onChange={(e) => setSelectedDept(e.target.value)} className="w-full bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 text-slate-900 dark:text-white rounded-xl px-4 py-2.5 text-sm font-bold focus:ring-2 focus:ring-blue-500 outline-none appearance-none cursor-pointer">
-                        <option value="All">{t.common.all}</option>
-                        {DEPARTMENTS.map(d => <option key={d} value={d}>{d}</option>)}
+                        <option className="dark:bg-slate-800" value="All">{t.common.all}</option>
+                        {DEPARTMENTS.map(d => <option className="dark:bg-slate-800" key={d} value={d}>{d}</option>)}
                     </select>
                     <Filter className="absolute right-3 top-2.5 text-slate-400" size={16} />
                 </div>
@@ -280,11 +281,11 @@ const ReportsPage: React.FC<ReportsPageProps> = ({ bookings, sessions, racDefini
                 <label className="text-[10px] font-bold text-slate-900 dark:text-slate-400 uppercase tracking-wider mb-1 block ml-1">{t.reports.filters.racType}</label>
                 <div className="relative">
                     <select value={selectedRac} onChange={(e) => setSelectedRac(e.target.value)} className="w-full bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 text-slate-900 dark:text-white rounded-xl px-4 py-2.5 text-sm font-bold focus:ring-2 focus:ring-blue-500 outline-none appearance-none cursor-pointer">
-                        <option value="All">{t.common.all}</option>
+                        <option className="dark:bg-slate-800" value="All">{t.common.all}</option>
                         {racDefinitions.length > 0 ? (
-                            racDefinitions.map(def => <option key={def.code} value={def.code}>{def.code}</option>)
+                            racDefinitions.map(def => <option className="dark:bg-slate-800" key={def.code} value={def.code}>{def.code}</option>)
                         ) : (
-                            RAC_KEYS.map(r => <option key={r} value={r}>{r}</option>)}
+                            RAC_KEYS.map(r => <option className="dark:bg-slate-800" key={r} value={r}>{r}</option>)}
                     </select>
                     <Filter className="absolute right-3 top-2.5 text-slate-400" size={16} />
                 </div>

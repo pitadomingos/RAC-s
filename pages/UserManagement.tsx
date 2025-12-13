@@ -280,9 +280,9 @@ const UserManagement: React.FC<UserManagementProps> = ({ users, setUsers, contra
                         onChange={handlePageSizeChange}
                         className="text-sm font-bold bg-transparent outline-none text-slate-800 dark:text-white cursor-pointer"
                     >
-                        <option value={10}>10</option>
-                        <option value={20}>20</option>
-                        <option value={50}>50</option>
+                        <option className="dark:bg-slate-800" value={10}>10</option>
+                        <option className="dark:bg-slate-800" value={20}>20</option>
+                        <option className="dark:bg-slate-800" value={50}>50</option>
                     </select>
                 </div>
             </div>
@@ -413,12 +413,12 @@ const UserManagement: React.FC<UserManagementProps> = ({ users, setUsers, contra
                                     value={newUser.role}
                                     onChange={e => setNewUser({...newUser, role: e.target.value as UserRole})}
                                 >
-                                    <option value={UserRole.USER}>General User</option>
-                                    <option value={UserRole.RAC_TRAINER}>RAC Trainer</option>
-                                    <option value={UserRole.RAC_ADMIN}>RAC Admin</option>
-                                    <option value={UserRole.SITE_ADMIN}>Site Admin</option>
-                                    <option value={UserRole.ENTERPRISE_ADMIN}>Enterprise Admin</option>
-                                    <option value={UserRole.SYSTEM_ADMIN}>System Admin</option>
+                                    <option className="dark:bg-slate-800" value={UserRole.USER}>General User</option>
+                                    <option className="dark:bg-slate-800" value={UserRole.RAC_TRAINER}>RAC Trainer</option>
+                                    <option className="dark:bg-slate-800" value={UserRole.RAC_ADMIN}>RAC Admin</option>
+                                    <option className="dark:bg-slate-800" value={UserRole.SITE_ADMIN}>Site Admin</option>
+                                    <option className="dark:bg-slate-800" value={UserRole.ENTERPRISE_ADMIN}>Enterprise Admin</option>
+                                    <option className="dark:bg-slate-800" value={UserRole.SYSTEM_ADMIN}>System Admin</option>
                                 </select>
                                 <Lock className="absolute left-3 top-3 text-slate-400" size={18} />
                             </div>
@@ -431,7 +431,7 @@ const UserManagement: React.FC<UserManagementProps> = ({ users, setUsers, contra
                                     value={newUser.company}
                                     onChange={e => setNewUser({...newUser, company: e.target.value})}
                                 >
-                                    {availableCompanies.map(c => <option key={c} value={c}>{c}</option>)}
+                                    {availableCompanies.map(c => <option className="dark:bg-slate-800" key={c} value={c}>{c}</option>)}
                                 </select>
                                 <Briefcase className="absolute left-3 top-3 text-slate-400" size={18} />
                             </div>
@@ -448,8 +448,8 @@ const UserManagement: React.FC<UserManagementProps> = ({ users, setUsers, contra
                                     value={newUser.siteId || ''}
                                     onChange={e => setNewUser({...newUser, siteId: e.target.value})}
                                 >
-                                    <option value="">-- {t.users.modal.selectSite} --</option>
-                                    {sites.map(s => <option key={s.id} value={s.id}>{s.name} ({s.location})</option>)}
+                                    <option className="dark:bg-slate-800" value="">-- {t.users.modal.selectSite} --</option>
+                                    {sites.map(s => <option className="dark:bg-slate-800" key={s.id} value={s.id}>{s.name} ({s.location})</option>)}
                                 </select>
                                 <MapPin className="absolute left-3 top-3 text-slate-400" size={18} />
                             </div>

@@ -172,9 +172,9 @@ const ScheduleTraining: React.FC<ScheduleTrainingProps> = ({ sessions, setSessio
                           onChange={handlePageSizeChange}
                           className="text-sm font-bold bg-transparent outline-none text-slate-800 dark:text-white cursor-pointer"
                       >
-                          <option value={10}>10</option>
-                          <option value={20}>20</option>
-                          <option value={50}>50</option>
+                          <option className="dark:bg-slate-800" value={10}>10</option>
+                          <option className="dark:bg-slate-800" value={20}>20</option>
+                          <option className="dark:bg-slate-800" value={50}>50</option>
                       </select>
                   </div>
               </div>
@@ -295,7 +295,7 @@ const ScheduleTraining: React.FC<ScheduleTrainingProps> = ({ sessions, setSessio
                                 onChange={e => setNewSession({...newSession, racType: e.target.value})}
                             >
                                 {racDefinitions.map(def => (
-                                    <option key={def.id} value={`${def.code} - ${def.name}`}>{def.code} - {def.name}</option>
+                                    <option className="dark:bg-slate-800" key={def.id} value={`${def.code} - ${def.name}`}>{def.code} - {def.name}</option>
                                 ))}
                             </select>
                             <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
@@ -341,9 +341,9 @@ const ScheduleTraining: React.FC<ScheduleTrainingProps> = ({ sessions, setSessio
                                         });
                                     }}
                                 >
-                                    <option value="">Select Room</option>
+                                    <option className="dark:bg-slate-800" value="">Select Room</option>
                                     {rooms.map(room => (
-                                        <option key={room.id} value={room.name}>{room.name}</option>
+                                        <option className="dark:bg-slate-800" key={room.id} value={room.name}>{room.name}</option>
                                     ))}
                                 </select>
                                 <MapPin size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
@@ -371,9 +371,9 @@ const ScheduleTraining: React.FC<ScheduleTrainingProps> = ({ sessions, setSessio
                                     value={String(newSession.instructor)}
                                     onChange={e => setNewSession({...newSession, instructor: e.target.value})}
                                 >
-                                    <option value="">Select Instructor</option>
+                                    <option className="dark:bg-slate-800" value="">Select Instructor</option>
                                     {trainers.map(trainer => (
-                                        <option key={trainer.id} value={trainer.name}>
+                                        <option className="dark:bg-slate-800" key={trainer.id} value={trainer.name}>
                                             {trainer.name}
                                         </option>
                                     ))}
@@ -389,8 +389,8 @@ const ScheduleTraining: React.FC<ScheduleTrainingProps> = ({ sessions, setSessio
                                     value={String(newSession.sessionLanguage)}
                                     onChange={e => setNewSession({...newSession, sessionLanguage: e.target.value as any})}
                                 >
-                                    <option value="Portuguese">{t.schedule.modal.portuguese}</option>
-                                    <option value="English">{t.schedule.modal.english}</option>
+                                    <option className="dark:bg-slate-800" value="Portuguese">{t.schedule.modal.portuguese}</option>
+                                    <option className="dark:bg-slate-800" value="English">{t.schedule.modal.english}</option>
                                 </select>
                                 <Globe size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
                             </div>

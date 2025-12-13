@@ -356,11 +356,11 @@ const Layout: React.FC<LayoutProps> = ({
                     onChange={(e) => setUserRole(e.target.value as UserRole)}
                     className="w-full bg-slate-800 dark:bg-slate-900 text-white text-xs p-2 rounded border border-slate-600 dark:border-slate-700 focus:border-yellow-500 outline-none"
                   >
-                    <option value={UserRole.SYSTEM_ADMIN}>System Admin</option>
-                    <option value={UserRole.ENTERPRISE_ADMIN}>Enterprise Admin</option>
-                    <option value={UserRole.SITE_ADMIN}>Site Admin</option>
-                    <option value={UserRole.RAC_TRAINER}>RAC Trainer</option>
-                    <option value={UserRole.USER}>User</option>
+                    <option className="bg-slate-800 dark:bg-slate-900" value={UserRole.SYSTEM_ADMIN}>System Admin</option>
+                    <option className="bg-slate-800 dark:bg-slate-900" value={UserRole.ENTERPRISE_ADMIN}>Enterprise Admin</option>
+                    <option className="bg-slate-800 dark:bg-slate-900" value={UserRole.SITE_ADMIN}>Site Admin</option>
+                    <option className="bg-slate-800 dark:bg-slate-900" value={UserRole.RAC_TRAINER}>RAC Trainer</option>
+                    <option className="bg-slate-800 dark:bg-slate-900" value={UserRole.USER}>User</option>
                   </select>
                   <div className="text-[10px] text-gray-500 text-center mt-1">
                     {userRole === UserRole.SYSTEM_ADMIN ? t.common.superuser : t.common.restricted}
@@ -413,11 +413,11 @@ const Layout: React.FC<LayoutProps> = ({
                     <select 
                         value={currentSiteId}
                         onChange={(e) => setCurrentSiteId(e.target.value)}
-                        className="bg-transparent text-xs font-bold text-slate-700 dark:text-slate-200 outline-none cursor-pointer"
+                        className="bg-transparent dark:bg-slate-700 text-xs font-bold text-slate-700 dark:text-slate-200 outline-none cursor-pointer"
                     >
-                        <option value="all">{t.common.enterpriseView}</option>
+                        <option className="dark:bg-slate-700" value="all">{t.common.enterpriseView}</option>
                         {sites.map(s => (
-                            <option key={s.id} value={s.id}>{s.name}</option>
+                            <option className="dark:bg-slate-700" key={s.id} value={s.id}>{s.name}</option>
                         ))}
                     </select>
                 </div>

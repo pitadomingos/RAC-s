@@ -485,7 +485,7 @@ const BookingForm: React.FC<BookingFormProps> = ({ addBookings, sessions, userRo
                       `}
                       required
                     >
-                      <option value="">-- {t.booking.chooseSession} --</option>
+                      <option className="dark:bg-slate-800" value="">-- {t.booking.chooseSession} --</option>
                       {availableSessions.map(session => {
                         const count = existingBookings.filter(b => b.sessionId === session.id).length;
                         const isFull = count >= session.capacity;
@@ -499,7 +499,7 @@ const BookingForm: React.FC<BookingFormProps> = ({ addBookings, sessions, userRo
                             <option 
                                 key={session.id} 
                                 value={session.id} 
-                                className={`${isFull ? 'text-red-500' : ''} ${isMatch ? 'bg-blue-100 font-black' : ''}`}
+                                className={`${isFull ? 'text-red-500' : 'dark:bg-slate-800'} ${isMatch ? 'bg-blue-100 font-black' : ''}`}
                             >
                             {isMatch ? '★ ' : ''}{session.racType} {displayLang} • {session.date} • {session.location} • (Cap: {count}/{session.capacity}) {isFull ? '(FULL)' : ''}
                             </option>
@@ -655,9 +655,9 @@ const BookingForm: React.FC<BookingFormProps> = ({ addBookings, sessions, userRo
                           disabled={isKnownId || isLocked}
                         >
                           {contractors.length > 0 ? (
-                              contractors.map(c => <option key={c} value={c}>{c}</option>)
+                              contractors.map(c => <option className="dark:bg-slate-800" key={c} value={c}>{c}</option>)
                           ) : (
-                              <option value="Unknown">Unknown</option>
+                              <option className="dark:bg-slate-800" value="Unknown">Unknown</option>
                           )}
                         </select>
                       </td>
@@ -670,7 +670,7 @@ const BookingForm: React.FC<BookingFormProps> = ({ addBookings, sessions, userRo
                           onChange={(e) => handleRowChange(index, 'department', e.target.value)}
                           disabled={isKnownId || isLocked}
                         >
-                          {DEPARTMENTS.map(d => <option key={d} value={d}>{d}</option>)}
+                          {DEPARTMENTS.map(d => <option className="dark:bg-slate-800" key={d} value={d}>{d}</option>)}
                         </select>
                       </td>
 
@@ -682,7 +682,7 @@ const BookingForm: React.FC<BookingFormProps> = ({ addBookings, sessions, userRo
                           onChange={(e) => handleRowChange(index, 'role', e.target.value)}
                           disabled={isKnownId || isLocked}
                         >
-                          {ROLES.map(r => <option key={r} value={r}>{r}</option>)}
+                          {ROLES.map(r => <option className="dark:bg-slate-800" key={r} value={r}>{r}</option>)}
                         </select>
                       </td>
 

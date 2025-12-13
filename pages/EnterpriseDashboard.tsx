@@ -355,10 +355,10 @@ const EnterpriseDashboard: React.FC<EnterpriseDashboardProps> = ({
                                 setSelectedTenantId(e.target.value);
                                 setSelectedContractor('All'); // Reset
                             }}
-                            className="bg-transparent text-sm font-bold outline-none cursor-pointer pr-2"
+                            className="bg-slate-900 text-sm font-bold outline-none cursor-pointer pr-2"
                         >
-                            <option value="All">{t.common.all} {t.common.tenants}</option>
-                            {companies.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                            <option className="bg-slate-900" value="All">{t.common.allTenants}</option>
+                            {companies.map(c => <option className="bg-slate-900" key={c.id} value={c.id}>{c.name}</option>)}
                         </select>
                     </div>
                 )}
@@ -369,10 +369,10 @@ const EnterpriseDashboard: React.FC<EnterpriseDashboardProps> = ({
                     <select 
                         value={selectedContractor}
                         onChange={(e) => setSelectedContractor(e.target.value)}
-                        className="bg-transparent text-sm font-bold text-slate-700 dark:text-slate-200 outline-none cursor-pointer pr-2"
+                        className="bg-transparent dark:bg-slate-700 text-sm font-bold text-slate-700 dark:text-slate-200 outline-none cursor-pointer pr-2"
                     >
-                        <option value="All">{t.common.all} {t.common.contractors}</option>
-                        {availableContractors.map(c => <option key={c} value={c}>{c}</option>)}
+                        <option className="dark:bg-slate-700" value="All">{t.common.allContractors}</option>
+                        {availableContractors.map(c => <option className="dark:bg-slate-700" key={c} value={c}>{c}</option>)}
                     </select>
                 </div>
 
@@ -382,10 +382,10 @@ const EnterpriseDashboard: React.FC<EnterpriseDashboardProps> = ({
                     <select 
                         value={selectedSiteId}
                         onChange={(e) => setSelectedSiteId(e.target.value)}
-                        className="bg-transparent text-sm font-bold text-slate-700 dark:text-slate-200 outline-none cursor-pointer pr-2"
+                        className="bg-transparent dark:bg-slate-700 text-sm font-bold text-slate-700 dark:text-slate-200 outline-none cursor-pointer pr-2"
                     >
-                        <option value="All">{t.common.all} {t.common.sites}</option>
-                        {sites.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+                        <option className="dark:bg-slate-700" value="All">{t.common.allSites}</option>
+                        {sites.map(s => <option className="dark:bg-slate-700" key={s.id} value={s.id}>{s.name}</option>)}
                     </select>
                 </div>
 
@@ -395,10 +395,10 @@ const EnterpriseDashboard: React.FC<EnterpriseDashboardProps> = ({
                     <select 
                         value={selectedDept}
                         onChange={(e) => setSelectedDept(e.target.value)}
-                        className="bg-transparent text-sm font-bold text-slate-700 dark:text-slate-200 outline-none cursor-pointer pr-2"
+                        className="bg-transparent dark:bg-slate-700 text-sm font-bold text-slate-700 dark:text-slate-200 outline-none cursor-pointer pr-2"
                     >
-                        <option value="All">{t.common.all} {t.common.depts}</option>
-                        {DEPARTMENTS.map(d => <option key={d} value={d}>{d}</option>)}
+                        <option className="dark:bg-slate-700" value="All">{t.common.allDepts}</option>
+                        {DEPARTMENTS.map(d => <option className="dark:bg-slate-700" key={d} value={d}>{d}</option>)}
                     </select>
                 </div>
             </div>

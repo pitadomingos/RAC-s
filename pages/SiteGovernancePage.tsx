@@ -231,9 +231,9 @@ const SiteGovernancePage: React.FC<SiteGovernancePageProps> = ({
                                     onChange={(e) => setSelectedSiteId(e.target.value)}
                                     className="w-full appearance-none bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 text-slate-900 dark:text-white text-sm font-bold rounded-xl py-3 pl-4 pr-10 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-600"
                                 >
-                                    <option value="" disabled>Select a site</option>
+                                    <option className="dark:bg-slate-800" value="" disabled>Select a site</option>
                                     {sites.map(site => (
-                                        <option key={site.id} value={site.id}>
+                                        <option className="dark:bg-slate-800" key={site.id} value={site.id}>
                                             {site.name} ({site.location})
                                         </option>
                                     ))}
