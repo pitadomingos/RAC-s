@@ -20,8 +20,10 @@ export interface RacDef {
 
 export interface Company {
   id: string;
-  name: string;
+  name: string; // The Enterprise Name (e.g. Vulcan)
   status: 'Active' | 'Inactive';
+  appName?: string; // Custom Branding Name
+  subContractors?: string[]; // List of companies/contractors working on site
 }
 
 export interface Site {

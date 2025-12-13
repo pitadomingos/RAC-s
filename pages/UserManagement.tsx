@@ -9,18 +9,22 @@ import ConfirmModal from '../components/ConfirmModal';
 interface UserManagementProps {
     users: User[];
     setUsers: React.Dispatch<React.SetStateAction<User[]>>;
+    contractors?: string[];
 }
 
-const UserManagement: React.FC<UserManagementProps> = ({ users, setUsers }) => {
+const UserManagement: React.FC<UserManagementProps> = ({ users, setUsers, contractors = [] }) => {
   const { t } = useLanguage();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [filterQuery, setFilterQuery] = useState('');
-  const [newUser, setNewUser] = useState<Partial<User>>({
-      name: '', email: '', role: UserRole.USER, status: 'Active', company: COMPANIES[0], jobTitle: ''
-  });
-  const [openActionId, setOpenActionId] = useState<number | null>(null);
+  
+  // Use contractors[0] as default company if available
+  const defaultCompany = contractors.length > 0 ? contractors[0] : (COMPANIES[0] || 'Unknown');
 
+  const [newUser, setNewUser] = useState<Partial<User>>({
+      name: '', email: '', role: UserRole.USER, status: 'Active', company: defaultCompany, jobTitle: ''
+  });
+  
   // Pagination State
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
@@ -51,16 +55,15 @@ const UserManagement: React.FC<UserManagementProps> = ({ users, setUsers }) => {
           email: newUser.email,
           role: newUser.role || UserRole.USER,
           status: newUser.status || 'Active',
-          company: newUser.company || 'Unknown',
+          company: newUser.company || defaultCompany,
           jobTitle: newUser.jobTitle || 'N/A'
       };
       setUsers([...users, userToAdd]);
       setIsModalOpen(false);
-      setNewUser({ name: '', email: '', role: UserRole.USER, status: 'Active', company: COMPANIES[0], jobTitle: '' });
+      setNewUser({ name: '', email: '', role: UserRole.USER, status: 'Active', company: defaultCompany, jobTitle: '' });
   };
 
   const handleDeleteUser = (id: number) => {
-      setOpenActionId(null); // Close dropdown first
       setConfirmState({
           isOpen: true,
           title: 'Delete User Account?',
@@ -292,66 +295,45 @@ const UserManagement: React.FC<UserManagementProps> = ({ users, setUsers }) => {
                 return (
                 <tr key={String(user.id)} className="hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors group">
                     <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="flex items-center">
-                        <div className={`h-10 w-10 rounded-full ${colorClass} flex items-center justify-center text-white font-bold shadow-md ring-2 ring-white dark:ring-slate-700`}>
-                        {String(user.name).charAt(0)}
+                        <div className="flex items-center">
+                            <div className={`h-10 w-10 rounded-full flex items-center justify-center text-white font-bold text-sm shadow-sm ${colorClass}`}>
+                            {user.name.charAt(0)}
+                            </div>
+                            <div className="ml-4">
+                            <div className="text-sm font-bold text-slate-900 dark:text-white">{user.name}</div>
+                            <div className="text-xs text-slate-500 dark:text-slate-400 flex items-center gap-1"><Mail size={10} /> {user.email}</div>
+                            </div>
                         </div>
-                        <div className="ml-4">
-                        <div className="text-sm font-bold text-slate-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">{String(user.name)}</div>
-                        <div className="text-xs text-slate-500 dark:text-slate-400 font-mono flex items-center gap-1 mt-0.5">
-                            <Mail size={10} />
-                            {String(user.email)}
-                        </div>
-                        </div>
-                    </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap hidden md:table-cell">
-                        <div className="text-sm font-medium text-slate-700 dark:text-slate-300">{String(user.company || '-')}</div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap hidden md:table-cell">
-                        <div className="flex items-center gap-1.5 text-sm text-slate-600 dark:text-slate-400">
+                        <div className="flex items-center gap-2">
                             <Briefcase size={14} className="text-slate-400" />
-                            {String(user.jobTitle || '-')}
+                            <span className="text-sm text-slate-700 dark:text-slate-300 font-medium">{user.company}</span>
                         </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap hidden md:table-cell">
+                        <span className="text-sm text-slate-600 dark:text-slate-400">{user.jobTitle}</span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold border ${getRoleColor(user.role)}`}>
-                        <Key size={10} />
-                        {String(user.role)}
-                    </span>
+                        <span className={`px-2 py-1 inline-flex text-[10px] leading-5 font-bold rounded-full uppercase border ${getRoleColor(user.role)}`}>
+                            {user.role}
+                        </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-center">
                         {user.status === 'Active' ? (
-                            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-green-50 text-green-600 border border-green-200 dark:bg-green-900/30 dark:text-green-400 dark:border-green-800">
+                            <span className="inline-flex items-center gap-1 text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-900/20 px-2 py-1 rounded-md text-xs font-bold border border-green-200 dark:border-green-900/50">
                                 <CheckCircle2 size={12} /> Active
                             </span>
                         ) : (
-                            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-red-50 text-red-600 border border-red-200 dark:bg-red-900/30 dark:text-red-400 dark:border-red-800">
+                            <span className="inline-flex items-center gap-1 text-slate-500 bg-slate-100 dark:bg-slate-700 px-2 py-1 rounded-md text-xs font-bold border border-slate-200 dark:border-slate-600">
                                 <XCircle size={12} /> Inactive
                             </span>
                         )}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium relative">
-                    <button 
-                        onClick={() => setOpenActionId(openActionId === user.id ? null : user.id)}
-                        className="text-slate-400 hover:text-slate-700 dark:hover:text-white p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
-                    >
-                        <MoreVertical size={18} />
-                    </button>
-                    {/* Dropdown Action Menu */}
-                    {openActionId === user.id && (
-                        <div className="absolute right-10 top-2 w-40 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-xl z-50 overflow-hidden animate-fade-in-up">
-                            <button className="w-full text-left px-4 py-3 text-xs font-bold hover:bg-slate-50 dark:hover:bg-slate-700 flex items-center gap-2 text-slate-700 dark:text-slate-300 transition-colors">
-                                <Edit size={14} /> {t.common.edit}
-                            </button>
-                            <button 
-                                onClick={() => handleDeleteUser(user.id)}
-                                className="w-full text-left px-4 py-3 text-xs font-bold hover:bg-red-50 dark:hover:bg-red-900/20 text-red-600 dark:text-red-400 flex items-center gap-2 transition-colors border-t border-slate-100 dark:border-slate-700"
-                            >
-                                <Trash2 size={14} /> {t.common.delete}
-                            </button>
-                        </div>
-                    )}
+                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                        <button onClick={() => handleDeleteUser(user.id)} className="text-slate-400 hover:text-red-600 dark:hover:text-red-400 transition-colors p-2 rounded-full hover:bg-red-50 dark:hover:bg-red-900/20">
+                            <Trash2 size={18} />
+                        </button>
                     </td>
                 </tr>
                 )})}
@@ -359,20 +341,119 @@ const UserManagement: React.FC<UserManagementProps> = ({ users, setUsers }) => {
             </table>
         </div>
 
-        {/* Footer Pagination */}
-        <div className="p-4 border-t border-slate-100 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 flex flex-col md:flex-row justify-between items-center gap-4">
-             <div className="flex items-center gap-4">
-                 <div className="text-xs font-bold text-slate-400 uppercase tracking-wider">
-                     Page {currentPage} of {Math.max(1, totalPages)} • {users.length} Total
-                 </div>
-                 
-                 <div className="flex gap-2">
-                    <button onClick={() => goToPage(currentPage - 1)} disabled={currentPage === 1} className="p-2 rounded-lg border border-slate-200 dark:border-slate-600 hover:bg-slate-100 dark:hover:bg-slate-700 disabled:opacity-50 transition-colors text-slate-600 dark:text-slate-300"><ChevronLeft size={16} /></button>
-                    <button onClick={() => goToPage(currentPage + 1)} disabled={currentPage === totalPages} className="p-2 rounded-lg border border-slate-200 dark:border-slate-600 hover:bg-slate-100 dark:hover:bg-slate-700 disabled:opacity-50 transition-colors text-slate-600 dark:text-slate-300"><ChevronRight size={16} /></button>
-                 </div>
-             </div>
+        {/* Footer */}
+        <div className="p-4 border-t border-slate-100 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 flex justify-between items-center text-xs text-slate-500 dark:text-slate-400">
+            <div>Page {currentPage} of {Math.max(1, totalPages)}</div>
+            <div className="flex gap-2">
+                <button onClick={() => goToPage(currentPage - 1)} disabled={currentPage === 1} className="p-1.5 rounded-lg border border-slate-200 dark:border-slate-600 hover:bg-white dark:hover:bg-slate-700 disabled:opacity-50 transition-colors"><ChevronLeft size={16}/></button>
+                <button onClick={() => goToPage(currentPage + 1)} disabled={currentPage === totalPages} className="p-1.5 rounded-lg border border-slate-200 dark:border-slate-600 hover:bg-white dark:hover:bg-slate-700 disabled:opacity-50 transition-colors"><ChevronRight size={16}/></button>
+            </div>
         </div>
       </div>
+
+      {/* --- ADD USER MODAL --- */}
+      {isModalOpen && (
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in">
+            <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden border border-slate-200 dark:border-slate-700">
+                <div className="px-6 py-4 border-b border-slate-100 dark:border-slate-700 flex justify-between items-center bg-slate-50 dark:bg-slate-900/50">
+                    <h3 className="font-bold text-lg text-slate-800 dark:text-white">{t.users.modal.title}</h3>
+                    <button onClick={() => setIsModalOpen(false)} className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors">
+                        <X size={20} />
+                    </button>
+                </div>
+                
+                <div className="p-6 space-y-4">
+                    <div>
+                        <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1">{t.users.modal.name}</label>
+                        <div className="relative">
+                            <input 
+                                className="w-full pl-10 pr-4 py-3 bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-xl text-sm outline-none focus:ring-2 focus:ring-green-500 text-slate-900 dark:text-white"
+                                placeholder="Full Name"
+                                value={newUser.name}
+                                onChange={e => setNewUser({...newUser, name: e.target.value})}
+                            />
+                            <Users className="absolute left-3 top-3 text-slate-400" size={18} />
+                        </div>
+                    </div>
+
+                    <div>
+                        <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1">{t.users.modal.email}</label>
+                        <div className="relative">
+                            <input 
+                                className="w-full pl-10 pr-4 py-3 bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-xl text-sm outline-none focus:ring-2 focus:ring-green-500 text-slate-900 dark:text-white"
+                                placeholder="Email Address"
+                                value={newUser.email}
+                                onChange={e => setNewUser({...newUser, email: e.target.value})}
+                            />
+                            <Mail className="absolute left-3 top-3 text-slate-400" size={18} />
+                        </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                        <div>
+                            <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1">Role</label>
+                            <div className="relative">
+                                <select 
+                                    className="w-full pl-10 pr-4 py-3 bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-xl text-sm outline-none focus:ring-2 focus:ring-green-500 text-slate-900 dark:text-white appearance-none cursor-pointer"
+                                    value={newUser.role}
+                                    onChange={e => setNewUser({...newUser, role: e.target.value as UserRole})}
+                                >
+                                    <option value={UserRole.USER}>General User</option>
+                                    <option value={UserRole.RAC_TRAINER}>RAC Trainer</option>
+                                    <option value={UserRole.SITE_ADMIN}>Site Admin</option>
+                                    <option value={UserRole.ENTERPRISE_ADMIN}>Enterprise Admin</option>
+                                    <option value={UserRole.SYSTEM_ADMIN}>System Admin</option>
+                                </select>
+                                <Lock className="absolute left-3 top-3 text-slate-400" size={18} />
+                            </div>
+                        </div>
+                        <div>
+                            <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1">Company</label>
+                            <div className="relative">
+                                <select 
+                                    className="w-full pl-10 pr-4 py-3 bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-xl text-sm outline-none focus:ring-2 focus:ring-green-500 text-slate-900 dark:text-white appearance-none cursor-pointer"
+                                    value={newUser.company}
+                                    onChange={e => setNewUser({...newUser, company: e.target.value})}
+                                >
+                                    {contractors.length > 0 ? (
+                                        contractors.map(c => <option key={c} value={c}>{c}</option>)
+                                    ) : (
+                                        <option value="Unknown">Unknown</option>
+                                    )}
+                                </select>
+                                <Briefcase className="absolute left-3 top-3 text-slate-400" size={18} />
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1">Job Title</label>
+                        <input 
+                            className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-xl text-sm outline-none focus:ring-2 focus:ring-green-500 text-slate-900 dark:text-white"
+                            placeholder="e.g. Safety Officer"
+                            value={newUser.jobTitle}
+                            onChange={e => setNewUser({...newUser, jobTitle: e.target.value})}
+                        />
+                    </div>
+                </div>
+
+                <div className="p-6 border-t border-slate-100 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 flex justify-end gap-3">
+                    <button 
+                        onClick={() => setIsModalOpen(false)}
+                        className="px-6 py-2 text-sm font-bold text-slate-500 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-lg transition-colors"
+                    >
+                        {t.common.cancel}
+                    </button>
+                    <button 
+                        onClick={handleAddUser}
+                        className="px-8 py-2 text-sm font-bold bg-green-600 hover:bg-green-500 text-white rounded-lg shadow-lg shadow-green-500/30 transition-all transform hover:-translate-y-0.5"
+                    >
+                        {t.users.modal.createUser}
+                    </button>
+                </div>
+            </div>
+        </div>
+      )}
 
       {/* --- CONFIRMATION MODAL --- */}
       <ConfirmModal 
@@ -384,94 +465,6 @@ const UserManagement: React.FC<UserManagementProps> = ({ users, setUsers }) => {
           isDestructive={confirmState.isDestructive}
           confirmText="Delete"
       />
-
-      {/* Modern Modal */}
-      {isModalOpen && (
-          <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-md z-50 flex items-center justify-center p-4 animate-fade-in">
-              <div className="bg-white dark:bg-slate-800 rounded-3xl shadow-2xl w-full max-w-lg p-0 overflow-hidden transform transition-all scale-100 border border-slate-200 dark:border-slate-700">
-                   
-                   <div className="p-6 bg-slate-50 dark:bg-slate-900/50 border-b border-slate-100 dark:border-slate-700 flex justify-between items-center">
-                       <div>
-                           <h3 className="text-xl font-black text-slate-900 dark:text-white tracking-tight">{t.users.modal.title}</h3>
-                           <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Create a new system user profile.</p>
-                       </div>
-                       <button onClick={() => setIsModalOpen(false)} className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-2 rounded-full hover:bg-white dark:hover:bg-slate-700 transition-colors">
-                           <X size={20} />
-                       </button>
-                   </div>
-
-                   <div className="p-8 space-y-5">
-                       <div>
-                           <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2 block ml-1">{t.users.modal.name}</label>
-                           <input 
-                             className="w-full bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-xl p-3 text-sm font-semibold focus:ring-2 focus:ring-green-500 outline-none text-slate-900 dark:text-white transition-all" 
-                             value={String(newUser.name)}
-                             onChange={e => setNewUser({...newUser, name: e.target.value})}
-                             placeholder="Full Name"
-                           />
-                       </div>
-                       
-                       <div>
-                           <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2 block ml-1">{t.users.modal.email}</label>
-                           <input 
-                             className="w-full bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-xl p-3 text-sm font-semibold focus:ring-2 focus:ring-green-500 outline-none text-slate-900 dark:text-white transition-all" 
-                             value={String(newUser.email)}
-                             onChange={e => setNewUser({...newUser, email: e.target.value})}
-                             placeholder="email@example.com"
-                           />
-                       </div>
-
-                       <div className="grid grid-cols-2 gap-5">
-                           <div>
-                               <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2 block ml-1">{t.common.company}</label>
-                               <select 
-                                   className="w-full bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-xl p-3 text-sm font-medium focus:ring-2 focus:ring-green-500 outline-none text-slate-900 dark:text-white appearance-none"
-                                   value={String(newUser.company)}
-                                   onChange={e => setNewUser({...newUser, company: e.target.value})}
-                               >
-                                   {COMPANIES.map(c => <option key={c} value={c}>{c}</option>)}
-                               </select>
-                           </div>
-                           <div>
-                               <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2 block ml-1">{t.common.role}</label>
-                               <select 
-                                    className="w-full bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-xl p-3 text-sm font-medium focus:ring-2 focus:ring-green-500 outline-none text-slate-900 dark:text-white appearance-none"
-                                    value={String(newUser.role)}
-                                    onChange={e => setNewUser({...newUser, role: e.target.value as UserRole})}
-                                >
-                                    {Object.values(UserRole).map(r => <option key={String(r)} value={String(r)}>{String(r)}</option>)}
-                                </select>
-                           </div>
-                       </div>
-                       
-                       <div>
-                           <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2 block ml-1">{t.common.jobTitle}</label>
-                           <input 
-                                className="w-full bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-xl p-3 text-sm font-semibold focus:ring-2 focus:ring-green-500 outline-none text-slate-900 dark:text-white transition-all"
-                                value={String(newUser.jobTitle)}
-                                onChange={e => setNewUser({...newUser, jobTitle: e.target.value})}
-                                placeholder="e.g. Safety Officer"
-                            />
-                       </div>
-                   </div>
-
-                   <div className="p-6 bg-slate-50 dark:bg-slate-900/50 border-t border-slate-100 dark:border-slate-700 flex justify-end gap-3">
-                       <button 
-                            onClick={() => setIsModalOpen(false)}
-                            className="px-6 py-3 text-sm text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-xl font-bold transition-colors"
-                        >
-                            Cancel
-                        </button>
-                       <button 
-                            onClick={handleAddUser} 
-                            className="px-8 py-3 text-sm bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-500 hover:to-emerald-500 text-white rounded-xl font-bold shadow-lg shadow-green-500/30 flex items-center gap-2 transition-all transform hover:-translate-y-0.5"
-                        >
-                           <Plus size={18} /> {t.users.modal.createUser}
-                       </button>
-                   </div>
-              </div>
-          </div>
-      )}
     </div>
   );
 };

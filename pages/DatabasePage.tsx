@@ -1,7 +1,7 @@
 
 import React, { useState, useMemo, useEffect } from 'react';
 import { Booking, BookingStatus, EmployeeRequirement, Employee, TrainingSession, RacDef } from '../types';
-import { COMPANIES, OPS_KEYS, PERMISSION_KEYS, DEPARTMENTS } from '../constants';
+import { OPS_KEYS, PERMISSION_KEYS, DEPARTMENTS } from '../constants';
 import { Search, CheckCircle, XCircle, Edit, ChevronLeft, ChevronRight, Download, X, Trash2, QrCode, Printer, Phone, AlertTriangle, Loader2, Archive, Filter } from 'lucide-react';
 import { useLanguage } from '../contexts/LanguageContext';
 import JSZip from 'jszip';
@@ -15,9 +15,10 @@ interface DatabasePageProps {
   onUpdateEmployee: (id: string, updates: Partial<Employee>) => void;
   onDeleteEmployee: (id: string) => void;
   racDefinitions: RacDef[];
+  contractors?: string[];
 }
 
-const DatabasePage: React.FC<DatabasePageProps> = ({ bookings, requirements, updateRequirements, sessions, onUpdateEmployee, onDeleteEmployee, racDefinitions }) => {
+const DatabasePage: React.FC<DatabasePageProps> = ({ bookings, requirements, updateRequirements, sessions, onUpdateEmployee, onDeleteEmployee, racDefinitions, contractors = [] }) => {
   const { t } = useLanguage();
   
   // -- State --
@@ -444,7 +445,7 @@ const DatabasePage: React.FC<DatabasePageProps> = ({ bookings, requirements, upd
                         className="pl-3 pr-8 py-1.5 border border-gray-300 dark:border-slate-600 dark:bg-slate-700 text-black dark:text-white rounded-md text-xs font-medium outline-none focus:ring-yellow-500 focus:border-yellow-500 cursor-pointer appearance-none hover:bg-white dark:hover:bg-slate-600 transition-colors"
                      >
                         <option value="All">All Companies</option>
-                        {COMPANIES.map(c => <option key={c} value={c}>{c}</option>)}
+                        {contractors.map(c => <option key={c} value={c}>{c}</option>)}
                      </select>
                      <Filter size={12} className="absolute right-2.5 top-2.5 text-gray-400 pointer-events-none" />
                  </div>
@@ -666,7 +667,11 @@ const DatabasePage: React.FC<DatabasePageProps> = ({ bookings, requirements, upd
                         <div className="flex gap-2">
                             <input className="flex-1 border rounded p-2 text-black" value={editingEmployee.recordId} onChange={e => setEditingEmployee({...editingEmployee, recordId: e.target.value})} placeholder="ID" />
                             <select className="flex-1 border rounded p-2 text-black" value={editingEmployee.company} onChange={e => setEditingEmployee({...editingEmployee, company: e.target.value})}>
-                                {COMPANIES.map(c => <option key={c} value={c}>{c}</option>)}
+                                {contractors.length > 0 ? (
+                                    contractors.map(c => <option key={c} value={c}>{c}</option>)
+                                ) : (
+                                    <option value="Unknown">Unknown</option>
+                                )}
                             </select>
                         </div>
                         <div className="border-t pt-2 mt-2">

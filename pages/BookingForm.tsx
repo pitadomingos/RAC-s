@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { Employee, BookingStatus, Booking, UserRole, TrainingSession, SystemNotification, EmployeeRequirement } from '../types';
-import { COMPANIES, DEPARTMENTS, ROLES } from '../constants';
+import { DEPARTMENTS, ROLES } from '../constants';
 import { Plus, Trash2, Save, Settings, ShieldCheck, Calendar, UserPlus, FileSignature, CheckCircle2, AlertCircle, Search, UserCheck, RefreshCw, Lock, Layers } from 'lucide-react';
 import { v4 as uuidv4 } from 'uuid';
 import { useNavigate, useLocation } from 'react-router-dom';
@@ -17,6 +17,7 @@ interface BookingFormProps {
   addNotification?: (notification: SystemNotification) => void; 
   currentEmployeeId?: string; // Passed from App.tsx
   requirements?: EmployeeRequirement[]; // Added requirements prop
+  contractors?: string[]; // Dynamic List from App
 }
 
 interface RenewalBatch {
@@ -24,7 +25,7 @@ interface RenewalBatch {
     employees: Employee[];
 }
 
-const BookingForm: React.FC<BookingFormProps> = ({ addBookings, sessions, userRole, existingBookings = [], addNotification, currentEmployeeId, requirements = [] }) => {
+const BookingForm: React.FC<BookingFormProps> = ({ addBookings, sessions, userRole, existingBookings = [], addNotification, currentEmployeeId, requirements = [], contractors = [] }) => {
   const navigate = useNavigate();
   const location = useLocation();
   const { t } = useLanguage();
@@ -41,7 +42,7 @@ const BookingForm: React.FC<BookingFormProps> = ({ addBookings, sessions, userRo
     id: uuidv4(),
     name: '',
     recordId: '',
-    company: COMPANIES[0],
+    company: contractors[0] || 'Unknown',
     department: DEPARTMENTS[0],
     role: ROLES[0],
     driverLicenseNumber: '',
@@ -84,9 +85,6 @@ const BookingForm: React.FC<BookingFormProps> = ({ addBookings, sessions, userRo
       }
 
       // 2. ADMIN/MANAGER VIEW: Full visibility of all sessions
-      // System Admins, RAC Admins, and Dept Admins can see the entire schedule.
-      // Note: The 'handleSubmit' validation will still prevent them from booking 
-      // an unmapped employee, but they can view and select any session here.
       return sessions;
   }, [sessions, isSelfService, currentEmployeeId, requirements]);
 
@@ -164,7 +162,7 @@ const BookingForm: React.FC<BookingFormProps> = ({ addBookings, sessions, userRo
       id: uuidv4(),
       name: '',
       recordId: '',
-      company: COMPANIES[0],
+      company: contractors[0] || 'Unknown',
       department: DEPARTMENTS[0],
       role: ROLES[0],
       driverLicenseNumber: '',
@@ -652,7 +650,11 @@ const BookingForm: React.FC<BookingFormProps> = ({ addBookings, sessions, userRo
                           onChange={(e) => handleRowChange(index, 'company', e.target.value)}
                           disabled={isKnownId || isLocked}
                         >
-                          {COMPANIES.map(c => <option key={c} value={c}>{c}</option>)}
+                          {contractors.length > 0 ? (
+                              contractors.map(c => <option key={c} value={c}>{c}</option>)
+                          ) : (
+                              <option value="Unknown">Unknown</option>
+                          )}
                         </select>
                       </td>
 

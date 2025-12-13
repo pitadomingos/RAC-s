@@ -51,6 +51,7 @@ interface LayoutProps {
   sites?: Site[];
   currentSiteId?: string;
   setCurrentSiteId?: (id: string) => void;
+  appName?: string; // NEW: Dynamic App Name for Branding
 }
 
 const Layout: React.FC<LayoutProps> = ({ 
@@ -61,7 +62,8 @@ const Layout: React.FC<LayoutProps> = ({
   clearNotifications,
   sites = [],
   currentSiteId = 'all',
-  setCurrentSiteId
+  setCurrentSiteId,
+  appName = 'CARS Manager' // Default fallback
 }) => {
   const [isSidebarOpen, setSidebarOpen] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(false);
@@ -73,6 +75,11 @@ const Layout: React.FC<LayoutProps> = ({
   const { theme, setTheme } = useTheme();
 
   const unreadCount = notifications.filter(n => !n.isRead).length;
+
+  // Update Document Title based on App Name
+  useEffect(() => {
+      document.title = appName;
+  }, [appName]);
 
   // Safety check for translations
   if (!t || !t.nav) {
@@ -202,7 +209,7 @@ const Layout: React.FC<LayoutProps> = ({
       path: '/settings', 
       label: t.nav.settings, 
       icon: Settings, 
-      visible: userRole === UserRole.SYSTEM_ADMIN
+      visible: [UserRole.SYSTEM_ADMIN, UserRole.ENTERPRISE_ADMIN].includes(userRole)
     },
     { 
       path: '/request-cards', 
@@ -245,7 +252,7 @@ const Layout: React.FC<LayoutProps> = ({
   const navItems = allNavItems.filter(item => item.visible);
 
   const currentNavItem = navItems.find(i => i.path === location.pathname);
-  let pageTitle = String(t.common.vulcan);
+  let pageTitle = appName; // Default title to App Name
   if (currentNavItem && currentNavItem.label) {
     pageTitle = String(currentNavItem.label);
   } else if (location.pathname === '/proposal') {
@@ -271,9 +278,9 @@ const Layout: React.FC<LayoutProps> = ({
       >
         {/* Header */}
         <div className={`flex items-center h-16 border-b border-slate-700 dark:border-slate-800 ${isCollapsed ? 'justify-center p-0' : 'justify-between p-4'}`}>
-          <div className="flex items-center space-x-2">
-            <ShieldCheck className={`${isCollapsed ? 'w-8 h-8' : 'w-8 h-8'} text-yellow-500`} />
-            {!isCollapsed && <span className="text-xl font-bold tracking-wider">{t.common.vulcan}</span>}
+          <div className="flex items-center space-x-2 overflow-hidden">
+            <ShieldCheck className={`${isCollapsed ? 'w-8 h-8' : 'w-8 h-8'} text-yellow-500 flex-shrink-0`} />
+            {!isCollapsed && <span className="text-lg font-bold tracking-wider truncate" title={appName}>{appName}</span>}
           </div>
           <button onClick={() => setSidebarOpen(false)} className="md:hidden text-gray-400 hover:text-white">
             <X size={24} />

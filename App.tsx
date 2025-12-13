@@ -40,10 +40,24 @@ const App: React.FC = () => {
   const [notifications, setNotifications] = useState<SystemNotification[]>([]);
   
   // -- Multi-Tenancy State --
+  // Note: subContractors array allows the Enterprise (Vulcan) to manage its list of accepted companies.
   const [companies, setCompanies] = useState<Company[]>([
-      { id: 'c1', name: 'Vulcan Mining', status: 'Active' },
-      { id: 'c2', name: 'Global Logistics', status: 'Active' }
+      { 
+        id: 'c1', 
+        name: 'Vulcan', // Enterprise Name
+        status: 'Active', 
+        appName: 'CARS Manager',
+        subContractors: ['Vulcan Mining', 'Global Logistics', 'Safety First Contractors', 'Elite Security'] 
+      },
+      { 
+        id: 'c2', 
+        name: 'Global Logistics', 
+        status: 'Active', 
+        appName: 'SafetyTrack',
+        subContractors: ['Global Logistics', 'Fast Haul'] 
+      }
   ]);
+  
   const [sites, setSites] = useState<Site[]>([
       { id: 's1', companyId: 'c1', name: 'Moatize Mine', location: 'Tete', mandatoryRacs: ['RAC01', 'RAC02'] },
       { id: 's2', companyId: 'c1', name: 'Maputo HQ', location: 'Maputo', mandatoryRacs: ['RAC01'] },
@@ -55,6 +69,28 @@ const App: React.FC = () => {
 
   // Simulated logged-in user for self-service
   const currentEmployeeId = 'emp-1';
+
+  // Branding Logic & Contractor List
+  const { currentAppName, currentContractors } = useMemo(() => {
+      // Logic: Find the active Enterprise based on Role or context.
+      // For this demo, non-System Admins default to "Vulcan" (c1).
+      let activeEnt = companies.find(c => c.id === 'c1');
+      
+      if (userRole === UserRole.SYSTEM_ADMIN) {
+          // System Admin sees default app name, and ALL possible contractors combined for now
+          // (In a real app, SysAdmin would switch contexts)
+          return {
+              currentAppName: 'CARS Manager',
+              currentContractors: Array.from(new Set(companies.flatMap(c => c.subContractors || [])))
+          };
+      } else {
+          // Enterprise Admin / User view
+          return {
+              currentAppName: activeEnt?.appName || 'CARS Manager',
+              currentContractors: activeEnt?.subContractors || COMPANIES // Fallback to constant
+          };
+      }
+  }, [userRole, companies]);
 
   // Data
   // Assign initial data to a site for demo purposes (default s1)
@@ -76,8 +112,8 @@ const App: React.FC = () => {
   
   // Users
   const [users, setUsers] = useState<User[]>([
-    { id: 1, name: 'System Admin', email: 'admin@vulcan.com', role: UserRole.SYSTEM_ADMIN, status: 'Active', company: 'Vulcan Mining' },
-    { id: 2, name: 'John Doe', email: 'john@vulcan.com', role: UserRole.RAC_TRAINER, status: 'Active', company: 'Vulcan Mining' },
+    { id: 1, name: 'System Admin', email: 'admin@vulcan.com', role: UserRole.SYSTEM_ADMIN, status: 'Active', company: 'Vulcan' },
+    { id: 2, name: 'John Doe', email: 'john@vulcan.com', role: UserRole.RAC_TRAINER, status: 'Active', company: 'Vulcan' },
   ]);
 
   // Bookings & Employees (Mock Data)
@@ -98,11 +134,15 @@ const App: React.FC = () => {
         for (let i = 1; i <= 8; i++) {
             const empId = `emp-${i}`;
             const siteId = i % 2 === 0 ? 's1' : 's2'; // Distribute across sites
+            
+            // Assign Sub-contractors from the constant list for initial seed
+            const assignedCompany = COMPANIES[i % COMPANIES.length];
+
             const employee: Employee = {
                 id: empId,
                 name: `Safe Worker ${i}`,
                 recordId: `VUL-${1000 + i}`,
-                company: COMPANIES[i % COMPANIES.length],
+                company: assignedCompany,
                 department: DEPARTMENTS[i % DEPARTMENTS.length],
                 role: ROLES[i % ROLES.length],
                 driverLicenseNumber: `DL-${202400 + i}`,
@@ -506,13 +546,14 @@ const App: React.FC = () => {
         sites={sites}
         currentSiteId={currentSiteId}
         setCurrentSiteId={setCurrentSiteId}
+        appName={currentAppName} // PASS DYNAMIC NAME HERE
       >
         <Suspense fallback={<div className="flex items-center justify-center h-full text-slate-500">Loading...</div>}>
             <Routes>
               {/* Enterprise Specific Routes */}
               <Route path="/enterprise-dashboard" element={
                   [UserRole.SYSTEM_ADMIN, UserRole.ENTERPRISE_ADMIN].includes(userRole) 
-                  ? <EnterpriseDashboard sites={sites} bookings={bookings} requirements={requirements} userRole={userRole} /> 
+                  ? <EnterpriseDashboard sites={sites} bookings={bookings} requirements={requirements} userRole={userRole} contractors={currentContractors} /> 
                   : <Navigate to="/" replace />
               } />
               
@@ -535,21 +576,21 @@ const App: React.FC = () => {
                     ? <Navigate to="/manuals" replace /> 
                     : (userRole === UserRole.ENTERPRISE_ADMIN || userRole === UserRole.SYSTEM_ADMIN)
                       ? <Navigate to="/enterprise-dashboard" replace />
-                      : <Dashboard bookings={filteredBookings} requirements={filteredRequirements} sessions={filteredSessions} userRole={userRole} onApproveAutoBooking={onApproveAutoBooking} onRejectAutoBooking={onRejectAutoBooking} racDefinitions={racDefinitions} />
+                      : <Dashboard bookings={filteredBookings} requirements={filteredRequirements} sessions={filteredSessions} userRole={userRole} onApproveAutoBooking={onApproveAutoBooking} onRejectAutoBooking={onRejectAutoBooking} racDefinitions={racDefinitions} contractors={currentContractors} />
               } />
               
               {/* Database is RESTRICTED for General User and RAC Trainer */}
               <Route path="/database" element={
                   (userRole === UserRole.USER || userRole === UserRole.RAC_TRAINER)
                     ? <Navigate to="/manuals" replace />
-                    : <DatabasePage bookings={filteredBookings} requirements={filteredRequirements} updateRequirements={updateRequirements} sessions={filteredSessions} onUpdateEmployee={onUpdateEmployee} onDeleteEmployee={onDeleteEmployee} racDefinitions={racDefinitions} />
+                    : <DatabasePage bookings={filteredBookings} requirements={filteredRequirements} updateRequirements={updateRequirements} sessions={filteredSessions} onUpdateEmployee={onUpdateEmployee} onDeleteEmployee={onDeleteEmployee} racDefinitions={racDefinitions} contractors={currentContractors} />
               } />
               
               {/* Reports is RESTRICTED for RAC Trainer */}
               <Route path="/reports" element={authorizedRoles.includes(userRole) ? <ReportsPage bookings={filteredBookings} sessions={filteredSessions} /> : <Navigate to="/" replace />} />
               
               {/* Booking is RESTRICTED for RAC Trainer and Enterprise Admin */}
-              <Route path="/booking" element={userRole === UserRole.RAC_TRAINER || userRole === UserRole.ENTERPRISE_ADMIN ? <Navigate to="/" replace /> : <BookingForm addBookings={addBookings} sessions={filteredSessions} userRole={userRole} existingBookings={filteredBookings} addNotification={addNotification} currentEmployeeId={currentEmployeeId} requirements={filteredRequirements} />} />
+              <Route path="/booking" element={userRole === UserRole.RAC_TRAINER || userRole === UserRole.ENTERPRISE_ADMIN ? <Navigate to="/" replace /> : <BookingForm addBookings={addBookings} sessions={filteredSessions} userRole={userRole} existingBookings={filteredBookings} addNotification={addNotification} currentEmployeeId={currentEmployeeId} requirements={filteredRequirements} contractors={currentContractors} />} />
               
               <Route path="/trainer-input" element={
                   authorizedRoles.includes(userRole) && userRole !== UserRole.ENTERPRISE_ADMIN 
@@ -576,11 +617,11 @@ const App: React.FC = () => {
               
               <Route path="/print-cards" element={authorizedRoles.concat(UserRole.USER).includes(userRole) && userRole !== UserRole.ENTERPRISE_ADMIN ? <CardsPage bookings={filteredBookings} requirements={filteredRequirements} racDefinitions={racDefinitions} sessions={filteredSessions} userRole={userRole} /> : <Navigate to="/" replace />} />
               
-              <Route path="/users" element={userRole === UserRole.SYSTEM_ADMIN ? <UserManagement users={users} setUsers={setUsers} /> : <Navigate to="/" replace />} />
+              <Route path="/users" element={userRole === UserRole.SYSTEM_ADMIN ? <UserManagement users={users} setUsers={setUsers} contractors={currentContractors} /> : <Navigate to="/" replace />} />
               <Route path="/schedule" element={[UserRole.SYSTEM_ADMIN, UserRole.SITE_ADMIN].includes(userRole) ? <ScheduleTraining sessions={sessions} setSessions={setSessions} rooms={rooms} trainers={trainers} /> : <Navigate to="/" replace />} />
               
               {/* Settings now manages Sites/Companies too. Restricted to System Admin as requested for "System Settings". */}
-              <Route path="/settings" element={userRole === UserRole.SYSTEM_ADMIN ? 
+              <Route path="/settings" element={[UserRole.SYSTEM_ADMIN, UserRole.ENTERPRISE_ADMIN].includes(userRole) ? 
                 <SettingsPage 
                   racDefinitions={racDefinitions} 
                   onUpdateRacs={handleUpdateRacDefinitions} 
@@ -595,6 +636,7 @@ const App: React.FC = () => {
                   userRole={userRole}
                   users={users}
                   onUpdateUsers={setUsers}
+                  contractors={currentContractors}
                 /> : <Navigate to="/" replace />} 
               />
               

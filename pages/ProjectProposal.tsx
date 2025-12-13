@@ -18,7 +18,7 @@ const PresentationPage: React.FC = () => {
   const [isFullscreen, setIsFullscreen] = useState(false);
 
   // Safety check to ensure nested properties exist before accessing them
-  if (!t || !t.proposal || !t.proposal.aboutMe || !t.proposal.objectives) {
+  if (!t || !t.proposal || !t.proposal.aboutMe || !t.proposal.objectives || !t.proposal.scenario) {
       return (
           <div className="p-8 text-white bg-slate-900 h-screen flex items-center justify-center">
               <div className="text-center">
@@ -33,7 +33,7 @@ const PresentationPage: React.FC = () => {
   const slides = [
     { id: 'title', type: 'title' },
     { id: 'aboutMe', type: 'aboutMe', title: t.proposal.aboutMe.title },
-    { id: 'scenario', type: 'scenario', title: 'Real World Scenario' },
+    { id: 'scenario', type: 'scenario', title: t.proposal.scenario.title },
     { id: 'summary', type: 'content', title: t.proposal.execSummary.title },
     { id: 'objectives', type: 'objectives', title: t.proposal.objectives.title },
     { id: 'organogram', type: 'organogram', title: t.proposal.organogram.title },
@@ -115,7 +115,7 @@ const PresentationPage: React.FC = () => {
               <div className="p-5 bg-orange-500/10 rounded-3xl border border-orange-500/30 backdrop-blur-md shadow-[0_0_50px_rgba(249,115,22,0.2)]">
                   <Play size={48} className="text-orange-500" />
               </div>
-              <h2 className="text-4xl md:text-6xl font-bold text-white tracking-tight">Zero-Downtime Workflow</h2>
+              <h2 className="text-4xl md:text-6xl font-bold text-white tracking-tight">{t.proposal.scenario.workflowTitle}</h2>
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
@@ -127,10 +127,9 @@ const PresentationPage: React.FC = () => {
                       <div className="absolute -left-4 top-1/2 -translate-y-1/2 w-8 h-8 bg-slate-900 border-2 border-red-500 rounded-full flex items-center justify-center z-10 shadow-[0_0_15px_rgba(239,68,68,0.5)]">
                           <AlertTriangle size={14} className="text-red-500" />
                       </div>
-                      <h3 className="text-2xl font-bold text-red-400 mb-3 group-hover:text-red-300 transition-colors">The Risk</h3>
+                      <h3 className="text-2xl font-bold text-red-400 mb-3 group-hover:text-red-300 transition-colors">{t.proposal.scenario.riskTitle}</h3>
                       <p className="text-lg text-slate-300 leading-relaxed">
-                          Operator <strong>Paulo Manjate</strong> has a Critical RAC 02 certification expiring in <strong className="text-white bg-red-500/20 px-2 py-0.5 rounded border border-red-500/30">3 days</strong>.
-                          Access denial is imminent.
+                          {t.proposal.scenario.riskText}
                       </p>
                   </div>
 
@@ -138,12 +137,10 @@ const PresentationPage: React.FC = () => {
                       <div className="absolute -left-4 top-1/2 -translate-y-1/2 w-8 h-8 bg-slate-900 border-2 border-green-500 rounded-full flex items-center justify-center z-10 shadow-[0_0_15px_rgba(34,197,94,0.5)]">
                           <Zap size={14} className="text-green-500" />
                       </div>
-                      <h3 className="text-2xl font-bold text-green-400 mb-3 group-hover:text-green-300 transition-colors">The Auto-Fix</h3>
+                      <h3 className="text-2xl font-bold text-green-400 mb-3 group-hover:text-green-300 transition-colors">{t.proposal.scenario.autoFixTitle}</h3>
                       <p className="text-lg text-slate-300 leading-relaxed">
-                          System detects risk &lt; 7 Days.
-                          <br/>
-                          Automatically <strong className="text-green-400">reserves a seat</strong> in the next available session (Tomorrow). 
-                          <span className="block mt-2 text-sm text-slate-500 font-mono">// No human intervention required.</span>
+                          {t.proposal.scenario.autoFixText}
+                          <span className="block mt-2 text-sm text-slate-500 font-mono">{t.proposal.scenario.autoFixNote}</span>
                       </p>
                   </div>
               </div>
@@ -155,15 +152,15 @@ const PresentationPage: React.FC = () => {
                       <div className="w-32 h-32 bg-blue-600 rounded-full flex items-center justify-center mb-8 shadow-[0_0_60px_rgba(37,99,235,0.4)] animate-pulse">
                           <CalendarClock size={64} className="text-white" />
                       </div>
-                      <h3 className="text-3xl font-black text-white mb-4">Live Demo</h3>
+                      <h3 className="text-3xl font-black text-white mb-4">{t.proposal.scenario.demoTitle}</h3>
                       <p className="text-slate-400 mb-10 text-lg max-w-md">
-                          Check the Dashboard. You should see a <span className="text-orange-400 font-bold">Pending Action</span> alert for Paulo Manjate.
+                          {t.proposal.scenario.demoText}
                       </p>
                       <button 
                         onClick={() => navigate('/')}
                         className="group relative inline-flex items-center gap-3 px-8 py-4 bg-white text-slate-950 rounded-xl font-bold text-lg overflow-hidden shadow-lg hover:shadow-white/20 transition-all"
                       >
-                          <span className="relative z-10">Go to Dashboard</span>
+                          <span className="relative z-10">{t.proposal.scenario.demoButton}</span>
                           <ChevronRight size={20} className="relative z-10 group-hover:translate-x-1 transition-transform"/>
                           <div className="absolute inset-0 bg-blue-200 transform scale-x-0 group-hover:scale-x-100 transition-transform origin-left"></div>
                       </button>
@@ -671,53 +668,51 @@ const PresentationPage: React.FC = () => {
         </div>
 
         {/* Navigation Bar - Glassmorphism Dock */}
-        <div className="fixed bottom-8 left-1/2 -translate-x-1/2 h-20 bg-white/5 backdrop-blur-xl border border-white/10 rounded-full flex items-center px-4 shadow-2xl z-50 ring-1 ring-white/5 transition-all hover:bg-white/10">
+        <div className="fixed bottom-8 left-1/2 -translate-x-1/2 h-16 bg-white/5 backdrop-blur-xl border border-white/10 rounded-full flex items-center px-2 shadow-2xl z-50 ring-1 ring-white/5 transition-all hover:bg-white/10">
             <button 
                 onClick={prevSlide}
                 disabled={currentSlide === 0}
-                className="w-14 h-14 rounded-full flex items-center justify-center hover:bg-white/10 disabled:opacity-30 text-white transition-all active:scale-90"
+                className="w-12 h-12 rounded-full flex items-center justify-center hover:bg-white/10 disabled:opacity-30 text-white transition-all active:scale-90"
             >
-                <ChevronLeft size={32} />
+                <ChevronLeft size={24} />
             </button>
             
-            <div className="px-8 flex flex-col items-center min-w-[180px]">
-                <span className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Slide</span>
-                <div className="flex items-center gap-3">
-                    <span className="text-2xl font-mono font-bold text-white leading-none">
-                        {currentSlide + 1} <span className="text-slate-600">/</span> {slides.length}
-                    </span>
-                </div>
+            <div className="px-6 flex flex-col items-center min-w-[120px]">
+                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Slide</span>
+                <span className="text-lg font-mono font-bold text-white leading-none">
+                    {currentSlide + 1} <span className="text-slate-600">/</span> {slides.length}
+                </span>
             </div>
 
             <button 
                 onClick={nextSlide}
                 disabled={currentSlide === slides.length - 1}
-                className="w-14 h-14 rounded-full flex items-center justify-center hover:bg-white/10 disabled:opacity-30 text-white transition-all active:scale-90"
+                className="w-12 h-12 rounded-full flex items-center justify-center hover:bg-white/10 disabled:opacity-30 text-white transition-all active:scale-90"
             >
-                <ChevronRight size={32} />
+                <ChevronRight size={24} />
             </button>
 
-            <div className="w-px h-10 bg-white/10 mx-4"></div>
+            <div className="w-px h-8 bg-white/10 mx-2"></div>
 
             <button 
                 onClick={toggleFullScreen}
-                className="w-14 h-14 rounded-full flex items-center justify-center hover:bg-white/10 text-slate-400 hover:text-white transition-all"
+                className="w-12 h-12 rounded-full flex items-center justify-center hover:bg-white/10 text-slate-400 hover:text-white transition-all"
                 title="Fullscreen"
             >
-                {isFullscreen ? <Minimize size={24} /> : <Maximize size={24} />}
+                {isFullscreen ? <Minimize size={20} /> : <Maximize size={20} />}
             </button>
 
             <button 
                 onClick={() => navigate('/')}
-                className="w-14 h-14 rounded-full flex items-center justify-center hover:bg-red-500/20 text-red-400 hover:text-red-500 transition-all ml-2"
+                className="w-12 h-12 rounded-full flex items-center justify-center hover:bg-red-500/20 text-red-400 hover:text-red-500 transition-all ml-1"
                 title="Exit Presentation"
             >
-                <X size={24} />
+                <X size={20} />
             </button>
         </div>
         
         {/* Progress Bar Top */}
-        <div className="fixed top-0 left-0 h-1.5 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 transition-all duration-500 ease-out z-50 shadow-[0_0_20px_rgba(59,130,246,0.5)]" style={{ width: `${((currentSlide + 1) / slides.length) * 100}%` }}></div>
+        <div className="fixed top-0 left-0 h-1 bg-gradient-to-r from-blue-500 to-purple-500 transition-all duration-500 ease-out z-50 shadow-[0_0_10px_rgba(59,130,246,0.5)]" style={{ width: `${((currentSlide + 1) / slides.length) * 100}%` }}></div>
     </div>
   );
 };

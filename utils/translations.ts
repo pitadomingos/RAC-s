@@ -157,7 +157,15 @@ export const translations = {
         governanceTitle: 'Site Governance',
         governanceSubtitle: 'Define mandatory safety training policies per location.',
         pushPolicy: 'Save & Push Policy',
-        policyApplied: 'Policy Applied'
+        policyApplied: 'Policy Applied',
+        deptHeatmap: 'Department Risk Heatmap',
+        tenantMatrix: 'Tenant Performance Matrix',
+        systemView: 'SYSTEM VIEW',
+        bottlenecks: 'Training Bottlenecks',
+        noBottlenecks: 'No bottlenecks detected.',
+        clickToGen: 'Click generate to receive',
+        safetyIntel: 'enterprise-level safety intelligence.',
+        multiTenantDiag: 'multi-tenant safety diagnostics.'
     },
     database: {
       title: 'Master Employee Database',
@@ -292,6 +300,7 @@ export const translations = {
           s3Desc: 'Reduced admin time by 85% via batch processing and auto-booking.'
         },
         formulaTitle: 'The Compliance Formula',
+        formulaDesc: 'The system strictly enforces an AND logic gate. If any single variable (Status, ASO Date, or any required RAC Training) is missing or expired, the result defaults to BLOCKED.',
         formulaLogic: {
           active: 'Active Status',
           aso: 'Valid ASO',
@@ -375,6 +384,18 @@ export const translations = {
         role: 'Full Stack Developer',
         cert: 'Certified Solutions Architect',
         bio: 'Specializing in enterprise-grade safety systems and digital transformation for the mining sector. Focused on zero-downtime compliance architectures.'
+      },
+      scenario: {
+        title: 'Real World Scenario',
+        workflowTitle: 'Zero-Downtime Workflow',
+        riskTitle: 'The Risk',
+        riskText: 'Operator Paulo Manjate has a Critical RAC 02 certification expiring in 3 days. Access denial is imminent.',
+        autoFixTitle: 'The Auto-Fix',
+        autoFixText: 'System detects risk < 7 Days. Automatically reserves a seat in the next available session (Tomorrow).',
+        autoFixNote: '// No human intervention required.',
+        demoTitle: 'Live Demo',
+        demoText: 'Check the Dashboard. You should see a Pending Action alert for Paulo Manjate.',
+        demoButton: 'Go to Dashboard'
       },
       execSummary: {
         title: 'Executive Summary',
@@ -611,9 +632,16 @@ export const translations = {
         governanceTitle: 'Governança do Site',
         governanceSubtitle: 'Defina políticas de treinamento obrigatórias por local.',
         pushPolicy: 'Salvar e Aplicar Política',
-        policyApplied: 'Política Aplicada'
+        policyApplied: 'Política Aplicada',
+        deptHeatmap: 'Mapa de Calor de Risco por Dept',
+        tenantMatrix: 'Matriz de Desempenho de Inquilinos',
+        systemView: 'VISÃO DO SISTEMA',
+        bottlenecks: 'Gargalos de Treinamento',
+        noBottlenecks: 'Nenhum gargalo detectado.',
+        clickToGen: 'Clique em gerar para receber',
+        safetyIntel: 'inteligência de segurança.',
+        multiTenantDiag: 'diagnósticos de segurança multi-inquilino.'
     },
-    // ... database ...
     database: {
       title: 'Banco de Dados Mestre',
       subtitle: 'Gerenciar requisitos. RAC 02 é auto-desativado se a Carta estiver expirada.',
@@ -647,7 +675,6 @@ export const translations = {
           EXEC: 'Exec'
       }
     },
-    // ... booking ...
     booking: {
       title: 'Agendar Sessão',
       secureMode: 'Modo de Entrada Segura',
@@ -749,6 +776,7 @@ export const translations = {
           s3Desc: 'Redução de 85% no tempo administrativo via processamento em lote e auto-agendamento.'
         },
         formulaTitle: 'A Fórmula de Conformidade',
+        formulaDesc: 'O sistema aplica estritamente uma porta lógica E. Se qualquer variável (Status, Data ASO, ou qualquer Treinamento RAC exigido) estiver faltando ou expirado, o resultado padrão é BLOQUEADO.',
         formulaLogic: {
           active: 'Status Ativo',
           aso: 'ASO Válido',
@@ -824,6 +852,18 @@ export const translations = {
         role: 'Desenvolvedor Full Stack',
         cert: 'Arquiteto de Soluções Certificado',
         bio: 'Especialista em sistemas de segurança de nível empresarial e transformação digital para o setor de mineração. Focado em arquiteturas de conformidade sem tempo de inatividade.'
+      },
+      scenario: {
+        title: 'Cenário Real',
+        workflowTitle: 'Fluxo Sem Interrupções',
+        riskTitle: 'O Risco',
+        riskText: 'O operador Paulo Manjate tem uma certificação crítica RAC 02 expirando em 3 dias. Bloqueio iminente.',
+        autoFixTitle: 'A Correção',
+        autoFixText: 'Sistema detecta risco < 7 Dias. Reserva automaticamente vaga na próxima sessão (Amanhã).',
+        autoFixNote: '// Sem intervenção humana.',
+        demoTitle: 'Demo Ao Vivo',
+        demoText: 'Verifique o Painel. Você verá um alerta de Ação Pendente para Paulo Manjate.',
+        demoButton: 'Ir para Painel'
       },
       execSummary: {
         title: 'Resumo Executivo',

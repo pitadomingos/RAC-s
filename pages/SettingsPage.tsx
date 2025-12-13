@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { Settings, Users, Box, Save, Plus, Trash2, Tag, Edit2, Check, X, AlertCircle, Sliders, MapPin, User as UserIcon, Hash, LayoutGrid, Building2, Map, ShieldCheck, Mail } from 'lucide-react';
+import { Settings, Users, Box, Save, Plus, Trash2, Tag, Edit2, Check, X, AlertCircle, Sliders, MapPin, User as UserIcon, Hash, LayoutGrid, Building2, Map, ShieldCheck, Mail, Palette, Briefcase } from 'lucide-react';
 import { RacDef, Room, Trainer, Site, Company, UserRole, User } from '../types';
 import { v4 as uuidv4 } from 'uuid';
 import { logger } from '../utils/logger';
@@ -21,6 +21,7 @@ interface SettingsPageProps {
     userRole?: UserRole;
     users?: User[];
     onUpdateUsers?: (newUsers: User[]) => void;
+    contractors?: string[];
 }
 
 const SettingsPage: React.FC<SettingsPageProps> = ({ 
@@ -30,10 +31,11 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
     sites = [], onUpdateSites,
     companies = [], onUpdateCompanies,
     userRole = UserRole.SYSTEM_ADMIN,
-    users = [], onUpdateUsers
+    users = [], onUpdateUsers,
+    contractors = []
 }) => {
   const { t } = useLanguage();
-  const [activeTab, setActiveTab] = useState<'General' | 'Trainers' | 'RACs' | 'Sites' | 'Companies'>('General');
+  const [activeTab, setActiveTab] = useState<'General' | 'Trainers' | 'RACs' | 'Sites' | 'Companies' | 'Branding' | 'Contractors'>('General');
   const [isSaving, setIsSaving] = useState(false);
 
   // Confirmation Modal State
@@ -53,9 +55,7 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
 
   // --- SITES CRUD ---
   const [newSite, setNewSite] = useState({ name: '', location: '' });
-  const [editingSiteId, setEditingSiteId] = useState<string | null>(null);
-  const [editSiteData, setEditSiteData] = useState<Partial<Site>>({});
-
+  
   const handleAddSite = () => {
       if (!newSite.name || !onUpdateSites) return;
       const site: Site = {
@@ -79,9 +79,48 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
       });
   };
 
+  // --- CONTRACTORS MANAGEMENT (Enterprise Admin) ---
+  const [newContractor, setNewContractor] = useState('');
+  
+  const handleAddContractor = () => {
+      if (!newContractor.trim() || !onUpdateCompanies) return;
+      // Find current enterprise (mock: c1 for demo if not SysAdmin)
+      // In a real app, we'd get the ID from context.
+      // Assuming 'c1' is the active enterprise for Enterprise Admin in this demo flow.
+      const activeEntId = 'c1'; 
+      const activeEnt = companies.find(c => c.id === activeEntId);
+      
+      if (activeEnt) {
+          const updatedSubs = [...(activeEnt.subContractors || []), newContractor.trim()];
+          onUpdateCompanies(companies.map(c => c.id === activeEntId ? { ...c, subContractors: updatedSubs } : c));
+          setNewContractor('');
+      }
+  };
+
+  const handleDeleteContractor = (contractorName: string) => {
+      if (!onUpdateCompanies) return;
+      const activeEntId = 'c1'; 
+      const activeEnt = companies.find(c => c.id === activeEntId);
+      
+      if (activeEnt) {
+          setConfirmState({
+              isOpen: true,
+              title: 'Remove Contractor?',
+              message: `Are you sure you want to remove "${contractorName}"? Employees associated with this contractor may have display issues.`,
+              onConfirm: () => {
+                  const updatedSubs = (activeEnt.subContractors || []).filter(c => c !== contractorName);
+                  onUpdateCompanies(companies.map(c => c.id === activeEntId ? { ...c, subContractors: updatedSubs } : c));
+              },
+              isDestructive: true
+          });
+      }
+  };
+
   // --- COMPANIES CRUD & AUTO-PROVISIONING ---
-  const [newCompany, setNewCompany] = useState({ name: '', adminName: '', adminEmail: '' });
+  const [newCompany, setNewCompany] = useState({ name: '', adminName: '', adminEmail: '', appName: '' });
   const [provisionSuccess, setProvisionSuccess] = useState<string | null>(null);
+  const [editingCompanyId, setEditingCompanyId] = useState<string | null>(null);
+  const [editCompanyData, setEditCompanyData] = useState<Partial<Company>>({});
 
   const handleAddCompany = () => {
       if (!newCompany.name || !onUpdateCompanies || !onUpdateSites || !onUpdateUsers) {
@@ -99,7 +138,9 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
       const company: Company = {
           id: companyId,
           name: newCompany.name,
-          status: 'Active'
+          status: 'Active',
+          appName: newCompany.appName || 'CARS Manager',
+          subContractors: [newCompany.name] // Default self as first contractor
       };
 
       // 2. Create Default Site
@@ -128,13 +169,25 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
       onUpdateSites([...sites, defaultSite]);
       onUpdateUsers([...users, adminUser]);
 
-      setNewCompany({ name: '', adminName: '', adminEmail: '' });
+      setNewCompany({ name: '', adminName: '', adminEmail: '', appName: '' });
       setProvisionSuccess(`Enterprise "${company.name}" provisioned successfully. Admin "${adminUser.name}" created with AI & Reporting access.`);
       
       setTimeout(() => setProvisionSuccess(null), 5000);
   };
 
-  // ... existing CRUD handlers ...
+  const startEditCompany = (comp: Company) => {
+      setEditingCompanyId(comp.id);
+      setEditCompanyData(comp);
+  };
+
+  const saveCompany = () => {
+      if (!onUpdateCompanies) return;
+      if (editingCompanyId && editCompanyData.name) {
+          onUpdateCompanies(companies.map(c => c.id === editingCompanyId ? { ...c, ...editCompanyData } as Company : c));
+          setEditingCompanyId(null);
+      }
+  };
+
   // --- ROOMS CRUD ---
   const [newRoom, setNewRoom] = useState({ name: '', capacity: 0 });
   const [editingRoomId, setEditingRoomId] = useState<string | null>(null);
@@ -369,6 +422,42 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
                         </button>
                     )}
 
+                    {/* NEW: BRANDING (Enterprise Admin & System Admin) */}
+                    {[UserRole.SYSTEM_ADMIN, UserRole.ENTERPRISE_ADMIN].includes(userRole!) && (
+                        <button 
+                            onClick={() => setActiveTab('Branding')}
+                            className={`w-full text-left px-4 py-4 rounded-xl text-sm font-bold transition-all flex items-center gap-4 group mt-2
+                                ${activeTab === 'Branding' 
+                                    ? 'bg-gradient-to-r from-pink-500 to-rose-500 text-white shadow-lg shadow-pink-500/30 transform scale-[1.02]' 
+                                    : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700/50 hover:text-slate-900 dark:hover:text-white'}
+                            `}
+                        >
+                            <Palette size={20} className={activeTab === 'Branding' ? 'text-white' : 'text-slate-400 group-hover:text-pink-500 transition-colors'} />
+                            <div className="flex flex-col">
+                                <span>Branding</span>
+                                <span className={`text-[10px] font-normal ${activeTab === 'Branding' ? 'text-pink-100' : 'text-slate-400'}`}>Customize App Name</span>
+                            </div>
+                        </button>
+                    )}
+
+                    {/* NEW: CONTRACTORS (Enterprise Admin Only) */}
+                    {userRole === UserRole.ENTERPRISE_ADMIN && (
+                        <button 
+                            onClick={() => setActiveTab('Contractors')}
+                            className={`w-full text-left px-4 py-4 rounded-xl text-sm font-bold transition-all flex items-center gap-4 group mt-2
+                                ${activeTab === 'Contractors' 
+                                    ? 'bg-gradient-to-r from-cyan-500 to-blue-500 text-white shadow-lg shadow-cyan-500/30 transform scale-[1.02]' 
+                                    : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700/50 hover:text-slate-900 dark:hover:text-white'}
+                            `}
+                        >
+                            <Briefcase size={20} className={activeTab === 'Contractors' ? 'text-white' : 'text-slate-400 group-hover:text-cyan-500 transition-colors'} />
+                            <div className="flex flex-col">
+                                <span>Contractors</span>
+                                <span className={`text-[10px] font-normal ${activeTab === 'Contractors' ? 'text-cyan-100' : 'text-slate-400'}`}>Manage Companies</span>
+                            </div>
+                        </button>
+                    )}
+
                     {/* NEW: COMPANIES (System Admin Only) */}
                     {userRole === UserRole.SYSTEM_ADMIN && (
                         <button 
@@ -381,7 +470,7 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
                         >
                             <Building2 size={20} className={activeTab === 'Companies' ? 'text-white' : 'text-slate-400 group-hover:text-gray-900 transition-colors'} />
                             <div className="flex flex-col">
-                                <span>Companies</span>
+                                <span>Enterprises</span>
                                 <span className={`text-[10px] font-normal ${activeTab === 'Companies' ? 'text-gray-300' : 'text-slate-400'}`}>Tenants & Clients</span>
                             </div>
                         </button>
@@ -773,13 +862,115 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
                         </div>
                     )}
 
-                    {/* COMPANIES Tab (System Admin Only) */}
+                    {/* BRANDING Tab */}
+                    {activeTab === 'Branding' && (
+                        <div className="max-w-4xl mx-auto animate-fade-in">
+                            <div className="flex justify-between items-end mb-6">
+                                <div>
+                                    <h3 className="text-xl font-bold text-slate-900 dark:text-white">Enterprise Branding</h3>
+                                    <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">Customize the application name for your organization.</p>
+                                </div>
+                            </div>
+
+                            <div className="grid gap-4">
+                                {companies.map(comp => (
+                                    <div key={comp.id} className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700">
+                                        <div className="flex justify-between items-start mb-4">
+                                            <div>
+                                                <h4 className="font-bold text-lg text-slate-800 dark:text-white">{comp.name}</h4>
+                                                <p className="text-xs text-slate-500 uppercase tracking-wider">Current App Name: <span className="font-bold text-pink-600">{comp.appName || 'CARS Manager'}</span></p>
+                                            </div>
+                                            {editingCompanyId !== comp.id && (
+                                                <button 
+                                                    onClick={() => startEditCompany(comp)}
+                                                    className="p-2 bg-pink-50 dark:bg-pink-900/20 text-pink-600 dark:text-pink-400 rounded-lg hover:bg-pink-100 transition-colors"
+                                                >
+                                                    <Edit2 size={16} />
+                                                </button>
+                                            )}
+                                        </div>
+
+                                        {editingCompanyId === comp.id && (
+                                            <div className="bg-slate-50 dark:bg-slate-700/50 p-4 rounded-xl border border-pink-100 dark:border-slate-600 mt-2">
+                                                <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2 block">New App Name</label>
+                                                <div className="flex gap-2">
+                                                    <input 
+                                                        className="flex-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-lg p-2 text-sm font-semibold focus:ring-2 focus:ring-pink-500 outline-none text-slate-900 dark:text-white"
+                                                        value={String(editCompanyData.appName || '')}
+                                                        onChange={(e) => setEditCompanyData({...editCompanyData, appName: e.target.value})}
+                                                        placeholder="e.g. Carterinhas"
+                                                    />
+                                                    <button onClick={saveCompany} className="p-2 bg-green-600 text-white rounded-lg hover:bg-green-500"><Check size={18}/></button>
+                                                    <button onClick={() => setEditingCompanyId(null)} className="p-2 bg-slate-200 text-slate-600 rounded-lg hover:bg-slate-300"><X size={18}/></button>
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+
+                    {/* CONTRACTORS Tab (Enterprise Admin Only) */}
+                    {activeTab === 'Contractors' && (
+                        <div className="max-w-4xl mx-auto animate-fade-in">
+                            <div className="flex justify-between items-end mb-6">
+                                <div>
+                                    <h3 className="text-xl font-bold text-slate-900 dark:text-white">Sub-Contractors</h3>
+                                    <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">Manage the list of companies operating under your Enterprise umbrella.</p>
+                                </div>
+                            </div>
+
+                            <div className="bg-slate-50 dark:bg-slate-700/30 p-5 rounded-2xl border border-slate-200 dark:border-slate-600 mb-8 flex gap-4 items-end shadow-sm">
+                                <div className="flex-1">
+                                    <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider ml-1 mb-1.5 flex items-center gap-2">
+                                        <Briefcase size={12} /> Company Name
+                                    </label>
+                                    <input 
+                                        className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-xl p-3 text-sm font-semibold focus:ring-2 focus:ring-cyan-500 outline-none text-slate-800 dark:text-white transition-all" 
+                                        placeholder="e.g. Acme Contracting Ltd"
+                                        value={newContractor}
+                                        onChange={(e) => setNewContractor(e.target.value)}
+                                    />
+                                </div>
+                                <button 
+                                    onClick={handleAddContractor}
+                                    className="bg-slate-900 dark:bg-cyan-600 text-white p-3 rounded-xl hover:bg-slate-800 dark:hover:bg-cyan-500 transition-all shadow-lg hover:shadow-xl active:scale-95 flex items-center justify-center"
+                                >
+                                    <Plus size={20} />
+                                </button>
+                            </div>
+
+                            <div className="grid gap-3">
+                                {contractors.map(contractor => (
+                                    <div key={contractor} className="group flex items-center justify-between p-4 bg-white dark:bg-slate-800 rounded-xl border border-slate-100 dark:border-slate-700 hover:border-cyan-200 dark:hover:border-cyan-500 hover:shadow-md transition-all">
+                                        <div className="flex items-center gap-4 flex-1">
+                                            <div className="w-10 h-10 rounded-full bg-cyan-50 dark:bg-cyan-900/30 flex items-center justify-center text-cyan-600 dark:text-cyan-300 border border-cyan-100 dark:border-cyan-800">
+                                                <Briefcase size={18} />
+                                            </div>
+                                            <div className="font-bold text-slate-800 dark:text-white text-sm">{contractor}</div>
+                                        </div>
+                                        <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                            <button onClick={() => handleDeleteContractor(contractor)} className="p-2 hover:bg-red-50 text-slate-400 hover:text-red-500 rounded-lg transition-colors"><Trash2 size={16}/></button>
+                                        </div>
+                                    </div>
+                                ))}
+                                {contractors.length === 0 && (
+                                    <div className="p-8 text-center text-slate-400 text-sm italic border border-dashed border-slate-300 rounded-xl">
+                                        No sub-contractors defined. Add one above.
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    )}
+
+                    {/* COMPANIES Tab (System Admin Only - Manage Enterprises) */}
                     {activeTab === 'Companies' && (
                         <div className="max-w-4xl mx-auto animate-fade-in">
                             <div className="flex justify-between items-end mb-6">
                                 <div>
-                                    <h3 className="text-xl font-bold text-slate-900 dark:text-white">Tenant Companies</h3>
-                                    <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">Manage client organizations and provision initial admins.</p>
+                                    <h3 className="text-xl font-bold text-slate-900 dark:text-white">Tenant Enterprises</h3>
+                                    <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">Manage client organizations (Tenants) and provision initial admins.</p>
                                 </div>
                             </div>
 
@@ -802,12 +993,21 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
                                 </h4>
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                                     <div>
-                                        <label className="text-xs font-bold text-slate-500 dark:text-slate-400 mb-1 block ml-1">Company Name</label>
+                                        <label className="text-xs font-bold text-slate-500 dark:text-slate-400 mb-1 block ml-1">Enterprise Name</label>
                                         <input 
                                             className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-xl p-3 text-sm font-semibold focus:ring-2 focus:ring-gray-500 outline-none text-slate-800 dark:text-white transition-all" 
                                             placeholder="e.g. Acme Corp"
                                             value={newCompany.name}
                                             onChange={(e) => setNewCompany({...newCompany, name: e.target.value})}
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="text-xs font-bold text-slate-500 dark:text-slate-400 mb-1 block ml-1">App Name (Branding)</label>
+                                        <input 
+                                            className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-xl p-3 text-sm font-semibold focus:ring-2 focus:ring-gray-500 outline-none text-slate-800 dark:text-white transition-all" 
+                                            placeholder="e.g. Carterinhas"
+                                            value={newCompany.appName}
+                                            onChange={(e) => setNewCompany({...newCompany, appName: e.target.value})}
                                         />
                                     </div>
                                     <div>

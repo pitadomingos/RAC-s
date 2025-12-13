@@ -325,8 +325,7 @@ const AdminManualPage: React.FC = () => {
                   </div>
 
                   <p className="text-center text-slate-400 text-lg max-w-3xl mx-auto leading-relaxed">
-                      The system strictly enforces an <strong>AND</strong> logic gate. 
-                      If any single variable (Status, ASO Date, or <em>any</em> required RAC Training) is missing or expired, the result defaults to <strong>BLOCKED</strong>.
+                      {t.adminManual.content.formulaDesc}
                   </p>
               </div>
           </div>
