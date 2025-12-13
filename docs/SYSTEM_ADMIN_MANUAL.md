@@ -108,7 +108,39 @@ Navigate to **Request Cards**.
 
 ---
 
-## 5. Troubleshooting
+## 5. Enterprise Management (New)
+
+The system now supports Multi-Tenancy, allowing a single deployment to manage multiple client companies and sites.
+
+### Creating a New Enterprise
+1.  Go to **System Settings** > **Companies** (Only available to `System Admin`).
+2.  Fill in the "New Enterprise Provisioning" form:
+    *   **Company Name:** e.g., "Acme Corp".
+    *   **Admin Name:** e.g., "John Smith".
+    *   **Admin Email:** e.g., "admin@acme.com".
+3.  Click **Provision Enterprise**.
+4.  **Result:** The system automatically creates:
+    *   The Company entity.
+    *   A default "Headquarters" Site.
+    *   A new User with role `Enterprise Admin` linked to this company.
+
+### Site Governance
+Enterprise Admins can manage mandatory requirements per site.
+1.  Go to **Site Governance**.
+2.  Select a Site from the sidebar.
+3.  Toggle the RACs that are mandatory for *all* employees at that site.
+4.  Click **Save & Push Policy**.
+5.  **Result:** The system updates the requirements matrix for every employee assigned to that site, ensuring they are flagged for the required training.
+
+### Corporate Dashboard
+Navigate to **Corporate Dashboard** to view a high-level summary of all sites under your management, including:
+*   Global Health Score (Average compliance across sites).
+*   Top Performing Site vs Needs Attention.
+*   Comparative charts for workforce compliance.
+
+---
+
+## 6. Troubleshooting
 
 **Q: Why can't I find an employee in the Booking Form?**
 A: Ensure the employee exists in the **Database** first. The Booking form searches the Master Database.

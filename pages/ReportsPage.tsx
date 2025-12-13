@@ -6,7 +6,7 @@ import { generateSafetyReport } from '../services/geminiService';
 import { 
   FileText, Calendar, Sparkles, BarChart3, Printer, UserX, 
   AlertCircle, UserCheck, TrendingUp, Users, CheckCircle2, XCircle,
-  Award, Filter
+  Award, Filter, Map
 } from 'lucide-react';
 import { 
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, 
@@ -29,6 +29,17 @@ const ReportsPage: React.FC<ReportsPageProps> = ({ bookings, sessions }) => {
   const [selectedDept, setSelectedDept] = useState('All');
   const [selectedRac, setSelectedRac] = useState('All');
   
+  // Site Filter (Derived from data availability for now)
+  const [selectedSite, setSelectedSite] = useState('All');
+  const availableSites = useMemo(() => {
+      const sites = new Set<string>();
+      bookings.forEach(b => {
+          if (b.employee.siteId) sites.add(b.employee.siteId);
+      });
+      // Map IDs to readable names if possible (using mock logic or passed props, here simplified)
+      return Array.from(sites);
+  }, [bookings]);
+
   const [aiReport, setAiReport] = useState<string | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
 
@@ -73,9 +84,13 @@ const ReportsPage: React.FC<ReportsPageProps> = ({ bookings, sessions }) => {
        if (end && bDate > end) return false;
        if (selectedDept !== 'All' && b.employee.department !== selectedDept) return false;
        if (selectedRac !== 'All' && getRacCode(b) !== selectedRac) return false;
+       // Site Filter
+       const bSite = b.employee.siteId || 's1'; // Default
+       if (selectedSite !== 'All' && bSite !== selectedSite) return false;
+
        return true;
     });
-  }, [bookings, period, startDate, endDate, selectedDept, selectedRac, sessions]);
+  }, [bookings, period, startDate, endDate, selectedDept, selectedRac, selectedSite, sessions]);
 
   // -- 2. Stats Calculation --
   const stats = useMemo(() => {
@@ -162,6 +177,7 @@ const ReportsPage: React.FC<ReportsPageProps> = ({ bookings, sessions }) => {
         startDate,
         endDate,
         department: selectedDept,
+        site: selectedSite,
         metrics: {
             totalBookings: stats.total,
             passRate: stats.passRate + '%',
@@ -181,7 +197,7 @@ const ReportsPage: React.FC<ReportsPageProps> = ({ bookings, sessions }) => {
     <div className="space-y-8 pb-12 animate-fade-in-up">
        
        {/* --- Control Bar --- */}
-       <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-lg border border-slate-100 dark:border-slate-700 flex flex-col xl:flex-row justify-between gap-6 transition-all">
+       <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-lg border border-slate-100 dark:border-slate-700 flex flex-col xl:flex-row justify-between gap-6 transition-all sticky top-0 z-20">
           <div className="flex items-center gap-4">
              <div className="p-3 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl shadow-lg text-white">
                 <BarChart3 size={28} />
@@ -193,7 +209,8 @@ const ReportsPage: React.FC<ReportsPageProps> = ({ bookings, sessions }) => {
           </div>
 
           <div className="flex flex-wrap items-end gap-3">
-             <div className="flex-1 min-w-[140px]">
+             {/* Period Filter */}
+             <div className="flex-1 min-w-[120px]">
                 <label className="text-[10px] font-bold text-slate-900 dark:text-slate-400 uppercase tracking-wider mb-1 block ml-1">{t.reports.filters.period}</label>
                 <div className="relative group">
                    <select 
@@ -209,6 +226,24 @@ const ReportsPage: React.FC<ReportsPageProps> = ({ bookings, sessions }) => {
                    <Calendar className="absolute right-3 top-2.5 text-slate-400 group-hover:text-blue-500 transition-colors" size={16} />
                 </div>
              </div>
+
+             {/* Site Filter (Admin Only Feature) */}
+             {availableSites.length > 0 && (
+                 <div className="flex-1 min-w-[120px]">
+                    <label className="text-[10px] font-bold text-slate-900 dark:text-slate-400 uppercase tracking-wider mb-1 block ml-1">Site</label>
+                    <div className="relative">
+                        <select 
+                            value={selectedSite} 
+                            onChange={(e) => setSelectedSite(e.target.value)} 
+                            className="w-full bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 text-slate-900 dark:text-white rounded-xl px-4 py-2.5 text-sm font-bold focus:ring-2 focus:ring-blue-500 outline-none appearance-none cursor-pointer"
+                        >
+                            <option value="All">{t.common.all}</option>
+                            {availableSites.map(s => <option key={s} value={s}>{s === 's1' ? 'Moatize' : s === 's2' ? 'Maputo' : s}</option>)}
+                        </select>
+                        <Map className="absolute right-3 top-2.5 text-slate-400" size={16} />
+                    </div>
+                 </div>
+             )}
 
              {period === 'Custom' && (
                 <>
@@ -367,7 +402,7 @@ const ReportsPage: React.FC<ReportsPageProps> = ({ bookings, sessions }) => {
                       </div>
                       <div>
                          <h3 className="text-lg font-bold text-slate-800 dark:text-white">{t.reports.executiveAnalysis}</h3>
-                         <p className="text-xs text-slate-500">AI-Powered Insights based on current data</p>
+                         <p className="text-xs text-slate-500">AI-Powered Insights based on filtered data</p>
                       </div>
                    </div>
                    <button 

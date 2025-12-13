@@ -23,7 +23,7 @@ export const getSafetyAdvice = async (rac: string, query: string, language: Lang
   if (!ai) return "AI Service Unavailable (Missing API Key).";
   
   try {
-    const t = translations[language];
+    const t = translations[language] as any;
     if (!t?.ai?.systemPromptAdvice) {
         return "AI Configuration Error: Missing translations.";
     }
@@ -57,7 +57,7 @@ export const generateSafetyReport = async (stats: any, period: string, language:
   if (!ai) return "AI Service Unavailable (Missing API Key).";
 
   try {
-    const t = translations[language];
+    const t = translations[language] as any;
     if (!t?.ai?.systemPromptReport) {
         return "AI Configuration Error: Missing translations.";
     }

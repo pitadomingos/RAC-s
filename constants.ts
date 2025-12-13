@@ -11,7 +11,7 @@ export const RAC_LIST = Object.values(RAC);
 // Now includes PTS, ART, and LIBs so they appear in the RAC Matrix and Settings
 export const RAC_KEYS = [
   'RAC01', 'RAC02', 'RAC03', 'RAC04', 'RAC05', 
-  'RAC06', 'RAC07', 'RAC08', 'RAC09', 'RAC10',
+  'RAC06', 'RAC07', 'RAC08', 'RAC09', 'RAC10', 'RAC11',
   'PTS', 'ART', 'LIB_OPS', 'LIB_MOV'
 ];
 
@@ -39,10 +39,11 @@ export const INITIAL_RAC_DEFINITIONS: RacDef[] = [
     { id: '7', code: 'RAC08', name: 'RAC 08 - Electricity' },
     { id: '8', code: 'RAC09', name: 'RAC 09 - Explosives' },
     { id: '9', code: 'RAC10', name: 'RAC 10 - Liquid Metal' },
-    { id: '10', code: 'PTS', name: 'PTS - Permissão de Trabalho Seguro' },
-    { id: '11', code: 'ART', name: 'ART - Análise de Risco da Tarefa' },
-    { id: '12', code: 'LIB_OPS', name: 'LIB-OPS - Liberação Operacional' },
-    { id: '13', code: 'LIB_MOV', name: 'LIB-MOV - Liberação de Movimentação' }
+    { id: '10', code: 'RAC11', name: 'RAC 11 - Mine Traffic & Traffic Rules' },
+    { id: '11', code: 'PTS', name: 'PTS - Permissão de Trabalho Seguro' },
+    { id: '12', code: 'ART', name: 'ART - Análise de Risco da Tarefa' },
+    { id: '13', code: 'LIB_OPS', name: 'LIB-OPS - Liberação Operacional' },
+    { id: '14', code: 'LIB_MOV', name: 'LIB-MOV - Liberação de Movimentação' }
 ];
 
 // Calculate generic future dates for demo purposes
@@ -64,7 +65,8 @@ export const MOCK_SESSIONS: TrainingSession[] = [
   { id: 'S005', racType: 'RAC02 - Vehicles', date: getFutureDate(5), startTime: '08:00', location: 'Field A', instructor: 'Jane Smith', capacity: 15, sessionLanguage: 'Portuguese' },
   { id: 'S006', racType: 'RAC01 - Working at Height', date: getFutureDate(10), startTime: '10:00', location: 'Room B', instructor: 'John Doe', capacity: 20, sessionLanguage: 'Portuguese' },
   { id: 'S007', racType: 'RAC10 - Liquid Metal', date: getFutureDate(12), startTime: '14:00', location: 'Room A', instructor: 'Mike Brown', capacity: 25, sessionLanguage: 'English' },
-  
+  { id: 'S013', racType: 'RAC11 - Mine Traffic', date: getFutureDate(14), startTime: '09:00', location: 'Simulator Room', instructor: 'Jane Smith', capacity: 10, sessionLanguage: 'Portuguese' },
+
   // Extra sessions to ensure Auto-Booking always finds a slot for demo purposes
   { id: 'S008', racType: 'RAC01 - Working at Height', date: getFutureDate(3), startTime: '08:00', location: 'Room A', instructor: 'John Doe', capacity: 20, sessionLanguage: 'Portuguese' },
   { id: 'S009', racType: 'RAC05 - Confined Space', date: getFutureDate(4), startTime: '09:00', location: 'Room C', instructor: 'Mike Brown', capacity: 15, sessionLanguage: 'English' },

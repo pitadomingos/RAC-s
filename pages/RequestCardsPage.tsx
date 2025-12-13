@@ -313,12 +313,12 @@ const RequestCardsPage: React.FC<RequestCardsPageProps> = ({ bookings, requireme
                    <div className="bg-red-50 dark:bg-red-900/20 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6 group-hover:scale-110 transition-transform duration-500">
                         <AlertCircle size={40} className="text-red-500" />
                    </div>
-                   <h3 className="text-xl font-black text-slate-800 dark:text-white mb-2">Eligibility Check Failed</h3>
+                   <h3 className="text-xl font-black text-slate-800 dark:text-white mb-2">{t.cards.eligibility.failedTitle}</h3>
                    <p className="text-sm text-slate-500 dark:text-slate-400 mb-6 leading-relaxed">
-                       You do not currently meet the requirements for a safety card. Please ensure your ASO is valid and you have passed all required trainings.
+                       {t.cards.eligibility.failedMsg}
                    </p>
                    <button onClick={() => navigate('/manuals')} className="w-full py-3 rounded-xl bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 font-bold text-sm hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors">
-                       Check Requirements
+                       {t.cards.eligibility.checkReqs}
                    </button>
                </div>
             ) : (

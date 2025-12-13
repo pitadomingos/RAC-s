@@ -14,7 +14,7 @@ const TechnicalDocs: React.FC = () => {
     { id: 'arch', label: 'Architecture (Current)', icon: Layers },
     { id: 'files', label: 'File Structure', icon: FolderOpen },
     { id: 'data', label: 'Data Models', icon: Database },
-    { id: 'roadmap', label: 'Future Roadmap', icon: Rocket }, // NEW SECTION
+    { id: 'roadmap', label: 'Future Roadmap', icon: Rocket }, 
     { id: 'state', label: 'State & Logic', icon: Cpu },
     { id: 'debug', label: 'Debugging', icon: Terminal },
   ];
@@ -85,26 +85,32 @@ const TechnicalDocs: React.FC = () => {
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                           <div className="p-6 bg-slate-50 dark:bg-slate-900/50 rounded-xl border border-slate-200 dark:border-slate-700">
                               <h4 className="font-bold text-slate-800 dark:text-white flex items-center gap-2 mb-3">
-                                  <Database size={18} className="text-blue-500"/> Monolithic State Store
+                                  <Database size={18} className="text-blue-500"/> Multi-Tenant State
                               </h4>
                               <p className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
-                                  The application uses a "lifted state" pattern. All core data (Bookings, Employees, Sessions, Users) resides in <code>App.tsx</code>. This state is passed down as props to pages.
+                                  The application uses a hierarchical data structure to support Multi-Tenancy.
                                   <br/><br/>
-                                  <span className="font-bold text-red-500">Crucial:</span> There is no backend database connected in this version. Data persists in memory only (or simulated via <code>INITIAL_CONSTANTS</code>). Reloading the page resets data to mock defaults.
+                                  <strong>Hierarchy:</strong> Company &gt; Site &gt; Employee.
+                                  <br/>
+                                  Data isolation is handled via `siteId` filtering in the `App.tsx` state selector logic.
                               </p>
                           </div>
 
                           <div className="p-6 bg-slate-50 dark:bg-slate-900/50 rounded-xl border border-slate-200 dark:border-slate-700">
                               <h4 className="font-bold text-slate-800 dark:text-white flex items-center gap-2 mb-3">
-                                  <Key size={18} className="text-yellow-500"/> Role-Based Access Control (RBAC)
+                                  <Key size={18} className="text-yellow-500"/> Role Hierarchy & Billing
                               </h4>
                               <p className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
-                                  Security is handled via the <code>UserRole</code> enum in <code>types.ts</code>.
-                                  <ul className="list-disc ml-4 mt-2 space-y-1">
-                                      <li><strong>App.tsx</strong>: Routes are guarded conditionally based on role.</li>
-                                      <li><strong>Layout.tsx</strong>: Sidebar items are hidden/shown based on role.</li>
-                                      <li><strong>Pages</strong>: Specific buttons (e.g., "Add Session") are conditionally rendered.</li>
+                                  <strong>Organogram:</strong>
+                                  <ul className="list-disc ml-4 mt-2 space-y-1 text-xs">
+                                      <li><strong>System Admin</strong> (SaaS Owner)</li>
+                                      <li><strong>Enterprise Admin</strong> (Client HQ)</li>
+                                      <li><strong>Site Admin</strong> (Location Manager)</li>
+                                      <li><strong>Operational Admins</strong> (RAC Admin, Dept Admin, Trainer)</li>
+                                      <li><strong>General User</strong> (Billable End-User)</li>
                                   </ul>
+                                  <br/>
+                                  <strong>Billing Model:</strong> Charges apply ONLY to <code>General User</code> role at $2/month. All admin tiers are free management seats.
                               </p>
                           </div>
                       </div>
@@ -142,12 +148,12 @@ const TechnicalDocs: React.FC = () => {
                             desc="The Master Matrix. Calculates compliance (Grant/Block) based on ASO + RAC requirements. Handles CSV Import." 
                           />
                           <FileEntry 
-                            name="pages/BookingForm.tsx" 
-                            desc="Complex logic for Batch Entry. Handles validation, session capacity checks, and duplicate detection." 
+                            name="pages/EnterpriseDashboard.tsx" 
+                            desc="Corporate-level aggregations. Displays performance metrics across multiple sites." 
                           />
                           <FileEntry 
-                            name="pages/ResultsPage.tsx" 
-                            desc="Historical records. Includes 'Row Level Security' logic to restrict General Users to only see their own records." 
+                            name="pages/SiteGovernancePage.tsx" 
+                            desc="Policy Engine. Allows Enterprise Admins to define mandatory RACs for specific sites." 
                           />
                           <FileEntry 
                             name="components/CardTemplate.tsx" 
@@ -165,6 +171,22 @@ const TechnicalDocs: React.FC = () => {
                       </div>
 
                       <div className="grid grid-cols-1 gap-6">
+                          <CodeBlock title="Multi-Tenancy Models" code={`
+interface Company {
+  id: string;
+  name: string;
+  status: 'Active' | 'Inactive';
+}
+
+interface Site {
+  id: string;
+  companyId: string;
+  name: string;
+  location: string;
+  mandatoryRacs?: string[]; // Policy Engine
+}
+                          `} />
+
                           <CodeBlock title="Booking Interface (The core record)" code={`
 interface Booking {
   id: string;           // UUID

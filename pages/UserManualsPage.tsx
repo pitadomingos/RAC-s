@@ -20,6 +20,15 @@ const UserManualsPage: React.FC<UserManualsPageProps> = ({ userRole }) => {
       setActiveTab(userRole);
   }, [userRole]);
 
+  // Safety check to ensure nested properties exist
+  if (!t || !t.manuals || !t.manuals.sysAdmin || !t.manuals.user) {
+      return (
+          <div className="flex items-center justify-center h-full p-20 text-slate-500">
+              Loading Manuals...
+          </div>
+      );
+  }
+
   // Define available manuals based on Role Heirarchy
   const getAvailableRoles = () => {
       if (userRole === UserRole.SYSTEM_ADMIN) {

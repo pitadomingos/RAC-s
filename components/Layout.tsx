@@ -32,9 +32,13 @@ import {
   Minimize,
   Presentation,
   FileCode,
-  Shield
+  Shield,
+  Map,
+  Building2,
+  BarChart,
+  GanttChart
 } from 'lucide-react';
-import { UserRole, SystemNotification } from '../types';
+import { UserRole, SystemNotification, Site } from '../types';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useTheme } from '../contexts/ThemeContext';
 
@@ -44,9 +48,21 @@ interface LayoutProps {
   setUserRole: (role: UserRole) => void;
   notifications?: SystemNotification[];
   clearNotifications?: () => void;
+  sites?: Site[];
+  currentSiteId?: string;
+  setCurrentSiteId?: (id: string) => void;
 }
 
-const Layout: React.FC<LayoutProps> = ({ children, userRole, setUserRole, notifications = [], clearNotifications }) => {
+const Layout: React.FC<LayoutProps> = ({ 
+  children, 
+  userRole, 
+  setUserRole, 
+  notifications = [], 
+  clearNotifications,
+  sites = [],
+  currentSiteId = 'all',
+  setCurrentSiteId
+}) => {
   const [isSidebarOpen, setSidebarOpen] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isNotifOpen, setNotifOpen] = useState(false);
@@ -115,47 +131,60 @@ const Layout: React.FC<LayoutProps> = ({ children, userRole, setUserRole, notifi
   };
 
   const allNavItems = [
+    // Enterprise Level Pages
+    {
+      path: '/enterprise-dashboard',
+      label: 'Corporate Dashboard',
+      icon: BarChart,
+      visible: [UserRole.SYSTEM_ADMIN, UserRole.ENTERPRISE_ADMIN].includes(userRole)
+    },
+    {
+      path: '/site-governance',
+      label: 'Site Governance',
+      icon: GanttChart,
+      visible: [UserRole.SYSTEM_ADMIN, UserRole.ENTERPRISE_ADMIN].includes(userRole)
+    },
     { 
       path: '/', 
       label: t.nav.dashboard, 
       icon: LayoutDashboard, 
-      visible: userRole !== UserRole.USER // HIDDEN FOR GENERAL USER
+      visible: userRole !== UserRole.USER && userRole !== UserRole.ENTERPRISE_ADMIN
     },
     {
       path: '/database',
       label: t.nav.database,
       icon: Database,
-      visible: userRole !== UserRole.USER && userRole !== UserRole.RAC_TRAINER // HIDDEN FOR GENERAL USER AND TRAINER
+      visible: userRole !== UserRole.USER && userRole !== UserRole.RAC_TRAINER 
     },
     { 
       path: '/reports', 
       label: t.nav.reports, 
       icon: FileBarChart, 
-      visible: [UserRole.SYSTEM_ADMIN, UserRole.RAC_ADMIN, UserRole.DEPT_ADMIN].includes(userRole) 
+      visible: [UserRole.SYSTEM_ADMIN, UserRole.ENTERPRISE_ADMIN, UserRole.SITE_ADMIN].includes(userRole) 
     },
     { 
       path: '/booking', 
       label: t.nav.booking, 
       icon: CalendarPlus, 
-      visible: userRole !== UserRole.RAC_TRAINER // HIDDEN FOR TRAINER
+      visible: userRole !== UserRole.RAC_TRAINER && userRole !== UserRole.ENTERPRISE_ADMIN
     },
     { 
       path: '/trainer-input', 
       label: t.nav.trainerInput, 
       icon: PenTool, 
-      visible: [UserRole.SYSTEM_ADMIN, UserRole.RAC_ADMIN, UserRole.RAC_TRAINER].includes(userRole) 
+      visible: [UserRole.SYSTEM_ADMIN, UserRole.RAC_TRAINER, UserRole.SITE_ADMIN].includes(userRole) 
     },
     { 
       path: '/results', 
       label: t.nav.records, 
       icon: ClipboardList, 
-      visible: userRole !== UserRole.RAC_TRAINER // HIDDEN FOR TRAINER
+      visible: userRole !== UserRole.RAC_TRAINER && userRole !== UserRole.ENTERPRISE_ADMIN
     },
     {
       path: '/alcohol-control',
       label: t.nav.alcohol,
       icon: Wine,
-      visible: [UserRole.SYSTEM_ADMIN, UserRole.RAC_ADMIN].includes(userRole)
+      visible: [UserRole.SYSTEM_ADMIN, UserRole.ENTERPRISE_ADMIN].includes(userRole)
     },
     { 
       path: '/users', 
@@ -167,19 +196,19 @@ const Layout: React.FC<LayoutProps> = ({ children, userRole, setUserRole, notifi
       path: '/schedule', 
       label: t.nav.schedule, 
       icon: CalendarDays, 
-      visible: [UserRole.SYSTEM_ADMIN, UserRole.RAC_ADMIN].includes(userRole) 
+      visible: [UserRole.SYSTEM_ADMIN, UserRole.SITE_ADMIN].includes(userRole) 
     },
     { 
       path: '/settings', 
       label: t.nav.settings, 
       icon: Settings, 
-      visible: [UserRole.SYSTEM_ADMIN, UserRole.RAC_ADMIN].includes(userRole) 
+      visible: userRole === UserRole.SYSTEM_ADMIN
     },
     { 
       path: '/request-cards', 
       label: t.nav.requestCards, 
       icon: Mail, 
-      visible: [UserRole.SYSTEM_ADMIN, UserRole.DEPT_ADMIN, UserRole.RAC_ADMIN, UserRole.USER].includes(userRole) 
+      visible: userRole !== UserRole.ENTERPRISE_ADMIN
     },
     {
       path: '/manuals',
@@ -189,21 +218,21 @@ const Layout: React.FC<LayoutProps> = ({ children, userRole, setUserRole, notifi
     },
     {
       path: '/admin-manual',
-      label: t.nav.adminGuide, // New Label
+      label: t.nav.adminGuide, 
       icon: Shield,
-      visible: userRole === UserRole.SYSTEM_ADMIN
+      visible: userRole === UserRole.SYSTEM_ADMIN // STRICTLY SYSTEM ADMIN
     },
     {
       path: '/tech-docs',
-      label: 'Technical Docs', // Hardcoded as it's dev-only
+      label: 'Technical Docs',
       icon: FileCode,
-      visible: userRole === UserRole.SYSTEM_ADMIN
+      visible: userRole === UserRole.SYSTEM_ADMIN // STRICTLY SYSTEM ADMIN
     },
     {
       path: '/logs',
       label: t.nav.logs,
       icon: ScrollText,
-      visible: [UserRole.SYSTEM_ADMIN, UserRole.RAC_ADMIN].includes(userRole)
+      visible: [UserRole.SYSTEM_ADMIN, UserRole.ENTERPRISE_ADMIN].includes(userRole)
     },
     {
         path: '/presentation',
@@ -215,7 +244,6 @@ const Layout: React.FC<LayoutProps> = ({ children, userRole, setUserRole, notifi
 
   const navItems = allNavItems.filter(item => item.visible);
 
-  // Safely determine page title - strictly string
   const currentNavItem = navItems.find(i => i.path === location.pathname);
   let pageTitle = String(t.common.vulcan);
   if (currentNavItem && currentNavItem.label) {
@@ -266,14 +294,20 @@ const Layout: React.FC<LayoutProps> = ({ children, userRole, setUserRole, notifi
           {navItems.map((item) => {
             const Icon = item.icon;
             const isActive = location.pathname === item.path;
+            const isEnterprise = item.path === '/enterprise-dashboard' || item.path === '/site-governance';
+            
             return (
               <Link
                 key={item.path}
                 to={item.path}
+                onClick={() => setSidebarOpen(false)}
                 title={isCollapsed ? String(item.label) : ''}
                 className={`
                   flex items-center rounded-lg transition-colors
-                  ${isActive ? 'bg-yellow-500 text-slate-900 font-medium' : 'text-gray-300 hover:bg-slate-800 hover:text-white'}
+                  ${isActive 
+                    ? (isEnterprise ? 'bg-indigo-600 text-white font-medium shadow-lg shadow-indigo-500/30' : 'bg-yellow-500 text-slate-900 font-medium') 
+                    : 'text-gray-300 hover:bg-slate-800 hover:text-white'
+                  }
                   ${isCollapsed ? 'justify-center p-3' : 'space-x-3 px-4 py-3'}
                 `}
               >
@@ -306,9 +340,9 @@ const Layout: React.FC<LayoutProps> = ({ children, userRole, setUserRole, notifi
                     className="w-full bg-slate-800 dark:bg-slate-900 text-white text-xs p-2 rounded border border-slate-600 dark:border-slate-700 focus:border-yellow-500 outline-none"
                   >
                     <option value={UserRole.SYSTEM_ADMIN}>System Admin</option>
-                    <option value={UserRole.RAC_ADMIN}>RAC Admin</option>
+                    <option value={UserRole.ENTERPRISE_ADMIN}>Enterprise Admin</option>
+                    <option value={UserRole.SITE_ADMIN}>Site Admin</option>
                     <option value={UserRole.RAC_TRAINER}>RAC Trainer</option>
-                    <option value={UserRole.DEPT_ADMIN}>Dept Admin</option>
                     <option value={UserRole.USER}>User</option>
                   </select>
                   <div className="text-[10px] text-gray-500 text-center mt-1">
@@ -343,6 +377,23 @@ const Layout: React.FC<LayoutProps> = ({ children, userRole, setUserRole, notifi
 
           <div className="flex items-center space-x-2 md:space-x-4">
             
+            {/* SITE SELECTOR (MULTI-TENANCY) */}
+            {setCurrentSiteId && (userRole === UserRole.SYSTEM_ADMIN || userRole === UserRole.ENTERPRISE_ADMIN) && (
+                <div className="hidden md:flex items-center gap-2 bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg px-2 py-1">
+                    {currentSiteId === 'all' ? <Building2 size={16} className="text-blue-500" /> : <Map size={16} className="text-green-500" />}
+                    <select 
+                        value={currentSiteId}
+                        onChange={(e) => setCurrentSiteId(e.target.value)}
+                        className="bg-transparent text-xs font-bold text-slate-700 dark:text-slate-200 outline-none cursor-pointer"
+                    >
+                        <option value="all">{t.common.enterpriseView}</option>
+                        {sites.map(s => (
+                            <option key={s.id} value={s.id}>{s.name}</option>
+                        ))}
+                    </select>
+                </div>
+            )}
+
             {/* Language Toggle */}
             <button 
                 onClick={toggleLanguage}
@@ -378,7 +429,7 @@ const Layout: React.FC<LayoutProps> = ({ children, userRole, setUserRole, notifi
               >
                 <Bell size={20} />
                 {unreadCount > 0 && (
-                  <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full border border-white dark:border-slate-800"></span>
+                  <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-50 rounded-full border border-white dark:border-slate-800"></span>
                 )}
               </button>
               

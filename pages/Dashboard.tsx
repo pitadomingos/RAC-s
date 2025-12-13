@@ -22,7 +22,7 @@ const Dashboard: React.FC<DashboardProps> = ({
   bookings, 
   requirements, 
   sessions, 
-  userRole,
+  userRole, 
   onApproveAutoBooking,
   onRejectAutoBooking,
   racDefinitions = []
@@ -51,6 +51,15 @@ const Dashboard: React.FC<DashboardProps> = ({
     const timer = setInterval(() => setTick(t => t + 1), 60000);
     return () => clearInterval(timer);
   }, []);
+
+  // Safety check for translations
+  if (!t || !t.dashboard || !t.dashboard.upcoming || !t.dashboard.booked) {
+      return (
+          <div className="flex items-center justify-center h-full p-20 text-slate-500">
+              Loading Dashboard Resources...
+          </div>
+      );
+  }
 
   // --- CORE LOGIC: Access Status Calculation (Replicated from DatabasePage) ---
   const employeesWithStatus = useMemo(() => {

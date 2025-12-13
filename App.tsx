@@ -1,12 +1,12 @@
 
-import React, { useState, Suspense, lazy, useEffect } from 'react';
+import React, { useState, Suspense, lazy, useEffect, useMemo } from 'react';
 import { HashRouter, Routes, Route, Navigate } from 'react-router-dom';
 import Layout from './components/Layout';
 import GeminiAdvisor from './components/GeminiAdvisor';
 import { AdvisorProvider } from './contexts/AdvisorContext';
 import { 
   UserRole, Booking, EmployeeRequirement, TrainingSession, User, RacDef, 
-  BookingStatus, Employee, SystemNotification, Room, Trainer
+  BookingStatus, Employee, SystemNotification, Room, Trainer, Site, Company
 } from './types';
 import { MOCK_SESSIONS, INITIAL_RAC_DEFINITIONS, COMPANIES, DEPARTMENTS, ROLES, RAC_KEYS } from './constants';
 import { v4 as uuidv4 } from 'uuid';
@@ -24,30 +24,48 @@ const SettingsPage = lazy(() => import('./pages/SettingsPage'));
 const RequestCardsPage = lazy(() => import('./pages/RequestCardsPage'));
 const CardsPage = lazy(() => import('./pages/CardsPage'));
 const UserManualsPage = lazy(() => import('./pages/UserManualsPage'));
-const AdminManualPage = lazy(() => import('./pages/AdminManualPage')); // New Import
+const AdminManualPage = lazy(() => import('./pages/AdminManualPage'));
 const LogsPage = lazy(() => import('./pages/LogsPage'));
 const ProjectProposal = lazy(() => import('./pages/ProjectProposal'));
 const PresentationPage = lazy(() => import('./pages/PresentationPage'));
 const AlcoholIntegration = lazy(() => import('./pages/AlcoholIntegration'));
 const VerificationPage = lazy(() => import('./pages/VerificationPage'));
 const TechnicalDocs = lazy(() => import('./pages/TechnicalDocs'));
+const EnterpriseDashboard = lazy(() => import('./pages/EnterpriseDashboard'));
+const SiteGovernancePage = lazy(() => import('./pages/SiteGovernancePage'));
 
 const App: React.FC = () => {
   // --- State Management ---
   const [userRole, setUserRole] = useState<UserRole>(UserRole.SYSTEM_ADMIN);
   const [notifications, setNotifications] = useState<SystemNotification[]>([]);
   
+  // -- Multi-Tenancy State --
+  const [companies, setCompanies] = useState<Company[]>([
+      { id: 'c1', name: 'Vulcan Mining', status: 'Active' },
+      { id: 'c2', name: 'Global Logistics', status: 'Active' }
+  ]);
+  const [sites, setSites] = useState<Site[]>([
+      { id: 's1', companyId: 'c1', name: 'Moatize Mine', location: 'Tete', mandatoryRacs: ['RAC01', 'RAC02'] },
+      { id: 's2', companyId: 'c1', name: 'Maputo HQ', location: 'Maputo', mandatoryRacs: ['RAC01'] },
+      { id: 's3', companyId: 'c1', name: 'Nacala Corridor', location: 'Nacala', mandatoryRacs: ['RAC02', 'RAC05'] }
+  ]);
+  
+  // Current Context (Default 'all' for Enterprise View)
+  const [currentSiteId, setCurrentSiteId] = useState<string>('all');
+
   // Simulated logged-in user for self-service
   const currentEmployeeId = 'emp-1';
 
   // Data
-  const [sessions, setSessions] = useState<TrainingSession[]>(MOCK_SESSIONS);
+  // Assign initial data to a site for demo purposes (default s1)
+  const stampedSessions = MOCK_SESSIONS.map(s => ({ ...s, siteId: 's1' }));
+  const [sessions, setSessions] = useState<TrainingSession[]>(stampedSessions);
   const [racDefinitions, setRacDefinitions] = useState<RacDef[]>(INITIAL_RAC_DEFINITIONS);
   const [rooms, setRooms] = useState<Room[]>([
-      { id: '1', name: 'Room A', capacity: 20 },
-      { id: '2', name: 'Room B', capacity: 30 },
-      { id: '3', name: 'Field Training Area', capacity: 15 },
-      { id: '4', name: 'Computer Lab', capacity: 12 },
+      { id: '1', name: 'Room A', capacity: 20, siteId: 's1' },
+      { id: '2', name: 'Room B', capacity: 30, siteId: 's1' },
+      { id: '3', name: 'Field Training Area', capacity: 15, siteId: 's1' },
+      { id: '4', name: 'Computer Lab', capacity: 12, siteId: 's2' },
   ]);
   const [trainers, setTrainers] = useState<Trainer[]>([
       { id: '1', name: 'John Doe', racs: ['RAC01', 'RAC05'] },
@@ -79,6 +97,7 @@ const App: React.FC = () => {
         // 1. Create 8 FULLY GRANTED Employees (Perfect Batch)
         for (let i = 1; i <= 8; i++) {
             const empId = `emp-${i}`;
+            const siteId = i % 2 === 0 ? 's1' : 's2'; // Distribute across sites
             const employee: Employee = {
                 id: empId,
                 name: `Safe Worker ${i}`,
@@ -89,7 +108,8 @@ const App: React.FC = () => {
                 driverLicenseNumber: `DL-${202400 + i}`,
                 driverLicenseClass: 'C1',
                 driverLicenseExpiry: '2030-01-01', // Future Date
-                isActive: true
+                isActive: true,
+                siteId: siteId
             };
 
             // Requirements
@@ -134,7 +154,8 @@ const App: React.FC = () => {
                 company: 'Vulcan Mining',
                 department: 'HSE',
                 role: 'Technician',
-                isActive: true
+                isActive: true,
+                siteId: 's1'
             };
 
             generatedRequirements.push({
@@ -171,7 +192,8 @@ const App: React.FC = () => {
             isActive: true,
             driverLicenseNumber: 'DL-98765432',
             driverLicenseClass: 'G (Heavy)',
-            driverLicenseExpiry: '2025-12-31'
+            driverLicenseExpiry: '2025-12-31',
+            siteId: 's1'
         };
         generatedRequirements.push({
             employeeId: pauloEmp.id,
@@ -201,7 +223,8 @@ const App: React.FC = () => {
                 company: 'Global Logistics',
                 department: 'Logistics',
                 role: 'Driver',
-                isActive: true
+                isActive: true,
+                siteId: 's1'
             };
             
             // Map requirement
@@ -236,6 +259,26 @@ const App: React.FC = () => {
         }]);
     }
   }, []);
+
+  // --- FILTER LOGIC (Site Context) ---
+  const filteredBookings = useMemo(() => {
+      if (currentSiteId === 'all') return bookings;
+      return bookings.filter(b => b.employee.siteId === currentSiteId || !b.employee.siteId); // Default to show if undefined for legacy
+  }, [bookings, currentSiteId]);
+
+  const filteredSessions = useMemo(() => {
+      if (currentSiteId === 'all') return sessions;
+      return sessions.filter(s => s.siteId === currentSiteId || !s.siteId);
+  }, [sessions, currentSiteId]);
+
+  const filteredRequirements = useMemo(() => {
+      // Requirements are linked to Employee IDs. 
+      // We first find eligible employees for the site.
+      if (currentSiteId === 'all') return requirements;
+      const validEmployeeIds = new Set(filteredBookings.map(b => b.employee.id));
+      return requirements.filter(r => validEmployeeIds.has(r.employeeId));
+  }, [requirements, filteredBookings, currentSiteId]);
+
 
   // --- DEMAND ANALYTICS ENGINE ---
   useEffect(() => {
@@ -274,7 +317,7 @@ const App: React.FC = () => {
               }
           }
       });
-  }, [bookings, sessions]); // Run when bookings or sessions change
+  }, [bookings, sessions]);
 
   // --- Handlers ---
 
@@ -289,7 +332,6 @@ const App: React.FC = () => {
   };
 
   // GENERIC HELPER: Sync Requirements from Bookings
-  // This ensures "Records drive Database" - if you have a booking, you have a requirement.
   const syncRequirementsFromBookings = (bookingsToSync: Booking[]) => {
       setRequirements(prevReqs => {
           const newReqs = [...prevReqs];
@@ -311,20 +353,14 @@ const App: React.FC = () => {
               const session = sessions.find(s => s.id === b.sessionId);
               
               if (session) {
-                  // e.g. "RAC 01 - Height" -> "RAC01"
                   racCode = session.racType.split(' - ')[0]; 
               } else {
-                  // Fallback for imports: e.g. "RAC01|Historical" -> "RAC01"
                   racCode = b.sessionId.split('|')[0];
               }
               
-              // 3. Normalize Code (Remove spaces, (imp), uppercase)
-              // Matches logic in DatabasePage
               racCode = racCode.replace(/\(imp\)/gi, '').replace(/\s+/g, '').toUpperCase();
               
-              // 4. Update Matrix
               if (racCode) {
-                  // Only update if not already true (preserve existing state, though true is idempotent)
                   if (!newReqs[reqIndex].requiredRacs[racCode]) {
                       newReqs[reqIndex].requiredRacs[racCode] = true;
                   }
@@ -336,8 +372,18 @@ const App: React.FC = () => {
   };
 
   const addBookings = (newBookings: Booking[]) => {
-      setBookings(prev => [...prev, ...newBookings]);
-      syncRequirementsFromBookings(newBookings);
+      // Force assign siteId if missing, defaulting to current selected or first site
+      const targetSite = currentSiteId !== 'all' ? currentSiteId : 's1';
+      const stampedBookings = newBookings.map(b => ({
+          ...b,
+          employee: {
+              ...b.employee,
+              siteId: b.employee.siteId || targetSite
+          }
+      }));
+
+      setBookings(prev => [...prev, ...stampedBookings]);
+      syncRequirementsFromBookings(stampedBookings);
   };
 
   const updateBookings = (updates: Booking[]) => {
@@ -345,7 +391,6 @@ const App: React.FC = () => {
           const update = updates.find(u => u.id === b.id);
           return update ? update : b;
       }));
-      // Also sync on update (e.g. Trainer saves results -> Ensure mapped)
       syncRequirementsFromBookings(updates);
   };
 
@@ -353,25 +398,26 @@ const App: React.FC = () => {
       setBookings(prev => prev.map(b => b.id === id ? { ...b, status } : b));
   };
 
-  // ENHANCED IMPORT: Handles Bookings AND Matrix/ASO Side Effects
-  // Now accepts full Employee object in sideEffects to enable new employee creation
   const importBookings = (newBookings: Booking[], sideEffects?: { employee: Employee, aso: string, ops: Record<string, boolean> }[]) => {
-      // 1. Process New Training Records
-      setBookings(prev => [...prev, ...newBookings]);
-      syncRequirementsFromBookings(newBookings);
+      // Assign site context to imports if not present
+      const targetSite = currentSiteId !== 'all' ? currentSiteId : 's1';
+      const stampedBookings = newBookings.map(b => ({
+          ...b,
+          employee: { ...b.employee, siteId: b.employee.siteId || targetSite }
+      }));
 
-      // 2. Process Matrix Side Effects (Updates OR New Employees)
+      setBookings(prev => [...prev, ...stampedBookings]);
+      syncRequirementsFromBookings(stampedBookings);
+
       if (sideEffects && sideEffects.length > 0) {
-          const extraBookings: Booking[] = []; // Dummy bookings for new employees
+          const extraBookings: Booking[] = [];
 
-          // Update Requirements
           setRequirements(prevReqs => {
               const newReqs = [...prevReqs];
               
               sideEffects.forEach(effect => {
                   let idx = newReqs.findIndex(r => r.employeeId === effect.employee.id);
                   
-                  // Create if not exists (New Employee via Matrix)
                   if (idx === -1) {
                       newReqs.push({
                           employeeId: effect.employee.id,
@@ -380,43 +426,27 @@ const App: React.FC = () => {
                       });
                       idx = newReqs.length - 1;
 
-                      // CRITICAL: Ensure this new employee exists in the system by adding a dummy booking if not already in `newBookings`
-                      // Check if already covered by the main training import
-                      const inMainImport = newBookings.some(b => b.employee.id === effect.employee.id);
+                      const inMainImport = stampedBookings.some(b => b.employee.id === effect.employee.id);
                       if (!inMainImport) {
-                          // Check if already exists in GLOBAL bookings (need access to current state, tricky inside setRequirements)
-                          // We'll handle this check outside or assume safe to add registration if not found
                           extraBookings.push({
                               id: uuidv4(),
                               sessionId: 'REGISTRATION',
-                              employee: effect.employee,
+                              employee: { ...effect.employee, siteId: targetSite },
                               status: BookingStatus.PENDING,
                               isAutoBooked: false
                           });
                       }
                   }
 
-                  // Update ASO if provided
-                  if (effect.aso) {
-                      newReqs[idx].asoExpiryDate = effect.aso;
-                  }
-
-                  // Merge Ops Flags
-                  if (effect.ops) {
-                      newReqs[idx].requiredRacs = {
-                          ...newReqs[idx].requiredRacs,
-                          ...effect.ops
-                      };
-                  }
+                  if (effect.aso) newReqs[idx].asoExpiryDate = effect.aso;
+                  if (effect.ops) newReqs[idx].requiredRacs = { ...newReqs[idx].requiredRacs, ...effect.ops };
               });
               
               return newReqs;
           });
 
-          // Add any new dummy bookings needed for registration
           if (extraBookings.length > 0) {
               setBookings(prev => {
-                  // Filter out duplicates just in case
                   const uniqueExtras = extraBookings.filter(eb => !prev.some(pb => pb.employee.id === eb.employee.id));
                   return [...prev, ...uniqueExtras];
               });
@@ -447,42 +477,8 @@ const App: React.FC = () => {
       setRequirements(prev => prev.filter(r => r.employeeId !== id));
   };
 
-  // Deprecated direct import function, but kept if needed by legacy calls
-  const onImportEmployees = (data: { employee: Employee, req: EmployeeRequirement }[]) => {
-      // Re-route to new logic if possible or keep for safety
-      const newBookings: Booking[] = [];
-      const newReqs: EmployeeRequirement[] = [];
-
-      data.forEach(({ employee, req }) => {
-          const exists = bookings.some(b => b.employee.recordId === employee.recordId);
-          if (!exists) {
-              newBookings.push({
-                  id: uuidv4(),
-                  sessionId: 'REGISTRATION',
-                  employee: employee,
-                  status: BookingStatus.PENDING,
-                  isAutoBooked: false
-              });
-          }
-          newReqs.push(req);
-      });
-
-      if (newBookings.length > 0) setBookings(prev => [...prev, ...newBookings]);
-      
-      setRequirements(prev => {
-          const merged = [...prev];
-          newReqs.forEach(nr => {
-              const idx = merged.findIndex(r => r.employeeId === nr.employeeId);
-              if (idx >= 0) merged[idx] = nr;
-              else merged.push(nr);
-          });
-          return merged;
-      });
-  };
-
   const onApproveAutoBooking = (bookingId: string) => {
       setBookings(prev => prev.map(b => b.id === bookingId ? { ...b, isAutoBooked: false, status: BookingStatus.PENDING } : b));
-      // Notify
       addNotification({
           id: uuidv4(),
           type: 'success',
@@ -497,71 +493,116 @@ const App: React.FC = () => {
       setBookings(prev => prev.filter(b => b.id !== bookingId));
   };
 
+  const authorizedRoles = [UserRole.SYSTEM_ADMIN, UserRole.ENTERPRISE_ADMIN, UserRole.SITE_ADMIN, UserRole.RAC_TRAINER, UserRole.DEPT_ADMIN];
+
   return (
     <HashRouter>
       <AdvisorProvider>
-      <Layout userRole={userRole} setUserRole={setUserRole} notifications={notifications} clearNotifications={clearNotifications}>
+      <Layout 
+        userRole={userRole} 
+        setUserRole={setUserRole} 
+        notifications={notifications} 
+        clearNotifications={clearNotifications}
+        sites={sites}
+        currentSiteId={currentSiteId}
+        setCurrentSiteId={setCurrentSiteId}
+      >
         <Suspense fallback={<div className="flex items-center justify-center h-full text-slate-500">Loading...</div>}>
             <Routes>
-              {/* Dashboard is RESTRICTED for General User */}
+              {/* Enterprise Specific Routes */}
+              <Route path="/enterprise-dashboard" element={
+                  [UserRole.SYSTEM_ADMIN, UserRole.ENTERPRISE_ADMIN].includes(userRole) 
+                  ? <EnterpriseDashboard sites={sites} bookings={bookings} requirements={requirements} userRole={userRole} /> 
+                  : <Navigate to="/" replace />
+              } />
+              
+              <Route path="/site-governance" element={
+                  [UserRole.SYSTEM_ADMIN, UserRole.ENTERPRISE_ADMIN].includes(userRole) 
+                  ? <SiteGovernancePage 
+                      sites={sites} 
+                      setSites={setSites} 
+                      racDefinitions={racDefinitions} 
+                      bookings={bookings}
+                      requirements={requirements}
+                      updateRequirements={updateRequirements}
+                    /> 
+                  : <Navigate to="/" replace />
+              } />
+
+              {/* Dashboard Redirect Logic */}
               <Route path="/" element={
                   userRole === UserRole.USER 
                     ? <Navigate to="/manuals" replace /> 
-                    : <Dashboard bookings={bookings} requirements={requirements} sessions={sessions} userRole={userRole} onApproveAutoBooking={onApproveAutoBooking} onRejectAutoBooking={onRejectAutoBooking} racDefinitions={racDefinitions} />
+                    : (userRole === UserRole.ENTERPRISE_ADMIN || userRole === UserRole.SYSTEM_ADMIN)
+                      ? <Navigate to="/enterprise-dashboard" replace />
+                      : <Dashboard bookings={filteredBookings} requirements={filteredRequirements} sessions={filteredSessions} userRole={userRole} onApproveAutoBooking={onApproveAutoBooking} onRejectAutoBooking={onRejectAutoBooking} racDefinitions={racDefinitions} />
               } />
               
               {/* Database is RESTRICTED for General User and RAC Trainer */}
               <Route path="/database" element={
                   (userRole === UserRole.USER || userRole === UserRole.RAC_TRAINER)
                     ? <Navigate to="/manuals" replace />
-                    : <DatabasePage bookings={bookings} requirements={requirements} updateRequirements={updateRequirements} sessions={sessions} onUpdateEmployee={onUpdateEmployee} onDeleteEmployee={onDeleteEmployee} racDefinitions={racDefinitions} />
+                    : <DatabasePage bookings={filteredBookings} requirements={filteredRequirements} updateRequirements={updateRequirements} sessions={filteredSessions} onUpdateEmployee={onUpdateEmployee} onDeleteEmployee={onDeleteEmployee} racDefinitions={racDefinitions} />
               } />
               
               {/* Reports is RESTRICTED for RAC Trainer */}
-              <Route path="/reports" element={[UserRole.SYSTEM_ADMIN, UserRole.RAC_ADMIN, UserRole.DEPT_ADMIN].includes(userRole) ? <ReportsPage bookings={bookings} sessions={sessions} /> : <Navigate to="/" replace />} />
+              <Route path="/reports" element={authorizedRoles.includes(userRole) ? <ReportsPage bookings={filteredBookings} sessions={filteredSessions} /> : <Navigate to="/" replace />} />
               
-              {/* Booking is RESTRICTED for RAC Trainer */}
-              <Route path="/booking" element={userRole === UserRole.RAC_TRAINER ? <Navigate to="/" replace /> : <BookingForm addBookings={addBookings} sessions={sessions} userRole={userRole} existingBookings={bookings} addNotification={addNotification} currentEmployeeId={currentEmployeeId} requirements={requirements} />} />
+              {/* Booking is RESTRICTED for RAC Trainer and Enterprise Admin */}
+              <Route path="/booking" element={userRole === UserRole.RAC_TRAINER || userRole === UserRole.ENTERPRISE_ADMIN ? <Navigate to="/" replace /> : <BookingForm addBookings={addBookings} sessions={filteredSessions} userRole={userRole} existingBookings={filteredBookings} addNotification={addNotification} currentEmployeeId={currentEmployeeId} requirements={filteredRequirements} />} />
               
               <Route path="/trainer-input" element={
-                  [UserRole.SYSTEM_ADMIN, UserRole.RAC_ADMIN, UserRole.RAC_TRAINER].includes(userRole) 
+                  authorizedRoles.includes(userRole) && userRole !== UserRole.ENTERPRISE_ADMIN 
                   ? <TrainerInputPage 
-                      bookings={bookings} 
+                      bookings={filteredBookings} 
                       updateBookings={updateBookings} 
-                      sessions={sessions} 
+                      sessions={filteredSessions} 
                       userRole={userRole} 
                       currentUserName={userRole === UserRole.RAC_TRAINER ? 'John Doe' : 'System Admin'} 
                     /> 
                   : <Navigate to="/" replace />
               } />
               
-              {/* Results is RESTRICTED for RAC Trainer. Pass currentEmployeeId to limit view for USER. */}
-              <Route path="/results" element={userRole === UserRole.RAC_TRAINER ? <Navigate to="/" replace /> : <ResultsPage bookings={bookings} updateBookingStatus={updateBookingStatus} importBookings={importBookings} userRole={userRole} sessions={sessions} currentEmployeeId={currentEmployeeId} />} />
+              {/* Results is RESTRICTED for RAC Trainer and Enterprise Admin */}
+              <Route path="/results" element={userRole === UserRole.RAC_TRAINER || userRole === UserRole.ENTERPRISE_ADMIN ? <Navigate to="/" replace /> : <ResultsPage bookings={filteredBookings} updateBookingStatus={updateBookingStatus} importBookings={importBookings} userRole={userRole} sessions={filteredSessions} currentEmployeeId={currentEmployeeId} />} />
               
               <Route path="/proposal" element={userRole === UserRole.SYSTEM_ADMIN ? <ProjectProposal /> : <Navigate to="/" replace />} />
               <Route path="/presentation" element={userRole === UserRole.SYSTEM_ADMIN ? <PresentationPage /> : <Navigate to="/" replace />} />
-              
-              {/* Technical Docs: System Admin Only */}
               <Route path="/tech-docs" element={userRole === UserRole.SYSTEM_ADMIN ? <TechnicalDocs /> : <Navigate to="/" replace />} />
-              
-              {/* Dedicated Admin Manual Page (NEW) - System Admin Only */}
-              <Route path="/admin-manual" element={userRole === UserRole.SYSTEM_ADMIN ? <AdminManualPage /> : <Navigate to="/manuals" replace />} />
+              <Route path="/admin-manual" element={userRole === UserRole.SYSTEM_ADMIN ? <AdminManualPage /> : <Navigate to="/" replace />} />
               
               {/* Pass currentEmployeeId for Self-Service */}
-              <Route path="/request-cards" element={[UserRole.SYSTEM_ADMIN, UserRole.DEPT_ADMIN, UserRole.RAC_ADMIN, UserRole.USER].includes(userRole) ? <RequestCardsPage bookings={bookings} requirements={requirements} racDefinitions={racDefinitions} sessions={sessions} userRole={userRole} currentEmployeeId={currentEmployeeId} /> : <Navigate to="/" replace />} />
+              <Route path="/request-cards" element={authorizedRoles.concat(UserRole.USER).includes(userRole) && userRole !== UserRole.ENTERPRISE_ADMIN ? <RequestCardsPage bookings={filteredBookings} requirements={filteredRequirements} racDefinitions={racDefinitions} sessions={filteredSessions} userRole={userRole} currentEmployeeId={currentEmployeeId} /> : <Navigate to="/" replace />} />
               
-              <Route path="/print-cards" element={[UserRole.SYSTEM_ADMIN, UserRole.DEPT_ADMIN, UserRole.RAC_ADMIN, UserRole.USER].includes(userRole) ? <CardsPage bookings={bookings} requirements={requirements} racDefinitions={racDefinitions} sessions={sessions} userRole={userRole} /> : <Navigate to="/" replace />} />
+              <Route path="/print-cards" element={authorizedRoles.concat(UserRole.USER).includes(userRole) && userRole !== UserRole.ENTERPRISE_ADMIN ? <CardsPage bookings={filteredBookings} requirements={filteredRequirements} racDefinitions={racDefinitions} sessions={filteredSessions} userRole={userRole} /> : <Navigate to="/" replace />} />
               
               <Route path="/users" element={userRole === UserRole.SYSTEM_ADMIN ? <UserManagement users={users} setUsers={setUsers} /> : <Navigate to="/" replace />} />
-              <Route path="/schedule" element={[UserRole.SYSTEM_ADMIN, UserRole.RAC_ADMIN].includes(userRole) ? <ScheduleTraining sessions={sessions} setSessions={setSessions} rooms={rooms} trainers={trainers} /> : <Navigate to="/" replace />} />
-              <Route path="/settings" element={[UserRole.SYSTEM_ADMIN, UserRole.RAC_ADMIN].includes(userRole) ? <SettingsPage racDefinitions={racDefinitions} onUpdateRacs={handleUpdateRacDefinitions} rooms={rooms} onUpdateRooms={setRooms} trainers={trainers} onUpdateTrainers={setTrainers} /> : <Navigate to="/" replace />} />
+              <Route path="/schedule" element={[UserRole.SYSTEM_ADMIN, UserRole.SITE_ADMIN].includes(userRole) ? <ScheduleTraining sessions={sessions} setSessions={setSessions} rooms={rooms} trainers={trainers} /> : <Navigate to="/" replace />} />
+              
+              {/* Settings now manages Sites/Companies too. Restricted to System Admin as requested for "System Settings". */}
+              <Route path="/settings" element={userRole === UserRole.SYSTEM_ADMIN ? 
+                <SettingsPage 
+                  racDefinitions={racDefinitions} 
+                  onUpdateRacs={handleUpdateRacDefinitions} 
+                  rooms={rooms} 
+                  onUpdateRooms={setRooms} 
+                  trainers={trainers} 
+                  onUpdateTrainers={setTrainers} 
+                  sites={sites} 
+                  onUpdateSites={setSites} 
+                  companies={companies} 
+                  onUpdateCompanies={setCompanies} 
+                  userRole={userRole}
+                  users={users}
+                  onUpdateUsers={setUsers}
+                /> : <Navigate to="/" replace />} 
+              />
+              
               <Route path="/manuals" element={<UserManualsPage userRole={userRole} />} />
-              <Route path="/logs" element={[UserRole.SYSTEM_ADMIN, UserRole.RAC_ADMIN].includes(userRole) ? <LogsPage /> : <Navigate to="/" replace />} />
+              <Route path="/logs" element={[UserRole.SYSTEM_ADMIN, UserRole.ENTERPRISE_ADMIN].includes(userRole) ? <LogsPage /> : <Navigate to="/" replace />} />
               
-              {/* New Alcohol Control Module */}
-              <Route path="/alcohol-control" element={[UserRole.SYSTEM_ADMIN, UserRole.RAC_ADMIN].includes(userRole) ? <AlcoholIntegration /> : <Navigate to="/" replace />} />
+              <Route path="/alcohol-control" element={[UserRole.SYSTEM_ADMIN, UserRole.ENTERPRISE_ADMIN].includes(userRole) ? <AlcoholIntegration /> : <Navigate to="/" replace />} />
               
-              {/* Public Verification Route - Updated to accept sessions and racDefinitions */}
               <Route path="/verify/:recordId" element={<VerificationPage bookings={bookings} requirements={requirements} racDefinitions={racDefinitions} sessions={sessions} />} />
 
               <Route path="*" element={<Navigate to="/" replace />} />

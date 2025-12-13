@@ -17,8 +17,17 @@ const PresentationPage: React.FC = () => {
   const [currentSlide, setCurrentSlide] = useState(0);
   const [isFullscreen, setIsFullscreen] = useState(false);
 
-  // Safety check
-  if (!t || !t.proposal) return <div className="p-8 text-white bg-slate-900 h-screen flex items-center justify-center">Loading Presentation...</div>;
+  // Safety check to ensure nested properties exist before accessing them
+  if (!t || !t.proposal || !t.proposal.aboutMe || !t.proposal.objectives) {
+      return (
+          <div className="p-8 text-white bg-slate-900 h-screen flex items-center justify-center">
+              <div className="text-center">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white mx-auto mb-4"></div>
+                  Loading Presentation...
+              </div>
+          </div>
+      );
+  }
 
   // Define Slides Structure
   const slides = [
@@ -402,7 +411,28 @@ const PresentationPage: React.FC = () => {
       </div>
   );
 
-  const FinancialsSlide = () => (
+  const FinancialsSlide = () => {
+      // Calculate dynamic totals
+      const calculateTotals = () => {
+          let initial = 0;
+          let monthly = 0;
+          t.proposal.financials.items.forEach(item => {
+              const val = parseFloat(item.cost.replace(/[^0-9.]/g, ''));
+              if (
+                  item.type.toLowerCase().includes('monthly') || 
+                  item.type.toLowerCase().includes('mensal')
+              ) {
+                  monthly += val;
+              } else {
+                  initial += val;
+              }
+          });
+          return { initial, monthly };
+      };
+      
+      const totals = calculateTotals();
+
+      return (
       <div className="flex flex-col justify-center h-full max-w-6xl mx-auto px-4 relative z-10 animate-fade-in-up">
           <h2 className="text-4xl md:text-6xl font-black text-white mb-16">{t.proposal.financials.title}</h2>
           
@@ -426,14 +456,24 @@ const PresentationPage: React.FC = () => {
                   ))}
               </div>
 
-              <div className="bg-gradient-to-r from-yellow-600 to-amber-600 p-8 flex justify-between items-center text-white relative overflow-hidden">
+              <div className="bg-gradient-to-r from-yellow-600 to-amber-600 p-8 flex flex-col md:flex-row justify-between items-center text-white relative overflow-hidden">
                   <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-10"></div>
-                  <div className="text-xl font-bold uppercase tracking-wider opacity-90 relative z-10">Total Investment</div>
-                  <div className="text-4xl font-black font-mono tracking-tight relative z-10 shadow-black drop-shadow-md">$17,500.00</div>
+                  <div className="text-xl font-bold uppercase tracking-wider opacity-90 relative z-10 mb-4 md:mb-0">Total Investment Breakdown</div>
+                  <div className="text-right relative z-10">
+                      <div className="text-4xl font-black font-mono tracking-tight shadow-black drop-shadow-md">
+                          ${totals.initial.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                          <span className="text-lg font-normal opacity-70 ml-2">Initial</span>
+                      </div>
+                      <div className="text-2xl font-bold font-mono tracking-tight opacity-90">
+                          + ${totals.monthly.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                          <span className="text-sm font-normal opacity-70 ml-2">/ Month</span>
+                      </div>
+                  </div>
               </div>
           </div>
       </div>
-  );
+      );
+  };
 
   const RoadmapSlide = () => (
       <div className="flex flex-col justify-center h-full max-w-7xl mx-auto px-4 relative z-10 animate-fade-in-up">
@@ -619,12 +659,12 @@ const PresentationPage: React.FC = () => {
             {/* Grid Pattern */}
             <div className="absolute inset-0 opacity-[0.03]" style={{ backgroundImage: 'linear-gradient(#fff 1px, transparent 1px), linear-gradient(90deg, #fff 1px, transparent 1px)', backgroundSize: '50px 50px' }}></div>
             {/* Moving Glow Orbs */}
-            <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-blue-900/20 rounded-full blur-[120px] animate-pulse-slow"></div>
-            <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-purple-900/20 rounded-full blur-[120px] animate-pulse-slow" style={{ animationDelay: '2s' }}></div>
+            <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-blue-900/10 rounded-full blur-[150px] animate-pulse-slow"></div>
+            <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-purple-900/10 rounded-full blur-[120px] animate-pulse-slow delay-1000"></div>
         </div>
 
         {/* Slide Content */}
-        <div className="relative z-10 h-full w-full overflow-y-auto pb-24 scrollbar-hide">
+        <div className="relative z-10 h-full w-full overflow-y-auto pb-32 scrollbar-hide">
             <div className="min-h-full flex flex-col justify-center p-4 md:p-8 lg:p-16">
                 {renderSlide()}
             </div>

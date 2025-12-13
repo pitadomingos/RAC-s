@@ -18,10 +18,26 @@ export interface RacDef {
   name: string;
 }
 
+export interface Company {
+  id: string;
+  name: string;
+  status: 'Active' | 'Inactive';
+}
+
+export interface Site {
+  id: string;
+  companyId: string;
+  name: string;
+  location: string;
+  // New: Defines which RACs are mandatory for *everyone* at this site by default
+  mandatoryRacs?: string[]; 
+}
+
 export interface Room {
   id: string;
   name: string;
   capacity: number;
+  siteId?: string; // Room belongs to a site
 }
 
 export interface Trainer {
@@ -31,10 +47,12 @@ export interface Trainer {
 }
 
 export enum UserRole {
-  SYSTEM_ADMIN = 'System Admin',
+  SYSTEM_ADMIN = 'System Admin',       // SaaS Owner (Manages Companies)
+  ENTERPRISE_ADMIN = 'Enterprise Admin', // Client HQ (Manages Sites & Global Standards)
+  SITE_ADMIN = 'Site Admin',           // Site Manager (Manages daily ops)
   RAC_ADMIN = 'RAC Admin',
+  DEPT_ADMIN = 'Department Admin',
   RAC_TRAINER = 'RAC Trainer',
-  DEPT_ADMIN = 'Departmental Admin',
   USER = 'User'
 }
 
@@ -55,7 +73,8 @@ export interface Employee {
   company: string;
   department: string;
   role: string;
-  isActive?: boolean; // New field for Active status
+  isActive?: boolean;
+  siteId?: string; // Multi-site support
   // Driver License Details (Specific for RAC 02)
   driverLicenseNumber?: string;
   driverLicenseClass?: string;
@@ -64,13 +83,14 @@ export interface Employee {
 
 export interface TrainingSession {
   id: string;
-  racType: string; // Changed from RAC enum to string to support custom RACs
+  racType: string;
   date: string;
   startTime: string;
   location: string;
   instructor: string;
   capacity: number;
   sessionLanguage: 'English' | 'Portuguese';
+  siteId?: string; // Session belongs to a site
 }
 
 export enum BookingStatus {
@@ -100,7 +120,6 @@ export interface ChartData {
   value: number;
 }
 
-// New Interface for Database Page Logic
 export interface EmployeeRequirement {
   employeeId: string;
   asoExpiryDate: string; // Medical Exam Expiry
