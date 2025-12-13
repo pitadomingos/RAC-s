@@ -31,6 +31,9 @@ const PresentationPage: React.FC = () => {
     { id: 'costs', type: 'costs', title: t.proposal.costs.title },
     { id: 'roadmap', type: 'roadmap', title: t.proposal.roadmap.title },
     { id: 'ai', type: 'ai', title: t.proposal.ai.title },
+    { id: 'alcohol', type: 'alcohol', title: t.proposal.alcohol.title },
+    { id: 'enhanced', type: 'enhanced', title: t.proposal.enhanced.title },
+    { id: 'conclusion', type: 'conclusion', title: t.proposal.conclusion.title },
     { id: 'contact', type: 'contact', title: t.proposal.thankYou.title },
   ];
 
@@ -70,26 +73,47 @@ const PresentationPage: React.FC = () => {
 
   const TitleSlide = () => (
       <div className="flex flex-col items-center justify-center min-h-full py-20 text-center px-4 relative z-10 animate-fade-in-up">
-          <div className="relative mb-12 group">
-              <div className="absolute inset-0 bg-vulcan-green blur-[80px] opacity-30 animate-pulse-slow"></div>
-              <Shield size={160} className="text-white relative z-10 drop-shadow-[0_0_40px_rgba(255,255,255,0.3)] animate-float" />
+          <div className="relative mb-16 group">
+              <div className="absolute inset-0 bg-blue-500/20 blur-[100px] opacity-40 animate-pulse-slow"></div>
+              {/* Replaced generic Shield with actual Logo */}
+              <img 
+                src="assets/DigiSol_Logo.png" 
+                alt="DigiSol Orbit" 
+                className="w-72 md:w-96 lg:w-[30rem] h-auto object-contain relative z-10 animate-float drop-shadow-2xl"
+                onError={(e) => { 
+                    e.currentTarget.style.display = 'none'; 
+                    // Fallback if image fails - show nothing or alt
+                }}
+              />
           </div>
-          <h1 className="text-5xl md:text-7xl font-black text-white mb-6 leading-tight max-w-5xl">{t.proposal.title}</h1>
-          <div className="h-1.5 w-32 bg-yellow-500 rounded-full mb-8"></div>
-          <h2 className="text-xl md:text-3xl text-slate-300 font-light uppercase tracking-widest animate-slide-in-right">{t.proposal.subtitle}</h2>
+          
+          <h1 className="text-6xl md:text-8xl lg:text-9xl font-black text-white mb-8 leading-tight max-w-6xl tracking-tighter drop-shadow-lg">
+              {t.proposal.title}
+          </h1>
+          
+          <div className="h-2 w-48 bg-yellow-500 rounded-full mb-10 shadow-[0_0_20px_rgba(234,179,8,0.5)]"></div>
+          
+          <h2 className="text-2xl md:text-4xl lg:text-5xl text-slate-200 font-light uppercase tracking-[0.2em] animate-slide-in-right">
+              {t.proposal.subtitle}
+          </h2>
       </div>
   );
 
   const GenericListSlide = ({ title, items, icon: Icon }: any) => (
-      <div className="flex flex-col justify-center min-h-full py-20 max-w-7xl mx-auto px-6 relative z-10 animate-fade-in-up">
-          <h2 className="text-4xl md:text-6xl font-black text-white mb-16 text-center">{title}</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+      <div className="flex flex-col justify-center min-h-full py-10 max-w-[90%] mx-auto px-6 relative z-10 animate-fade-in-up">
+          <h2 className="text-5xl md:text-7xl font-black text-white mb-20 text-center tracking-tight drop-shadow-md">
+              {title}
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
               {items.map((item: any, i: number) => (
-                  <div key={i} className="bg-slate-900/80 p-8 rounded-2xl border border-slate-700 hover:border-blue-500 transition-colors">
-                      <h4 className="text-xl font-bold text-white mb-2 flex items-center gap-3">
-                          {Icon && <Icon size={24} className="text-blue-400" />} {item.title || item.name || item.role}
+                  <div key={i} className="bg-slate-900/60 p-10 rounded-3xl border border-slate-600/50 hover:border-blue-500 hover:bg-slate-800/80 transition-all backdrop-blur-sm">
+                      <h4 className="text-3xl md:text-4xl font-bold text-white mb-6 flex items-center gap-4">
+                          {Icon && <div className="p-3 bg-blue-500/20 rounded-xl"><Icon size={40} className="text-blue-400" /></div>} 
+                          {item.title || item.name || item.role}
                       </h4>
-                      <p className="text-slate-400 text-sm leading-relaxed">{item.desc}</p>
+                      <p className="text-slate-300 text-xl md:text-2xl leading-relaxed font-light">
+                          {item.desc}
+                      </p>
                   </div>
               ))}
           </div>
@@ -97,46 +121,66 @@ const PresentationPage: React.FC = () => {
   );
 
   const CostsSlide = () => (
-      <div className="flex flex-col justify-center min-h-full py-20 max-w-5xl mx-auto px-6 relative z-10 animate-fade-in-up">
-          <div className="text-center mb-16">
-              <h2 className="text-4xl md:text-6xl font-black text-white mb-4">{t.proposal.costs.title}</h2>
-              <p className="text-2xl text-slate-400 font-light">{t.proposal.costs.subtitle}</p>
+      <div className="flex flex-col justify-center min-h-full py-20 max-w-[85%] mx-auto px-6 relative z-10 animate-fade-in-up">
+          <div className="text-center mb-20">
+              <h2 className="text-6xl md:text-8xl font-black text-white mb-6 tracking-tight">{t.proposal.costs.title}</h2>
+              <p className="text-3xl md:text-4xl text-slate-400 font-light">{t.proposal.costs.subtitle}</p>
           </div>
-          <div className="bg-slate-900 rounded-3xl border border-slate-700 overflow-hidden shadow-2xl">
+          <div className="bg-slate-900/80 rounded-[2.5rem] border border-slate-600 overflow-hidden shadow-2xl backdrop-blur-md">
               {t.proposal.costs.items.map((item: any, i: number) => (
-                  <div key={i} className="flex items-center justify-between p-8 border-b border-slate-800 last:border-0 hover:bg-slate-800/50 transition-colors">
-                      <div className="flex items-center gap-4">
-                          <div className="p-3 bg-green-500/10 rounded-xl text-green-500"><DollarSign size={24} /></div>
+                  <div key={i} className="flex flex-col md:flex-row md:items-center justify-between p-10 border-b border-slate-700/50 last:border-0 hover:bg-slate-800/50 transition-colors gap-4">
+                      <div className="flex items-start gap-6">
+                          <div className="p-4 bg-green-500/10 rounded-2xl text-green-400 shrink-0 mt-1"><DollarSign size={40} /></div>
                           <div>
-                              <span className="text-xl font-bold text-slate-200 block">{item.item}</span>
-                              <span className="text-xs text-slate-500 uppercase">{item.type}</span>
+                              <span className="text-3xl md:text-4xl font-bold text-slate-100 block mb-2">{item.item}</span>
+                              <span className="text-lg md:text-xl text-slate-500 uppercase tracking-wider font-bold">{item.type}</span>
                           </div>
                       </div>
-                      <span className="text-2xl font-mono font-bold text-white">{item.cost}</span>
+                      <span className="text-4xl md:text-5xl font-mono font-bold text-green-400 text-right">{item.cost}</span>
                   </div>
               ))}
           </div>
       </div>
   );
 
+  const ConclusionSlide = () => (
+      <div className="flex flex-col items-center justify-center min-h-full py-20 px-6 max-w-6xl mx-auto relative z-10 animate-fade-in-up text-center">
+          <h2 className="text-5xl md:text-7xl font-black text-white mb-12 tracking-tight">{t.proposal.conclusion.title}</h2>
+          <p className="text-2xl md:text-4xl text-slate-300 font-light leading-relaxed max-w-5xl">
+              "{t.proposal.conclusion.text}"
+          </p>
+      </div>
+  );
+
   const ContactSlide = () => (
-      <div className="flex flex-col items-center justify-center min-h-full py-20 text-center max-w-5xl mx-auto px-4 relative z-10 animate-fade-in-up">
-          <div className="mb-12 p-8 bg-white/5 rounded-full border border-white/10 backdrop-blur-md"><Mail size={64} className="text-white" /></div>
-          <h2 className="text-5xl md:text-7xl font-black text-white mb-12">{t.proposal.thankYou.title}</h2>
-          <div className="flex flex-col gap-6 text-xl md:text-2xl text-slate-300">
-              <div className="flex items-center gap-4 justify-center"><Phone className="text-green-400" /> {t.proposal.thankYou.phone}</div>
-              <div className="flex items-center gap-4 justify-center"><Mail className="text-blue-400" /> {t.proposal.thankYou.contact}</div>
-              <div className="flex items-center gap-4 justify-center text-lg text-slate-500 mt-4"><MapPin size={20} /> {t.proposal.thankYou.address}</div>
+      <div className="flex flex-col items-center justify-center min-h-full py-20 text-center max-w-6xl mx-auto px-4 relative z-10 animate-fade-in-up">
+          <div className="mb-16 p-12 bg-white/5 rounded-full border border-white/10 backdrop-blur-xl shadow-[0_0_60px_rgba(255,255,255,0.1)]">
+              <Mail size={100} className="text-white" />
+          </div>
+          <h2 className="text-6xl md:text-8xl lg:text-9xl font-black text-white mb-16 tracking-tighter">{t.proposal.thankYou.title}</h2>
+          <div className="flex flex-col gap-10 text-3xl md:text-5xl text-slate-200 font-light">
+              <div className="flex items-center gap-6 justify-center">
+                  <Phone className="text-green-400 shrink-0" size={48} /> 
+                  <span>{t.proposal.thankYou.phone}</span>
+              </div>
+              <div className="flex items-center gap-6 justify-center">
+                  <Mail className="text-blue-400 shrink-0" size={48} /> 
+                  <span className="font-bold">{t.proposal.thankYou.contact}</span>
+              </div>
+              <div className="flex items-center gap-6 justify-center text-2xl md:text-4xl text-slate-400 mt-8">
+                  <MapPin className="shrink-0" size={40} /> 
+                  <span>{t.proposal.thankYou.address}</span>
+              </div>
           </div>
       </div>
   );
 
   const renderSlide = () => {
-      // Data Transformation for Organogram Slide
+      // Data Transformation for Organogram Slide - Remove Hardcoded English
       const organogramItems = [
-          { name: t.proposal.organogram.pm, desc: 'Project Manager (Delivery Lead)' },
-          { name: t.proposal.organogram.tech1, desc: 'Technician 1 (Full-Stack Dev)' },
-          { name: t.proposal.organogram.tech2, desc: 'Technician 2 (Database/Deploy)' }
+          { name: t.proposal.organogram.pm, desc: '' },
+          { name: t.proposal.organogram.tech1, desc: '' },
+          { name: t.proposal.organogram.tech2, desc: '' }
       ];
 
       switch(slides[currentSlide].id) {
@@ -150,6 +194,9 @@ const PresentationPage: React.FC = () => {
           case 'costs': return <CostsSlide />;
           case 'roadmap': return <GenericListSlide title={t.proposal.roadmap.title} items={t.proposal.roadmap.items} icon={Zap} />;
           case 'ai': return <GenericListSlide title={t.proposal.ai.title} items={t.proposal.ai.items} icon={Cpu} />;
+          case 'alcohol': return <GenericListSlide title={t.proposal.alcohol.title} items={t.proposal.alcohol.items} icon={Wine} />;
+          case 'enhanced': return <GenericListSlide title={t.proposal.enhanced.title} items={t.proposal.enhanced.items} icon={CheckCircle} />;
+          case 'conclusion': return <ConclusionSlide />;
           case 'contact': return <ContactSlide />;
           default: return <TitleSlide />;
       }
@@ -171,16 +218,16 @@ const PresentationPage: React.FC = () => {
         </div>
 
         {/* Navigation */}
-        <div className="fixed bottom-8 left-1/2 -translate-x-1/2 h-16 bg-white/5 backdrop-blur-xl border border-white/10 rounded-full flex items-center px-2 shadow-2xl z-50 ring-1 ring-white/5 transition-all hover:bg-white/10">
-            <button onClick={prevSlide} disabled={currentSlide === 0} className="w-12 h-12 rounded-full flex items-center justify-center hover:bg-white/10 disabled:opacity-30 text-white"><ChevronLeft size={24} /></button>
-            <div className="px-6 flex flex-col items-center min-w-[120px]">
-                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Slide</span>
-                <span className="text-lg font-mono font-bold text-white leading-none">{currentSlide + 1} <span className="text-slate-600">/</span> {slides.length}</span>
+        <div className="fixed bottom-8 left-1/2 -translate-x-1/2 h-20 bg-white/5 backdrop-blur-xl border border-white/10 rounded-full flex items-center px-4 shadow-2xl z-50 ring-1 ring-white/5 transition-all hover:bg-white/10">
+            <button onClick={prevSlide} disabled={currentSlide === 0} className="w-14 h-14 rounded-full flex items-center justify-center hover:bg-white/10 disabled:opacity-30 text-white"><ChevronLeft size={32} /></button>
+            <div className="px-8 flex flex-col items-center min-w-[160px]">
+                <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">Slide</span>
+                <span className="text-2xl font-mono font-bold text-white leading-none">{currentSlide + 1} <span className="text-slate-600">/</span> {slides.length}</span>
             </div>
-            <button onClick={nextSlide} disabled={currentSlide === slides.length - 1} className="w-12 h-12 rounded-full flex items-center justify-center hover:bg-white/10 disabled:opacity-30 text-white"><ChevronRight size={24} /></button>
-            <div className="w-px h-8 bg-white/10 mx-2"></div>
-            <button onClick={toggleFullScreen} className="w-12 h-12 rounded-full flex items-center justify-center hover:bg-white/10 text-slate-400 hover:text-white transition-all">{isFullscreen ? <Minimize size={20} /> : <Maximize size={20} />}</button>
-            <button onClick={() => navigate('/')} className="w-12 h-12 rounded-full flex items-center justify-center hover:bg-red-500/20 text-red-400 hover:text-red-500 transition-all ml-1"><X size={20} /></button>
+            <button onClick={nextSlide} disabled={currentSlide === slides.length - 1} className="w-14 h-14 rounded-full flex items-center justify-center hover:bg-white/10 disabled:opacity-30 text-white"><ChevronRight size={32} /></button>
+            <div className="w-px h-10 bg-white/10 mx-4"></div>
+            <button onClick={toggleFullScreen} className="w-14 h-14 rounded-full flex items-center justify-center hover:bg-white/10 text-slate-400 hover:text-white transition-all">{isFullscreen ? <Minimize size={28} /> : <Maximize size={28} />}</button>
+            <button onClick={() => navigate('/')} className="w-14 h-14 rounded-full flex items-center justify-center hover:bg-red-500/20 text-red-400 hover:text-red-500 transition-all ml-2"><X size={28} /></button>
         </div>
     </div>
   );

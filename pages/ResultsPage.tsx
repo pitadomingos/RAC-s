@@ -6,17 +6,16 @@ import {
   Upload, FileSpreadsheet, Search, Filter, Download, 
   CheckCircle2, XCircle, Award, Users, TrendingUp,
   FileText, Calendar, User, MapPin,
-  ChevronLeft, ChevronRight, Briefcase, QrCode, Printer, Phone, AlertTriangle, X
+  ChevronLeft, ChevronRight, Briefcase, QrCode, Printer, AlertTriangle, X
 } from 'lucide-react';
 import { v4 as uuidv4 } from 'uuid';
 import { format, addYears, isValid } from 'date-fns';
 import { useLanguage } from '../contexts/LanguageContext';
-import { RAC_KEYS, OPS_KEYS } from '../constants';
+import { RAC_KEYS } from '../constants';
 
 interface ResultsPageProps {
   bookings: Booking[];
   updateBookingStatus: (id: string, status: BookingStatus) => void;
-  // Updated signature to accept full Employee object in side effects
   importBookings?: (newBookings: Booking[], sideEffects?: { employee: Employee, aso: string, ops: Record<string, boolean> }[]) => void;
   userRole: UserRole;
   sessions: TrainingSession[];
@@ -24,7 +23,6 @@ interface ResultsPageProps {
 }
 
 const ResultsPage: React.FC<ResultsPageProps> = ({ bookings, updateBookingStatus, importBookings, userRole, sessions, currentEmployeeId }) => {
-  // ... (No changes to state or filtering logic)
   const [searchParams] = useSearchParams();
   const initialQuery = searchParams.get('q') || '';
   const [filter, setFilter] = useState(initialQuery);
@@ -37,7 +35,6 @@ const ResultsPage: React.FC<ResultsPageProps> = ({ bookings, updateBookingStatus
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { t } = useLanguage();
   
-  // QR State for User
   const [showQrModal, setShowQrModal] = useState(false);
 
   useEffect(() => {
@@ -49,7 +46,6 @@ const ResultsPage: React.FC<ResultsPageProps> = ({ bookings, updateBookingStatus
       setCurrentPage(1);
   }, [filter, statusFilter, trainerFilter, dateFilter, racFilter]);
 
-  // -- Esc Key for Modal --
   useEffect(() => {
     const handleEsc = (e: KeyboardEvent) => {
         if (e.key === 'Escape') {
@@ -70,7 +66,6 @@ const ResultsPage: React.FC<ResultsPageProps> = ({ bookings, updateBookingStatus
       return Array.from(trainers).sort();
   }, [sessions]);
 
-  // Find current user profile from bookings if User Role
   const currentUserEmployee = useMemo(() => {
       if (userRole === UserRole.USER && currentEmployeeId) {
           const booking = bookings.find(b => b.employee.id === currentEmployeeId);
@@ -215,7 +210,6 @@ const ResultsPage: React.FC<ResultsPageProps> = ({ bookings, updateBookingStatus
       const dataRows = lines.slice(1);
       
       const newBookings: Booking[] = [];
-      // Updated: sideEffects now carries full employee object
       const sideEffects: { employee: Employee, aso: string, ops: Record<string, boolean> }[] = [];
       
       let skippedCount = 0;
@@ -379,7 +373,6 @@ const ResultsPage: React.FC<ResultsPageProps> = ({ bookings, updateBookingStatus
     reader.readAsText(file);
   };
 
-  // QR Logic
   const getQrUrl = (recordId: string) => {
       const appOrigin = window.location.origin + window.location.pathname;
       const verificationUrl = `${appOrigin}#/verify/${recordId}`;
@@ -402,7 +395,6 @@ const ResultsPage: React.FC<ResultsPageProps> = ({ bookings, updateBookingStatus
       }
   };
 
-  // ... (Remainder of component render logic, getRacDetails, ScoreCircle, etc. is unchanged)
   const getRacDetails = (sessionId: string) => {
       if (sessionId.includes('RAC02') || sessionId.includes('RAC 02')) return { isRac02: true };
       const session = sessions.find(s => s.id === sessionId);

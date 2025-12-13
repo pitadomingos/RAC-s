@@ -29,22 +29,22 @@ const ProjectProposal: React.FC = () => {
             </button>
         </div>
 
-        {/* --- PAGE 1: COVER PAGE --- */}
-        <div className="bg-white h-[297mm] relative flex flex-col justify-between p-16 text-slate-900 overflow-hidden shadow-xl print:shadow-none mb-8 print:mb-0 print:break-after-page">
+        {/* --- PAGE 1: COVER PAGE (Dark Mode) --- */}
+        <div className="bg-slate-900 h-[297mm] relative flex flex-col justify-between p-16 text-white overflow-hidden shadow-xl print:shadow-none mb-8 print:mb-0 print:break-after-page">
             
             {/* Top Branding */}
             <div>
-                <h1 className="text-6xl font-black uppercase tracking-tighter mb-2 text-slate-900">
+                <h1 className="text-6xl font-black uppercase tracking-tighter mb-2 text-white">
                     Pita Domingos
                 </h1>
-                <p className="text-sm font-medium text-slate-500 tracking-widest mb-1 italic">
+                <p className="text-sm font-medium text-slate-400 tracking-widest mb-1 italic">
                     Powering the next orbit of your digital evolution.
                 </p>
             </div>
 
             {/* Central Graphic Element */}
             <div className="flex-1 flex flex-col items-center justify-center relative">
-                 <div className="absolute inset-0 bg-slate-50 rounded-full opacity-50 blur-3xl scale-75"></div>
+                 <div className="absolute inset-0 bg-slate-800 rounded-full opacity-50 blur-3xl scale-75"></div>
                  {/* Replaced generic Shield with actual Logo */}
                  <img 
                     src="assets/DigiSol_Logo.png" 
@@ -53,15 +53,15 @@ const ProjectProposal: React.FC = () => {
                     onError={(e) => { e.currentTarget.style.display = 'none'; }}
                  />
                  <div className="mt-12 text-center relative z-10">
-                     <h3 className="text-4xl font-bold text-slate-800 mb-2">{t.proposal.title}</h3>
-                     <p className="text-xl text-slate-500 font-light uppercase tracking-widest">{t.proposal.subtitle}</p>
+                     <h3 className="text-4xl font-bold text-white mb-2">{t.proposal.title}</h3>
+                     <p className="text-xl text-slate-400 font-light uppercase tracking-widest">{t.proposal.subtitle}</p>
                  </div>
             </div>
 
             {/* Footer Details */}
-            <div className="border-t-4 border-slate-900 pt-8">
+            <div className="border-t-4 border-slate-700 pt-8">
                 <div className="flex justify-between items-end">
-                    <div className="text-sm font-medium space-y-1 text-slate-600">
+                    <div className="text-sm font-medium space-y-1 text-slate-400">
                         <p>{t.proposal.header.ref}</p>
                         <p>{t.proposal.header.date}</p>
                     </div>
@@ -69,7 +69,7 @@ const ProjectProposal: React.FC = () => {
                         <div className="inline-block bg-yellow-500 text-white px-4 py-1 font-bold text-xs uppercase rounded-sm mb-2">
                             Commercial In Confidence
                         </div>
-                        <p className="text-xs text-slate-400">DigiSol Orbit • Tete, Mozambique</p>
+                        <p className="text-xs text-slate-500">DigiSol Orbit • Tete, Mozambique</p>
                     </div>
                 </div>
             </div>

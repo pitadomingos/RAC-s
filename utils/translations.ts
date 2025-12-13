@@ -539,6 +539,147 @@ export const translations = {
     }
   },
   pt: {
+    nav: {
+      dashboard: 'Painel',
+      enterpriseDashboard: 'Painel Corporativo',
+      siteGovernance: 'Governança de Sites',
+      database: 'Banco de Dados',
+      reports: 'Relatórios e Análises',
+      booking: 'Agendar Treinamento',
+      trainerInput: 'Entrada do Instrutor',
+      records: 'Registros',
+      users: 'Gestão de Usuários',
+      schedule: 'Agendar Treinamentos',
+      settings: 'Configurações do Sistema',
+      requestCards: 'Solicitar Cartões CARs',
+      manuals: 'Manuais do Usuário',
+      adminGuide: 'Guia do Administrador',
+      logs: 'Logs do Sistema',
+      proposal: 'Proposta de Projeto',
+      presentation: 'Modo Apresentação',
+      alcohol: 'Controle de Álcool',
+      systemHealth: 'Saúde do Sistema'
+    },
+    common: {
+      vulcan: 'Gestor CARS',
+      safetySystem: 'Sistema de Gestão de Segurança',
+      role: 'Função',
+      activeSession: 'Sessão Ativa',
+      notifications: 'Notificações',
+      clearAll: 'Limpar Tudo',
+      noNotifications: 'Sem novas notificações',
+      viewProposal: 'Ver Proposta',
+      simulateRole: 'Simular Função',
+      superuser: 'Acesso Superusuário',
+      restricted: 'Acesso Restrito',
+      loading: 'Carregando...',
+      save: 'Salvar',
+      cancel: 'Cancelar',
+      actions: 'Ações',
+      edit: 'Editar',
+      delete: 'Excluir',
+      submit: 'Enviar',
+      search: 'Pesquisar...',
+      all: 'Todos',
+      date: 'Data',
+      time: 'Hora',
+      status: 'Status',
+      name: 'Nome',
+      email: 'Email',
+      id: 'ID',
+      company: 'Empresa',
+      jobTitle: 'Cargo',
+      department: 'Departamento',
+      yes: 'Sim',
+      no: 'Não',
+      required: 'Obrigatório',
+      optional: 'Opcional',
+      download: 'Baixar',
+      upload: 'Enviar',
+      template: 'Modelo',
+      import: 'Importar Dados',
+      print: 'Imprimir',
+      fullScreen: 'Tela Cheia',
+      exitFullScreen: 'Sair da Tela Cheia',
+      rowsPerPage: 'Linhas por página:',
+      page: 'Página',
+      of: 'de',
+      siteContext: 'Contexto do Site',
+      enterpriseView: 'Visão Empresarial (Todos os Sites)',
+      tenants: 'Locatários',
+      contractors: 'Contratadas',
+      sites: 'Locais',
+      depts: 'Departamentos'
+    },
+    dashboard: {
+      title: 'Visão Geral Operacional',
+      subtitle: 'Métricas de treinamento de segurança em tempo real.',
+      kpi: {
+        adherence: 'Adesão HSE',
+        certifications: 'Total de Certificações',
+        pending: 'Correção Pendente',
+        expiring: 'Expirando (30 Dias)',
+        scheduled: 'Sessões Agendadas'
+      },
+      charts: {
+        complianceTitle: 'Conformidade de Treinamento por RAC & ASO',
+        complianceSubtitle: 'Mostra status obrigatório. Verde = Válido. Vermelho = Ausente/Expirado.',
+        accessTitle: 'Status Geral de Acesso da Força de Trabalho',
+        compliant: 'Conforme',
+        missing: 'Ausente / Expirado',
+        nonCompliant: 'Não Conforme'
+      },
+      upcoming: {
+        title: 'Próximas Sessões',
+        viewSchedule: 'Ver Agenda',
+        capacity: 'Capacidade',
+        status: 'Status',
+        date: 'Data / Hora',
+        session: 'Info da Sessão'
+      },
+      booked: {
+        title: 'Funcionários Agendados',
+        tableEmployee: 'Funcionário / Empresa',
+        tableRac: 'RAC Agendado',
+        tableDate: 'Data',
+        tableRoom: 'Sala',
+        tableTrainer: 'Instrutor',
+        noData: 'Nenhum agendamento correspondente aos filtros'
+      },
+      renewal: {
+        title: 'Ação Necessária: Renovação de Treinamento',
+        message: 'funcionários têm treinamentos críticos expirando em 30 dias.',
+        button: 'Agendar Renovações'
+      },
+      autoBooking: {
+        title: 'Ação Necessária: Auto-Agendamentos Pendentes',
+        subPart1: 'O sistema detectou riscos de expiração',
+        subPart2: 'e reservou vagas para evitar bloqueio. Aprove para finalizar.'
+      }
+    },
+    adminManual: {
+      title: 'Manual do Sistema',
+      subtitle: 'Guia do Administrador',
+      slides: { intro: 'Introdução', hierarchy: 'Hierarquia & Acesso', objectives: 'Objetivos', logic: 'Lógica', workflow: 'Fluxo de Trabalho', config: 'Configuração', booking: 'Agendamento', advanced: 'Avançado', troubleshoot: 'Solução de Problemas' },
+      content: {
+          confidential: 'CONFIDENCIAL', production: 'PRODUÇÃO v2.5',
+          hierarchy: {
+              title: 'Organograma do Sistema & Modelo de Acesso', 
+              billingTitle: 'Investimento & Assinaturas', 
+              billingDesc: 'As funções administrativas principais (Admin do Sistema, Empresarial, do Site e Instrutores) estão integradas ao plano de investimento principal para garantir a implementação bem-sucedida do sistema. O acesso do Usuário Geral (Autoatendimento) é uma assinatura opcional baseada na política da empresa.', 
+              cost: 'Incluído', 
+              perUser: 'Funções Principais Integradas', 
+              roles: { sysAdmin: 'Admin do Sistema', entAdmin: 'Admin Empresarial', siteAdmin: 'Admin do Site', ops: 'Admins Operacionais', user: 'Usuário Geral (Assinatura)' }
+          },
+          objectives: { title: 'Objetivos & Escopo', problemTitle: 'Desafios', solutionTitle: 'Soluções', p1Title: 'Integridade de Dados', p1Desc: 'Planilhas descentralizadas levavam a conflitos de versão.', p2Title: 'Tempo de Conformidade', p2Desc: 'Lacuna entre a conclusão do treinamento e o acesso ao site.', p3Title: 'Carga Administrativa', p3Desc: 'A entrada manual de dados consumia mais de 40 horas/semana.', s1Title: 'Verdade Central', s1Desc: 'Banco de dados único baseado em nuvem para todas as entidades.', s2Title: 'Aplicação Automática', s2Desc: 'O cálculo de expiração em tempo real evita o acesso não autorizado.', s3Title: 'Eficiência', s3Desc: 'Ferramentas de autoatendimento e agendamento automático reduzem a carga administrativa em 80%.' },
+          formulaTitle: 'Fórmula de Conformidade', formulaDesc: 'Porta Lógica E (AND).', formulaLogic: { active: 'Ativo', aso: 'ASO Válido', racs: 'RACs Necessários', result: 'ACESSO CONCEDIDO' },
+          flowTitle: 'Fluxo de Dados Principal', flowSteps: { db: 'Banco de Dados', dbDesc: 'Requisitos', book: 'Agendamento', bookDesc: 'Agenda', res: 'Resultados', resDesc: 'Notas', stat: 'Status', statDesc: 'Calcular' },
+          configTitle: 'Configuração do Sistema', configCards: { racs: 'Definições de RAC', racsDesc: 'Defina módulos de segurança críticos.', rooms: 'Salas', roomsDesc: 'Gerencie a capacidade física.', trainers: 'Instrutores', trainersDesc: 'Autorize a equipe de avaliação.' },
+          bookingTitle: 'Regras de Agendamento', matrixLock: 'Bloqueio de Matriz', matrixDesc: 'Impede o agendamento de treinamentos não obrigatórios para economizar custos.', gradingTitle: 'Avaliação', gradingText: 'Limites automatizados de Aprovação/Reprovação.', rac02Title: 'RAC 02', rac02Text: 'Verificação rigorosa da Carta de Condução necessária.', expiryTitle: 'Auto-Expiração', expiryText: 'Validade de 2 anos definida automaticamente.',
+          advancedTitle: 'Capacidades Avançadas', autoBook: 'Auto-Agendamento', autoBookDesc: 'Gestão proativa de expiração.', aiRep: 'Relatórios IA', aiRepDesc: 'Insights generativos sobre tendências de segurança.', alc: 'Controle de Álcool', alcDesc: 'Roteiro de integração IoT para bafômetros.',
+          tsTitle: 'Solução de Problemas', ts1: 'Pesquisa Não Encontrada', ts1Desc: 'Verifique a ortografia do ID de Registro.', ts2: 'Status Bloqueado', ts2Desc: 'Verifique as datas de ASO e Carta de Condução.', ts3: 'Leitura QR', ts3Desc: 'Requer acesso à rede.'
+      }
+    },
     proposal: {
         title: "Proposta de Projeto: Gestor de RACS",
         subtitle: "Iniciativa de Transformação Digital",
@@ -552,11 +693,110 @@ export const translations = {
           title: "1. Resumo Executivo",
           intro: "Temos o prazer de submeter esta proposta para o desenvolvimento e implementação do Gestor de RACS (CARS Manager). Esta solução digital abrangente foi projetada para otimizar a gestão de treinamentos de Requisitos de Atividade Crítica (RAC), garantindo 100% de visibilidade de conformidade e eficiência operacional.",
           overviewTitle: "Visão Geral e Capacidades SaaS",
-          overviewText: "O Gestor de RACS é uma plataforma baseada na web feita sob medida para digitalizar o processo de ponta a ponta da gestão de treinamento de segurança. Desde o agendamento de sessões até a classificação de resultados e emissão de cartões de identificação, o sistema fornece uma única fonte de verdade para a conformidade de HSE. Ele substitui planilhas manuais e registros em papel por um banco de dados seguro e automatizado acessível por Administradores de Sistema, Treinadores de RAC e Líderes de Departamento."
+          overviewText: "O Gestor de RACS é uma plataforma baseada na web feita sob medida para digitalizar o processo de ponta a ponta da gestão de treinamento de segurança. Desde o agendamento de sessões até a classificação de resultados e emissão de cartões de identificação, o sistema fornece uma única fonte de verdade para a conformidade de HSE. Ele substitui planilhas manuais e registros em papel por um banco de dados seguro e automatizado acessível por Administradores de Sistema, Treinadores de RAC e Líderes de Departamento. Agora evoluído para uma plataforma SaaS Multi-Tenant, permite gestão centralizada para múltiplas empresas mantendo estrito isolamento de dados."
+        },
+        objectives: {
+          title: "2. Objetivos do Projeto",
+          subtitle: "Problema Atual vs Nossa Solução",
+          problem: "A dependência de planilhas manuais leva à inconsistência de dados, dificuldade em rastrear certificações expiradas e atrasos na emissão de cartões físicos. Não há visibilidade em tempo real da prontidão da força de trabalho.",
+          items: [
+            { title: "Banco de Dados Centralizado", desc: "Para 15.000+ funcionários em vários locatários." },
+            { title: "Expiração Automatizada", desc: "Notificações e atualizações de status." },
+            { title: "Cartões Digitais e Físicos", desc: "Fluxo de trabalho de emissão unificado." },
+            { title: "RBAC", desc: "Controle de acesso baseado em função para segurança." },
+            { title: "Análise com IA", desc: "Insights de segurança via IA Gemini." },
+            { title: "SaaS Multi-Tenancy", desc: "Arquitetura escalável para gestão empresarial." }
+          ]
+        },
+        organogram: {
+            title: "3. Organograma do Projeto",
+            pm: "Gerente de Projeto (Líder de Entrega)",
+            tech1: "Técnico 1 (Desenvolvedor Full-Stack)",
+            tech2: "Técnico 2 (Banco de Dados/Implantação)"
+        },
+        roles: {
+          title: "4. Funções e Permissões",
+          items: [
+            { role: "Admin do Sistema", desc: "Acesso total a todas as configurações e gestão de usuários." },
+            { role: "Admin Empresarial", desc: "Nível HQ do cliente. Gerencia locais, subcontratados e branding." },
+            { role: "Admin de RAC", desc: "Gerencia cronogramas, aprova resultados e supervisiona a conformidade." },
+            { role: "Admin de Depto", desc: "Acesso somente leitura para seu departamento. Pode solicitar cartões." },
+            { role: "Instrutor RAC", desc: "Só pode visualizar sessões atribuídas e inserir notas/presença." },
+            { role: "Usuário Geral", desc: "Pode visualizar seu próprio status e solicitar substituição de cartão." }
+          ]
+        },
+        timeline: {
+          title: "5. Cronograma de Implementação",
+          subtitle: "Plano de Entrega de 12 Semanas",
+          phases: [
+            { title: "Fase 1: Descoberta e Design", weeks: "Semanas 1-2", desc: "Levantamento de requisitos, prototipagem UI/UX e design do esquema do banco de dados." },
+            { title: "Fase 2: Desenvolvimento Central", weeks: "Semanas 3-8", desc: "Desenvolvimento do Módulo de Agendamento, Banco de Dados e Sistema de Avaliação." },
+            { title: "Fase 3: Testes e QA", weeks: "Semanas 9-10", desc: "Testes de Aceitação do Usuário (UAT), correção de bugs e testes de carga." },
+            { title: "Fase 4: Implantação", weeks: "Semanas 11-12", desc: "Implantação em produção, sessões de treinamento para administradores e entrega." }
+          ]
+        },
+        techStack: {
+            title: "6. Stack Técnico",
+            items: [
+                { name: "Frontend", desc: "React (TypeScript), Tailwind CSS, Ícones Lucide" },
+                { name: "Lógica Backend", desc: "Node.js, Arquitetura RESTful, Funções Serverless" },
+                { name: "Banco de Dados", desc: "PostgreSQL / SQL Server (Pronto para Produção)" },
+                { name: "Segurança", desc: "Autenticação JWT, Controle de Acesso Baseado em Função, Criptografia de Dados" }
+            ]
+        },
+        costs: {
+          title: "7. Investimento Financeiro",
+          subtitle: "Inicial: $38.000,00 | Mensal: $20.000,00",
+          items: [
+            { item: "Arquitetura e Desenvolvimento de Software", type: "Pagamento Único (Inicial)", cost: "$20.000,00" },
+            { item: "Design UI/UX e Prototipagem", type: "Pagamento Único (Inicial)", cost: "$8.000,00" },
+            { item: "Configuração e Assinatura Cloud", type: "Mensal (Início Pós-UAT)", cost: "$5.000,00" },
+            { item: "Treinamento e Documentação", type: "Pagamento Único (Pós-Implantação)", cost: "$10.000,00" },
+            { item: "Taxa de Manutenção e Gestão", type: "Mensal", cost: "$15.000,00" }
+          ]
+        },
+        roadmap: {
+            title: "8. Roteiro Futuro",
+            items: [
+                { title: "Integração SSO", desc: "Conectar com Azure AD para Login Único." },
+                { title: "Migração para Nuvem", desc: "Mover de local para Azure/AWS para escalabilidade." },
+                { title: "E-mails Automatizados", desc: "Enviar certificados PDF diretamente para o e-mail do funcionário." },
+                { title: "App Móvel", desc: "App nativo Android/iOS para verificação em campo." }
+            ]
+        },
+        ai: {
+            title: "9. IA e Recursos Inteligentes",
+            items: [
+                { title: "Chatbot Consultor de Segurança", desc: "Um assistente de IA incorporado que responde perguntas sobre padrões RAC e protocolos de segurança." },
+                { title: "Relatórios Automatizados", desc: "A IA analisa tendências mensais para identificar departamentos de alto risco e sugerir intervenções." }
+            ]
+        },
+        alcohol: {
+            title: "10. Integração de Álcool e IoT",
+            items: [
+                { title: "Integração de Software", desc: "Endpoints API para Dados do Bafômetro, Widget de Painel 'Aptidão para o Trabalho'." },
+                { title: "Infraestrutura", desc: "Obras Civis (Modificação de torniquete), Elétrica e Cabeamento, Hardware de Bafômetro com Face-ID." }
+            ]
+        },
+        enhanced: {
+            title: "11. Capacidades Operacionais Aprimoradas",
+            items: [
+                { title: "Verificação Móvel", desc: "Digitalização de Passaporte Digital via QR." },
+                { title: "Agendamento Automático Inteligente", desc: "Agendamento automatizado com base na expiração (<7 dias)." },
+                { title: "Gestão de Dados em Massa", desc: "Ferramentas de importação/exportação CSV em massa." },
+                { title: "Trilhas de Auditoria do Sistema", desc: "Registro abrangente de todas as atividades do sistema." }
+            ]
         },
         conclusion: {
             title: "12. Conclusão",
             text: "O Gestor de RACS representa um passo significativo para a excelência em segurança operacional. Ao digitalizar esses fluxos de trabalho críticos, a Vulcan Mining não apenas garantirá a conformidade, mas também promoverá uma cultura de transparência e eficiência. Estamos comprometidos em fornecer uma solução de classe mundial que atenda aos seus rigorosos padrões."
+        },
+        thankYou: { 
+            title: 'Fale Conosco', 
+            contact: 'pita.domingos@zd044.onmicrosoft.com', 
+            phone: '+258 845479481',
+            address: 'Perto de O Puarrou - Bairro Chingodzi, Tete',
+            company: 'DigiSol Orbit'
         }
     }
   }
