@@ -1,4 +1,5 @@
 
+// ... existing imports ...
 import React, { useState, useMemo, useEffect } from 'react';
 import { Booking, BookingStatus, EmployeeRequirement, Employee, TrainingSession, RacDef } from '../types';
 import { OPS_KEYS, PERMISSION_KEYS, DEPARTMENTS } from '../constants';
@@ -7,6 +8,7 @@ import { useLanguage } from '../contexts/LanguageContext';
 import JSZip from 'jszip';
 import ConfirmModal from '../components/ConfirmModal';
 
+// ... interface definitions ...
 interface DatabasePageProps {
   bookings: Booking[];
   requirements: EmployeeRequirement[];
@@ -553,17 +555,21 @@ const DatabasePage: React.FC<DatabasePageProps> = ({ bookings, requirements, upd
                                              const today = new Date().toISOString().split('T')[0];
                                              const isValid = trainingDate && trainingDate > today;
                                              
-                                             // IMPORTANT: "Required" logic visual update.
-                                             // If it's valid, it should show Green regardless of "requiredRacs" state, implying it's "Mapped"
+                                             // Determine Requirement visually based on both manual check AND existence
                                              const isRequired = req.requiredRacs[key] || isValid; 
                                              
                                              const isRac02Blocked = key === 'RAC02' && isDlExpired;
+                                             
                                              let bgClass = 'bg-gray-100 dark:bg-slate-700 text-gray-300';
                                              if (isRequired) {
-                                                if (isValid && !isRac02Blocked) bgClass = 'bg-green-50 text-white shadow-sm';
-                                                else bgClass = 'bg-red-50 text-white shadow-sm';
+                                                // Updated visual logic per user request: Red if missing/expired, Green if valid.
+                                                if (isValid && !isRac02Blocked) {
+                                                    bgClass = 'bg-green-500 text-white shadow-sm hover:bg-green-600'; // Solid Green for Valid
+                                                } else {
+                                                    bgClass = 'bg-red-500 text-white shadow-sm hover:bg-red-600';     // Solid Red for Missing/Expired
+                                                }
                                              } else {
-                                                 bgClass = 'bg-gray-100 dark:bg-slate-800 text-gray-400 dark:text-gray-600 border border-gray-200 dark:border-slate-700';
+                                                 bgClass = 'bg-gray-100 dark:bg-slate-800 text-gray-400 dark:text-gray-600 border border-gray-200 dark:border-slate-700 hover:bg-gray-200 dark:hover:bg-slate-700';
                                              }
                                              return <button key={key} onClick={() => handleRequirementChange(emp.id, key, !req.requiredRacs[key])} className={`text-[9px] font-bold w-10 h-6 rounded flex items-center justify-center transition-all ${bgClass}`} title={def.name}>{key.replace('RAC', 'R')}</button>;
                                          })}
@@ -582,16 +588,22 @@ const DatabasePage: React.FC<DatabasePageProps> = ({ bookings, requirements, upd
                                                  isValid = !!(trainingDate && trainingDate > today);
                                              }
                                              
-                                             // Same logic: If Valid record found (for non-permissions), implied mapped
                                              const isRequired = req.requiredRacs[key] || (!isPermission && isValid);
 
                                              let bgClass = 'bg-gray-100 dark:bg-slate-700 text-gray-300';
                                              if (isRequired) {
-                                                 if (isPermission && isValid) bgClass = 'bg-blue-600 text-white shadow-sm';
-                                                 else if (!isPermission && isValid) bgClass = 'bg-green-50 text-white shadow-sm';
-                                                 else bgClass = 'bg-red-50 text-white shadow-sm';
+                                                 if (isPermission) {
+                                                     // Permissions (like Exec/Owner) are often manual toggles, so if checked (isValid=true), show Blue.
+                                                     // If not checked but somehow required? Permissions logic is simpler: Checked = YES.
+                                                     if (isValid) bgClass = 'bg-blue-500 text-white shadow-sm hover:bg-blue-600';
+                                                     else bgClass = 'bg-red-500 text-white shadow-sm hover:bg-red-600'; // Required but unchecked
+                                                 } else {
+                                                     // Standard Operational Training (PTS/ART) -> Green/Red logic
+                                                     if (isValid) bgClass = 'bg-green-500 text-white shadow-sm hover:bg-green-600';
+                                                     else bgClass = 'bg-red-500 text-white shadow-sm hover:bg-red-600';
+                                                 }
                                              } else {
-                                                 bgClass = 'bg-gray-100 dark:bg-slate-800 text-gray-400 dark:text-gray-600 border border-gray-200 dark:border-slate-700';
+                                                 bgClass = 'bg-gray-100 dark:bg-slate-800 text-gray-400 dark:text-gray-600 border border-gray-200 dark:border-slate-700 hover:bg-gray-200 dark:hover:bg-slate-700';
                                              }
                                              const label = t.database.ops[key as keyof typeof t.database.ops] || key;
                                              return <button key={key} onClick={() => handleRequirementChange(emp.id, key, !req.requiredRacs[key])} className={`text-[9px] font-bold px-2 h-6 min-w-[2.5rem] rounded flex items-center justify-center transition-all whitespace-nowrap ${bgClass}`} title={label}>{label}</button>;
@@ -611,6 +623,7 @@ const DatabasePage: React.FC<DatabasePageProps> = ({ bookings, requirements, upd
              </table>
         </div>
 
+        {/* ... Rest of existing pagination and modal code ... */}
         <div className="shrink-0 p-3 border-t border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-800/50 flex flex-col md:flex-row justify-between items-center gap-4">
              <div className="flex items-center gap-4">
                  <div className="flex items-center gap-2">
@@ -641,7 +654,6 @@ const DatabasePage: React.FC<DatabasePageProps> = ({ bookings, requirements, upd
              </div>
         </div>
 
-        {/* --- CONFIRMATION MODAL --- */}
         <ConfirmModal 
             isOpen={confirmState.isOpen}
             title={confirmState.title}
@@ -652,7 +664,6 @@ const DatabasePage: React.FC<DatabasePageProps> = ({ bookings, requirements, upd
             confirmText={confirmState.isDestructive ? 'Delete' : 'Confirm'}
         />
 
-        {/* --- EDIT MODAL --- */}
         {editingEmployee && (
             <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4" onClick={() => setEditingEmployee(null)}>
                 <div className="bg-white dark:bg-slate-800 rounded-xl shadow-2xl w-full max-w-lg p-6 relative" onClick={(e) => e.stopPropagation()}>
