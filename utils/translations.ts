@@ -85,7 +85,12 @@ const enTranslations = {
       siteContext: 'Site Context',
       enterpriseView: 'Enterprise View (All Sites)',
       completed: 'Completed',
-      timeLeft: 'left'
+      timeLeft: 'left',
+      recordsFound: 'records found',
+      operationalMatrix: 'Operational Matrix',
+      owner: 'Owner',
+      smsBlast: 'SMS Blast',
+      sending: 'Sending...'
     },
     feedback: {
         button: 'Send Feedback',
@@ -224,6 +229,8 @@ const enTranslations = {
       confirmDeactivateMsg: 'Marking as Inactive will hide this employee from searches. Continue?',
       confirmDelete: 'Delete Record?',
       confirmDeleteMsg: 'This will permanently remove the employee and all training records. This cannot be undone.',
+      importSuccess: 'Import Successful',
+      bulkQrMessage: 'This will generate and download {count} QR codes. This might take a while.',
       transfer: {
         title: 'Edit / Transfer Employee',
         subtitle: 'Update employee details. Changing the Company/Dept will maintain historical training records under the new entity.',
@@ -326,108 +333,96 @@ const enTranslations = {
             logs: 'Synchronization Logs'
         }
     },
-    reports: { title: 'Reports', subtitle: 'Analytics.', printReport: 'Print', filters: { period: 'Period', department: 'Dept', racType: 'RAC', startDate: 'Start', endDate: 'End' }, periods: { weekly: 'Weekly', monthly: 'Monthly', ytd: 'YTD', custom: 'Custom' }, generate: 'Generate AI', analyzing: 'Analyzing...', stats: { totalTrained: 'Total', passRate: 'Pass Rate', attendance: 'Attendance', noShows: 'No Shows' }, charts: { performance: 'Performance' }, executiveAnalysis: 'Executive AI Analysis', trainerMetrics: { title: 'Trainer Metrics', name: 'Trainer', sessions: 'Sessions', passRate: 'Pass Rate', avgTheory: 'Theory', avgPrac: 'Prac' } },
+    reports: { title: 'Reports', subtitle: 'Analytics.', printReport: 'Print', filters: { period: 'Period', department: 'Dept', racType: 'RAC', startDate: 'Start Date', endDate: 'End Date' }, periods: { weekly: 'Weekly', monthly: 'Monthly', ytd: 'YTD', custom: 'Custom' }, generate: 'Generate AI', analyzing: 'Analyzing...', stats: { totalTrained: 'Total', passRate: 'Pass Rate', attendance: 'Attendance', noShows: 'No Shows' }, charts: { performance: 'Performance' }, executiveAnalysis: 'Executive AI Analysis', trainerMetrics: { title: 'Trainer Metrics', name: 'Trainer', sessions: 'Sessions', passRate: 'Pass Rate', avgTheory: 'Theory', avgPrac: 'Prac' } },
     logs: { title: 'System Logs', levels: { all: 'All Levels', info: 'Info', warn: 'Warning', error: 'Error', audit: 'Audit' }, table: { level: 'Level', timestamp: 'Timestamp', user: 'User', message: 'Message' } },
     adminManual: {
         title: 'System Administrator Manual',
         subtitle: 'Comprehensive guide for maintaining the CARS Manager Ecosystem.',
         slides: {
             intro: 'Introduction',
-            hierarchy: 'System Hierarchy',
-            objectives: 'Core Objectives',
-            logic: 'Access Logic',
-            workflow: 'Data Workflow',
-            config: 'Configuration',
-            booking: 'Booking Rules',
-            advanced: 'Advanced Features',
-            troubleshoot: 'Troubleshooting'
+            logic: '1. System Logic Overview',
+            dashboard: '2. Dashboard Navigation',
+            workflows: '3. Core Workflows',
+            advanced: '4. Advanced Configurations',
+            troubleshoot: '5. Troubleshooting Guide',
+            architecture: '6. System Architecture'
         },
         content: {
             confidential: 'CONFIDENTIAL',
             production: 'PRODUCTION',
-            hierarchy: {
-                title: 'User Role Hierarchy',
-                roles: {
-                    sysAdmin: 'System Admin',
-                    entAdmin: 'Enterprise Admin',
-                    siteAdmin: 'Site Admin',
-                    ops: 'Operational Roles',
-                    user: 'General User'
-                },
-                billingTitle: 'SaaS Billing Model',
-                billingDesc: 'The system uses a per-active-user billing model. Only General Users are billable.',
-                cost: '$2.00',
-                perUser: 'Per User / Month'
-            },
-            objectives: {
-                title: 'System Objectives',
-                problemTitle: 'The Problem',
-                problemText: 'Fragmented data sources and manual processes lead to compliance risks.',
-                p1Title: 'Data Silos',
-                p1Desc: 'HR and Safety data live in disconnected systems.',
-                p2Title: 'Manual Entry',
-                p2Desc: 'High risk of human error during data entry.',
-                p3Title: 'Latency',
-                p3Desc: 'Delays in access revocation for expired certifications.',
-                solutionTitle: 'The Solution',
-                s1Title: 'Unified Database',
-                s1Desc: 'Single source of truth for all employee data.',
-                s2Title: 'Automation',
-                s2Desc: 'Automated booking and expiry notifications.',
-                s3Title: 'Real-time Access',
-                s3Desc: 'Instant access control updates based on compliance status.',
-                goals: ['Centralized Data', 'Automated Workflows', 'Real-time Compliance']
-            },
-            formulaTitle: 'Access Logic Formula',
-            formulaLogic: {
-                active: 'Active Status',
-                aso: 'Valid ASO',
-                racs: 'Required RACs',
+            logic: {
+                title: 'System Logic: The Traffic Light',
+                desc: 'The CARS Manager is a Logic Engine. Compliance is calculated dynamically based on three core pillars.',
+                active: 'User Active?',
+                aso: 'ASO Valid? (Medical)',
+                racs: 'RACs Valid? (Training)',
                 result: 'ACCESS GRANTED'
             },
-            flowTitle: 'Data Workflow',
-            flowSteps: {
-                db: 'Database',
-                dbDesc: 'Employee data is synchronized from HR/Contractor systems.',
-                book: 'Booking',
-                bookDesc: 'Training sessions are scheduled and employees are booked.',
-                res: 'Results',
-                resDesc: 'Trainers input results (Pass/Fail).',
-                stat: 'Status',
-                statDesc: 'System updates access status based on results.'
+            dashboard: {
+                operational: {
+                    title: 'Operational Dashboard',
+                    kpi: 'KPI Cards: Real-time counts for Certifications, Pending, and Expiring.',
+                    renewal: 'Renewal Widget: Alert for <30 days expiry. "Book Renewals" auto-loads wizard.',
+                    auto: 'Auto-Booking: Approvals for system-generated bookings (<7 days expiry).'
+                },
+                enterprise: {
+                    title: 'Enterprise Dashboard',
+                    global: 'Global Health Score: Aggregate compliance %.',
+                    risk: 'Risk Heatmap: Low compliance departments.',
+                    ai: 'AI Analysis: Generates executive text summary.'
+                }
             },
-            configTitle: 'System Configuration',
-            configCards: {
-                racs: 'RAC Definitions',
-                racsDesc: 'Define Critical Safety Rules, validity periods, and requirements.',
-                rooms: 'Training Rooms',
-                roomsDesc: 'Manage training locations and capacities.',
-                trainers: 'Trainers',
-                trainersDesc: 'Manage qualified trainers and their certifications.'
+            workflows: {
+                a: {
+                    title: 'A. Onboarding & Matrix',
+                    steps: [
+                        'Go to Database -> Import Wizard (CSV).',
+                        'Set Matrix: Toggle RAC columns to Green (Required).',
+                        'Result: Employee blocked until specific RAC passed.'
+                    ]
+                },
+                b: {
+                    title: 'B. Scheduling & Booking',
+                    steps: [
+                        'Schedule -> Create Session.',
+                        'Book Training -> Select Session -> Add Employees.',
+                        'Smart Capacity: Overflow auto-routed to next session or Waitlist.'
+                    ]
+                },
+                c: {
+                    title: 'C. Grading (Trainer Input)',
+                    steps: [
+                        'Select Session -> Mark Attendance.',
+                        'Enter Scores (Theory < 70% = Fail).',
+                        'RAC 02 Rule: "DL Verified" checkbox is mandatory.'
+                    ]
+                },
+                d: {
+                    title: 'D. Issuing Cards',
+                    steps: [
+                        'Request Cards -> Filter Compliant Employees.',
+                        'Batch Print (8 per page).',
+                        'Back of Card: Print from Database (QR).'
+                    ]
+                }
             },
-            bookingTitle: 'Booking Logic',
-            matrixLock: 'Matrix Lock',
-            matrixDesc: 'The system enforces a Matrix Lock to ensure compliance.',
-            gradingTitle: 'Grading',
-            gradingText: 'Passing score is 70%. Attendance is mandatory.',
-            rac02Title: 'RAC 02 Logic',
-            rac02Text: 'Requires valid Driver License details.',
-            expiryTitle: 'Expiry Logic',
-            expiryText: 'Certifications valid for defined period (e.g. 2 years).',
-            advancedTitle: 'Advanced Features',
-            autoBook: 'Auto-Booking',
-            autoBookDesc: 'System automatically books expiring employees.',
-            aiRep: 'AI Reporting',
-            aiRepDesc: 'Generate executive summaries using AI.',
-            alc: 'Alcohol Control',
-            alcDesc: 'Integration with breathalyzer devices.',
-            tsTitle: 'Troubleshooting',
-            ts1: 'Search Issues',
-            ts1Desc: 'Check spelling and ID format.',
-            ts2: 'Access Denied',
-            ts2Desc: 'Verify ASO and RAC status in Database.',
-            ts3: 'System Error',
-            ts3Desc: 'Check browser console and network connection.'
+            advanced: {
+                gov: {
+                    title: 'Site Governance',
+                    desc: 'Define mandatory RACs per location. "Push Policy" updates all site employees instantly.'
+                },
+                alcohol: {
+                    title: 'Alcohol Control (IoT)',
+                    desc: 'Real-time MQTT stream. Positive test triggers immediate block and alert.'
+                }
+            },
+            troubleshoot: {
+                t1: { issue: 'Access Denied but Trained', solution: 'Check ASO Date. Expired medical blocks access even with valid training.' },
+                t2: { issue: 'Cannot Book Employee', solution: 'Check Matrix in Database. Training must be marked "Required".' },
+                t3: { issue: 'RAC 02 Failed Auto', solution: 'Driver License expired in database. Update DL info.' },
+                t4: { issue: 'QR Code "Not Found"', solution: 'Record ID mismatch. Ensure exact case (VUL-101).' },
+                t5: { issue: 'System Sluggish', solution: 'Check Logs. Wait for Middleware Sync to finish.' }
+            }
         }
     },
     proposal: {
@@ -442,15 +437,21 @@ const enTranslations = {
         },
         execSummary: {
             title: 'Executive Summary',
-            text: 'CARS Manager is a comprehensive safety management platform designed to streamline training, compliance, and access control.',
+            text: "The CARS Manager is a specialized web application meticulously engineered to revolutionize the safety training lifecycle for Critical Activity Requisitions (RAC 01 - RAC 10). This innovative system directly addresses the inefficiencies inherent in traditional, manual processes, such as disparate spreadsheets and fragmented communication channels. By consolidating these into a centralized digital platform, the CARS Manager provides a comprehensive solution for managing every aspect of safety training, from initial booking and rigorous results tracking to the seamless issuance of certifications (CARs) and continuous compliance monitoring. This integrated approach ensures that all critical safety training data is readily accessible, accurate, and up-to-date, significantly enhancing operational safety and regulatory adherence. The system's design prioritizes user experience while delivering robust functionality, making it an indispensable tool for organizations committed to maintaining the highest standards of workplace safety.",
             quote: 'Safety is not just a priority, it is a value.'
         },
         objectives: {
             title: 'Project Objectives',
-            problemTitle: 'Challenges',
-            problemText: 'Current systems are inefficient and prone to error.',
+            problemTitle: 'Current Problem',
+            problemText: 'Reliance on manual spreadsheets leads to data inconsistency, difficulty in tracking expiring certifications, and delays in issuing physical cards. There is no real-time visibility into workforce readiness.',
             solutionTitle: 'Our Solution',
-            goals: ['Efficiency', 'Accuracy', 'Compliance']
+            goals: [
+                'Centralized Database for 15,000+ Employees', 
+                'Automated Expiration Notifications', 
+                'Digital & Physical Card Issuance',
+                'Role-Based Access Control (RBAC)',
+                'AI-Powered Safety Analytics'
+            ]
         },
         organogram: {
             title: 'Project Structure',
@@ -482,13 +483,13 @@ const enTranslations = {
             security: 'OAuth2, JWT'
         },
         financials: {
-            title: 'Financial Overview',
+            title: 'Financial Proposal',
             items: [
-                { name: 'Development', cost: '$5,000' },
-                { name: 'Infrastructure', cost: '$500' },
-                { name: 'Maintenance', cost: '$200/mo' },
-                { name: 'Training', cost: '$1,000' },
-                { name: 'Support', cost: '$100/mo' }
+                { name: 'Software Architecture & Development', type: 'Once-off', cost: '$20,000.00' },
+                { name: 'UI/UX Design & Prototyping', type: 'Once-off', cost: '$8,000.00' },
+                { name: 'Cloud Structure Setup & Subscription', type: 'Monthly', cost: '$5,000.00' },
+                { name: 'Training & Documentation', type: 'Once-off', cost: '$10,000.00' },
+                { name: 'Maintenance & Management Fee', type: 'Monthly', cost: '$15,000.00' }
             ]
         },
         roadmap: {
@@ -671,7 +672,27 @@ export const translations = {
     reports: enTranslations.reports,
     logs: enTranslations.logs,
     adminManual: enTranslations.adminManual,
-    proposal: enTranslations.proposal,
+    proposal: {
+        ...enTranslations.proposal,
+        execSummary: {
+            title: 'Sumário Executivo',
+            text: "O Gestor de RACS é uma aplicação web especializada, meticulosamente projetada para revolucionar o ciclo de vida do treinamento de segurança para Requisitos de Atividades Críticas (RAC 01 - RAC 10). Este sistema inovador aborda diretamente as ineficiências inerentes aos processos manuais tradicionais, como planilhas díspares e canais de comunicação fragmentados. Ao consolidar esses elementos em uma plataforma digital centralizada, o Gestor de RACS fornece uma solução abrangente para gerenciar todos os aspectos do treinamento de segurança, desde o agendamento inicial e rastreamento rigoroso de resultados até a emissão perfeita de certificações (CARs) e monitoramento contínuo de conformidade. Essa abordagem integrada garante que todos os dados críticos de treinamento de segurança sejam facilmente acessíveis, precisos e atualizados, melhorando significativamente a segurança operacional e a adesão regulatória. O design do sistema prioriza a experiência do usuário enquanto oferece funcionalidade robusta, tornando-o uma ferramenta indispensável para organizações comprometidas em manter os mais altos padrões de segurança no local de trabalho.",
+            quote: 'Segurança não é apenas uma prioridade, é um valor.'
+        },
+        objectives: {
+            title: 'Objetivos do Projeto',
+            problemTitle: 'Problema Atual',
+            problemText: 'A dependência de planilhas manuais leva à inconsistência de dados, dificuldade em rastrear certificações expirando e atrasos na emissão de cartões físicos. Não há visibilidade em tempo real da prontidão da força de trabalho.',
+            solutionTitle: 'Nossa Solução',
+            goals: [
+                'Base de Dados Centralizada para 15.000+ Funcionários',
+                'Notificações Automatizadas de Expiração',
+                'Emissão de Cartões Físicos e Digitais',
+                'Controle de Acesso Baseado em Função (RBAC)',
+                'Análise de Segurança Impulsionada por IA'
+            ]
+        }
+    },
     alcohol: enTranslations.alcohol,
     manuals: enTranslations.manuals
   }

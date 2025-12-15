@@ -1,158 +1,134 @@
 
-# CARS Manager - System Administrator Manual
-**Version:** 2.5.0  
-**Target Audience:** System Administrators, HSE Managers
+# SYSTEM ADMINISTRATOR GUIDE (MANUAL)
+**System:** CARS Manager v2.5
+**Access Level:** System Administrator / HSE Manager
 
 ---
 
-## 1. System Overview
+## 1. System Logic Overview
 
-The **CARS Manager (Critical Activity Requisitions System)** is a web-based Safety Management System designed to ensure workforce compliance in high-risk industrial environments (Mining/Oil & Gas). 
+The **CARS Manager** is not just a database; it is a Logic Engine. Understanding how it calculates "Compliance" is critical.
 
-It acts as the central "Gatekeeper" logic for site access. The system links Employee Health (ASO), Training Competency (RACs), and Operational Permissions to determine if an employee is **Compliant (Green)** or **Blocked (Red)**.
+### 🚦 The Traffic Light Logic
+The system grants a **GREEN (Granted)** status only if all three conditions are met:
 
-### Core Capabilities
-*   **Matrix Management:** Define exactly which trainings a specific employee role requires.
-*   **Scheduling & Booking:** Manage classroom capacity and assign employees to training sessions.
-*   **Grading & Results:** Capture test scores and attendance.
-*   **Automated Compliance:** The system automatically calculates access status based on expiry dates.
-*   **Digital Passport:** Generates QR-coded ID cards for field verification.
-*   **Auto-Booking Engine:** Automatically reserves training slots for employees expiring in < 7 days.
-*   **AI Analytics:** Uses Google Gemini AI to generate safety reports and provide advice.
+```text
+[ 👤 User Active? ] 
+             +
+      [ 🏥 ASO Valid? ]  (Medical Expiry > Today)
+             +
+      [ 🎓 RACs Valid? ] (All Required Modules = Passed)
+             =
+      ✅ ACCESS GRANTED
+```
 
----
-
-## 2. Architecture & Data Logic
-
-### The Compliance Formula
-The system determines an employee's status based on strict logic. An employee is **GRANTED** access only if:
-
-1.  **Status is Active:** The employee is not marked inactive in the database.
-2.  **ASO is Valid:** Medical certificate expiry date is in the future.
-3.  **RAC Requirements Met:** For every RAC marked as `TRUE` in the Database Matrix:
-    *   There must be a `PASSED` training record.
-    *   The training record's expiry date must be in the future.
-4.  **Driver License (RAC 02 Specific):** If the employee requires `RAC 02` (Vehicles), their Driver License must be valid and verified.
-
-### Data Flow
-1.  **Database (Input):** You define *Requirements* (Who needs what?).
-2.  **Booking (Process):** You schedule training. *Constraint: You cannot book a training if the Database says it isn't required.*
-3.  **Trainer Input (Execution):** Trainers mark attendance and scores.
-4.  **Results (Output):** Passing creates a historical record with an expiry date (default: 2 years).
-5.  **Dashboard (Monitoring):** The system re-calculates compliance in real-time.
+**⚠️ Important:** If *any* required RAC is missing or expired, the entire status turns **RED (Blocked)**.
 
 ---
 
-## 3. Operational Workflows
+## 2. Dashboard Navigation
 
-### A. System Configuration (First Run)
-Before onboarding employees, configure the environment in **System Settings**:
-1.  **RAC Definitions:** Define the modules (e.g., RAC 01, RAC 02, PTS). *Warning: Deleting a RAC here removes the column from the database.*
-2.  **Rooms:** Define physical locations and seating capacity. This sets limits for the Booking engine.
-3.  **Trainers:** Register trainers and authorize them for specific modules.
+### 📊 Operational Dashboard
+*   **KPI Cards:** Shows real-time counts for Certifications, Pending, and Expiring.
+*   **Renewal Widget:** A yellow alert box appears if users are expiring in < 30 days. Click "Book Renewals" to auto-load them into the booking wizard.
+*   **Auto-Booking Approval:** An orange table appears if the system auto-booked employees (expiry < 7 days). You must click Approve or Reject.
 
-### B. Onboarding Employees (The Database)
-Navigate to the **Database** page. This is your Master Record.
-*   **Manual Entry:** Click "Import CSV" (use the template).
-*   **The Matrix:** 
-    *   **Left Side:** Check boxes for RACs (Training Modules).
-    *   **Right Side:** Check boxes for Operational Permissions (e.g., LIB-OPS).
-    *   **ASO:** Enter the medical expiry date.
-*   **QR Codes:** You can mass download QR codes for all employees in the current view here.
-
-### C. Booking Training
-Navigate to **Book Training**.
-*   **Modes:**
-    *   *System Admin:* Can see all sessions and book anyone.
-    *   *User (Self-Service):* Can only see sessions for RACs they are required to have.
-*   **Validation:** The system prevents overbooking (Capacity limits) and Duplicate bookings (Same RAC type).
-*   **Renewals:** Use the "Book Renewals" button on the Dashboard to load a batch of employees expiring in 30 days.
-
-### D. Grading (The Trainer Workflow)
-Trainers use the **Trainer Input** page.
-*   **Grading Logic:** 
-    *   Pass Mark: 70% Theory.
-    *   Attendance is mandatory.
-    *   **RAC 02:** Requires a specific "DL Verified" checkbox. If the Driver License is invalid, the student fails regardless of score.
-*   **Saving:** Clicking "Save" commits the data as a permanent record and updates the employee's expiry date.
-
-### E. Issuing Cards
-Navigate to **Request Cards**.
-*   **Eligibility Engine:** This page *only* shows employees who are 100% compliant. If an employee is missing, check their ASO or Training dates.
-*   **Batch Printing:** Select up to 8 employees to generate a printable A4 PDF with crop marks.
+### 🌍 Enterprise Dashboard
+*   **Global Health Score:** An aggregate % of compliance across all sites.
+*   **Risk Heatmap:** Identifies which Departments or Contractors have the lowest compliance.
+*   **AI Analysis:** Click "Generate Strategic Report" to have Gemini AI write a text summary of the risks.
 
 ---
 
-## 4. Advanced Features
+## 3. Core Workflows
 
-### Auto-Booking Engine
-*   **Trigger:** Runs on the Dashboard load.
-*   **Logic:** Scans for employees where `Training Expiry < 7 Days`.
-*   **Action:** Automatically creates a `PENDING` booking for the next available session of that RAC type.
-*   **Approval:** Administrators must approve these auto-bookings in the orange widget on the Dashboard.
+### Workflow A: Onboarding & Matrix Setup (Database Page)
+1.  **Go to Database.**
+2.  **Import:** Click "Import Wizard" to upload a CSV from HR. The system maps columns automatically.
+3.  **The Matrix (Crucial):**
+    *   On the right side of the table, you will see columns for RAC01, RAC02, PTS, etc.
+    *   **Toggle Buttons:** Click a button to turn it **Green (Required)** or **Grey (Not Required)**.
+    *   *Note: If you mark a RAC as required, the employee becomes "Blocked" until they pass that specific training.*
 
-### AI Reporting
-*   Located in **Reports**.
-*   Click "Generate AI Analysis".
-*   The system sends anonymized statistical data (Pass rates, attendance, failing modules) to Google Gemini.
-*   **Output:** An executive summary identifying high-risk departments and training gaps.
+### Workflow B: Scheduling & Booking
+1.  **Go to Schedule** to create slots (Date, Time, Capacity, Room).
+2.  **Go to Book Training.**
+3.  **Selection:** Choose a Session.
+4.  **Input:** Add employees.
+5.  **Smart Capacity Check:**
+    *   If you try to book 15 people into a room with 10 seats...
+    *   The system puts 10 in the session.
+    *   The system automatically finds the next future session for the remaining 5.
+    *   If no future session exists, they go to the **Waitlist**.
 
-### Alcohol Control (IoT)
-*   Located in **Alcohol Control**.
-*   Currently a roadmap/simulation module.
-*   **Protocol:** Designed to link with turnstiles. If a breathalyzer detects alcohol, the system sets `Access Status = Blocked` until 02:00 AM the next day.
+### Workflow C: Grading (Trainer Input)
+1.  **Go to Trainer Input.**
+2.  Select the Session.
+3.  **Mark Attendance:** Check the box.
+4.  **Enter Scores:**
+    *   Theory < 70% = Fail.
+    *   **RAC 02 Special Rule:** You must check "DL Verified". If the driver's license is invalid, the student fails immediately, regardless of score.
+5.  **Save:** Click Save. This triggers the **Automatic Print Dialog** for the physical register.
 
-### Audit Logs
-*   Located in **System Logs**.
-*   Tracks critical actions: User creation, deletion, manual grade changes, and configuration updates.
-
----
-
-## 5. Enterprise Management (New)
-
-The system now supports Multi-Tenancy, allowing a single deployment to manage multiple client companies and sites.
-
-### Creating a New Enterprise
-1.  Go to **System Settings** > **Companies** (Only available to `System Admin`).
-2.  Fill in the "New Enterprise Provisioning" form:
-    *   **Company Name:** e.g., "Acme Corp".
-    *   **Admin Name:** e.g., "John Smith".
-    *   **Admin Email:** e.g., "admin@acme.com".
-3.  Click **Provision Enterprise**.
-4.  **Result:** The system automatically creates:
-    *   The Company entity.
-    *   A default "Headquarters" Site.
-    *   A new User with role `Enterprise Admin` linked to this company.
-
-### Site Governance
-Enterprise Admins can manage mandatory requirements per site.
-1.  Go to **Site Governance**.
-2.  Select a Site from the sidebar.
-3.  Toggle the RACs that are mandatory for *all* employees at that site.
-4.  Click **Save & Push Policy**.
-5.  **Result:** The system updates the requirements matrix for every employee assigned to that site, ensuring they are flagged for the required training.
-
-### Corporate Dashboard
-Navigate to **Corporate Dashboard** to view a high-level summary of all sites under your management, including:
-*   Global Health Score (Average compliance across sites).
-*   Top Performing Site vs Needs Attention.
-*   Comparative charts for workforce compliance.
+### Workflow D: Issuing Cards
+1.  **Go to Request Cards.**
+2.  **Filter:** Select compliant employees.
+3.  **Batch:** The system allows batches of 8 cards.
+4.  **Print:** Generates a PDF with crop marks for the ID card printer.
+5.  **Back of Card:** Can be printed from the Database page (QR Code).
 
 ---
 
-## 6. Troubleshooting
+## 4. Advanced Configurations
 
-**Q: Why can't I find an employee in the Booking Form?**
-A: Ensure the employee exists in the **Database** first. The Booking form searches the Master Database.
+### ⚙️ Site Governance
+**Use Case:** You want everyone at "Moatize Mine" to have RAC 01, but "Maputo HQ" does not need it.
+1.  **Go to Site Governance.**
+2.  Select the site.
+3.  Toggle RAC 01.
+4.  Click **"Push Policy"**.
+**Result:** Every employee linked to Moatize instantly gets RAC 01 marked as "Required" in their matrix.
 
-**Q: Why is an employee "Blocked" even though they passed training?**
-A: Check their **ASO (Medical)** date in the Database. If the medical is expired, site access is blocked regardless of training status. Also, check if they are marked "Inactive".
+### 🍷 Alcohol Control (IoT)
+1.  **Go to Alcohol Control.**
+2.  **Live Stream:** Shows real-time tests from MQTT breathalyzers.
+3.  **Alerts:** A positive test triggers a red modal popup and logs a "Violation".
+4.  **Protocol:** Positive test = Immediate Gate Lock + Supervisor Email.
 
-**Q: The QR Code shows "Record Not Found".**
-A: The QR code links to the employee's `Record ID`. Ensure the ID in the URL matches exactly what is in the database (case-sensitive).
+---
 
-**Q: How do I delete a wrong training record?**
-A: Go to **Results Page**. Admins can view history. Currently, strict deletion is restricted to maintain audit trails, but you can overwrite status by re-grading in Trainer Input if the session is still pending.
+## 5. Troubleshooting Guide
 
-**Q: How do I backup data?**
-A: Go to **Database** and click "Export DB". This downloads a CSV of the entire matrix. Go to **Results** and click "Export Records" for training history.
+| Issue | Visual | Solution |
+| :--- | :---: | :--- |
+| **Access Denied but Trained** | ❌ | Check ASO Date in Database. Even with training, an expired medical blocks access. |
+| **Cannot Book Employee** | 🔒 | Check if the RAC is marked Required in Database. The system prevents booking unnecessary training. |
+| **RAC 02 Failed Automatically** | 🚗 | The employee's Driver License date in the database is expired. Update DL first. |
+| **QR Code "Not Found"** | 📱 | Ensure the Record ID in the URL matches exactly (Case Sensitive). e.g., VUL-101 vs vul-101. |
+| **System Sluggish** | 🐌 | Check System Logs. If "Syncing" is active, wait for the middleware job to finish. |
+
+---
+
+## 6. System Architecture (Visual Reference)
+
+```text
+[ USER INTERFACE ]
+      |
+      v
+[ PERMISSION GATE ] <--- Checks User Role (System Admin vs User)
+      |
+      v
+[ LOGIC ENGINE ]
+   |-- Check Capacity
+   |-- Check Pre-requisites (Matrix Lock)
+   |-- Check DL Validity (For RAC 02)
+      |
+      v
+[ DATABASE STATE ] <--- Updates Booking / Employee Record
+      |
+      v
+[ AUTOMATION ]
+   |--> 📧 Email/SMS Trigger
+   |--> 🖨️ Auto-Print Register
+   |--> 🤖 AI Analysis Update
+```

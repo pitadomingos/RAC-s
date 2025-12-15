@@ -13,11 +13,14 @@ interface State {
 }
 
 export class ErrorBoundary extends React.Component<Props, State> {
-  public state: State = {
-    hasError: false,
-    error: null,
-    aiDiagnosis: null
-  };
+  constructor(props: Props) {
+    super(props);
+    this.state = {
+      hasError: false,
+      error: null,
+      aiDiagnosis: null
+    };
+  }
 
   public static getDerivedStateFromError(error: Error): State {
     return { hasError: true, error, aiDiagnosis: null };
@@ -31,7 +34,7 @@ export class ErrorBoundary extends React.Component<Props, State> {
     this.runSilentDiagnosis(error, errorInfo);
   }
 
-  private async runSilentDiagnosis(error: Error, errorInfo: ErrorInfo) {
+  private runSilentDiagnosis = async (error: Error, errorInfo: ErrorInfo) => {
       try {
           const stack = errorInfo.componentStack || '';
           const diagnosis = await analyzeRuntimeError(error.message, stack);

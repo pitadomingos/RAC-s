@@ -3,12 +3,10 @@ import React, { useState, useEffect } from 'react';
 import { 
   Shield, Database, Calendar, Users, 
   FileText, Activity, AlertTriangle, 
-  Settings, CheckCircle, Smartphone,
+  CheckCircle, Smartphone,
   ChevronLeft, ChevronRight, Maximize, Minimize, X,
-  Lock, Zap, Server, Layout, HelpCircle, Terminal,
-  Workflow, CheckCircle2, XCircle, Search, DollarSign,
-  User, Building2, Map, Layers, RefreshCw, GitMerge,
-  HardHat
+  Lock, Server, CheckCircle2, XCircle, Search,
+  Building2, Map, Layout, Zap, Terminal, Workflow, Settings
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useLanguage } from '../contexts/LanguageContext';
@@ -44,15 +42,8 @@ const AdminManualPage: React.FC = () => {
     }
   };
 
-  // Robust Safety check to prevent "Cannot read properties of undefined"
-  // Checks deep nested properties that are accessed during render
-  if (
-      !t || 
-      !t.adminManual || 
-      !t.adminManual.slides || 
-      !t.adminManual.content ||
-      !t.adminManual.content.objectives
-  ) {
+  // Robust Safety check
+  if (!t || !t.adminManual || !t.adminManual.slides || !t.adminManual.content) {
       return (
           <div className="flex items-center justify-center h-screen bg-slate-950 text-white">
               <div className="text-center">
@@ -65,15 +56,12 @@ const AdminManualPage: React.FC = () => {
 
   const slides = [
       { id: 'intro', title: t.adminManual.slides.intro },
-      { id: 'hierarchy', title: t.adminManual.slides.hierarchy },
-      { id: 'objectives', title: t.adminManual.slides.objectives },
       { id: 'logic', title: t.adminManual.slides.logic },
-      { id: 'workflow', title: t.adminManual.slides.workflow },
-      { id: 'sync', title: 'Data Synchronization' }, // NEW
-      { id: 'config', title: t.adminManual.slides.config },
-      { id: 'booking', title: t.adminManual.slides.booking },
+      { id: 'dashboard', title: t.adminManual.slides.dashboard },
+      { id: 'workflows', title: t.adminManual.slides.workflows },
       { id: 'advanced', title: t.adminManual.slides.advanced },
-      { id: 'troubleshoot', title: t.adminManual.slides.troubleshoot }
+      { id: 'troubleshoot', title: t.adminManual.slides.troubleshoot },
+      { id: 'architecture', title: t.adminManual.slides.architecture }
   ];
 
   const nextSlide = () => {
@@ -117,187 +105,11 @@ const AdminManualPage: React.FC = () => {
       </div>
   );
 
-  const HierarchySlide = () => (
-      <div className="flex flex-col justify-center h-full max-w-7xl mx-auto px-6 relative z-10 animate-fade-in-up">
-          <h2 className="text-4xl md:text-6xl font-black text-white mb-12 text-center tracking-tight">
-              {t.adminManual.content.hierarchy.title}
-          </h2>
-
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-start">
-              {/* ORGANOGRAM */}
-              <div className="bg-slate-900/60 p-8 rounded-[2rem] border border-blue-500/20 backdrop-blur-md relative overflow-hidden">
-                  <div className="flex flex-col items-center gap-6">
-                      
-                      {/* L1 */}
-                      <div className="p-4 bg-slate-800 rounded-xl border border-slate-600 w-64 text-center shadow-lg relative z-10">
-                          <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-blue-600 rounded-full p-1"><Server size={14} className="text-white"/></div>
-                          <div className="text-blue-300 font-bold">{t.adminManual.content.hierarchy.roles.sysAdmin}</div>
-                      </div>
-                      
-                      {/* Connector */}
-                      <div className="h-6 w-0.5 bg-slate-600"></div>
-
-                      {/* L2 */}
-                      <div className="p-4 bg-slate-800 rounded-xl border border-slate-600 w-64 text-center shadow-lg relative z-10">
-                          <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-purple-600 rounded-full p-1"><Building2 size={14} className="text-white"/></div>
-                          <div className="text-purple-300 font-bold">{t.adminManual.content.hierarchy.roles.entAdmin}</div>
-                      </div>
-
-                      {/* Connector */}
-                      <div className="h-6 w-0.5 bg-slate-600"></div>
-
-                      {/* L3 */}
-                      <div className="p-4 bg-slate-800 rounded-xl border border-slate-600 w-64 text-center shadow-lg relative z-10">
-                          <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-orange-600 rounded-full p-1"><Map size={14} className="text-white"/></div>
-                          <div className="text-orange-300 font-bold">{t.adminManual.content.hierarchy.roles.siteAdmin}</div>
-                      </div>
-
-                      {/* Connector Branch */}
-                      <div className="relative w-48 h-6">
-                          <div className="absolute top-0 left-1/2 w-0.5 h-full bg-slate-600 -translate-x-1/2"></div>
-                          <div className="absolute bottom-0 left-0 w-full h-0.5 bg-slate-600"></div>
-                      </div>
-
-                      {/* L4 Group */}
-                      <div className="flex gap-4">
-                          <div className="p-3 bg-slate-800/50 rounded-lg border border-slate-700 text-xs text-slate-400 font-mono text-center w-32">
-                              {t.adminManual.content.hierarchy.roles.ops}
-                          </div>
-                      </div>
-
-                      {/* L5 - The User */}
-                      <div className="mt-4 p-4 bg-green-900/30 rounded-xl border border-green-500/50 w-64 text-center shadow-[0_0_30px_rgba(34,197,94,0.2)] relative z-10 animate-pulse">
-                          <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-green-600 rounded-full p-1"><User size={14} className="text-white"/></div>
-                          <div className="text-green-300 font-bold">{t.adminManual.content.hierarchy.roles.user}</div>
-                      </div>
-                  </div>
-              </div>
-
-              {/* BILLING MODEL */}
-              <div className="flex flex-col gap-8">
-                  <div className="bg-gradient-to-br from-slate-900 to-slate-800 p-10 rounded-[2.5rem] border border-green-500/30 shadow-2xl relative overflow-hidden group">
-                      <div className="absolute top-0 right-0 p-10 opacity-5 group-hover:opacity-10 transition-opacity">
-                          <DollarSign size={150} />
-                      </div>
-                      <div className="relative z-10">
-                          <div className="flex items-center gap-4 mb-6">
-                              <div className="p-3 bg-green-500/20 rounded-2xl text-green-400 border border-green-500/30 shadow-lg">
-                                  <DollarSign size={32} />
-                              </div>
-                              <h3 className="text-2xl font-black text-white">{t.adminManual.content.hierarchy.billingTitle}</h3>
-                          </div>
-                          
-                          <p className="text-lg text-slate-300 mb-8 leading-relaxed font-light">
-                              {t.adminManual.content.hierarchy.billingDesc}
-                          </p>
-
-                          <div className="flex items-end gap-3 bg-slate-950/50 p-6 rounded-2xl border border-slate-700">
-                              <span className="text-6xl font-black text-green-400 tracking-tighter drop-shadow-md">
-                                  {t.adminManual.content.hierarchy.cost}
-                              </span>
-                              <span className="text-sm text-slate-400 font-bold uppercase tracking-wide mb-2">
-                                  {t.adminManual.content.hierarchy.perUser}
-                              </span>
-                          </div>
-                      </div>
-                  </div>
-
-                  <div className="bg-blue-900/20 p-6 rounded-2xl border border-blue-500/30">
-                      <h4 className="text-blue-300 font-bold flex items-center gap-2 mb-2">
-                          <CheckCircle2 size={18} /> Admin Seats are Free
-                      </h4>
-                      <p className="text-sm text-blue-200/80">
-                          System Administrators, Enterprise Admins, Site Managers, and Trainers do not count towards the monthly billing cycle.
-                      </p>
-                  </div>
-              </div>
-          </div>
-      </div>
-  );
-
-  const ObjectivesSlide = () => (
-      <div className="flex flex-col justify-center h-full max-w-[1600px] mx-auto px-6 relative z-10 animate-fade-in-up">
-          <h2 className="text-4xl md:text-6xl font-black text-white mb-12 text-center tracking-tight">{t.adminManual.content.objectives.title}</h2>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-10 h-full max-h-[70vh]">
-              
-              {/* Problem Column */}
-              <div className="bg-slate-900/60 p-8 rounded-[2rem] border border-red-500/20 backdrop-blur-md hover:border-red-500/40 transition-colors flex flex-col h-full overflow-y-auto custom-scrollbar">
-                  <div className="flex items-center gap-4 mb-6 pb-4 border-b border-red-500/20 sticky top-0 bg-slate-900/95 z-10">
-                      <div className="p-3 bg-red-500/10 rounded-xl">
-                        <XCircle className="text-red-500" size={32} />
-                      </div>
-                      <h3 className="text-2xl font-bold text-red-100">{t.adminManual.content.objectives.problemTitle}</h3>
-                  </div>
-                  <div className="space-y-8 flex-1">
-                      <div className="p-4 bg-red-500/5 rounded-2xl border border-red-500/5">
-                          <h4 className="text-red-300 font-bold text-lg mb-2 flex items-center gap-2">
-                              <span className="text-red-500 font-black text-xl">01.</span>
-                              {t.adminManual.content.objectives.p1Title}
-                          </h4>
-                          <p className="text-base text-slate-400 leading-relaxed">{t.adminManual.content.objectives.p1Desc}</p>
-                      </div>
-                      <div className="p-4 bg-red-500/5 rounded-2xl border border-red-500/5">
-                          <h4 className="text-red-300 font-bold text-lg mb-2 flex items-center gap-2">
-                              <span className="text-red-500 font-black text-xl">02.</span>
-                              {t.adminManual.content.objectives.p2Title}
-                          </h4>
-                          <p className="text-base text-slate-400 leading-relaxed">{t.adminManual.content.objectives.p2Desc}</p>
-                      </div>
-                      <div className="p-4 bg-red-500/5 rounded-2xl border border-red-500/5">
-                          <h4 className="text-red-300 font-bold text-lg mb-2 flex items-center gap-2">
-                              <span className="text-red-500 font-black text-xl">03.</span>
-                              {t.adminManual.content.objectives.p3Title}
-                          </h4>
-                          <p className="text-base text-slate-400 leading-relaxed">{t.adminManual.content.objectives.p3Desc}</p>
-                      </div>
-                  </div>
-              </div>
-
-              {/* Solution Column */}
-              <div className="bg-slate-900/60 p-8 rounded-[2rem] border border-green-500/20 backdrop-blur-md hover:border-green-500/40 transition-colors flex flex-col h-full overflow-y-auto custom-scrollbar">
-                  <div className="flex items-center gap-4 mb-6 pb-4 border-b border-green-500/20 sticky top-0 bg-slate-900/95 z-10">
-                      <div className="p-3 bg-green-500/10 rounded-xl">
-                        <CheckCircle2 className="text-green-500" size={32} />
-                      </div>
-                      <h3 className="text-2xl font-bold text-green-100">{t.adminManual.content.objectives.solutionTitle}</h3>
-                  </div>
-                  <div className="space-y-8 flex-1">
-                      <div className="p-4 bg-green-500/5 rounded-2xl border border-green-500/5">
-                          <h4 className="text-green-300 font-bold text-lg mb-2 flex items-center gap-2">
-                              <span className="text-green-500 font-black text-xl">01.</span>
-                              {t.adminManual.content.objectives.s1Title}
-                          </h4>
-                          <p className="text-base text-slate-400 leading-relaxed">{t.adminManual.content.objectives.s1Desc}</p>
-                      </div>
-                      <div className="p-4 bg-green-500/5 rounded-2xl border border-green-500/5">
-                          <h4 className="text-green-300 font-bold text-lg mb-2 flex items-center gap-2">
-                              <span className="text-green-500 font-black text-xl">02.</span>
-                              {t.adminManual.content.objectives.s2Title}
-                          </h4>
-                          <p className="text-base text-slate-400 leading-relaxed">{t.adminManual.content.objectives.s2Desc}</p>
-                      </div>
-                      <div className="p-4 bg-green-500/5 rounded-2xl border border-green-500/5">
-                          <h4 className="text-green-300 font-bold text-lg mb-2 flex items-center gap-2">
-                              <span className="text-green-500 font-black text-xl">03.</span>
-                              {t.adminManual.content.objectives.s3Title}
-                          </h4>
-                          <p className="text-base text-slate-400 leading-relaxed">{t.adminManual.content.objectives.s3Desc}</p>
-                      </div>
-                  </div>
-              </div>
-
-          </div>
-      </div>
-  );
-
   const LogicSlide = () => (
       <div className="flex flex-col justify-center h-full max-w-7xl mx-auto px-6 relative z-10">
           <div className="text-center mb-16 animate-fade-in-down">
-              <div className="inline-flex items-center gap-3 px-6 py-2 rounded-full bg-blue-500/20 text-blue-300 border border-blue-500/30 text-base font-bold mb-6">
-                  <Activity size={20} /> Architecture
-              </div>
-              <h2 className="text-5xl md:text-7xl font-black text-white tracking-tighter">{t.adminManual.content.formulaTitle}</h2>
+              <h2 className="text-5xl md:text-7xl font-black text-white tracking-tighter mb-6">{t.adminManual.content.logic.title}</h2>
+              <p className="text-xl text-slate-400 max-w-3xl mx-auto">{t.adminManual.content.logic.desc}</p>
           </div>
 
           <div className="relative group animate-fade-in-up">
@@ -308,239 +120,115 @@ const AdminManualPage: React.FC = () => {
                   <div className="flex flex-col md:flex-row items-center justify-center gap-8 md:gap-4 mb-12">
                       <div className="bg-white/5 border border-white/10 px-8 py-6 rounded-2xl flex flex-col items-center">
                           <span className="text-xs text-slate-500 uppercase font-bold tracking-wider mb-2">Input 1</span>
-                          <div className="text-blue-400 font-black text-2xl flex items-center gap-2"><CheckCircle size={20}/> {t.adminManual.content.formulaLogic.active}</div>
+                          <div className="text-blue-400 font-black text-2xl flex items-center gap-2"><CheckCircle size={20}/> {t.adminManual.content.logic.active}</div>
                       </div>
                       <span className="text-slate-600 font-black text-2xl">+</span>
                       <div className="bg-white/5 border border-white/10 px-8 py-6 rounded-2xl flex flex-col items-center">
                           <span className="text-xs text-slate-500 uppercase font-bold tracking-wider mb-2">Input 2</span>
-                          <div className="text-orange-400 font-black text-2xl flex items-center gap-2"><Calendar size={20}/> {t.adminManual.content.formulaLogic.aso}</div>
+                          <div className="text-orange-400 font-black text-2xl flex items-center gap-2"><Calendar size={20}/> {t.adminManual.content.logic.aso}</div>
                       </div>
                       <span className="text-slate-600 font-black text-2xl">+</span>
                       <div className="bg-white/5 border border-white/10 px-8 py-6 rounded-2xl flex flex-col items-center">
                           <span className="text-xs text-slate-500 uppercase font-bold tracking-wider mb-2">Input 3</span>
-                          <div className="text-yellow-400 font-black text-2xl flex items-center gap-2"><Database size={20}/> {t.adminManual.content.formulaLogic.racs}</div>
+                          <div className="text-yellow-400 font-black text-2xl flex items-center gap-2"><Database size={20}/> {t.adminManual.content.logic.racs}</div>
                       </div>
                       <span className="text-slate-600 font-black text-2xl">=</span>
                       <div className="bg-green-500/20 border border-green-500/50 px-10 py-8 rounded-3xl shadow-[0_0_30px_rgba(34,197,94,0.3)]">
-                          <div className="text-green-400 font-black text-3xl tracking-wide">{t.adminManual.content.formulaLogic.result}</div>
+                          <div className="text-green-400 font-black text-3xl tracking-wide">{t.adminManual.content.logic.result}</div>
                       </div>
                   </div>
 
-                  <p className="text-center text-slate-400 text-lg max-w-3xl mx-auto leading-relaxed">
-                      The system strictly enforces an <strong>AND</strong> logic gate. 
-                      If any single variable (Status, ASO Date, or <em>any</em> required RAC Training) is missing or expired, the result defaults to <strong>BLOCKED</strong>.
+                  <p className="text-center text-slate-400 text-lg max-w-3xl mx-auto leading-relaxed border-l-4 border-red-500 pl-4 bg-red-900/10 p-4 rounded-r-xl">
+                      <strong>⚠️ Important:</strong> The system enforces strict AND logic. If any required RAC is missing or expired, status turns <span className="text-red-500 font-bold">RED (Blocked)</span>.
                   </p>
               </div>
           </div>
       </div>
   );
 
-  const WorkflowSlide = () => (
-      <div className="flex flex-col justify-center h-full max-w-[1800px] mx-auto px-6 relative z-10 animate-fade-in-up">
-          <h2 className="text-5xl md:text-7xl font-black text-white mb-16 text-center tracking-tighter">{t.adminManual.content.flowTitle}</h2>
+  const DashboardSlide = () => (
+      <div className="flex flex-col justify-center h-full max-w-7xl mx-auto px-6 relative z-10 animate-fade-in-up">
+          <h2 className="text-4xl md:text-6xl font-black text-white mb-16 text-center">{t.adminManual.slides.dashboard}</h2>
           
-          <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 h-full">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
+              {/* Operational */}
+              <div className="bg-slate-900/80 p-8 rounded-[2rem] border border-blue-500/30 backdrop-blur-md">
+                  <div className="flex items-center gap-4 mb-6">
+                      <div className="p-3 bg-blue-500/20 rounded-xl text-blue-400"><Layout size={32}/></div>
+                      <h3 className="text-2xl font-bold text-blue-100">{t.adminManual.content.dashboard.operational.title}</h3>
+                  </div>
+                  <ul className="space-y-4 text-slate-300">
+                      <li className="flex gap-3"><Activity size={20} className="text-blue-500 shrink-0"/> {t.adminManual.content.dashboard.operational.kpi}</li>
+                      <li className="flex gap-3"><AlertTriangle size={20} className="text-yellow-500 shrink-0"/> {t.adminManual.content.dashboard.operational.renewal}</li>
+                      <li className="flex gap-3"><Zap size={20} className="text-orange-500 shrink-0"/> {t.adminManual.content.dashboard.operational.auto}</li>
+                  </ul>
+              </div>
+
+              {/* Enterprise */}
+              <div className="bg-slate-900/80 p-8 rounded-[2rem] border border-purple-500/30 backdrop-blur-md">
+                  <div className="flex items-center gap-4 mb-6">
+                      <div className="p-3 bg-purple-500/20 rounded-xl text-purple-400"><Building2 size={32}/></div>
+                      <h3 className="text-2xl font-bold text-purple-100">{t.adminManual.content.dashboard.enterprise.title}</h3>
+                  </div>
+                  <ul className="space-y-4 text-slate-300">
+                      <li className="flex gap-3"><Map size={20} className="text-purple-500 shrink-0"/> {t.adminManual.content.dashboard.enterprise.global}</li>
+                      <li className="flex gap-3"><Users size={20} className="text-red-500 shrink-0"/> {t.adminManual.content.dashboard.enterprise.risk}</li>
+                      <li className="flex gap-3"><Terminal size={20} className="text-green-500 shrink-0"/> {t.adminManual.content.dashboard.enterprise.ai}</li>
+                  </ul>
+              </div>
+          </div>
+      </div>
+  );
+
+  const WorkflowsSlide = () => (
+      <div className="flex flex-col justify-center h-full max-w-[1800px] mx-auto px-6 relative z-10 animate-fade-in-up">
+          <h2 className="text-4xl md:text-6xl font-black text-white mb-12 text-center">{t.adminManual.slides.workflows}</h2>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 h-[60vh]">
               {[
-                  { title: t.adminManual.content.flowSteps.db, icon: Database, desc: t.adminManual.content.flowSteps.dbDesc, color: 'blue' },
-                  { title: t.adminManual.content.flowSteps.book, icon: Calendar, desc: t.adminManual.content.flowSteps.bookDesc, color: 'purple' },
-                  { title: t.adminManual.content.flowSteps.res, icon: Activity, desc: t.adminManual.content.flowSteps.resDesc, color: 'green' },
-                  { title: t.adminManual.content.flowSteps.stat, icon: CheckCircle, desc: t.adminManual.content.flowSteps.statDesc, color: 'orange' },
-              ].map((step, i) => (
-                  <div key={i} className="relative group flex flex-col h-full">
-                      {i < 3 && (
-                          <div className="hidden lg:block absolute top-10 -right-5 z-20 text-slate-700/50">
-                              <ChevronRight size={40} strokeWidth={3} />
-                          </div>
-                      )}
-                      
-                      <div className={`bg-slate-900/80 border border-slate-700 hover:border-${step.color}-500/50 p-8 rounded-[2rem] flex-1 hover:-translate-y-2 transition-all duration-300 backdrop-blur-md flex flex-col shadow-xl`}>
-                          <div className={`w-16 h-16 rounded-2xl bg-${step.color}-500/10 flex items-center justify-center text-${step.color}-500 mb-6 shadow-[0_0_20px_rgba(0,0,0,0.2)] group-hover:scale-110 transition-transform duration-300`}>
-                              <step.icon size={32} />
-                          </div>
-                          <div className="font-black text-xl text-white mb-4 tracking-tight leading-tight">{step.title}</div>
-                          <div className="text-slate-400 text-sm leading-relaxed border-t border-slate-800 pt-4 mt-auto">
-                            {step.desc}
-                          </div>
+                  { section: t.adminManual.content.workflows.a, color: 'blue', icon: Database },
+                  { section: t.adminManual.content.workflows.b, color: 'purple', icon: Calendar },
+                  { section: t.adminManual.content.workflows.c, color: 'green', icon: Activity },
+                  { section: t.adminManual.content.workflows.d, color: 'orange', icon: CheckCircle },
+              ].map((wf, i) => (
+                  <div key={i} className={`bg-slate-900/80 border border-slate-700 hover:border-${wf.color}-500/50 p-6 rounded-[2rem] flex flex-col hover:-translate-y-2 transition-all duration-300 shadow-xl`}>
+                      <div className={`w-12 h-12 rounded-xl bg-${wf.color}-500/10 flex items-center justify-center text-${wf.color}-500 mb-4`}>
+                          <wf.icon size={24} />
                       </div>
+                      <h3 className="font-bold text-xl text-white mb-4">{wf.section.title}</h3>
+                      <ul className="space-y-3 text-sm text-slate-400 flex-1">
+                          {wf.section.steps.map((step: string, idx: number) => (
+                              <li key={idx} className="flex gap-2">
+                                  <span className={`text-${wf.color}-500 font-bold`}>•</span>
+                                  {step}
+                              </li>
+                          ))}
+                      </ul>
                   </div>
               ))}
           </div>
       </div>
   );
 
-  // --- NEW SLIDE: Data Synchronization ---
-  const SyncSlide = () => (
-      <div className="flex flex-col justify-center h-full max-w-7xl mx-auto px-6 relative z-10 animate-fade-in-up">
-          <h2 className="text-4xl md:text-6xl font-black text-white mb-12 text-center tracking-tight">Data Synchronization</h2>
-          
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-center">
-              {/* Sources */}
-              <div className="space-y-6">
-                  <div className="bg-slate-800 p-6 rounded-2xl border border-slate-600">
-                      <h4 className="text-xl font-bold text-white mb-2 flex items-center gap-2"><Users className="text-blue-400"/> Source A: HR</h4>
-                      <p className="text-slate-400 text-sm">Primary Employee Database (SAP/SuccessFactors). Read-only connection.</p>
-                  </div>
-                  <div className="bg-slate-800 p-6 rounded-2xl border border-slate-600">
-                      <h4 className="text-xl font-bold text-white mb-2 flex items-center gap-2"><HardHat className="text-orange-400"/> Source B: Célula</h4>
-                      <p className="text-slate-400 text-sm">Contractor Management Database. Source for non-permanent staff.</p>
-                  </div>
-              </div>
-
-              {/* The Middleware Engine */}
-              <div className="flex flex-col items-center justify-center">
-                  <div className="bg-indigo-900/50 p-10 rounded-full border-4 border-indigo-500 shadow-[0_0_60px_rgba(99,102,241,0.4)] relative z-10 animate-pulse">
-                      <GitMerge size={64} className="text-indigo-300" />
-                  </div>
-                  <div className="mt-8 text-center bg-slate-900/80 p-4 rounded-xl border border-slate-700">
-                      <h3 className="text-2xl font-black text-indigo-300 mb-2">The Middleware</h3>
-                      <p className="text-sm text-slate-300">Merges datasets nightly (02:00 AM)</p>
-                      <p className="text-xs text-slate-500 mt-1">Conflict Resolution: VUL- vs CON- Prefixes</p>
-                  </div>
-              </div>
-
-              {/* Destination */}
-              <div className="bg-slate-900/80 p-8 rounded-[2rem] border border-green-500/30">
-                  <div className="flex items-center gap-4 mb-4">
-                      <div className="p-3 bg-green-900/50 rounded-xl"><Database size={32} className="text-green-400"/></div>
-                      <h3 className="text-2xl font-bold text-white">CARS DB</h3>
-                  </div>
-                  <p className="text-lg text-slate-300 leading-relaxed">
-                      The application reads from a unified, locally cached "Source of Truth" to ensure zero-latency performance during site operations.
-                  </p>
-                  <div className="mt-6 flex items-center gap-3 text-sm text-slate-400">
-                      <RefreshCw size={16} className="animate-spin-slow" />
-                      Auto-syncs status (Active/Inactive) daily.
-                  </div>
-              </div>
-          </div>
-      </div>
-  );
-
-  const ConfigSlide = () => (
-      <div className="flex flex-col justify-center h-full max-w-[1600px] mx-auto px-6 relative z-10">
-          <div className="flex items-center gap-6 mb-12">
-              <div className="p-5 bg-slate-800 rounded-3xl border border-slate-700 shadow-xl">
-                  <Settings size={40} className="text-white" />
-              </div>
-              <h2 className="text-5xl md:text-7xl font-black text-white tracking-tighter">{t.adminManual.content.configTitle}</h2>
-          </div>
-
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-              <div className="bg-slate-900/80 p-10 rounded-[2.5rem] border border-slate-700 hover:border-blue-500/50 transition-all hover:-translate-y-2 group shadow-2xl flex flex-col">
-                  <div className="flex items-center gap-5 mb-6">
-                      <div className="p-4 bg-blue-500/20 rounded-2xl text-blue-400 group-hover:scale-110 transition-transform"><Database size={28} /></div>
-                      <h3 className="text-2xl font-bold text-white leading-tight">{t.adminManual.content.configCards.racs}</h3>
-                  </div>
-                  <p className="text-lg text-slate-400 leading-relaxed mb-8 font-light flex-1">
-                      {t.adminManual.content.configCards.racsDesc}
-                  </p>
-                  <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-2xl flex gap-3 items-start">
-                      <AlertTriangle className="text-red-500 shrink-0 mt-0.5" size={20} />
-                      <p className="text-xs text-red-300 leading-relaxed font-bold">CRITICAL: Deleting a RAC drops the Matrix column.</p>
-                  </div>
-              </div>
-
-              <div className="bg-slate-900/80 p-10 rounded-[2.5rem] border border-slate-700 hover:border-purple-500/50 transition-all hover:-translate-y-2 group shadow-2xl flex flex-col">
-                  <div className="flex items-center gap-5 mb-6">
-                      <div className="p-4 bg-purple-500/20 rounded-2xl text-purple-400 group-hover:scale-110 transition-transform"><Layout size={28} /></div>
-                      <h3 className="text-2xl font-bold text-white leading-tight">{t.adminManual.content.configCards.rooms}</h3>
-                  </div>
-                  <p className="text-lg text-slate-400 leading-relaxed font-light flex-1">
-                      {t.adminManual.content.configCards.roomsDesc}
-                  </p>
-              </div>
-
-              <div className="bg-slate-900/80 p-10 rounded-[2.5rem] border border-slate-700 hover:border-green-500/50 transition-all hover:-translate-y-2 group shadow-2xl flex flex-col">
-                  <div className="flex items-center gap-5 mb-6">
-                      <div className="p-4 bg-green-500/20 rounded-2xl text-green-400 group-hover:scale-110 transition-transform"><Users size={28} /></div>
-                      <h3 className="text-2xl font-bold text-white leading-tight">{t.adminManual.content.configCards.trainers}</h3>
-                  </div>
-                  <p className="text-lg text-slate-400 leading-relaxed font-light flex-1">
-                      {t.adminManual.content.configCards.trainersDesc}
-                  </p>
-              </div>
-          </div>
-      </div>
-  );
-
-  const BookingSlide = () => (
-      <div className="flex flex-col justify-center h-full max-w-[1600px] mx-auto px-6 relative z-10 animate-fade-in-up">
-          <h2 className="text-5xl md:text-7xl font-black text-white mb-16 text-center tracking-tighter">{t.adminManual.content.bookingTitle}</h2>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
-              {/* Left: The Lock */}
-              <div className="bg-slate-900/80 p-10 rounded-[3rem] border border-red-500/30 relative overflow-hidden group shadow-2xl flex flex-col justify-between">
-                  <div className="absolute top-0 right-0 p-12 opacity-5 group-hover:opacity-10 transition-opacity">
-                      <Lock size={200} />
-                  </div>
-                  <div>
-                    <h3 className="text-3xl font-bold text-red-400 mb-6">{t.adminManual.content.matrixLock}</h3>
-                    <p className="text-xl text-slate-300 leading-relaxed mb-8 font-light">
-                        {t.adminManual.content.matrixDesc}
-                    </p>
-                  </div>
-                  <div className="p-6 bg-red-950/40 rounded-3xl border border-red-900/50 backdrop-blur-md">
-                      <p className="text-red-200 font-medium flex gap-4 text-base items-start">
-                          <X className="shrink-0 mt-1" size={20} />
-                          Restriction: You cannot book an employee for "RAC 01" unless it is marked as <span className="text-white underline font-bold mx-1">Required</span> in their Database profile.
-                      </p>
-                  </div>
-              </div>
-
-              {/* Right: Logic Cards */}
-              <div className="space-y-6">
-                  <div className="bg-slate-900/60 p-8 rounded-[2.5rem] border border-slate-700 hover:bg-slate-800 transition-colors shadow-lg">
-                      <h4 className="text-xl font-bold text-white mb-3 flex items-center gap-3"><Terminal className="text-blue-400" size={24}/> {t.adminManual.content.gradingTitle}</h4>
-                      <p className="text-slate-400 text-base leading-relaxed pl-9">{t.adminManual.content.gradingText}</p>
-                  </div>
-                  
-                  <div className="bg-slate-900/60 p-8 rounded-[2.5rem] border border-slate-700 hover:bg-slate-800 transition-colors shadow-lg">
-                      <h4 className="text-xl font-bold text-white mb-3 flex items-center gap-3"><AlertTriangle className="text-yellow-400" size={24}/> {t.adminManual.content.rac02Title}</h4>
-                      <p className="text-slate-400 text-base leading-relaxed pl-9">{t.adminManual.content.rac02Text}</p>
-                  </div>
-
-                  <div className="bg-slate-900/60 p-8 rounded-[2.5rem] border border-slate-700 hover:bg-slate-800 transition-colors shadow-lg">
-                      <h4 className="text-xl font-bold text-white mb-3 flex items-center gap-3"><Workflow className="text-green-400" size={24}/> {t.adminManual.content.expiryTitle}</h4>
-                      <p className="text-slate-400 text-base leading-relaxed pl-9">{t.adminManual.content.expiryText}</p>
-                  </div>
-              </div>
-          </div>
-      </div>
-  );
-
   const AdvancedSlide = () => (
-      <div className="flex flex-col justify-center h-full max-w-[1600px] mx-auto px-6 relative z-10 animate-fade-in-up">
-          <h2 className="text-5xl md:text-7xl font-black text-white mb-16 tracking-tighter text-center">{t.adminManual.content.advancedTitle}</h2>
+      <div className="flex flex-col justify-center h-full max-w-5xl mx-auto px-6 relative z-10 animate-fade-in-up">
+          <h2 className="text-4xl md:text-6xl font-black text-white mb-16 text-center">{t.adminManual.slides.advanced}</h2>
           
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-              <div className="p-10 bg-slate-900/80 border border-purple-500/30 rounded-[2.5rem] hover:shadow-[0_0_40px_rgba(168,85,247,0.15)] transition-all group hover:-translate-y-2 flex flex-col">
-                  <div className="w-16 h-16 bg-purple-500/20 rounded-2xl flex items-center justify-center text-purple-400 mb-6 group-hover:scale-110 transition-transform">
-                      <Smartphone size={32} />
+          <div className="space-y-8">
+              <div className="bg-slate-800/50 p-8 rounded-3xl border border-indigo-500/30 flex gap-6 items-start hover:bg-slate-800 transition-colors">
+                  <div className="p-4 bg-indigo-500/20 rounded-2xl text-indigo-400 shrink-0"><Settings size={32}/></div>
+                  <div>
+                      <h3 className="text-2xl font-bold text-white mb-2">{t.adminManual.content.advanced.gov.title}</h3>
+                      <p className="text-lg text-slate-300">{t.adminManual.content.advanced.gov.desc}</p>
                   </div>
-                  <h3 className="text-2xl font-bold text-white mb-4">{t.adminManual.content.autoBook}</h3>
-                  <p className="text-base text-slate-400 leading-relaxed font-light flex-1">
-                      {t.adminManual.content.autoBookDesc}
-                  </p>
               </div>
 
-              <div className="p-10 bg-slate-900/80 border border-indigo-500/30 rounded-[2.5rem] hover:shadow-[0_0_40px_rgba(99,102,241,0.15)] transition-all group hover:-translate-y-2 flex flex-col">
-                  <div className="w-16 h-16 bg-indigo-500/20 rounded-2xl flex items-center justify-center text-indigo-400 mb-6 group-hover:scale-110 transition-transform">
-                      <FileText size={32} />
+              <div className="bg-slate-800/50 p-8 rounded-3xl border border-red-500/30 flex gap-6 items-start hover:bg-slate-800 transition-colors">
+                  <div className="p-4 bg-red-500/20 rounded-2xl text-red-400 shrink-0"><Lock size={32}/></div>
+                  <div>
+                      <h3 className="text-2xl font-bold text-white mb-2">{t.adminManual.content.advanced.alcohol.title}</h3>
+                      <p className="text-lg text-slate-300">{t.adminManual.content.advanced.alcohol.desc}</p>
                   </div>
-                  <h3 className="text-2xl font-bold text-white mb-4">{t.adminManual.content.aiRep}</h3>
-                  <p className="text-base text-slate-400 leading-relaxed font-light flex-1">
-                      {t.adminManual.content.aiRepDesc}
-                  </p>
-              </div>
-
-              <div className="p-10 bg-slate-900/80 border border-orange-500/30 rounded-[2.5rem] hover:shadow-[0_0_40px_rgba(249,115,22,0.15)] transition-all group hover:-translate-y-2 flex flex-col">
-                  <div className="w-16 h-16 bg-orange-500/20 rounded-2xl flex items-center justify-center text-orange-400 mb-6 group-hover:scale-110 transition-transform">
-                      <AlertTriangle size={32} />
-                  </div>
-                  <h3 className="text-2xl font-bold text-white mb-4">{t.adminManual.content.alc}</h3>
-                  <p className="text-base text-slate-400 leading-relaxed font-light flex-1">
-                      {t.adminManual.content.alcDesc}
-                  </p>
               </div>
           </div>
       </div>
@@ -548,33 +236,60 @@ const AdminManualPage: React.FC = () => {
 
   const TroubleshootSlide = () => (
       <div className="flex flex-col justify-center h-full max-w-6xl mx-auto px-6 relative z-10 animate-fade-in-up">
-          <div className="text-center mb-16">
-              <div className="inline-block p-5 bg-slate-800 rounded-full mb-6 shadow-2xl">
-                  <HelpCircle size={48} className="text-slate-400" />
+          <h2 className="text-4xl md:text-6xl font-black text-white mb-16 text-center">{t.adminManual.slides.troubleshoot}</h2>
+          
+          <div className="bg-slate-900/80 rounded-[2rem] border border-slate-700 overflow-hidden shadow-2xl">
+              <div className="grid grid-cols-12 bg-slate-800 p-4 text-xs font-bold text-slate-400 uppercase tracking-wider">
+                  <div className="col-span-4 pl-4">Issue</div>
+                  <div className="col-span-1 text-center">Visual</div>
+                  <div className="col-span-7">Solution</div>
               </div>
-              <h2 className="text-5xl md:text-7xl font-black text-white tracking-tighter">{t.adminManual.content.tsTitle}</h2>
+              <div className="divide-y divide-slate-700/50">
+                  {Object.values(t.adminManual.content.troubleshoot).map((item: any, i: number) => (
+                      <div key={i} className="grid grid-cols-12 p-6 items-center hover:bg-slate-800/30 transition-colors">
+                          <div className="col-span-4 pl-4 font-bold text-white text-lg">{item.issue}</div>
+                          <div className="col-span-1 text-center text-2xl">
+                              {i === 0 ? '❌' : i === 1 ? '🔒' : i === 2 ? '🚗' : i === 3 ? '📱' : '🐌'}
+                          </div>
+                          <div className="col-span-7 text-slate-300 text-base">{item.solution}</div>
+                      </div>
+                  ))}
+              </div>
           </div>
+      </div>
+  );
 
-          <div className="space-y-6">
-              <div className="bg-white/5 border border-white/10 p-8 rounded-[2rem] hover:bg-white/10 transition-colors cursor-default">
-                  <h4 className="font-bold text-blue-300 text-xl mb-3 flex items-center gap-4">
-                      <Search size={24}/> {t.adminManual.content.ts1}
-                  </h4>
-                  <p className="text-lg text-slate-300 pl-10 font-light">{t.adminManual.content.ts1Desc}</p>
-              </div>
+  const ArchitectureSlide = () => (
+      <div className="flex flex-col justify-center h-full max-w-4xl mx-auto px-6 relative z-10 animate-fade-in-up">
+          <h2 className="text-4xl md:text-6xl font-black text-white mb-12 text-center">{t.adminManual.slides.architecture}</h2>
+          
+          <div className="bg-slate-950 p-12 rounded-[2rem] border border-slate-800 shadow-2xl relative overflow-hidden font-mono">
+              <div className="absolute top-0 right-0 p-8 opacity-10"><Workflow size={200} /></div>
+              
+              <div className="flex flex-col items-center gap-6 relative z-10 text-slate-300">
+                  <div className="px-6 py-3 bg-slate-800 rounded-lg border border-slate-600 w-64 text-center font-bold text-white shadow-lg">[ USER INTERFACE ]</div>
+                  <div className="h-8 w-0.5 bg-slate-600"></div>
+                  <div className="px-6 py-3 bg-slate-800 rounded-lg border border-slate-600 w-64 text-center font-bold text-white shadow-lg">[ PERMISSION GATE ]</div>
+                  <div className="h-8 w-0.5 bg-slate-600"></div>
+                  
+                  <div className="p-6 bg-slate-900 rounded-xl border border-blue-500/30 w-full text-center relative shadow-lg shadow-blue-900/20">
+                      <div className="font-bold text-blue-400 text-xl mb-4">[ LOGIC ENGINE ]</div>
+                      <div className="grid grid-cols-3 gap-4 text-xs">
+                          <div className="bg-slate-800 p-2 rounded border border-slate-700">Check Capacity</div>
+                          <div className="bg-slate-800 p-2 rounded border border-slate-700">Check Matrix Lock</div>
+                          <div className="bg-slate-800 p-2 rounded border border-slate-700">Check DL Validity</div>
+                      </div>
+                  </div>
 
-              <div className="bg-white/5 border border-white/10 p-8 rounded-[2rem] hover:bg-white/10 transition-colors cursor-default">
-                  <h4 className="font-bold text-red-300 text-xl mb-3 flex items-center gap-4">
-                      <Lock size={24}/> {t.adminManual.content.ts2}
-                  </h4>
-                  <p className="text-lg text-slate-300 pl-10 font-light">{t.adminManual.content.ts2Desc}</p>
-              </div>
+                  <div className="h-8 w-0.5 bg-slate-600"></div>
+                  <div className="px-6 py-3 bg-slate-800 rounded-lg border border-slate-600 w-64 text-center font-bold text-white shadow-lg">[ DATABASE STATE ]</div>
+                  <div className="h-8 w-0.5 bg-slate-600"></div>
 
-              <div className="bg-white/5 border border-white/10 p-8 rounded-[2rem] hover:bg-white/10 transition-colors cursor-default">
-                  <h4 className="font-bold text-yellow-300 text-xl mb-3 flex items-center gap-4">
-                      <Smartphone size={24}/> {t.adminManual.content.ts3}
-                  </h4>
-                  <p className="text-lg text-slate-300 pl-10 font-light">{t.adminManual.content.ts3Desc}</p>
+                  <div className="grid grid-cols-3 gap-4 w-full">
+                      <div className="bg-slate-900 p-3 rounded-lg border border-green-500/30 text-center text-xs text-green-300 shadow-lg">📧 Email/SMS</div>
+                      <div className="bg-slate-900 p-3 rounded-lg border border-green-500/30 text-center text-xs text-green-300 shadow-lg">🖨️ Auto-Print</div>
+                      <div className="bg-slate-900 p-3 rounded-lg border border-green-500/30 text-center text-xs text-green-300 shadow-lg">🤖 AI Analysis</div>
+                  </div>
               </div>
           </div>
       </div>
@@ -583,15 +298,12 @@ const AdminManualPage: React.FC = () => {
   const renderSlide = () => {
       switch(slides[currentSlide].id) {
           case 'intro': return <IntroSlide />;
-          case 'hierarchy': return <HierarchySlide />;
-          case 'objectives': return <ObjectivesSlide />;
           case 'logic': return <LogicSlide />;
-          case 'workflow': return <WorkflowSlide />;
-          case 'sync': return <SyncSlide />; // NEW
-          case 'config': return <ConfigSlide />;
-          case 'booking': return <BookingSlide />;
+          case 'dashboard': return <DashboardSlide />;
+          case 'workflows': return <WorkflowsSlide />;
           case 'advanced': return <AdvancedSlide />;
           case 'troubleshoot': return <TroubleshootSlide />;
+          case 'architecture': return <ArchitectureSlide />;
           default: return <IntroSlide />;
       }
   };

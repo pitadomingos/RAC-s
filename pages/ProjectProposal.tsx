@@ -38,7 +38,7 @@ const ProjectProposal: React.FC = () => {
     { id: 'scenario', type: 'scenario', title: 'Real World Scenario' },
     { id: 'summary', type: 'content', title: t.proposal.execSummary.title },
     { id: 'objectives', type: 'objectives', title: t.proposal.objectives.title },
-    { id: 'integration', type: 'integration', title: 'Unified Data Integration' }, // NEW SLIDE
+    { id: 'integration', type: 'integration', title: 'Unified Data Integration' },
     { id: 'organogram', type: 'organogram', title: t.proposal.organogram.title },
     { id: 'timeline', type: 'timeline', title: t.proposal.timeline.title },
     { id: 'tech', type: 'tech', title: t.proposal.techStack.title },
@@ -134,7 +134,6 @@ const ProjectProposal: React.FC = () => {
       </div>
   );
 
-  // --- NEW INTEGRATION SLIDE ---
   const IntegrationSlide = () => (
       <div className="flex flex-col justify-center h-full max-w-7xl mx-auto px-6 relative z-10 animate-fade-in-up">
           <h2 className="text-4xl md:text-6xl font-black text-white mb-16 text-center tracking-tight">Unified Data Architecture</h2>
@@ -514,8 +513,11 @@ const ProjectProposal: React.FC = () => {
               if (!items[idx]) return 0;
               return parseFloat(items[idx].cost.replace(/[^0-9.]/g, '') || '0');
           };
+          // Items 1 & 2 (index 0 and 1) - Initial payment
           const initial = getVal(0) + getVal(1); 
+          // Item 4 (index 3) - Training & Documentation (Post UAT)
           const postUat = getVal(3);
+          // Items 3 & 5 (index 2 and 4) - Monthly (Cloud & Maintenance)
           const monthly = getVal(2) + getVal(4);
           return { initial, postUat, monthly };
       };
@@ -528,10 +530,17 @@ const ProjectProposal: React.FC = () => {
           
           <div className="bg-slate-900/80 rounded-3xl border border-slate-700 overflow-hidden shadow-2xl backdrop-blur-md">
               <div className="divide-y divide-slate-800">
-                  {t.proposal.financials.items.map((item, i) => (
+                  <div className="grid grid-cols-12 p-4 bg-slate-800/80 text-xs font-bold text-slate-400 uppercase tracking-wider">
+                      <div className="col-span-1 text-center">#</div>
+                      <div className="col-span-6">Item Description</div>
+                      <div className="col-span-3">Type</div>
+                      <div className="col-span-2 text-right">Cost</div>
+                  </div>
+                  {t.proposal.financials.items.map((item: any, i: number) => (
                       <div key={i} className="grid grid-cols-12 p-5 hover:bg-slate-800/50 transition-colors items-center">
                           <div className="col-span-1 text-center font-mono text-slate-500">{i+1}</div>
-                          <div className="col-span-9 text-white font-medium text-base">{item.name}</div>
+                          <div className="col-span-6 text-white font-medium text-base">{item.name}</div>
+                          <div className="col-span-3 text-sm text-slate-400">{item.type}</div>
                           <div className="col-span-2 text-right font-mono text-lg text-slate-300">{item.cost}</div>
                       </div>
                   ))}
@@ -540,17 +549,17 @@ const ProjectProposal: React.FC = () => {
               <div className="bg-gradient-to-r from-slate-950 to-slate-900 p-8 flex flex-col md:flex-row justify-between items-stretch text-white relative overflow-hidden gap-6 border-t border-slate-700">
                   <div className="flex-1 bg-slate-800/50 p-4 rounded-xl border border-slate-700 relative overflow-hidden">
                       <div className="absolute top-0 left-0 w-1 h-full bg-emerald-500"></div>
-                      <div className="text-xs uppercase font-bold text-slate-400 mb-1">Initial</div>
+                      <div className="text-xs uppercase font-bold text-slate-400 mb-1">Initial Payment</div>
                       <div className="text-3xl font-black font-mono tracking-tight text-white">${totals.initial.toLocaleString()}</div>
                   </div>
                   <div className="flex-1 bg-slate-800/50 p-4 rounded-xl border border-slate-700 relative overflow-hidden">
                       <div className="absolute top-0 left-0 w-1 h-full bg-yellow-500"></div>
-                      <div className="text-xs uppercase font-bold text-slate-400 mb-1">Post UAT</div>
+                      <div className="text-xs uppercase font-bold text-slate-400 mb-1">Deployment & Handover</div>
                       <div className="text-3xl font-black font-mono tracking-tight text-white">${totals.postUat.toLocaleString()}</div>
                   </div>
                   <div className="flex-1 bg-slate-800/50 p-4 rounded-xl border border-slate-700 relative overflow-hidden">
                       <div className="absolute top-0 left-0 w-1 h-full bg-blue-500"></div>
-                      <div className="text-xs uppercase font-bold text-slate-400 mb-1">Monthly</div>
+                      <div className="text-xs uppercase font-bold text-slate-400 mb-1">Monthly Recurring</div>
                       <div className="text-3xl font-black font-mono tracking-tight text-white">${totals.monthly.toLocaleString()}</div>
                   </div>
               </div>
@@ -614,7 +623,7 @@ const ProjectProposal: React.FC = () => {
           case 'scenario': return <ScenarioSlide />;
           case 'summary': return <SummarySlide />;
           case 'objectives': return <ObjectivesSlide />;
-          case 'integration': return <IntegrationSlide />; // NEW
+          case 'integration': return <IntegrationSlide />;
           case 'organogram': return <OrganogramSlide />;
           case 'timeline': return <TimelineSlide />;
           case 'tech': return <TechSlide />;
