@@ -6,9 +6,10 @@ import {
   Target, Zap, HardHat, Smartphone, CalendarClock,
   Database, Monitor, Lock, Server, Key, Mail,
   Rocket, Code, CheckCircle,
-  User, Award, Briefcase, HeartHandshake, FileText, Phone, GraduationCap, Activity, CreditCard, Wallet, Wrench, Layers,
+  User, Users, Award, Briefcase, HeartHandshake, FileText, Phone, GraduationCap, Activity, CreditCard, Wallet, Wrench, Layers,
   AlertTriangle, RotateCcw, Play, CheckSquare, Wifi, ScanFace, Bluetooth, FileSpreadsheet, ScrollText, Grid,
-  Globe, Building2, BrainCircuit, Sparkles, MapPin, Search
+  Globe, Building2, BrainCircuit, Sparkles, MapPin, Search,
+  GitMerge, RefreshCw, Link2, Factory
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
@@ -37,6 +38,7 @@ const ProjectProposal: React.FC = () => {
     { id: 'scenario', type: 'scenario', title: 'Real World Scenario' },
     { id: 'summary', type: 'content', title: t.proposal.execSummary.title },
     { id: 'objectives', type: 'objectives', title: t.proposal.objectives.title },
+    { id: 'integration', type: 'integration', title: 'Unified Data Integration' }, // NEW SLIDE
     { id: 'organogram', type: 'organogram', title: t.proposal.organogram.title },
     { id: 'timeline', type: 'timeline', title: t.proposal.timeline.title },
     { id: 'tech', type: 'tech', title: t.proposal.techStack.title },
@@ -128,6 +130,92 @@ const ProjectProposal: React.FC = () => {
 
           <div className="mt-12 text-slate-400 italic text-lg animate-pulse">
               {t.proposal.execSummary.quote}
+          </div>
+      </div>
+  );
+
+  // --- NEW INTEGRATION SLIDE ---
+  const IntegrationSlide = () => (
+      <div className="flex flex-col justify-center h-full max-w-7xl mx-auto px-6 relative z-10 animate-fade-in-up">
+          <h2 className="text-4xl md:text-6xl font-black text-white mb-16 text-center tracking-tight">Unified Data Architecture</h2>
+          
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-center">
+              
+              {/* Source Systems */}
+              <div className="space-y-6">
+                  <div className="bg-slate-900/80 p-6 rounded-2xl border border-blue-500/30 flex items-center gap-4">
+                      <div className="p-3 bg-blue-900/50 rounded-xl"><Users size={24} className="text-blue-400"/></div>
+                      <div>
+                          <h4 className="font-bold text-white text-lg">HR Database</h4>
+                          <p className="text-slate-400 text-sm">Permanent Staff (SuccessFactors)</p>
+                      </div>
+                  </div>
+                  <div className="bg-slate-900/80 p-6 rounded-2xl border border-orange-500/30 flex items-center gap-4">
+                      <div className="p-3 bg-orange-900/50 rounded-xl"><HardHat size={24} className="text-orange-400"/></div>
+                      <div>
+                          <h4 className="font-bold text-white text-lg">Célula de Contracto</h4>
+                          <p className="text-slate-400 text-sm">Contractor Management DB</p>
+                      </div>
+                  </div>
+              </div>
+
+              {/* Middleware Engine */}
+              <div className="flex flex-col items-center">
+                  <div className="h-10 w-0.5 bg-gradient-to-b from-transparent via-slate-500 to-slate-500 lg:hidden"></div>
+                  <div className="hidden lg:flex items-center gap-2 mb-4 animate-pulse">
+                      <span className="h-0.5 w-16 bg-slate-500"></span>
+                      <ChevronRight size={24} className="text-slate-500"/>
+                  </div>
+
+                  <div className="bg-slate-800 p-8 rounded-full border-4 border-slate-700 shadow-[0_0_50px_rgba(99,102,241,0.3)] relative z-10">
+                      <GitMerge size={64} className="text-indigo-400" />
+                  </div>
+                  <div className="mt-6 text-center">
+                      <h3 className="text-2xl font-black text-indigo-300">CARS Middleware</h3>
+                      <p className="text-slate-400 text-sm mt-2 max-w-xs mx-auto">
+                          Nightly synchronization engine utilizing Read-Only APIs to merge & normalize datasets.
+                      </p>
+                  </div>
+
+                  <div className="hidden lg:flex items-center gap-2 mt-4 animate-pulse">
+                      <ChevronRight size={24} className="text-slate-500"/>
+                      <span className="h-0.5 w-16 bg-slate-500"></span>
+                  </div>
+                  <div className="h-10 w-0.5 bg-gradient-to-b from-slate-500 to-transparent lg:hidden"></div>
+              </div>
+
+              {/* CARS Application */}
+              <div className="bg-gradient-to-br from-indigo-900 to-slate-900 p-8 rounded-[2.5rem] border border-indigo-500/50 shadow-2xl relative overflow-hidden group">
+                  <div className="absolute top-0 right-0 p-8 opacity-10 group-hover:opacity-20 transition-opacity">
+                      <Database size={100} />
+                  </div>
+                  <div className="relative z-10">
+                      <div className="flex items-center gap-4 mb-6">
+                          <div className="p-3 bg-indigo-500 rounded-xl text-white shadow-lg">
+                              <Shield size={32} />
+                          </div>
+                          <h3 className="text-3xl font-black text-white">CARS Manager</h3>
+                      </div>
+                      <p className="text-lg text-slate-300 leading-relaxed mb-6">
+                          A single, unified "Source of Truth" for site safety.
+                      </p>
+                      <ul className="space-y-3">
+                          <li className="flex items-center gap-3 text-slate-300">
+                              <CheckCircle size={18} className="text-green-400" />
+                              <span>Auto-Updates (No manual entry)</span>
+                          </li>
+                          <li className="flex items-center gap-3 text-slate-300">
+                              <CheckCircle size={18} className="text-green-400" />
+                              <span>Conflict Resolution (VUL vs CON)</span>
+                          </li>
+                          <li className="flex items-center gap-3 text-slate-300">
+                              <CheckCircle size={18} className="text-green-400" />
+                              <span>Live Status Calculation</span>
+                          </li>
+                      </ul>
+                  </div>
+              </div>
+
           </div>
       </div>
   );
@@ -526,6 +614,7 @@ const ProjectProposal: React.FC = () => {
           case 'scenario': return <ScenarioSlide />;
           case 'summary': return <SummarySlide />;
           case 'objectives': return <ObjectivesSlide />;
+          case 'integration': return <IntegrationSlide />; // NEW
           case 'organogram': return <OrganogramSlide />;
           case 'timeline': return <TimelineSlide />;
           case 'tech': return <TechSlide />;

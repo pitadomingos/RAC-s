@@ -4,7 +4,7 @@ import {
   FileCode, Database, Layers, Code, Terminal, AlertTriangle, 
   Cpu, GitBranch, Shield, Key, FolderOpen, ChevronRight, FileText,
   Rocket, CloudLightning, Wifi, Smartphone, Lock, Server, Radio,
-  Globe, CreditCard, LayoutTemplate
+  Globe, CreditCard, LayoutTemplate, GitMerge, RefreshCw
 } from 'lucide-react';
 
 const TechnicalDocs: React.FC = () => {
@@ -13,6 +13,7 @@ const TechnicalDocs: React.FC = () => {
   const sections = [
     { id: 'arch', label: 'Architecture (Current)', icon: Layers },
     { id: 'files', label: 'File Structure', icon: FolderOpen },
+    { id: 'integration', label: 'Legacy Integration', icon: GitMerge }, // NEW
     { id: 'data', label: 'Data Models', icon: Database },
     { id: 'roadmap', label: 'Future Roadmap', icon: Rocket }, 
     { id: 'state', label: 'State & Logic', icon: Cpu },
@@ -117,6 +118,79 @@ const TechnicalDocs: React.FC = () => {
                   </div>
               )}
 
+              {/* SECTION: LEGACY INTEGRATION (NEW) */}
+              {activeSection === 'integration' && (
+                  <div className="space-y-8 animate-fade-in">
+                      <div className="border-b border-slate-200 dark:border-slate-700 pb-4">
+                          <h3 className="text-2xl font-black text-slate-800 dark:text-white mb-2">Legacy Data Integration</h3>
+                          <p className="text-slate-500 dark:text-slate-400 text-sm">
+                              Middleware Architecture for HR (Internal) and Célula (Contractor) Database Unification.
+                          </p>
+                      </div>
+
+                      <div className="space-y-6">
+                          <div className="bg-blue-50 dark:bg-blue-900/10 p-6 rounded-2xl border border-blue-200 dark:border-blue-800">
+                              <h4 className="text-lg font-bold text-blue-900 dark:text-blue-300 mb-4 flex items-center gap-2">
+                                  <GitMerge size={20} /> The Middleware Strategy
+                              </h4>
+                              <p className="text-sm text-slate-700 dark:text-slate-300 leading-relaxed mb-4">
+                                  To ensure zero-downtime and security, the Frontend does <strong>not</strong> query HR databases directly. 
+                                  Instead, a Node.js Middleware Service runs a nightly synchronization job.
+                              </p>
+                              
+                              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-center mt-6">
+                                  <div className="p-3 bg-white dark:bg-slate-800 rounded-lg shadow-sm">
+                                      <div className="text-xs font-bold uppercase text-slate-400">Source A</div>
+                                      <div className="font-black text-slate-800 dark:text-white">HR Database</div>
+                                      <div className="text-[10px] text-slate-500">Read-Only View</div>
+                                  </div>
+                                  <div className="flex flex-col justify-center items-center">
+                                      <div className="h-px w-full bg-slate-300 dark:bg-slate-600 mb-1"></div>
+                                      <span className="text-[10px] font-mono bg-slate-200 dark:bg-slate-700 px-2 rounded">Sync 02:00 AM</span>
+                                      <div className="h-px w-full bg-slate-300 dark:bg-slate-600 mt-1"></div>
+                                  </div>
+                                  <div className="p-3 bg-white dark:bg-slate-800 rounded-lg shadow-sm">
+                                      <div className="text-xs font-bold uppercase text-slate-400">Source B</div>
+                                      <div className="font-black text-slate-800 dark:text-white">Contractor DB</div>
+                                      <div className="text-[10px] text-slate-500">Célula de Contracto</div>
+                                  </div>
+                              </div>
+                          </div>
+
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                              <div className="p-5 border border-slate-200 dark:border-slate-700 rounded-xl">
+                                  <h5 className="font-bold text-slate-800 dark:text-white mb-2 flex items-center gap-2">
+                                      <Shield size={16} className="text-green-500"/> Conflict Resolution
+                                  </h5>
+                                  <ul className="text-xs text-slate-600 dark:text-slate-400 space-y-2 list-disc pl-4">
+                                      <li>
+                                          <strong>ID Prefixing:</strong> To prevent collision between internal ID '1001' and contractor ID '1001', the middleware prefixes Record IDs:
+                                          <code className="block bg-slate-100 dark:bg-slate-800 p-1 mt-1 rounded">VUL-1001 (Internal) vs CON-1001 (Contractor)</code>
+                                      </li>
+                                      <li>
+                                          <strong>Source of Truth:</strong> If a user exists in both, HR data takes precedence for Name/Role fields.
+                                      </li>
+                                  </ul>
+                              </div>
+
+                              <div className="p-5 border border-slate-200 dark:border-slate-700 rounded-xl">
+                                  <h5 className="font-bold text-slate-800 dark:text-white mb-2 flex items-center gap-2">
+                                      <RefreshCw size={16} className="text-blue-500"/> Operational Rules
+                                  </h5>
+                                  <ul className="text-xs text-slate-600 dark:text-slate-400 space-y-2 list-disc pl-4">
+                                      <li>
+                                          <strong>Inactive Logic:</strong> If an employee is removed from Source A, the Middleware marks them as <code>isActive: false</code> in CARS. It does <em>not</em> delete the record to preserve audit history.
+                                      </li>
+                                      <li>
+                                          <strong>Read-Only Fields:</strong> Name, Dept, and Role become read-only in the UI for synced users.
+                                      </li>
+                                  </ul>
+                              </div>
+                          </div>
+                      </div>
+                  </div>
+              )}
+
               {/* SECTION: FILE STRUCTURE */}
               {activeSection === 'files' && (
                   <div className="space-y-8 animate-fade-in">
@@ -214,7 +288,7 @@ interface EmployeeRequirement {
                   </div>
               )}
 
-              {/* SECTION: FUTURE ROADMAP (NEW) */}
+              {/* SECTION: FUTURE ROADMAP */}
               {activeSection === 'roadmap' && (
                   <div className="space-y-10 animate-fade-in">
                       <div className="border-b border-slate-200 dark:border-slate-700 pb-4">

@@ -27,7 +27,7 @@ const DashboardStats: React.FC<DashboardStatsProps> = memo(({ bookings, requirem
   const passed = bookings.filter(b => b.status === BookingStatus.PASSED).length;
   const pending = bookings.filter(b => b.status === BookingStatus.PENDING).length;
   
-  // Expiring Logic
+  // Expiring Logic (For Stats Only)
   const today = new Date();
   const todayStr = today.toISOString().split('T')[0];
   const thirtyDaysFromNow = new Date();
@@ -40,8 +40,6 @@ const DashboardStats: React.FC<DashboardStatsProps> = memo(({ bookings, requirem
   });
 
   // 2. Compliance Logic (Requirements vs Actuals)
-  
-  // Get Unique Employees from Bookings or Requirements
   const uniqueEmployeeIds = Array.from(new Set([
     ...bookings.map(b => b.employee.id),
     ...requirements.map(r => r.employeeId)
@@ -50,80 +48,58 @@ const DashboardStats: React.FC<DashboardStatsProps> = memo(({ bookings, requirem
   let compliantCount = 0;
   let nonCompliantCount = 0;
   
-  // ASO Stats (Medical)
+  // ASO Stats
   let asoCompliant = 0;
   let asoMissing = 0;
   
-  // Store data for Stacked Bar Chart (By RAC)
-  // Format: { 'RAC01': { required: 10, compliant: 8 }, ... }
   const racComplianceStats: Record<string, { required: number, compliant: number, missing: number }> = {};
   RAC_KEYS.forEach(k => racComplianceStats[k] = { required: 0, compliant: 0, missing: 0 });
 
   uniqueEmployeeIds.forEach(empId => {
-    // Get Req
     const req = requirements.find(r => r.employeeId === empId) || { 
       employeeId: empId, asoExpiryDate: '', requiredRacs: {} 
     };
 
-    // Check ASO
     const isAsoValid = req.asoExpiryDate && req.asoExpiryDate > todayStr;
-    if (isAsoValid) {
-        asoCompliant++;
-    } else {
-        asoMissing++;
-    }
+    if (isAsoValid) asoCompliant++;
+    else asoMissing++;
     
-    // Check RACs
     let allRacsMet = true;
     
     RAC_KEYS.forEach(racKey => {
        const isRequired = req.requiredRacs[racKey];
        if (isRequired) {
          racComplianceStats[racKey].required++;
-         
-         // Check if they have a passed booking
          const hasTraining = bookings.some(b => {
              if (b.employee.id !== empId) return false;
              if (b.status !== BookingStatus.PASSED) return false;
              if (!b.expiryDate || b.expiryDate <= todayStr) return false;
              
-             // Resolve Session Name to RAC Key
              const session = MOCK_SESSIONS.find(s => s.id === b.sessionId);
              const sessionName = session ? session.racType : b.sessionId;
-             const bookingRacKey = sessionName.split(' - ')[0].replace(' ', ''); // "RAC 01" -> "RAC01"
-             
+             const bookingRacKey = sessionName.split(' - ')[0].replace(' ', '');
              return bookingRacKey === racKey;
          });
 
-         if (hasTraining) {
-            racComplianceStats[racKey].compliant++;
-         } else {
+         if (hasTraining) racComplianceStats[racKey].compliant++;
+         else {
             racComplianceStats[racKey].missing++;
             allRacsMet = false;
          }
        }
     });
 
-    if (isAsoValid && allRacsMet) {
-      compliantCount++;
-    } else {
-      nonCompliantCount++;
-    }
+    if (isAsoValid && allRacsMet) compliantCount++;
+    else nonCompliantCount++;
   });
 
-  // Data for Pie Chart - Using translated names
   const complianceData = [
     { name: t.dashboard.charts.compliant, value: compliantCount },
     { name: t.dashboard.charts.nonCompliant, value: nonCompliantCount }
   ];
 
-  // Data for Stacked Bar Chart - Now includes ASO
   const racStackData = [
-    {
-        name: 'ASO',
-        Compliant: asoCompliant,
-        Missing: asoMissing
-    },
+    { name: 'ASO', Compliant: asoCompliant, Missing: asoMissing },
     ...RAC_KEYS.map(key => ({
         name: key,
         Compliant: racComplianceStats[key].compliant,
@@ -131,26 +107,17 @@ const DashboardStats: React.FC<DashboardStatsProps> = memo(({ bookings, requirem
     }))
   ];
 
-  // Adherence %
   const totalEmployees = uniqueEmployeeIds.length;
   const adherencePercentage = totalEmployees > 0 
     ? ((compliantCount / totalEmployees) * 100).toFixed(1) 
     : '0.0';
-
-  const handleRenewalClick = () => {
-    if (onBookRenewals) {
-      onBookRenewals();
-    } else {
-      navigate('/booking');
-    }
-  };
 
   return (
     <div className="space-y-6">
       {/* KPI Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
         
-        {/* Adherence Card (Most Important) */}
+        {/* Adherence Card */}
         <div className="bg-white dark:bg-slate-800 p-4 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 lg:col-span-1 transition-colors">
           <div className="flex items-center justify-between">
             <div>
@@ -168,6 +135,7 @@ const DashboardStats: React.FC<DashboardStatsProps> = memo(({ bookings, requirem
           </div>
         </div>
 
+        {/* Certifications */}
         <div className="bg-white dark:bg-slate-800 p-4 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 transition-colors">
           <div className="flex items-center justify-between">
             <div>
@@ -180,6 +148,7 @@ const DashboardStats: React.FC<DashboardStatsProps> = memo(({ bookings, requirem
           </div>
         </div>
 
+        {/* Pending */}
         <div className="bg-white dark:bg-slate-800 p-4 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 transition-colors">
           <div className="flex items-center justify-between">
             <div>
@@ -192,6 +161,7 @@ const DashboardStats: React.FC<DashboardStatsProps> = memo(({ bookings, requirem
           </div>
         </div>
 
+        {/* Expiring */}
         <div className="bg-white dark:bg-slate-800 p-4 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 transition-colors">
           <div className="flex items-center justify-between">
             <div>
@@ -204,6 +174,7 @@ const DashboardStats: React.FC<DashboardStatsProps> = memo(({ bookings, requirem
           </div>
         </div>
 
+        {/* Scheduled */}
          <div className="bg-white dark:bg-slate-800 p-4 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 transition-colors">
           <div className="flex items-center justify-between">
             <div>
@@ -220,7 +191,7 @@ const DashboardStats: React.FC<DashboardStatsProps> = memo(({ bookings, requirem
       {/* Charts Row */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         
-        {/* Chart 1: Stacked Training vs Requirements */}
+        {/* Chart 1 */}
         <div className="bg-white dark:bg-slate-800 p-6 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 transition-colors flex flex-col">
           <h3 className="text-lg font-bold text-slate-800 dark:text-white mb-4">{t.dashboard.charts.complianceTitle}</h3>
           <div className="flex-1 w-full min-h-[300px]" style={{ minWidth: 0 }}>
@@ -244,7 +215,7 @@ const DashboardStats: React.FC<DashboardStatsProps> = memo(({ bookings, requirem
           </p>
         </div>
 
-        {/* Chart 2: Total Compliance Status */}
+        {/* Chart 2 */}
         <div className="bg-white dark:bg-slate-800 p-6 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 transition-colors flex flex-col">
           <h3 className="text-lg font-bold text-slate-800 dark:text-white mb-4">{t.dashboard.charts.accessTitle}</h3>
           <div className="flex-1 w-full min-h-[300px]" style={{ minWidth: 0 }}>
@@ -261,7 +232,6 @@ const DashboardStats: React.FC<DashboardStatsProps> = memo(({ bookings, requirem
                   stroke="none"
                 >
                   {complianceData.map((entry, index) => (
-                    // Use index for consistent coloring: 0=Green, 1=Red
                     <Cell key={`cell-${index}`} fill={PIE_COLORS[index % PIE_COLORS.length]} />
                   ))}
                 </Pie>
@@ -278,30 +248,6 @@ const DashboardStats: React.FC<DashboardStatsProps> = memo(({ bookings, requirem
           </div>
         </div>
       </div>
-
-      {/* Expiring Notification - Below Charts */}
-      {expiring.length > 0 && (
-        <div className="bg-yellow-50 dark:bg-yellow-900/20 border-l-4 border-yellow-500 p-4 rounded-r-lg flex flex-col md:flex-row justify-between items-start md:items-center animate-fade-in-down">
-          <div className="mb-4 md:mb-0">
-            <h3 className="text-lg font-bold text-yellow-800 dark:text-yellow-400">{t.dashboard.renewal.title}</h3>
-            <p className="text-sm text-yellow-700 dark:text-yellow-300">
-              {String(expiring.length)} {t.dashboard.renewal.message} 
-              {expiring.length <= 5 && (
-                  <span className="font-bold ml-1">
-                      ({expiring.map(e => e.employee.name).join(', ')})
-                  </span>
-              )}
-            </p>
-          </div>
-          <button 
-            onClick={handleRenewalClick}
-            className="bg-yellow-600 text-white px-4 py-2 rounded-md hover:bg-yellow-700 transition shadow-sm text-sm font-medium"
-          >
-            {t.dashboard.renewal.button}
-          </button>
-        </div>
-      )}
-
     </div>
   );
 });

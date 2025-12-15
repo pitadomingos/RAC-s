@@ -119,6 +119,7 @@ export interface Booking {
   practicalScore?: number;
   driverLicenseVerified?: boolean; // New field for Trainer validation
   isAutoBooked?: boolean;
+  comments?: string; // New field for Trainer remarks
 }
 
 export interface ChartData {

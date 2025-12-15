@@ -39,7 +39,8 @@ import {
   GanttChart,
   FileText,
   Briefcase,
-  MessageSquare
+  MessageSquare,
+  Send
 } from 'lucide-react';
 import { UserRole, SystemNotification, Site } from '../types';
 import { useLanguage } from '../contexts/LanguageContext';
@@ -71,8 +72,12 @@ const canViewAlcoholDashboard = (role: UserRole, jobTitle: string, dept: string)
     const allowedDepts = ['HSE', 'Operations', 'Security', 'Medical'];
     
     // Check if Title matches AND Dept matches
-    const hasTitle = allowedTitles.some(t => jobTitle.includes(t));
-    const hasDept = allowedDepts.some(d => dept.includes(d));
+    // Safeguard against undefined inputs
+    const safeTitle = jobTitle || '';
+    const safeDept = dept || '';
+
+    const hasTitle = allowedTitles.some(t => safeTitle.includes(t));
+    const hasDept = allowedDepts.some(d => safeDept.includes(d));
     
     return hasTitle && hasDept;
 };
@@ -161,129 +166,152 @@ const Layout: React.FC<LayoutProps> = memo(({
       }
   };
 
+  // --- NAVIGATION CONFIGURATION (REORDERED) ---
   const allNavItems = [
-    // Enterprise Level Pages
-    {
-      path: '/enterprise-dashboard',
-      label: 'Corporate Dashboard',
-      icon: BarChart,
-      visible: [UserRole.SYSTEM_ADMIN, UserRole.ENTERPRISE_ADMIN].includes(userRole)
-    },
-    {
-      path: '/site-governance',
-      label: 'Site Governance',
-      icon: GanttChart,
-      visible: [UserRole.SYSTEM_ADMIN, UserRole.ENTERPRISE_ADMIN].includes(userRole)
-    },
-    // Project Proposal Link (For System Admin Access primarily)
-    {
-      path: '/proposal',
-      label: t.nav.proposal,
-      icon: FileText,
-      visible: userRole === UserRole.SYSTEM_ADMIN
-    },
+    // 1. Dashboard
     { 
       path: '/', 
       label: t.nav.dashboard, 
       icon: LayoutDashboard, 
       visible: userRole !== UserRole.USER && userRole !== UserRole.ENTERPRISE_ADMIN
     },
-    {
-      path: '/database',
-      label: t.nav.database,
-      icon: Database,
-      visible: userRole !== UserRole.USER && userRole !== UserRole.RAC_TRAINER 
-    },
-    { 
-      path: '/reports', 
-      label: t.nav.reports, 
-      icon: FileBarChart, 
-      visible: [UserRole.SYSTEM_ADMIN, UserRole.ENTERPRISE_ADMIN, UserRole.SITE_ADMIN].includes(userRole) 
-    },
+    // 2. Booking (Action)
     { 
       path: '/booking', 
       label: t.nav.booking, 
       icon: CalendarPlus, 
       visible: userRole !== UserRole.RAC_TRAINER && userRole !== UserRole.ENTERPRISE_ADMIN
     },
-    { 
-      path: '/trainer-input', 
-      label: t.nav.trainerInput, 
-      icon: PenTool, 
-      visible: [UserRole.SYSTEM_ADMIN, UserRole.RAC_TRAINER, UserRole.SITE_ADMIN].includes(userRole) 
-    },
+    // 3. Results (Data)
     { 
       path: '/results', 
       label: t.nav.records, 
       icon: ClipboardList, 
       visible: userRole !== UserRole.RAC_TRAINER && userRole !== UserRole.ENTERPRISE_ADMIN
     },
+    // 4. Database (Master)
+    {
+      path: '/database',
+      label: t.nav.database,
+      icon: Database,
+      visible: userRole !== UserRole.USER && userRole !== UserRole.RAC_TRAINER 
+    },
+    // 5. Reports (Analytics)
+    { 
+      path: '/reports', 
+      label: t.nav.reports, 
+      icon: FileBarChart, 
+      visible: [UserRole.SYSTEM_ADMIN, UserRole.ENTERPRISE_ADMIN, UserRole.SITE_ADMIN].includes(userRole) 
+    },
+    // 6. Enterprise Dashboard (Admin)
+    {
+      path: '/enterprise-dashboard',
+      label: 'Corporate Dashboard',
+      icon: BarChart,
+      visible: [UserRole.SYSTEM_ADMIN, UserRole.ENTERPRISE_ADMIN].includes(userRole)
+    },
+    // 7. Alcohol (IoT)
     {
       path: '/alcohol-control',
       label: t.nav.alcohol,
       icon: Wine,
-      visible: showAlcoholLink // GRANULAR VISIBILITY
+      visible: showAlcoholLink
     },
-    {
-      path: '/feedback-admin',
-      label: t.nav.feedbackAdmin,
-      icon: MessageSquare,
-      visible: [UserRole.SYSTEM_ADMIN, UserRole.ENTERPRISE_ADMIN].includes(userRole)
-    },
-    { 
-      path: '/users', 
-      label: t.nav.users, 
-      icon: Users, 
-      visible: userRole === UserRole.SYSTEM_ADMIN 
-    },
-    { 
-      path: '/schedule', 
-      label: t.nav.schedule, 
-      icon: CalendarDays, 
-      visible: [UserRole.SYSTEM_ADMIN, UserRole.SITE_ADMIN].includes(userRole) 
-    },
-    { 
-      path: '/settings', 
-      label: t.nav.settings, 
-      icon: Settings, 
-      visible: userRole === UserRole.SYSTEM_ADMIN
-    },
+    // 8. Request Cards (Output)
     { 
       path: '/request-cards', 
       label: t.nav.requestCards, 
       icon: Mail, 
       visible: userRole !== UserRole.ENTERPRISE_ADMIN
     },
+    // 9. Communications (NEW)
     {
-      path: '/manuals',
-      label: t.nav.manuals,
-      icon: BookOpen,
-      visible: true
+      path: '/messages',
+      label: t.nav.communications || 'Communications',
+      icon: Send,
+      visible: [UserRole.SYSTEM_ADMIN, UserRole.ENTERPRISE_ADMIN, UserRole.SITE_ADMIN].includes(userRole)
     },
+    // 10. Schedule
+    { 
+      path: '/schedule', 
+      label: t.nav.schedule, 
+      icon: CalendarDays, 
+      visible: [UserRole.SYSTEM_ADMIN, UserRole.SITE_ADMIN].includes(userRole) 
+    },
+    // 11. Governance
     {
-      path: '/admin-manual',
-      label: t.nav.adminGuide, 
-      icon: Shield,
-      visible: userRole === UserRole.SYSTEM_ADMIN // STRICTLY SYSTEM ADMIN
+      path: '/site-governance',
+      label: 'Site Governance',
+      icon: GanttChart,
+      visible: [UserRole.SYSTEM_ADMIN, UserRole.ENTERPRISE_ADMIN].includes(userRole)
     },
-    {
-      path: '/tech-docs',
-      label: 'Technical Docs',
-      icon: FileCode,
-      visible: userRole === UserRole.SYSTEM_ADMIN // STRICTLY SYSTEM ADMIN
+    // 12. Trainer Input
+    { 
+      path: '/trainer-input', 
+      label: t.nav.trainerInput, 
+      icon: PenTool, 
+      visible: [UserRole.SYSTEM_ADMIN, UserRole.RAC_TRAINER, UserRole.SITE_ADMIN].includes(userRole) 
     },
+    // 13. Users
+    { 
+      path: '/users', 
+      label: t.nav.users, 
+      icon: Users, 
+      visible: userRole === UserRole.SYSTEM_ADMIN 
+    },
+    // 14. Settings
+    { 
+      path: '/settings', 
+      label: t.nav.settings, 
+      icon: Settings, 
+      visible: userRole === UserRole.SYSTEM_ADMIN
+    },
+    // 15. Logs
     {
       path: '/logs',
       label: t.nav.logs,
       icon: ScrollText,
       visible: [UserRole.SYSTEM_ADMIN, UserRole.ENTERPRISE_ADMIN].includes(userRole)
     },
+    // 16. Manuals
+    {
+      path: '/manuals',
+      label: t.nav.manuals,
+      icon: BookOpen,
+      visible: true
+    },
+    // Extra Admin Links
+    {
+      path: '/feedback-admin',
+      label: t.nav.feedbackAdmin,
+      icon: MessageSquare,
+      visible: [UserRole.SYSTEM_ADMIN, UserRole.ENTERPRISE_ADMIN].includes(userRole)
+    },
+    {
+      path: '/admin-manual',
+      label: t.nav.adminGuide, 
+      icon: Shield,
+      visible: userRole === UserRole.SYSTEM_ADMIN 
+    },
+    {
+      path: '/tech-docs',
+      label: 'Technical Docs',
+      icon: FileCode,
+      visible: userRole === UserRole.SYSTEM_ADMIN 
+    },
     {
         path: '/presentation',
         label: t.nav.presentation,
         icon: Presentation,
         visible: userRole === UserRole.SYSTEM_ADMIN
-    }
+    },
+    // Proposal (System Admin Access)
+    {
+      path: '/proposal',
+      label: t.nav.proposal,
+      icon: FileText,
+      visible: userRole === UserRole.SYSTEM_ADMIN
+    },
   ];
 
   const navItems = allNavItems.filter(item => item.visible);
@@ -300,6 +328,8 @@ const Layout: React.FC<LayoutProps> = memo(({
     pageTitle = 'Technical Documentation';
   } else if (location.pathname === '/admin-manual') {
     pageTitle = 'System Administrator Manual';
+  } else if (location.pathname === '/messages') {
+    pageTitle = 'Communication Center';
   }
 
   return (

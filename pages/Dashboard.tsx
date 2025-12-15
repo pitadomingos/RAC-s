@@ -7,6 +7,7 @@ import { Calendar, Clock, MapPin, ChevronRight, Filter, Timer, User, CheckCircle
 import { useNavigate } from 'react-router-dom';
 import { v4 as uuidv4 } from 'uuid';
 import { useLanguage } from '../contexts/LanguageContext';
+import { useMessages } from '../contexts/MessageContext';
 import { sendSms } from '../services/smsService';
 
 interface DashboardProps {
@@ -30,6 +31,7 @@ const Dashboard: React.FC<DashboardProps> = ({
 }) => {
   const navigate = useNavigate();
   const { t } = useLanguage();
+  const { addMessage } = useMessages();
   
   // -- GLOBAL FILTERS --
   const [selectedCompany, setSelectedCompany] = useState<string>('All');
@@ -203,7 +205,7 @@ const Dashboard: React.FC<DashboardProps> = ({
         const diff = sessionDate.getTime() - now.getTime();
 
         if (diff <= 0) {
-            return <span className="inline-flex items-center px-2 py-1 rounded text-xs font-bold bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-300 border border-gray-200 dark:border-gray-600">Completed</span>;
+            return <span className="inline-flex items-center px-2 py-1 rounded text-xs font-bold bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-300 border border-gray-200 dark:border-gray-600">{t.common.completed}</span>;
         }
 
         const days = Math.floor(diff / (1000 * 60 * 60 * 24));
@@ -213,7 +215,7 @@ const Dashboard: React.FC<DashboardProps> = ({
 
         return (
         <span className="inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-bold bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 border border-blue-200 dark:border-blue-800 whitespace-nowrap">
-            <Timer size={12} /> {String(days)}d : {String(hours)}h left
+            <Timer size={12} /> {String(days)}d : {String(hours)}h {t.common.timeLeft}
         </span>
         );
     } catch (e) { return null; }
@@ -283,13 +285,22 @@ const Dashboard: React.FC<DashboardProps> = ({
       setIsSendingSms(true);
 
       let sentCount = 0;
+      const uniqueExpiring = new Set<string>();
       
       // 1. Send for Expiring (< 30 Days)
-      const uniqueExpiring = new Set<string>();
       for (const b of expiringBookings) {
           if (b.employee.phoneNumber && !uniqueExpiring.has(b.employee.id)) {
               const msg = `VULCAN SAFETY: Hi ${b.employee.name}, your training is expiring soon. Please contact HSE.`;
               await sendSms(b.employee.phoneNumber, msg);
+              
+              // Add to Message Log
+              addMessage({
+                  type: 'SMS',
+                  recipient: b.employee.phoneNumber,
+                  recipientName: b.employee.name,
+                  content: msg
+              });
+
               uniqueExpiring.add(b.employee.id);
               sentCount++;
           }
@@ -303,10 +314,30 @@ const Dashboard: React.FC<DashboardProps> = ({
               if (!uniqueExpiring.has(b.employee.id)) {
                   const msg = `VULCAN CRITICAL: ${b.employee.name}, you have been auto-booked to prevent lockout. Check schedule immediately.`;
                   await sendSms(b.employee.phoneNumber, msg);
+                  
+                  // Add to Message Log
+                  addMessage({
+                      type: 'SMS',
+                      recipient: b.employee.phoneNumber,
+                      recipientName: b.employee.name,
+                      content: msg
+                  });
+
                   uniqueCritical.add(b.employee.id);
                   sentCount++;
               }
           }
+      }
+
+      // 3. Send Email to Manager (Simulated)
+      if (sentCount > 0) {
+          addMessage({
+              type: 'EMAIL',
+              recipient: 'manager@vulcan.com',
+              recipientName: 'Site Manager',
+              subject: 'Daily Expiry Notification Report',
+              content: `System Report:\n\nSent ${sentCount} SMS reminders to employees expiring within 30 days.\n\nPlease check the dashboard for details.`
+          });
       }
 
       setIsSendingSms(false);
@@ -374,7 +405,7 @@ const Dashboard: React.FC<DashboardProps> = ({
                     onChange={(e) => setSelectedCompany(e.target.value)}
                     className="w-full bg-transparent text-sm font-medium text-slate-800 dark:text-white outline-none cursor-pointer"
                 >
-                    <option value="All">All Companies</option>
+                    <option value="All">{t.common.all} {t.common.company}</option>
                     {COMPANIES.map(c => <option key={c} value={c}>{c}</option>)}
                 </select>
             </div>
@@ -386,7 +417,7 @@ const Dashboard: React.FC<DashboardProps> = ({
                     onChange={(e) => setSelectedDepartment(e.target.value)}
                     className="w-full bg-transparent text-sm font-medium text-slate-800 dark:text-white outline-none cursor-pointer"
                 >
-                    <option value="All">All Departments</option>
+                    <option value="All">{t.common.all} {t.common.department}</option>
                     {DEPARTMENTS.map(d => <option key={d} value={d}>{d}</option>)}
                 </select>
             </div>
@@ -398,9 +429,9 @@ const Dashboard: React.FC<DashboardProps> = ({
                     onChange={(e) => setSelectedAccessStatus(e.target.value as any)}
                     className="w-full bg-transparent text-sm font-medium text-slate-800 dark:text-white outline-none cursor-pointer"
                 >
-                    <option value="All">All Status</option>
-                    <option value="Granted">Granted Only</option>
-                    <option value="Blocked">Blocked Only</option>
+                    <option value="All">{t.common.all} Status</option>
+                    <option value="Granted">{t.database.granted}</option>
+                    <option value="Blocked">{t.database.blocked}</option>
                 </select>
             </div>
 
@@ -425,14 +456,14 @@ const Dashboard: React.FC<DashboardProps> = ({
       {/* --- OPERATIONAL MATRIX BREAKDOWN --- */}
       <div className="bg-slate-100 dark:bg-slate-800/50 p-4 rounded-xl border border-slate-200 dark:border-slate-700">
           <h3 className="text-sm font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-3 flex items-center gap-2">
-              <Layers size={14} /> Operational Matrix Breakdown
+              <Layers size={14} /> {t.common.operationalMatrix}
           </h3>
           <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-3">
               {Object.entries(matrixCounts).map(([key, count]) => {
                   let label = key;
                   if (key === 'LIB_OPS') label = 'LIB-OPS';
                   if (key === 'LIB_MOV') label = 'LIB-MOV';
-                  if (key === 'DONO_AREA_PTS') label = 'Owner';
+                  if (key === 'DONO_AREA_PTS') label = t.common.owner;
                   
                   return (
                       <div key={key} className="bg-white dark:bg-slate-700 rounded-lg p-3 shadow-sm border border-slate-200 dark:border-slate-600 flex flex-col items-center">
@@ -489,10 +520,10 @@ const Dashboard: React.FC<DashboardProps> = ({
                  <table className="min-w-full divide-y divide-orange-100 dark:divide-orange-900/30">
                      <thead className="bg-orange-50/50 dark:bg-orange-900/10 md:sticky md:top-0 z-10">
                          <tr>
-                             <th className="px-4 py-3 text-left text-xs font-bold text-orange-800 dark:text-orange-300 uppercase">Employee</th>
+                             <th className="px-4 py-3 text-left text-xs font-bold text-orange-800 dark:text-orange-300 uppercase">{t.common.name}</th>
                              <th className="px-4 py-3 text-left text-xs font-bold text-orange-800 dark:text-orange-300 uppercase">Session / RAC</th>
-                             <th className="px-4 py-3 text-left text-xs font-bold text-orange-800 dark:text-orange-300 uppercase">Scheduled Date</th>
-                             <th className="px-4 py-3 text-right text-xs font-bold text-orange-800 dark:text-orange-300 uppercase">Action</th>
+                             <th className="px-4 py-3 text-left text-xs font-bold text-orange-800 dark:text-orange-300 uppercase">{t.common.date}</th>
+                             <th className="px-4 py-3 text-right text-xs font-bold text-orange-800 dark:text-orange-300 uppercase">{t.common.actions}</th>
                          </tr>
                      </thead>
                      <tbody className="bg-white dark:bg-slate-800 divide-y divide-gray-50 dark:divide-slate-700">
@@ -520,15 +551,15 @@ const Dashboard: React.FC<DashboardProps> = ({
                                      <td className="px-4 py-3 text-right">
                                          <div className="flex justify-end gap-2">
                                             <button 
-                                                onClick={() => onApproveAutoBooking(booking.id)} 
+                                                onClick={() => onApproveAutoBooking && onApproveAutoBooking(booking.id)} 
                                                 className="flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-500 text-white rounded-lg shadow-md hover:shadow-lg transition-all transform hover:-translate-y-0.5"
                                                 title="Approve Booking"
                                             >
                                                 <CheckCircle size={16} />
-                                                <span className="text-xs font-bold">Approve</span>
+                                                <span className="text-xs font-bold">{t.common.yes}</span>
                                             </button>
                                             <button 
-                                                onClick={() => onRejectAutoBooking(booking.id)} 
+                                                onClick={() => onRejectAutoBooking && onRejectAutoBooking(booking.id)} 
                                                 className="flex items-center gap-1 px-3 py-2 bg-white text-red-600 border border-red-200 rounded-lg hover:bg-red-50 transition-colors"
                                                 title="Reject & Delete"
                                             >
@@ -565,7 +596,7 @@ const Dashboard: React.FC<DashboardProps> = ({
                 disabled={isSendingSms}
                 className="bg-slate-800 dark:bg-slate-700 text-white px-4 py-2 rounded-md hover:bg-slate-700 dark:hover:bg-slate-600 transition shadow-sm text-sm font-medium flex items-center gap-2"
               >
-                {isSendingSms ? 'Sending...' : <><MessageCircle size={16} /> SMS Blast</>}
+                {isSendingSms ? t.common.sending : <><MessageCircle size={16} /> {t.common.smsBlast || 'SMS Blast'}</>}
               </button>
               <button 
                 onClick={handleBookRenewals}
@@ -642,7 +673,7 @@ const Dashboard: React.FC<DashboardProps> = ({
                    <h3 className="font-bold text-slate-800 dark:text-white text-lg">{t.dashboard.booked.title}</h3>
                 </div>
                 <div className="text-xs text-gray-400">
-                  {finalFilteredBookings.length} records
+                  {finalFilteredBookings.length} {t.common.recordsFound}
                 </div>
              </div>
              
@@ -653,7 +684,7 @@ const Dashboard: React.FC<DashboardProps> = ({
                    onChange={(e) => setEmpFilterCompany(e.target.value)}
                    className="text-xs border-gray-300 dark:border-slate-600 dark:bg-slate-700 text-black dark:text-white rounded focus:ring-blue-500 focus:border-blue-500 py-1"
                 >
-                   <option value="All">All Companies</option>
+                   <option value="All">{t.common.all} {t.common.company}</option>
                    {COMPANIES.map(c => <option key={c} value={c}>{c}</option>)}
                 </select>
 
@@ -662,7 +693,7 @@ const Dashboard: React.FC<DashboardProps> = ({
                    onChange={(e) => setEmpFilterRac(e.target.value)}
                    className="text-xs border-gray-300 dark:border-slate-600 dark:bg-slate-700 text-black dark:text-white rounded focus:ring-blue-500 focus:border-blue-500 py-1"
                 >
-                   <option value="All">All RACs</option>
+                   <option value="All">{t.common.all} RACs</option>
                    {RAC_KEYS.map(r => <option key={r} value={r}>{r}</option>)}
                 </select>
 

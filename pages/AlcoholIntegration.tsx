@@ -1,18 +1,20 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useLanguage } from '../contexts/LanguageContext';
 import { 
   Wine, Activity, Wifi, Lock, UserX, AlertTriangle, 
   Server, Mail, Smartphone,
   CheckCircle2, XCircle, TrendingUp,
-  Map as MapIcon, FileText, ArrowRight, FileCode
+  Map as MapIcon, FileText, FileCode, Filter, Calendar, BarChart3, PieChart as PieIcon
 } from 'lucide-react';
 import { 
-  AreaChart, Area, Tooltip, ResponsiveContainer
+  AreaChart, Area, Tooltip, ResponsiveContainer, XAxis, YAxis, CartesianGrid, 
+  BarChart, Bar, Legend, PieChart, Pie, Cell
 } from 'recharts';
 import { BreathalyzerTest, SystemNotification } from '../types';
 import { v4 as uuidv4 } from 'uuid';
 import { useNavigate } from 'react-router-dom';
+import { format, subDays, subHours } from 'date-fns';
 
 interface AlcoholIntegrationProps {
     addNotification?: (notif: SystemNotification) => void;
@@ -23,6 +25,11 @@ const AlcoholIntegration: React.FC<AlcoholIntegrationProps> = ({ addNotification
   const navigate = useNavigate();
   const [viewLocalSpecs, setViewLocalSpecs] = useState(false);
   
+  // --- FILTERS STATE ---
+  const [dateFilter, setDateFilter] = useState<'Today' | 'Week' | 'Month'>('Today');
+  const [deviceFilter, setDeviceFilter] = useState<string>('All');
+  const [statusFilter, setStatusFilter] = useState<'All' | 'PASS' | 'FAIL'>('All');
+
   // --- STATE FOR SIMULATION ---
   const [tests, setTests] = useState<BreathalyzerTest[]>([]);
   const [devices, setDevices] = useState([
@@ -34,13 +41,46 @@ const AlcoholIntegration: React.FC<AlcoholIntegrationProps> = ({ addNotification
   const [activeAlert, setActiveAlert] = useState<BreathalyzerTest | null>(null);
   const [isReporting, setIsReporting] = useState(false);
 
-  // --- MOCK DATA GENERATOR ---
+  // --- INITIAL DATA GENERATION (History) ---
+  useEffect(() => {
+      // Generate some history so charts aren't empty
+      const history: BreathalyzerTest[] = [];
+      const now = new Date();
+      const deviceIds = devices.map(d => d.id);
+      
+      // Generate 500 records spanning back 7 days
+      for(let i = 0; i < 500; i++) {
+          const timeOffset = Math.floor(Math.random() * 7 * 24 * 60); // minutes
+          const date = subDays(now, Math.floor(timeOffset / (24*60)));
+          
+          // Higher chance of tests in morning (6am-9am)
+          const hour = date.getHours();
+          if (hour < 5 || hour > 20) continue; // Skip night
+
+          const isPositive = Math.random() < 0.03; // 3% fail rate history
+          const dId = deviceIds[Math.floor(Math.random() * deviceIds.length)];
+          
+          history.push({
+              id: uuidv4(),
+              deviceId: dId,
+              employeeId: `VUL-${Math.floor(Math.random() * 9000) + 1000}`,
+              employeeName: 'Historical Record',
+              date: date.toISOString().split('T')[0],
+              timestamp: format(date, 'HH:mm:ss'),
+              result: isPositive ? parseFloat((Math.random() * 0.1).toFixed(3)) : 0,
+              status: isPositive ? 'FAIL' : 'PASS'
+          });
+      }
+      setTests(history.sort((a, b) => new Date(b.date + 'T' + b.timestamp).getTime() - new Date(a.date + 'T' + a.timestamp).getTime()));
+  }, []);
+
+  // --- MOCK DATA GENERATOR (Live) ---
   const generateMockTest = () => {
       const names = ['Paulo Manjate', 'Jose Cossa', 'Maria Silva', 'Antonio Sitoe', 'Sarah Connor', 'John Doe', 'Luis Tete'];
       const randomName = names[Math.floor(Math.random() * names.length)];
       const randomDevice = devices[Math.floor(Math.random() * devices.length)];
       
-      // 5% chance of positive test
+      // 5% chance of positive test in live mode
       const isPositive = Math.random() < 0.05;
       const bac = isPositive ? (Math.random() * 0.15).toFixed(3) : '0.000';
       const now = new Date();
@@ -51,7 +91,7 @@ const AlcoholIntegration: React.FC<AlcoholIntegrationProps> = ({ addNotification
           employeeId: `VUL-${Math.floor(Math.random() * 9000) + 1000}`,
           employeeName: randomName,
           date: now.toISOString().split('T')[0],
-          timestamp: now.toLocaleTimeString(),
+          timestamp: now.toLocaleTimeString('en-GB', { hour12: false }),
           result: parseFloat(bac),
           status: isPositive ? 'FAIL' : 'PASS',
       } as BreathalyzerTest;
@@ -59,27 +99,24 @@ const AlcoholIntegration: React.FC<AlcoholIntegrationProps> = ({ addNotification
 
   // --- SIMULATION LOOP ---
   useEffect(() => {
-      if (viewLocalSpecs) return; // Pause simulation if viewing specs
+      if (viewLocalSpecs) return; 
 
       const interval = setInterval(() => {
           const newTest = generateMockTest();
-          setTests(prev => [newTest, ...prev].slice(0, 50)); // Keep last 50
+          setTests(prev => [newTest, ...prev]); 
 
           // Trigger Alert if Positive
           if (newTest.status === 'FAIL') {
               setActiveAlert(newTest);
-              // Trigger automated reporting logic
               handleAutomaticReporting(newTest);
           }
-      }, 3500); // New test every 3.5 seconds
+      }, 4000); 
 
       return () => clearInterval(interval);
   }, [viewLocalSpecs]);
 
   const handleAutomaticReporting = (test: BreathalyzerTest) => {
       setIsReporting(true);
-      
-      // Simulate API Delay for sending emails/SMS
       setTimeout(() => {
           setIsReporting(false);
           if (addNotification) {
@@ -95,22 +132,70 @@ const AlcoholIntegration: React.FC<AlcoholIntegrationProps> = ({ addNotification
       }, 3000);
   };
 
-  // --- METRICS ---
-  const stats = {
-      totalToday: 1240 + tests.length,
-      positives: tests.filter(t => t.status === 'FAIL').length,
-      avgTime: '1.2s',
-      onlineDevices: 4
-  };
+  // --- DATA FILTERING & ANALYTICS ---
+  
+  const filteredData = useMemo(() => {
+      const today = new Date().toISOString().split('T')[0];
+      const oneWeekAgo = format(subDays(new Date(), 7), 'yyyy-MM-dd');
+      const oneMonthAgo = format(subDays(new Date(), 30), 'yyyy-MM-dd');
 
-  const chartData = [
-      { time: '06:00', tests: 45, fails: 0 },
-      { time: '07:00', tests: 120, fails: 1 },
-      { time: '08:00', tests: 350, fails: 2 },
-      { time: '09:00', tests: 180, fails: 0 },
-      { time: '10:00', tests: 60, fails: 0 },
-      { time: '11:00', tests: 40, fails: 0 },
-      { time: '12:00', tests: 90, fails: 1 },
+      return tests.filter(t => {
+          // Date Filter
+          if (dateFilter === 'Today' && t.date !== today) return false;
+          if (dateFilter === 'Week' && t.date < oneWeekAgo) return false;
+          if (dateFilter === 'Month' && t.date < oneMonthAgo) return false;
+
+          // Device Filter
+          if (deviceFilter !== 'All' && t.deviceId !== deviceFilter) return false;
+
+          // Status Filter
+          if (statusFilter !== 'All' && t.status !== statusFilter) return false;
+
+          return true;
+      });
+  }, [tests, dateFilter, deviceFilter, statusFilter]);
+
+  const stats = useMemo(() => {
+      const total = filteredData.length;
+      const positives = filteredData.filter(t => t.status === 'FAIL').length;
+      const passRate = total > 0 ? ((total - positives) / total * 100).toFixed(1) : '100.0';
+      // Calculate throughput (tests per hour in selected range)
+      // Simplified: Just total / 12 (assuming 12 hour shift) or similar
+      const avgPerHour = total > 0 ? (total / (dateFilter === 'Today' ? new Date().getHours() + 1 : 24)).toFixed(0) : '0';
+
+      return { total, positives, passRate, avgPerHour };
+  }, [filteredData, dateFilter]);
+
+  // Chart Data: Hourly Trend
+  const trendData = useMemo(() => {
+      const grouped: Record<string, { time: string, tests: number, violations: number }> = {};
+      
+      filteredData.forEach(t => {
+          // Grouping Key
+          let key = t.timestamp.split(':')[0] + ':00'; // Hourly by default
+          if (dateFilter !== 'Today') key = t.date; // Daily if looking at week/month
+
+          if (!grouped[key]) grouped[key] = { time: key, tests: 0, violations: 0 };
+          grouped[key].tests++;
+          if (t.status === 'FAIL') grouped[key].violations++;
+      });
+
+      return Object.values(grouped).sort((a, b) => a.time.localeCompare(b.time));
+  }, [filteredData, dateFilter]);
+
+  // Chart Data: Device Distribution
+  const deviceStats = useMemo(() => {
+      const grouped: Record<string, number> = {};
+      filteredData.forEach(t => {
+          grouped[t.deviceId] = (grouped[t.deviceId] || 0) + 1;
+      });
+      return Object.entries(grouped).map(([name, val]) => ({ name, value: val }));
+  }, [filteredData]);
+
+  // Chart Data: Pie
+  const pieData = [
+      { name: 'Pass', value: stats.total - stats.positives, color: '#10b981' },
+      { name: 'Fail', value: stats.positives, color: '#ef4444' }
   ];
 
   return (
@@ -122,7 +207,7 @@ const AlcoholIntegration: React.FC<AlcoholIntegrationProps> = ({ addNotification
               <Activity size={300} />
           </div>
           
-          {/* Animated Pulse for Live Status (Only if Dashboard Mode) */}
+          {/* Top Right Controls */}
           <div className="absolute top-6 right-6 flex flex-col items-end gap-3">
               {!viewLocalSpecs && (
                   <div className="flex items-center gap-2 bg-red-500/20 px-4 py-2 rounded-full border border-red-500/50 animate-pulse">
@@ -136,19 +221,13 @@ const AlcoholIntegration: React.FC<AlcoholIntegrationProps> = ({ addNotification
                     onClick={() => navigate('/tech-docs')}
                     className="flex items-center gap-2 text-xs font-bold text-slate-400 hover:text-white bg-white/5 hover:bg-white/10 px-3 py-1.5 rounded-lg transition-colors border border-white/10"
                   >
-                      <FileCode size={14} /> System Specs
+                      <FileCode size={14} /> Specs
                   </button>
                   <button 
                     onClick={() => setViewLocalSpecs(!viewLocalSpecs)}
                     className="flex items-center gap-2 text-xs font-bold text-slate-400 hover:text-white bg-white/5 hover:bg-white/10 px-3 py-1.5 rounded-lg transition-colors border border-white/10"
                   >
                       <Activity size={14} /> {viewLocalSpecs ? t.alcohol.dashboard.backToLive : "Module Specs"}
-                  </button>
-                  <button 
-                    onClick={() => navigate('/proposal')}
-                    className="flex items-center gap-2 text-xs font-bold text-blue-300 hover:text-white bg-blue-500/10 hover:bg-blue-500/20 px-3 py-1.5 rounded-lg transition-colors border border-blue-500/30"
-                  >
-                      <FileText size={14} /> {t.alcohol.dashboard.viewRoadmap}
                   </button>
               </div>
           </div>
@@ -165,19 +244,19 @@ const AlcoholIntegration: React.FC<AlcoholIntegrationProps> = ({ addNotification
               </div>
 
               {!viewLocalSpecs && (
-                  /* KPI ROW */
+                  /* KPI ROW - DYNAMIC */
                   <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mt-8">
                       <div className="bg-slate-800/50 p-4 rounded-2xl border border-slate-700">
                           <p className="text-xs text-slate-400 font-bold uppercase tracking-wider mb-1">{t.alcohol.dashboard.kpi.total}</p>
-                          <div className="text-3xl font-black text-white">{stats.totalToday}</div>
+                          <div className="text-3xl font-black text-white">{stats.total}</div>
                       </div>
                       <div className="bg-red-900/20 p-4 rounded-2xl border border-red-900/50">
                           <p className="text-xs text-red-400 font-bold uppercase tracking-wider mb-1">{t.alcohol.dashboard.kpi.violations}</p>
                           <div className="text-3xl font-black text-red-500">{stats.positives}</div>
                       </div>
                       <div className="bg-slate-800/50 p-4 rounded-2xl border border-slate-700">
-                          <p className="text-xs text-slate-400 font-bold uppercase tracking-wider mb-1">{t.alcohol.dashboard.kpi.throughput}</p>
-                          <div className="text-3xl font-black text-blue-400">{stats.avgTime} <span className="text-sm text-slate-500 font-normal">/ {t.alcohol.dashboard.person}</span></div>
+                          <p className="text-xs text-slate-400 font-bold uppercase tracking-wider mb-1">Pass Rate</p>
+                          <div className="text-3xl font-black text-blue-400">{stats.passRate}%</div>
                       </div>
                       <div className="bg-emerald-900/20 p-4 rounded-2xl border border-emerald-900/50">
                           <p className="text-xs text-emerald-400 font-bold uppercase tracking-wider mb-1">{t.alcohol.dashboard.kpi.health}</p>
@@ -188,8 +267,56 @@ const AlcoholIntegration: React.FC<AlcoholIntegrationProps> = ({ addNotification
           </div>
       </div>
 
+      {!viewLocalSpecs && (
+          /* --- FILTER BAR --- */
+          <div className="bg-white dark:bg-slate-800 p-4 rounded-xl shadow-md border border-slate-200 dark:border-slate-700 flex flex-wrap gap-4 items-center justify-between">
+              <div className="flex flex-wrap gap-4 items-center">
+                  <div className="flex items-center gap-2 bg-slate-50 dark:bg-slate-700 p-2 rounded-lg border border-slate-200 dark:border-slate-600">
+                      <Calendar size={16} className="text-slate-400" />
+                      <select 
+                          value={dateFilter} 
+                          onChange={(e) => setDateFilter(e.target.value as any)}
+                          className="bg-transparent text-sm font-bold text-slate-700 dark:text-slate-200 outline-none cursor-pointer"
+                      >
+                          <option value="Today">Today</option>
+                          <option value="Week">Last 7 Days</option>
+                          <option value="Month">Last 30 Days</option>
+                      </select>
+                  </div>
+
+                  <div className="flex items-center gap-2 bg-slate-50 dark:bg-slate-700 p-2 rounded-lg border border-slate-200 dark:border-slate-600">
+                      <MapIcon size={16} className="text-slate-400" />
+                      <select 
+                          value={deviceFilter} 
+                          onChange={(e) => setDeviceFilter(e.target.value)}
+                          className="bg-transparent text-sm font-bold text-slate-700 dark:text-slate-200 outline-none cursor-pointer"
+                      >
+                          <option value="All">All Devices</option>
+                          {devices.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
+                      </select>
+                  </div>
+
+                  <div className="flex items-center gap-2 bg-slate-50 dark:bg-slate-700 p-2 rounded-lg border border-slate-200 dark:border-slate-600">
+                      <Filter size={16} className="text-slate-400" />
+                      <select 
+                          value={statusFilter} 
+                          onChange={(e) => setStatusFilter(e.target.value as any)}
+                          className="bg-transparent text-sm font-bold text-slate-700 dark:text-slate-200 outline-none cursor-pointer"
+                      >
+                          <option value="All">All Results</option>
+                          <option value="PASS">Pass Only</option>
+                          <option value="FAIL">Fail Only</option>
+                      </select>
+                  </div>
+              </div>
+              <div className="text-xs text-slate-500 font-mono">
+                  Showing {filteredData.length} records
+              </div>
+          </div>
+      )}
+
       {viewLocalSpecs ? (
-          /* --- TECHNICAL SPECS VIEW --- */
+          /* --- TECHNICAL SPECS VIEW (Unchanged) --- */
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 animate-fade-in-up">
               <div className="bg-white dark:bg-slate-800 p-8 rounded-2xl shadow-lg border border-slate-200 dark:border-slate-700">
                   <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-6 flex items-center gap-2">
@@ -235,75 +362,139 @@ const AlcoholIntegration: React.FC<AlcoholIntegrationProps> = ({ addNotification
                       </li>
                   </ul>
               </div>
+          </div>
+      ) : (
+          /* --- ANALYTICS & LIVE VIEW --- */
+          <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 animate-fade-in">
+              
+              {/* --- LEFT COL: ANALYTICS CHARTS --- */}
+              <div className="xl:col-span-2 space-y-6">
+                  
+                  {/* Chart 1: Trend */}
+                  <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-lg border border-slate-100 dark:border-slate-700 p-6">
+                      <h3 className="font-bold text-slate-800 dark:text-white mb-4 flex items-center gap-2">
+                          <TrendingUp size={20} className="text-indigo-500" /> 
+                          {dateFilter === 'Today' ? 'Hourly Activity Trend' : 'Daily Trend'}
+                      </h3>
+                      <div className="h-64 w-full">
+                          <ResponsiveContainer width="100%" height="100%">
+                              <AreaChart data={trendData}>
+                                  <defs>
+                                      <linearGradient id="colorTests" x1="0" y1="0" x2="0" y2="1">
+                                          <stop offset="5%" stopColor="#6366f1" stopOpacity={0.3}/>
+                                          <stop offset="95%" stopColor="#6366f1" stopOpacity={0}/>
+                                      </linearGradient>
+                                      <linearGradient id="colorFails" x1="0" y1="0" x2="0" y2="1">
+                                          <stop offset="5%" stopColor="#ef4444" stopOpacity={0.3}/>
+                                          <stop offset="95%" stopColor="#ef4444" stopOpacity={0}/>
+                                      </linearGradient>
+                                  </defs>
+                                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#374151" opacity={0.2} />
+                                  <XAxis dataKey="time" axisLine={false} tickLine={false} tick={{fill: '#94a3b8', fontSize: 10}} />
+                                  <YAxis axisLine={false} tickLine={false} tick={{fill: '#94a3b8', fontSize: 10}} />
+                                  <Tooltip contentStyle={{ backgroundColor: '#1e293b', border: 'none', borderRadius: '8px', color: '#fff' }} />
+                                  <Legend />
+                                  <Area type="monotone" dataKey="tests" stroke="#6366f1" fillOpacity={1} fill="url(#colorTests)" name="Total Tests" />
+                                  <Area type="monotone" dataKey="violations" stroke="#ef4444" fillOpacity={1} fill="url(#colorFails)" name="Violations" />
+                              </AreaChart>
+                          </ResponsiveContainer>
+                      </div>
+                  </div>
 
-              <div className="md:col-span-2 bg-gradient-to-r from-slate-100 to-slate-200 dark:from-slate-800 dark:to-slate-900 p-8 rounded-2xl border border-slate-300 dark:border-slate-700">
-                  <h3 className="text-lg font-bold text-slate-800 dark:text-white mb-4">{t.alcohol.proposal.header}</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                      <div className="p-4 bg-white dark:bg-slate-800 rounded-xl shadow-sm">
-                          <h5 className="font-bold text-xs text-slate-500 uppercase tracking-wider mb-2">{t.alcohol.proposal.hardware}</h5>
-                          <p className="text-sm font-medium text-slate-800 dark:text-white">{t.alcohol.challenges.gateSetup}</p>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      {/* Chart 2: Device Load */}
+                      <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-lg border border-slate-100 dark:border-slate-700 p-6">
+                          <h3 className="font-bold text-slate-800 dark:text-white mb-4 flex items-center gap-2">
+                              <BarChart3 size={20} className="text-blue-500" /> Device Load
+                          </h3>
+                          <div className="h-48 w-full">
+                              <ResponsiveContainer width="100%" height="100%">
+                                  <BarChart data={deviceStats} layout="vertical">
+                                      <XAxis type="number" hide />
+                                      <YAxis dataKey="name" type="category" width={50} tick={{fill: '#94a3b8', fontSize: 10}} />
+                                      <Tooltip cursor={{fill: 'transparent'}} contentStyle={{ backgroundColor: '#1e293b', border: 'none', borderRadius: '8px', color: '#fff' }}/>
+                                      <Bar dataKey="value" fill="#3b82f6" radius={[0, 4, 4, 0]} barSize={20} name="Tests Processed" />
+                                  </BarChart>
+                              </ResponsiveContainer>
+                          </div>
                       </div>
-                      <div className="p-4 bg-white dark:bg-slate-800 rounded-xl shadow-sm">
-                          <h5 className="font-bold text-xs text-slate-500 uppercase tracking-wider mb-2">{t.alcohol.proposal.software}</h5>
-                          <p className="text-sm font-medium text-slate-800 dark:text-white">{t.alcohol.proposal.integration}</p>
-                      </div>
-                      <div className="p-4 bg-white dark:bg-slate-800 rounded-xl shadow-sm">
-                          <h5 className="font-bold text-xs text-slate-500 uppercase tracking-wider mb-2">{t.alcohol.proposal.security}</h5>
-                          <p className="text-sm font-medium text-slate-800 dark:text-white">{t.alcohol.proposal.faceCap}</p>
+
+                      {/* Chart 3: Compliance Ratio */}
+                      <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-lg border border-slate-100 dark:border-slate-700 p-6 flex flex-col items-center">
+                          <h3 className="font-bold text-slate-800 dark:text-white mb-2 flex items-center gap-2 self-start">
+                              <PieIcon size={20} className="text-emerald-500" /> Compliance Ratio
+                          </h3>
+                          <div className="h-48 w-full relative">
+                              <ResponsiveContainer width="100%" height="100%">
+                                  <PieChart>
+                                      <Pie
+                                          data={pieData}
+                                          innerRadius={60}
+                                          outerRadius={80}
+                                          paddingAngle={5}
+                                          dataKey="value"
+                                      >
+                                          {pieData.map((entry, index) => (
+                                              <Cell key={`cell-${index}`} fill={entry.color} strokeWidth={0} />
+                                          ))}
+                                      </Pie>
+                                      <Tooltip contentStyle={{ backgroundColor: '#1e293b', border: 'none', borderRadius: '8px', color: '#fff' }} />
+                                      <Legend verticalAlign="bottom" height={36}/>
+                                  </PieChart>
+                              </ResponsiveContainer>
+                              <div className="absolute inset-0 flex items-center justify-center pointer-events-none pb-8">
+                                  <div className="text-center">
+                                      <span className="text-2xl font-black text-slate-800 dark:text-white">{stats.passRate}%</span>
+                                      <div className="text-[10px] text-slate-500 uppercase font-bold">Pass Rate</div>
+                                  </div>
+                              </div>
+                          </div>
                       </div>
                   </div>
               </div>
-          </div>
-      ) : (
-          /* --- LIVE DASHBOARD VIEW --- */
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 animate-fade-in">
-              
-              {/* --- LEFT COL: LIVE FEED --- */}
-              <div className="lg:col-span-2 bg-white dark:bg-slate-800 rounded-2xl shadow-lg border border-slate-100 dark:border-slate-700 flex flex-col h-[500px]">
-                  <div className="p-6 border-b border-slate-100 dark:border-slate-700 flex justify-between items-center">
+
+              {/* --- RIGHT COL: LIVE FEED --- */}
+              <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-lg border border-slate-100 dark:border-slate-700 flex flex-col h-[650px]">
+                  <div className="p-6 border-b border-slate-100 dark:border-slate-700 flex justify-between items-center bg-slate-50 dark:bg-slate-900/50">
                       <h3 className="font-bold text-slate-800 dark:text-white flex items-center gap-2">
-                          <Wifi size={20} className="text-blue-500" /> {t.alcohol.dashboard.log}
+                          <Wifi size={20} className="text-blue-500 animate-pulse" /> Live Stream
                       </h3>
                       <div className="flex gap-2">
-                          <span className="text-[10px] bg-slate-100 dark:bg-slate-700 text-slate-500 px-2 py-1 rounded">{t.alcohol.dashboard.mqtt}</span>
+                          <span className="text-[10px] bg-white dark:bg-slate-700 text-slate-500 px-2 py-1 rounded border border-slate-200 dark:border-slate-600">{t.alcohol.dashboard.mqtt}</span>
                       </div>
                   </div>
-                  <div className="flex-1 overflow-auto p-0">
+                  <div className="flex-1 overflow-auto p-0 scrollbar-hide">
                       <table className="w-full text-sm text-left">
-                          <thead className="bg-slate-50 dark:bg-slate-900/50 text-xs text-slate-500 uppercase font-bold sticky top-0 z-10">
+                          <thead className="bg-slate-50 dark:bg-slate-800/80 text-xs text-slate-500 uppercase font-bold sticky top-0 z-10 backdrop-blur-sm">
                               <tr>
-                                  <th className="px-6 py-3">{t.common.date}</th>
-                                  <th className="px-6 py-3">{t.common.time}</th>
-                                  <th className="px-6 py-3">{t.alcohol.dashboard.table.device}</th>
-                                  <th className="px-6 py-3">{t.results.table.employee}</th>
-                                  <th className="px-6 py-3">{t.alcohol.dashboard.table.result}</th>
-                                  <th className="px-6 py-3">{t.common.status}</th>
+                                  <th className="px-4 py-3">Time</th>
+                                  <th className="px-4 py-3">User</th>
+                                  <th className="px-4 py-3 text-right">Result</th>
                               </tr>
                           </thead>
                           <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
-                              {tests.map((test) => (
+                              {tests.slice(0, 50).map((test) => ( // Show last 50 only in feed
                                   <tr key={test.id} className={`hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors ${test.status === 'FAIL' ? 'bg-red-50 dark:bg-red-900/10' : ''}`}>
-                                      <td className="px-6 py-3 font-mono text-slate-600 dark:text-slate-400">{test.date}</td>
-                                      <td className="px-6 py-3 font-mono text-slate-600 dark:text-slate-400">{test.timestamp}</td>
-                                      <td className="px-6 py-3 text-slate-800 dark:text-white font-medium">{test.deviceId}</td>
-                                      <td className="px-6 py-3">
-                                          <div className="font-bold text-slate-800 dark:text-white">{test.employeeName}</div>
+                                      <td className="px-4 py-3">
+                                          <div className="font-mono text-slate-600 dark:text-slate-400 text-xs">{test.timestamp}</div>
+                                          <div className="text-[10px] text-slate-400">{test.deviceId}</div>
+                                      </td>
+                                      <td className="px-4 py-3">
+                                          <div className="font-bold text-slate-800 dark:text-white text-xs truncate max-w-[120px]">{test.employeeName}</div>
                                           <div className="text-[10px] text-slate-500">{test.employeeId}</div>
                                       </td>
-                                      <td className="px-6 py-3">
-                                          <span className={`font-mono font-bold ${test.result > 0 ? 'text-red-600' : 'text-slate-500'}`}>
-                                              {test.result.toFixed(3)}%
-                                          </span>
-                                      </td>
-                                      <td className="px-6 py-3">
+                                      <td className="px-4 py-3 text-right">
                                           {test.status === 'PASS' ? (
-                                              <span className="inline-flex items-center gap-1 px-2 py-1 rounded bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 text-xs font-bold">
-                                                  <CheckCircle2 size={12} /> {t.alcohol.dashboard.table.ok}
+                                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 text-[10px] font-bold">
+                                                  OK
                                               </span>
                                           ) : (
-                                              <span className="inline-flex items-center gap-1 px-2 py-1 rounded bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 text-xs font-bold animate-pulse">
-                                                  <XCircle size={12} /> {t.alcohol.dashboard.table.blocked}
-                                              </span>
+                                              <div className="flex flex-col items-end">
+                                                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 text-[10px] font-bold animate-pulse">
+                                                      FAIL
+                                                  </span>
+                                                  <span className="text-[10px] font-mono text-red-500 font-bold">{test.result.toFixed(3)}</span>
+                                              </div>
                                           )}
                                       </td>
                                   </tr>
@@ -311,50 +502,16 @@ const AlcoholIntegration: React.FC<AlcoholIntegrationProps> = ({ addNotification
                           </tbody>
                       </table>
                   </div>
-              </div>
-
-              {/* --- RIGHT COL: ANALYTICS --- */}
-              <div className="space-y-6">
-                  {/* Chart */}
-                  <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-lg border border-slate-100 dark:border-slate-700 p-6">
-                      <h3 className="font-bold text-slate-800 dark:text-white mb-4 flex items-center gap-2">
-                          <TrendingUp size={20} className="text-indigo-500" /> {t.alcohol.dashboard.throughputChart}
-                      </h3>
-                      <div className="h-48 w-full">
-                          <ResponsiveContainer width="100%" height="100%">
-                              <AreaChart data={chartData}>
-                                  <defs>
-                                      <linearGradient id="colorTests" x1="0" y1="0" x2="0" y2="1">
-                                          <stop offset="5%" stopColor="#6366f1" stopOpacity={0.3}/>
-                                          <stop offset="95%" stopColor="#6366f1" stopOpacity={0}/>
-                                      </linearGradient>
-                                  </defs>
-                                  <Tooltip 
-                                      contentStyle={{ backgroundColor: '#1e293b', border: 'none', borderRadius: '8px', color: '#fff' }}
-                                  />
-                                  <Area type="monotone" dataKey="tests" stroke="#6366f1" fillOpacity={1} fill="url(#colorTests)" />
-                              </AreaChart>
-                          </ResponsiveContainer>
+                  
+                  {/* Device Status Footer */}
+                  <div className="p-4 border-t border-slate-100 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50">
+                      <div className="flex justify-between items-center text-xs text-slate-500 mb-2">
+                          <span className="font-bold uppercase tracking-wider">Device Health</span>
+                          <span className="text-emerald-500 font-bold">100% Online</span>
                       </div>
-                  </div>
-
-                  {/* Device Status */}
-                  <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-lg border border-slate-100 dark:border-slate-700 p-6">
-                      <h3 className="font-bold text-slate-800 dark:text-white mb-4 flex items-center gap-2">
-                          <Server size={20} className="text-emerald-500" /> {t.alcohol.dashboard.deviceStatus}
-                      </h3>
-                      <div className="space-y-3">
+                      <div className="flex gap-1 h-1.5 w-full">
                           {devices.map(d => (
-                              <div key={d.id} className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-700/50 rounded-xl border border-slate-100 dark:border-slate-600">
-                                  <div className="flex items-center gap-3">
-                                      <div className="w-2 h-2 rounded-full bg-green-500 shadow-[0_0_8px_rgba(16,185,129,0.6)]"></div>
-                                      <div>
-                                          <div className="font-bold text-xs text-slate-800 dark:text-white">{d.name}</div>
-                                          <div className="text-[10px] text-slate-500">{d.location} • {d.id}</div>
-                                      </div>
-                                  </div>
-                                  <span className="text-[10px] font-bold text-green-600 dark:text-green-400 bg-green-100 dark:bg-green-900/30 px-2 py-1 rounded">{t.alcohol.dashboard.online}</span>
-                              </div>
+                              <div key={d.id} className="flex-1 bg-emerald-500 rounded-full opacity-80" title={d.name}></div>
                           ))}
                       </div>
                   </div>
@@ -364,7 +521,7 @@ const AlcoholIntegration: React.FC<AlcoholIntegrationProps> = ({ addNotification
 
       {/* --- ALERT MODAL (SIMULATED) --- */}
       {activeAlert && (
-          <div className="fixed inset-0 z-50 bg-red-900/40 backdrop-blur-md flex items-center justify-center p-4 animate-fade-in">
+          <div className="fixed inset-0 z-50 bg-red-900/60 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in">
               <div className="bg-white dark:bg-slate-800 rounded-3xl shadow-2xl w-full max-w-lg overflow-hidden border-2 border-red-500 relative">
                   
                   {/* Header */}

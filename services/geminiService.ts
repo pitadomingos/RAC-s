@@ -91,7 +91,38 @@ export const generateSafetyReport = async (stats: any, period: string, language:
     return response.text || "Unable to generate report analysis.";
   } catch (error: any) {
     logger.error("Gemini Report Generation Error", error);
-    // return friendly message
     return "Error generating AI report analysis. Please ensure API Key is configured and internet connection is stable.";
   }
+};
+
+/**
+ * Silently analyzes runtime errors.
+ * USAGE: Automated background system process.
+ * MODEL: gemini-2.5-flash-lite (optimized for speed/cost)
+ */
+export const analyzeRuntimeError = async (errorMsg: string, stackTrace: string): Promise<{ rootCause: string, fix: string }> => {
+    if (!ai) return { rootCause: "AI Service Unavailable", fix: "Check API Key configuration." };
+
+    try {
+        const model = 'gemini-2.5-flash-lite-preview-02-05'; // Fast, lightweight model
+        const systemPrompt = `You are a Senior React/TypeScript Site Reliability Engineer. 
+        Analyze the provided error and stack trace. 
+        Return a JSON object with two keys: 'rootCause' (concise explanation) and 'fix' (specific code fix or mitigation strategy). 
+        Do not include markdown formatting in the JSON.`;
+
+        const response = await ai.models.generateContent({
+            model: model,
+            contents: `Error: ${errorMsg}\nStack: ${stackTrace}`,
+            config: {
+                systemInstruction: systemPrompt,
+                responseMimeType: "application/json"
+            }
+        });
+
+        const text = response.text || "{}";
+        return JSON.parse(text);
+    } catch (e) {
+        logger.error("Gemini Error Analysis Failed", e);
+        return { rootCause: "Analysis Failed", fix: "Manual investigation required." };
+    }
 };

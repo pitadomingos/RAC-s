@@ -1,6 +1,6 @@
 
-import React, { useState } from 'react';
-import { ScrollText, Filter, AlertTriangle, CheckCircle, Info, ShieldAlert, Clock, Terminal, ChevronLeft, ChevronRight } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { ScrollText, Filter, AlertTriangle, CheckCircle, Info, ShieldAlert, Clock, Terminal, ChevronLeft, ChevronRight, Zap, Bot } from 'lucide-react';
 import { useLanguage } from '../contexts/LanguageContext';
 
 type LogLevel = 'INFO' | 'WARN' | 'ERROR' | 'AUDIT';
@@ -12,6 +12,7 @@ interface LogEntry {
     params?: any; 
     user: string;
     timestamp: string;
+    aiFix?: string; // New field for Gemini fixes
 }
 
 const MOCK_LOGS_DATA: LogEntry[] = [
@@ -27,10 +28,29 @@ const MOCK_LOGS_DATA: LogEntry[] = [
 const LogsPage: React.FC = () => {
     const { t, language } = useLanguage();
     const [filterLevel, setFilterLevel] = useState<LogLevel | 'ALL'>('ALL');
+    const [allLogs, setAllLogs] = useState<LogEntry[]>(MOCK_LOGS_DATA);
 
     // Pagination State
     const [currentPage, setCurrentPage] = useState(1);
     const [itemsPerPage, setItemsPerPage] = useState(20);
+
+    // Load AI-detected logs from LocalStorage (Simulating DB persist)
+    useEffect(() => {
+        try {
+            const backlog = localStorage.getItem('sys_logs_backlog');
+            if (backlog) {
+                const parsed = JSON.parse(backlog);
+                // Merge and deduplicate simple logic
+                setAllLogs(prev => {
+                    const combined = [...parsed, ...prev];
+                    // Simple sort by time descending (assuming string ISO or close enough for mock)
+                    return combined.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+                });
+            }
+        } catch (e) {
+            console.error("Failed to load system logs", e);
+        }
+    }, []);
 
     const getTranslatedMessage = (log: LogEntry) => {
         if (language === 'pt') {
@@ -46,8 +66,8 @@ const LogsPage: React.FC = () => {
     };
 
     const filteredLogs = filterLevel === 'ALL' 
-        ? MOCK_LOGS_DATA 
-        : MOCK_LOGS_DATA.filter(log => log.level === filterLevel);
+        ? allLogs 
+        : allLogs.filter(log => log.level === filterLevel);
 
     // Pagination Logic
     const totalPages = Math.ceil(filteredLogs.length / itemsPerPage);
@@ -104,10 +124,10 @@ const LogsPage: React.FC = () => {
                 </div>
             </div>
 
-            <div className="flex-1 bg-white rounded-xl shadow-lg border border-slate-100 overflow-hidden flex flex-col">
+            <div className="flex-1 bg-white dark:bg-slate-800 rounded-xl shadow-lg border border-slate-100 dark:border-slate-700 overflow-hidden flex flex-col transition-colors">
                 <div className="overflow-auto flex-1">
-                    <table className="min-w-full divide-y divide-slate-100">
-                        <thead className="bg-slate-50 sticky top-0 z-10">
+                    <table className="min-w-full divide-y divide-slate-100 dark:divide-slate-700">
+                        <thead className="bg-slate-50 dark:bg-slate-900/50 sticky top-0 z-10">
                             <tr>
                                 <th className="px-6 py-3 text-left text-xs font-bold text-black dark:text-gray-400 uppercase tracking-wider w-32">{t.logs.table.level}</th>
                                 <th className="px-6 py-3 text-left text-xs font-bold text-black dark:text-gray-400 uppercase tracking-wider w-48">{t.logs.table.timestamp}</th>
@@ -115,47 +135,60 @@ const LogsPage: React.FC = () => {
                                 <th className="px-6 py-3 text-left text-xs font-bold text-black dark:text-gray-400 uppercase tracking-wider">{t.logs.table.message}</th>
                             </tr>
                         </thead>
-                        <tbody className="bg-white divide-y divide-slate-100 font-mono text-xs">
-                            {paginatedLogs.map((log) => (
-                                <tr key={log.id} className="hover:bg-slate-50 transition-colors group">
-                                    <td className="px-6 py-3 whitespace-nowrap">
-                                        <div className="flex items-center gap-2">
-                                            {getIcon(log.level)}
-                                            <span className={`font-bold px-2 py-0.5 rounded border
-                                                ${log.level === 'INFO' ? 'bg-blue-50 text-blue-700 border-blue-200' : ''}
-                                                ${log.level === 'WARN' ? 'bg-yellow-50 text-yellow-700 border-yellow-200' : ''}
-                                                ${log.level === 'ERROR' ? 'bg-red-50 text-red-700 border-red-200' : ''}
-                                                ${log.level === 'AUDIT' ? 'bg-green-50 text-green-700 border-green-200' : ''}
-                                            `}>
-                                                {log.level}
-                                            </span>
-                                        </div>
-                                    </td>
-                                    <td className="px-6 py-3 whitespace-nowrap text-slate-900 dark:text-slate-400 flex items-center gap-2">
-                                        <Clock size={12} className="text-slate-400 group-hover:text-slate-600" />
-                                        {log.timestamp}
-                                    </td>
-                                    <td className="px-6 py-3 whitespace-nowrap text-slate-900 font-bold">
-                                        {log.user}
-                                    </td>
-                                    <td className="px-6 py-3 text-slate-800">
-                                        {getTranslatedMessage(log)}
-                                    </td>
-                                </tr>
-                            ))}
+                        <tbody className="bg-white dark:bg-slate-800 divide-y divide-slate-100 dark:divide-slate-700 font-mono text-xs">
+                            {paginatedLogs.map((log) => {
+                                const isAiFixed = !!log.aiFix;
+                                return (
+                                    <tr key={log.id} className={`hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors group ${isAiFixed ? 'bg-indigo-50/30 dark:bg-indigo-900/10' : ''}`}>
+                                        <td className="px-6 py-3 whitespace-nowrap">
+                                            <div className="flex items-center gap-2">
+                                                {getIcon(log.level)}
+                                                <span className={`font-bold px-2 py-0.5 rounded border
+                                                    ${log.level === 'INFO' ? 'bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-900/20 dark:text-blue-300 dark:border-blue-800' : ''}
+                                                    ${log.level === 'WARN' ? 'bg-yellow-50 text-yellow-700 border-yellow-200 dark:bg-yellow-900/20 dark:text-yellow-300 dark:border-yellow-800' : ''}
+                                                    ${log.level === 'ERROR' ? 'bg-red-50 text-red-700 border-red-200 dark:bg-red-900/20 dark:text-red-300 dark:border-red-800' : ''}
+                                                    ${log.level === 'AUDIT' ? 'bg-green-50 text-green-700 border-green-200 dark:bg-green-900/20 dark:text-green-300 dark:border-green-800' : ''}
+                                                `}>
+                                                    {log.level}
+                                                </span>
+                                            </div>
+                                        </td>
+                                        <td className="px-6 py-3 whitespace-nowrap text-slate-900 dark:text-slate-400 flex items-center gap-2">
+                                            <Clock size={12} className="text-slate-400 group-hover:text-slate-600 dark:group-hover:text-slate-300" />
+                                            {log.timestamp}
+                                        </td>
+                                        <td className="px-6 py-3 whitespace-nowrap text-slate-900 dark:text-white font-bold flex items-center gap-2">
+                                            {log.user === 'Gemini Watchdog' && <Bot size={14} className="text-indigo-500" />}
+                                            {log.user}
+                                        </td>
+                                        <td className="px-6 py-3 text-slate-800 dark:text-slate-300">
+                                            {getTranslatedMessage(log)}
+                                            {isAiFixed && (
+                                                <div className="mt-2 p-2 bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-100 dark:border-indigo-800 rounded-lg flex gap-3 items-start animate-pulse-slow">
+                                                    <div className="mt-0.5 text-indigo-500"><Zap size={14} /></div>
+                                                    <div>
+                                                        <p className="text-[10px] font-bold text-indigo-700 dark:text-indigo-300 uppercase mb-0.5">Gemini Resolution:</p>
+                                                        <p className="text-slate-600 dark:text-slate-400">{log.aiFix}</p>
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </td>
+                                    </tr>
+                                );
+                            })}
                         </tbody>
                     </table>
                 </div>
 
                 {/* Footer Pagination */}
-                <div className="p-3 border-t border-slate-100 bg-slate-50 flex flex-col md:flex-row justify-between items-center gap-4">
+                <div className="p-3 border-t border-slate-100 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 flex flex-col md:flex-row justify-between items-center gap-4">
                     <div className="flex items-center gap-4">
                         <div className="flex items-center gap-2">
-                            <span className="text-xs text-slate-600">Rows per page:</span>
+                            <span className="text-xs text-slate-600 dark:text-slate-400">Rows per page:</span>
                             <select 
                                 value={itemsPerPage}
                                 onChange={handlePageSizeChange}
-                                className="text-xs border border-slate-300 rounded bg-white text-slate-800 px-2 py-1 outline-none focus:ring-1 focus:ring-blue-500"
+                                className="text-xs border border-slate-300 dark:border-slate-600 rounded bg-white dark:bg-slate-700 text-slate-800 dark:text-white px-2 py-1 outline-none focus:ring-1 focus:ring-blue-500"
                             >
                                 <option value={10}>10</option>
                                 <option value={20}>20</option>
@@ -166,13 +199,13 @@ const LogsPage: React.FC = () => {
                             </select>
                         </div>
                         
-                        <div className="flex items-center gap-4 border-l border-slate-300 pl-4">
-                            <div className="text-xs text-slate-600">
+                        <div className="flex items-center gap-4 border-l border-slate-300 dark:border-slate-600 pl-4">
+                            <div className="text-xs text-slate-600 dark:text-slate-400">
                                 Page {currentPage} of {Math.max(1, totalPages)} ({filteredLogs.length} total)
                             </div>
                             <div className="flex items-center gap-1">
-                                <button onClick={() => goToPage(currentPage - 1)} disabled={currentPage === 1} className="p-1 rounded hover:bg-gray-200 disabled:opacity-30 text-slate-600"><ChevronLeft size={16} /></button>
-                                <button onClick={() => goToPage(currentPage + 1)} disabled={currentPage === totalPages} className="p-1 rounded hover:bg-gray-200 disabled:opacity-30 text-slate-600"><ChevronRight size={16} /></button>
+                                <button onClick={() => goToPage(currentPage - 1)} disabled={currentPage === 1} className="p-1 rounded hover:bg-gray-200 dark:hover:bg-slate-700 disabled:opacity-30 text-slate-600 dark:text-slate-300"><ChevronLeft size={16} /></button>
+                                <button onClick={() => goToPage(currentPage + 1)} disabled={currentPage === totalPages} className="p-1 rounded hover:bg-gray-200 dark:hover:bg-slate-700 disabled:opacity-30 text-slate-600 dark:text-slate-300"><ChevronRight size={16} /></button>
                             </div>
                         </div>
                     </div>

@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Employee, BookingStatus, Booking, UserRole, TrainingSession, SystemNotification, EmployeeRequirement, RacDef } from '../types';
 import { COMPANIES, DEPARTMENTS, ROLES } from '../constants';
-import { Plus, Trash2, Save, Settings, ShieldCheck, Calendar, UserPlus, FileSignature, CheckCircle2, AlertCircle, Search, UserCheck, RefreshCw, Lock, Layers } from 'lucide-react';
+import { Plus, Trash2, Save, Settings, ShieldCheck, Calendar, UserPlus, FileSignature, CheckCircle2, AlertCircle, Search, UserCheck, RefreshCw, Lock, Layers, UserMinus, ArrowRight } from 'lucide-react';
 import { v4 as uuidv4 } from 'uuid';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { sanitizeInput } from '../utils/security';
@@ -68,15 +68,18 @@ const BookingForm: React.FC<BookingFormProps> = ({ addBookings, sessions, userRo
 
   // Filter available sessions
   const availableSessions = useMemo(() => {
+      // Sort sessions by date
+      const sorted = [...sessions].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+
       if (isSelfService && currentEmployeeId) {
           const myReq = requirements.find(r => r.employeeId === currentEmployeeId);
           if (!myReq) return [];
-          return sessions.filter(session => {
+          return sorted.filter(session => {
               const racKey = session.racType.split(' - ')[0].replace(/\s+/g, '');
               return myReq.requiredRacs[racKey] === true;
           });
       }
-      return sessions;
+      return sorted;
   }, [sessions, isSelfService, currentEmployeeId, requirements]);
 
   useEffect(() => {
@@ -111,8 +114,6 @@ const BookingForm: React.FC<BookingFormProps> = ({ addBookings, sessions, userRo
   // DYNAMIC REQUIREMENT CHECK
   const isDlRequired = useMemo(() => {
       if (!sessionData) return false;
-      // Match session type to RAC Definition
-      // Try by full name or code
       const racCode = sessionData.racType.split(' - ')[0].replace(/\s/g, '');
       const def = racDefinitions.find(r => r.name === sessionData.racType || r.code === racCode);
       return def ? !!def.requiresDriverLicense : false;
@@ -189,6 +190,10 @@ const BookingForm: React.FC<BookingFormProps> = ({ addBookings, sessions, userRo
       alert(`Batch Saved! Loading renewals for: ${nextBatch.racType}`);
   };
 
+  const getRacCodeFromSession = (session: TrainingSession): string => {
+      return session.racType.split(' - ')[0].replace(/\s+/g, '').toUpperCase();
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedSession || !sessionData) {
@@ -213,18 +218,49 @@ const BookingForm: React.FC<BookingFormProps> = ({ addBookings, sessions, userRo
       return;
     }
 
-    const racKey = sessionData.racType.split(' - ')[0].replace(/\s+/g, '');
+    const targetRacCode = getRacCodeFromSession(sessionData);
 
-    // VALIDATION LOOP
+    // --- 1. VALIDATION LOOP (Database & Duplicates) ---
     for (const row of validRows) {
+        // A. Database Check
         const empRecord = employeeLookup.get(row.recordId.trim().toLowerCase());
         if (!empRecord) {
             alert(`Booking Blocked: Employee "${row.name}" (${row.recordId}) is not registered in the system database.`);
             return;
         }
+        
+        // B. Requirement Check
         const empReq = requirements.find(r => r.employeeId === empRecord.id);
-        if (!empReq || !empReq.requiredRacs[racKey]) {
-            alert(`Booking Blocked: Employee "${row.name}" is NOT mapped for ${racKey} in the database.`);
+        const reqKey = Object.keys(empReq?.requiredRacs || {}).find(k => k.replace(/\s/g, '').toUpperCase() === targetRacCode);
+        
+        if (!empReq || (reqKey && !empReq.requiredRacs[reqKey])) {
+            alert(`Booking Blocked: Employee "${row.name}" is NOT mapped for ${targetRacCode} in the database.`);
+            return;
+        }
+
+        // C. STRICT Duplicate Check (Same RAC Type)
+        const duplicate = existingBookings.find(b => {
+            if (b.employee.recordId.toLowerCase() !== row.recordId.trim().toLowerCase()) return false;
+            
+            // Check status (Pending or Passed)
+            if (b.status === BookingStatus.FAILED || b.status === BookingStatus.EXPIRED) return false;
+
+            // Check RAC Match
+            let existingRacCode = '';
+            const existingSession = sessions.find(s => s.id === b.sessionId);
+            if (existingSession) {
+                existingRacCode = getRacCodeFromSession(existingSession);
+            } else {
+                // Fallback for waitlist/legacy bookings
+                existingRacCode = b.sessionId.split(' - ')[0].replace(/\s+/g, '').toUpperCase();
+                if (b.sessionId.startsWith('WAITLIST-')) existingRacCode = b.sessionId.replace('WAITLIST-', '');
+            }
+
+            return existingRacCode === targetRacCode;
+        });
+
+        if (duplicate) {
+            alert(`Duplicate Denied: ${row.name} already has a ${duplicate.status} record for ${targetRacCode}.`);
             return;
         }
     }
@@ -237,63 +273,126 @@ const BookingForm: React.FC<BookingFormProps> = ({ addBookings, sessions, userRo
         }
     }
 
-    // Capacity Check
+    // --- 2. CAPACITY & AUTO-SLOTTING LOGIC ---
     const currentBookingsCount = existingBookings.filter(b => b.sessionId === selectedSession).length;
     const availableSlots = sessionData.capacity - currentBookingsCount;
-    const requestedSlots = validRows.length;
-
+    
     let finalBookings: Booking[] = [];
     let overflowEmployees: Employee[] = [];
 
-    if (requestedSlots > availableSlots) {
+    // Separate fitting vs overflow
+    if (validRows.length > availableSlots) {
         const fittingRows = validRows.slice(0, availableSlots);
-        const extraRows = validRows.slice(availableSlots);
+        overflowEmployees = validRows.slice(availableSlots).map(r => ({...r})); // Clone
+        
         fittingRows.forEach(row => {
              finalBookings.push({
                 id: uuidv4(),
                 sessionId: selectedSession,
                 employee: { ...row },
                 status: BookingStatus.PENDING,
+                isAutoBooked: false
             });
         });
-        overflowEmployees = extraRows.map(r => ({ ...r }));
     } else {
+        // Everyone fits
         finalBookings = validRows.map(row => ({
             id: uuidv4(),
             sessionId: selectedSession,
             employee: { ...row },
             status: BookingStatus.PENDING,
+            isAutoBooked: false
         }));
     }
 
-    // Duplicate Check
-    const uniqueBookings = finalBookings.filter(newBooking => {
-        const duplicate = existingBookings.find(b => {
-            if (b.employee.recordId.toLowerCase() !== newBooking.employee.recordId.toLowerCase()) return false;
-            const existingSession = sessions.find(s => s.id === b.sessionId);
-            const bRacType = existingSession ? existingSession.racType : (b.sessionId.includes(sessionData.racType) ? sessionData.racType : '');
-            if (bRacType === sessionData.racType && (b.status === BookingStatus.PENDING || b.status === BookingStatus.PASSED)) {
-                return true;
-            }
-            return false;
-        });
-        if (duplicate) {
-            alert(`${t.notifications.duplicateMsg}: ${newBooking.employee.name} (${sessionData.racType})`);
-            return false;
-        }
-        return true;
-    });
+    // Handle Overflow (Auto-Slotting)
+    if (overflowEmployees.length > 0) {
+        // Find next sessions with same RAC type and later date
+        const nextSessions = sessions
+            .filter(s => 
+                getRacCodeFromSession(s) === targetRacCode && 
+                new Date(s.date) > new Date(sessionData.date)
+            )
+            .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 
-    if (uniqueBookings.length > 0) {
-        addBookings(uniqueBookings);
-        logger.audit('Manual Booking Submitted', userRole, { count: uniqueBookings.length, session: selectedSession });
+        let remainingOverflow = [...overflowEmployees];
+        let slottedCount = 0;
+        let lastSlottedDate = '';
+
+        for (const nextSession of nextSessions) {
+            if (remainingOverflow.length === 0) break;
+
+            const nextCount = existingBookings.filter(b => b.sessionId === nextSession.id).length;
+            // Also count bookings we just added to this session in this loop (though typically none yet)
+            const newlyAddedCount = finalBookings.filter(b => b.sessionId === nextSession.id).length;
+            
+            const nextAvailable = nextSession.capacity - (nextCount + newlyAddedCount);
+
+            if (nextAvailable > 0) {
+                const toSlot = remainingOverflow.slice(0, nextAvailable);
+                remainingOverflow = remainingOverflow.slice(nextAvailable);
+
+                toSlot.forEach(emp => {
+                    finalBookings.push({
+                        id: uuidv4(),
+                        sessionId: nextSession.id,
+                        employee: { ...emp },
+                        status: BookingStatus.PENDING,
+                        isAutoBooked: true // Mark as auto-moved
+                    });
+                });
+                slottedCount += toSlot.length;
+                lastSlottedDate = nextSession.date;
+            }
+        }
+
+        // If still remaining, add to WAITLIST
+        if (remainingOverflow.length > 0) {
+            remainingOverflow.forEach(emp => {
+                finalBookings.push({
+                    id: uuidv4(),
+                    sessionId: `WAITLIST-${targetRacCode}`, // Virtual Session ID
+                    employee: { ...emp },
+                    status: BookingStatus.PENDING,
+                    isAutoBooked: true,
+                    comments: 'Added to Waiting List (No available sessions)'
+                });
+            });
+            if (addNotification) {
+                addNotification({
+                    id: uuidv4(),
+                    type: 'warning',
+                    title: 'Waitlist Created',
+                    message: `No available sessions found for ${remainingOverflow.length} employees. Added to Waitlist.`,
+                    timestamp: new Date(),
+                    isRead: false
+                });
+            }
+        }
+
+        // Notify regarding the split
+        if (slottedCount > 0 && addNotification) {
+            addNotification({
+                id: uuidv4(),
+                type: 'info',
+                title: t.notifications.capacityTitle,
+                message: `${t.notifications.capacityMsg} ${lastSlottedDate}.`,
+                timestamp: new Date(),
+                isRead: false
+            });
+        }
+    }
+
+    if (finalBookings.length > 0) {
+        addBookings(finalBookings);
+        logger.audit('Manual Booking Submitted', userRole, { count: finalBookings.length, session: selectedSession });
         setSubmitted(true);
-        if (addNotification) {
+        if (addNotification && overflowEmployees.length === 0) {
             addNotification({
                 id: uuidv4(),
                 type: 'success',
                 title: 'Booking Confirmed',
-                message: `Successfully booked ${uniqueBookings.length} employees.`,
+                message: `Successfully booked ${finalBookings.length} employees.`,
                 timestamp: new Date(),
                 isRead: false
             });
@@ -307,7 +406,7 @@ const BookingForm: React.FC<BookingFormProps> = ({ addBookings, sessions, userRo
                 setSelectedSession('');
                 setTargetRac('');
             }
-        }, 1500);
+        }, 2000); // Slightly longer delay to read notifications
     }
   };
 
@@ -370,8 +469,8 @@ const BookingForm: React.FC<BookingFormProps> = ({ addBookings, sessions, userRo
                         const isFull = count >= session.capacity;
                         const isMatch = targetRac && session.racType.includes(targetRac);
                         return (
-                            <option key={session.id} value={session.id} className={`${isFull ? 'text-red-500' : ''} ${isMatch ? 'bg-blue-100 font-black' : ''}`}>
-                            {isMatch ? '★ ' : ''}{session.racType} • {session.date} • {session.location} • (Cap: {count}/{session.capacity}) {isFull ? '(FULL)' : ''}
+                            <option key={session.id} value={session.id} className={`${isFull ? 'text-red-500 font-bold' : ''} ${isMatch ? 'bg-blue-100 font-black' : ''}`}>
+                            {isMatch ? '★ ' : ''}{session.racType} • {session.date} • {session.location} • (Cap: {count}/{session.capacity}) {isFull ? '(FULL - Auto-Waitlist)' : ''}
                             </option>
                         );
                       })}
@@ -379,6 +478,27 @@ const BookingForm: React.FC<BookingFormProps> = ({ addBookings, sessions, userRo
                     <div className="absolute right-5 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400"><Calendar size={24} /></div>
                </div>
                 {isSelfService && availableSessions.length === 0 && <p className="text-xs text-red-500 mt-2 font-bold flex items-center gap-1"><AlertCircle size={12}/> No eligible training sessions available.</p>}
+                
+                {/* AUTO-SLOT INDICATOR */}
+                {selectedSession && (() => {
+                    const s = availableSessions.find(sess => sess.id === selectedSession);
+                    if (s) {
+                        const count = existingBookings.filter(b => b.sessionId === s.id).length;
+                        if (count >= s.capacity) {
+                            return (
+                                <div className="mt-4 flex items-center gap-3 text-orange-700 bg-orange-50 dark:bg-orange-900/20 dark:text-orange-300 p-3 rounded-xl border border-orange-100 dark:border-orange-900/50 animate-fade-in-down">
+                                    <UserMinus size={18} />
+                                    <div>
+                                        <p className="font-bold text-xs">Session Full</p>
+                                        <p className="text-[10px] opacity-90">Bookings will be automatically moved to the next available session or waitlist.</p>
+                                    </div>
+                                </div>
+                            )
+                        }
+                    }
+                    return null;
+                })()}
+
                 {isDlRequired && (
                     <div className="mt-4 flex items-start gap-3 text-red-700 bg-red-50 dark:bg-red-900/20 dark:text-red-300 p-4 rounded-xl border border-red-100 dark:border-red-900/50 animate-fade-in-down">
                         <AlertCircle size={20} className="mt-0.5 flex-shrink-0" />

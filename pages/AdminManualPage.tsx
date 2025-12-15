@@ -7,7 +7,8 @@ import {
   ChevronLeft, ChevronRight, Maximize, Minimize, X,
   Lock, Zap, Server, Layout, HelpCircle, Terminal,
   Workflow, CheckCircle2, XCircle, Search, DollarSign,
-  User, Building2, Map, Layers
+  User, Building2, Map, Layers, RefreshCw, GitMerge,
+  HardHat
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useLanguage } from '../contexts/LanguageContext';
@@ -68,6 +69,7 @@ const AdminManualPage: React.FC = () => {
       { id: 'objectives', title: t.adminManual.slides.objectives },
       { id: 'logic', title: t.adminManual.slides.logic },
       { id: 'workflow', title: t.adminManual.slides.workflow },
+      { id: 'sync', title: 'Data Synchronization' }, // NEW
       { id: 'config', title: t.adminManual.slides.config },
       { id: 'booking', title: t.adminManual.slides.booking },
       { id: 'advanced', title: t.adminManual.slides.advanced },
@@ -366,6 +368,54 @@ const AdminManualPage: React.FC = () => {
       </div>
   );
 
+  // --- NEW SLIDE: Data Synchronization ---
+  const SyncSlide = () => (
+      <div className="flex flex-col justify-center h-full max-w-7xl mx-auto px-6 relative z-10 animate-fade-in-up">
+          <h2 className="text-4xl md:text-6xl font-black text-white mb-12 text-center tracking-tight">Data Synchronization</h2>
+          
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-center">
+              {/* Sources */}
+              <div className="space-y-6">
+                  <div className="bg-slate-800 p-6 rounded-2xl border border-slate-600">
+                      <h4 className="text-xl font-bold text-white mb-2 flex items-center gap-2"><Users className="text-blue-400"/> Source A: HR</h4>
+                      <p className="text-slate-400 text-sm">Primary Employee Database (SAP/SuccessFactors). Read-only connection.</p>
+                  </div>
+                  <div className="bg-slate-800 p-6 rounded-2xl border border-slate-600">
+                      <h4 className="text-xl font-bold text-white mb-2 flex items-center gap-2"><HardHat className="text-orange-400"/> Source B: Célula</h4>
+                      <p className="text-slate-400 text-sm">Contractor Management Database. Source for non-permanent staff.</p>
+                  </div>
+              </div>
+
+              {/* The Middleware Engine */}
+              <div className="flex flex-col items-center justify-center">
+                  <div className="bg-indigo-900/50 p-10 rounded-full border-4 border-indigo-500 shadow-[0_0_60px_rgba(99,102,241,0.4)] relative z-10 animate-pulse">
+                      <GitMerge size={64} className="text-indigo-300" />
+                  </div>
+                  <div className="mt-8 text-center bg-slate-900/80 p-4 rounded-xl border border-slate-700">
+                      <h3 className="text-2xl font-black text-indigo-300 mb-2">The Middleware</h3>
+                      <p className="text-sm text-slate-300">Merges datasets nightly (02:00 AM)</p>
+                      <p className="text-xs text-slate-500 mt-1">Conflict Resolution: VUL- vs CON- Prefixes</p>
+                  </div>
+              </div>
+
+              {/* Destination */}
+              <div className="bg-slate-900/80 p-8 rounded-[2rem] border border-green-500/30">
+                  <div className="flex items-center gap-4 mb-4">
+                      <div className="p-3 bg-green-900/50 rounded-xl"><Database size={32} className="text-green-400"/></div>
+                      <h3 className="text-2xl font-bold text-white">CARS DB</h3>
+                  </div>
+                  <p className="text-lg text-slate-300 leading-relaxed">
+                      The application reads from a unified, locally cached "Source of Truth" to ensure zero-latency performance during site operations.
+                  </p>
+                  <div className="mt-6 flex items-center gap-3 text-sm text-slate-400">
+                      <RefreshCw size={16} className="animate-spin-slow" />
+                      Auto-syncs status (Active/Inactive) daily.
+                  </div>
+              </div>
+          </div>
+      </div>
+  );
+
   const ConfigSlide = () => (
       <div className="flex flex-col justify-center h-full max-w-[1600px] mx-auto px-6 relative z-10">
           <div className="flex items-center gap-6 mb-12">
@@ -537,6 +587,7 @@ const AdminManualPage: React.FC = () => {
           case 'objectives': return <ObjectivesSlide />;
           case 'logic': return <LogicSlide />;
           case 'workflow': return <WorkflowSlide />;
+          case 'sync': return <SyncSlide />; // NEW
           case 'config': return <ConfigSlide />;
           case 'booking': return <BookingSlide />;
           case 'advanced': return <AdvancedSlide />;

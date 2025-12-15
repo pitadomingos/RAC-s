@@ -2,9 +2,48 @@
 import { RAC, RacDef, TrainingSession, Employee, EmployeeRequirement, Booking, BookingStatus, Feedback } from './types';
 import { v4 as uuidv4 } from 'uuid';
 
-export const COMPANIES = ['Vulcan Mining', 'Global Logistics', 'Safety First Contractors'];
+export const COMPANIES = [
+    'Vulcan Mining', 
+    'Global Logistics', 
+    'Safety First Contractors', 
+    'Jachris', 
+    'Mota-Engil', 
+    'Belabel', 
+    'Escopil'
+];
+
 export const DEPARTMENTS = ['Mine Operations', 'Plant Maintenance', 'HSE', 'Logistics', 'Administration'];
-export const ROLES = ['Operator', 'Technician', 'Engineer', 'Supervisor', 'General Helper', 'Driver'];
+export const ROLES = ['Operator', 'Technician', 'Engineer', 'Supervisor', 'General Helper', 'Driver', 'Mechanic', 'Electrician'];
+
+// --- INTEGRATION SIMULATION DATA ---
+// Total: 12 Employees (3 Vulcan + 9 Contractors)
+
+// Source A: Internal HR System (SAP) - 3 Employees
+export const RAW_HR_SOURCE = [
+    { id: '8901', name: 'Jessica Bata', dept: 'HSE', role: 'Safety Officer', email: 'jessica@vulcan.com' },
+    { id: '8902', name: 'Kelven Ubisse', dept: 'Mine Operations', role: 'Mining Engineer', email: 'kelven@vulcan.com' },
+    { id: '8903', name: 'Latifa Uetela', dept: 'Administration', role: 'HR Specialist', email: 'latifa@vulcan.com' }
+];
+
+// Source B: Contractor System (Célula) - 9 Employees
+export const RAW_CONTRACTOR_SOURCE = [
+    // Jachris (2)
+    { id: '9001', name: 'Manuel Xadreque', company: 'Jachris', dept: 'Administration', role: 'Catering Supervisor' },
+    { id: '9002', name: 'Nuno Zaqueu', company: 'Jachris', dept: 'Logistics', role: 'General Helper' },
+    
+    // Mota-Engil (2)
+    { id: '9003', name: 'Orlando Yacub', company: 'Mota-Engil', dept: 'Mine Operations', role: 'Excavator Operator' },
+    { id: '9004', name: 'Paulo Vombe', company: 'Mota-Engil', dept: 'Mine Operations', role: 'Civil Technician' },
+
+    // Belabel (3) - All Drivers
+    { id: '9005', name: 'Quim Wate', company: 'Belabel', dept: 'Logistics', role: 'Driver' },
+    { id: '9006', name: 'Rui Vilanculos', company: 'Belabel', dept: 'Logistics', role: 'Driver' },
+    { id: '9007', name: 'Sara Tamele', company: 'Belabel', dept: 'Logistics', role: 'Driver' },
+
+    // Escopil (2) - Plant Maintenance
+    { id: '9008', name: 'Telma Sambo', company: 'Escopil', dept: 'Plant Maintenance', role: 'Mechanic' },
+    { id: '9009', name: 'Ursio Raposo', company: 'Escopil', dept: 'Plant Maintenance', role: 'Electrician' }
+];
 
 export const RAC_LIST = Object.values(RAC);
 
