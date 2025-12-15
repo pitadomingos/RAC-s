@@ -133,11 +133,16 @@ const AlcoholIntegration: React.FC<AlcoholIntegrationProps> = ({ addNotification
               
               <div className="flex gap-2">
                   <button 
+                    onClick={() => navigate('/tech-docs')}
+                    className="flex items-center gap-2 text-xs font-bold text-slate-400 hover:text-white bg-white/5 hover:bg-white/10 px-3 py-1.5 rounded-lg transition-colors border border-white/10"
+                  >
+                      <FileCode size={14} /> System Specs
+                  </button>
+                  <button 
                     onClick={() => setViewLocalSpecs(!viewLocalSpecs)}
                     className="flex items-center gap-2 text-xs font-bold text-slate-400 hover:text-white bg-white/5 hover:bg-white/10 px-3 py-1.5 rounded-lg transition-colors border border-white/10"
                   >
-                      {viewLocalSpecs ? <Activity size={14} /> : <FileCode size={14} />}
-                      {viewLocalSpecs ? t.alcohol.dashboard.backToLive : "Technical Specs"}
+                      <Activity size={14} /> {viewLocalSpecs ? t.alcohol.dashboard.backToLive : "Module Specs"}
                   </button>
                   <button 
                     onClick={() => navigate('/proposal')}

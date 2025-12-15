@@ -21,8 +21,6 @@ interface SettingsPageProps {
     userRole?: UserRole;
     users?: User[];
     onUpdateUsers?: (newUsers: User[]) => void;
-    
-    // Updated props for feedback config
     feedbackConfig?: { mode: string, expiry: string | null };
     onUpdateFeedbackConfig?: (mode: string) => void;
 }
@@ -42,13 +40,10 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
   const [activeTab, setActiveTab] = useState<'General' | 'Trainers' | 'RACs' | 'Sites' | 'Companies'>('General');
   const [isSaving, setIsSaving] = useState(false);
 
-  // Permission Checkers
   const isSystemAdmin = userRole === UserRole.SYSTEM_ADMIN;
   const isEnterpriseAdmin = userRole === UserRole.ENTERPRISE_ADMIN;
-  // Enterprise Admins can define the Source of Truth for Modules
   const canEditGlobalDefinitions = isSystemAdmin || isEnterpriseAdmin;
 
-  // Confirmation Modal State
   const [confirmState, setConfirmState] = useState<{
     isOpen: boolean;
     title: string;
@@ -65,14 +60,12 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
 
   // --- SITES CRUD ---
   const [newSite, setNewSite] = useState({ name: '', location: '' });
-  const [editingSiteId, setEditingSiteId] = useState<string | null>(null);
-  const [editSiteData, setEditSiteData] = useState<Partial<Site>>({});
 
   const handleAddSite = () => {
       if (!newSite.name || !onUpdateSites) return;
       const site: Site = {
           id: uuidv4(),
-          companyId: 'c1', // Default to Vulcan for mock
+          companyId: 'c1',
           name: newSite.name,
           location: newSite.location || 'Unknown'
       };
@@ -85,48 +78,29 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
       setConfirmState({
           isOpen: true,
           title: 'Delete Site?',
-          message: 'This will remove the site from the system. Linked data may become inaccessible.',
+          message: 'This will remove the site from the system.',
           onConfirm: () => onUpdateSites(sites.filter(s => s.id !== id)),
           isDestructive: true
       });
   };
 
-  // --- COMPANIES CRUD & AUTO-PROVISIONING ---
+  // --- COMPANIES CRUD ---
   const [newCompany, setNewCompany] = useState({ name: '', adminName: '', adminEmail: '' });
   const [provisionSuccess, setProvisionSuccess] = useState<string | null>(null);
 
   const handleAddCompany = () => {
-      if (!newCompany.name || !onUpdateCompanies || !onUpdateSites || !onUpdateUsers) {
-          alert("Internal Error: Missing update functions");
-          return;
-      }
-      
+      if (!newCompany.name || !onUpdateCompanies || !onUpdateSites || !onUpdateUsers) return;
       if (!newCompany.adminName || !newCompany.adminEmail) {
-          alert("Please provide Admin details to provision the enterprise.");
+          alert("Please provide Admin details.");
           return;
       }
 
-      // 1. Create Company
       const companyId = uuidv4();
-      const company: Company = {
-          id: companyId,
-          name: newCompany.name,
-          status: 'Active'
-      };
-
-      // 2. Create Default Site
+      const company: Company = { id: companyId, name: newCompany.name, status: 'Active' };
       const siteId = uuidv4();
-      const defaultSite: Site = {
-          id: siteId,
-          companyId: companyId,
-          name: 'Main Headquarters',
-          location: 'Primary Location',
-          mandatoryRacs: []
-      };
-
-      // 3. Create Enterprise Admin User
+      const defaultSite: Site = { id: siteId, companyId: companyId, name: 'Main Headquarters', location: 'Primary Location', mandatoryRacs: [] };
       const adminUser: User = {
-          id: Date.now(), // Simple ID
+          id: Date.now(),
           name: newCompany.adminName,
           email: newCompany.adminEmail,
           role: UserRole.ENTERPRISE_ADMIN,
@@ -135,14 +109,12 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
           jobTitle: 'Enterprise Administrator'
       };
 
-      // Execute Updates
       onUpdateCompanies([...companies, company]);
       onUpdateSites([...sites, defaultSite]);
       onUpdateUsers([...users, adminUser]);
 
       setNewCompany({ name: '', adminName: '', adminEmail: '' });
-      setProvisionSuccess(`Enterprise "${company.name}" provisioned successfully. Admin "${adminUser.name}" created with AI & Reporting access.`);
-      
+      setProvisionSuccess(`Enterprise "${company.name}" provisioned successfully.`);
       setTimeout(() => setProvisionSuccess(null), 5000);
   };
 
@@ -153,11 +125,7 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
 
   const handleAddRoom = () => {
       if (!newRoom.name) return;
-      const room: Room = {
-          id: uuidv4(),
-          name: newRoom.name,
-          capacity: newRoom.capacity > 0 ? newRoom.capacity : 20
-      };
+      const room: Room = { id: uuidv4(), name: newRoom.name, capacity: newRoom.capacity > 0 ? newRoom.capacity : 20 };
       onUpdateRooms([...rooms, room]);
       setNewRoom({ name: '', capacity: 0 });
   };
@@ -178,14 +146,13 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
       setConfirmState({
           isOpen: true,
           title: 'Delete Room?',
-          message: 'Are you sure you want to delete this room configuration?',
+          message: 'Are you sure?',
           onConfirm: () => onUpdateRooms(rooms.filter(r => r.id !== id)),
           isDestructive: true
       });
   };
 
-
-  // --- TRAINERS STATE & CRUD ---
+  // --- TRAINERS CRUD ---
   const [newTrainer, setNewTrainer] = useState<{name: string, racs: string[]}>({ name: '', racs: [] });
   const [editingTrainerId, setEditingTrainerId] = useState<string | null>(null);
   const [editTrainerData, setEditTrainerData] = useState<{name: string, racs: string[]}>({ name: '', racs: [] });
@@ -193,28 +160,20 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
   const toggleNewTrainerRac = (racCode: string) => {
       setNewTrainer(prev => ({
           ...prev,
-          racs: prev.racs.includes(racCode) 
-              ? prev.racs.filter(r => r !== racCode)
-              : [...prev.racs, racCode]
+          racs: prev.racs.includes(racCode) ? prev.racs.filter(r => r !== racCode) : [...prev.racs, racCode]
       }));
   };
 
   const toggleEditTrainerRac = (racCode: string) => {
       setEditTrainerData(prev => ({
           ...prev,
-          racs: prev.racs.includes(racCode)
-              ? prev.racs.filter(r => r !== racCode)
-              : [...prev.racs, racCode]
+          racs: prev.racs.includes(racCode) ? prev.racs.filter(r => r !== racCode) : [...prev.racs, racCode]
       }));
   };
 
   const handleAddTrainer = () => {
       if (!newTrainer.name) return;
-      const trainer: Trainer = {
-          id: uuidv4(),
-          name: newTrainer.name,
-          racs: newTrainer.racs.length > 0 ? newTrainer.racs : []
-      };
+      const trainer: Trainer = { id: uuidv4(), name: newTrainer.name, racs: newTrainer.racs };
       onUpdateTrainers([...trainers, trainer]);
       setNewTrainer({ name: '', racs: [] });
   };
@@ -235,15 +194,14 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
       setConfirmState({
           isOpen: true,
           title: 'Delete Trainer?',
-          message: 'Are you sure you want to remove this trainer from the system?',
+          message: 'Are you sure?',
           onConfirm: () => onUpdateTrainers(trainers.filter(t => t.id !== id)),
           isDestructive: true
       });
   };
 
-
-  // --- RACS STATE & CRUD (Now using Props) ---
-  const [newRac, setNewRac] = useState({ code: '', name: '', validityMonths: 24 });
+  // --- RACS CRUD ---
+  const [newRac, setNewRac] = useState({ code: '', name: '', validityMonths: 24, requiresDriverLicense: false, requiresPractical: true });
   const [editingRacId, setEditingRacId] = useState<string | null>(null);
   const [editRacData, setEditRacData] = useState<Partial<RacDef>>({});
 
@@ -253,10 +211,12 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
           id: uuidv4(),
           code: newRac.code,
           name: newRac.name,
-          validityMonths: newRac.validityMonths || 24
+          validityMonths: newRac.validityMonths || 24,
+          requiresDriverLicense: newRac.requiresDriverLicense,
+          requiresPractical: newRac.requiresPractical
       };
       onUpdateRacs([...racDefinitions, rac]);
-      setNewRac({ code: '', name: '', validityMonths: 24 });
+      setNewRac({ code: '', name: '', validityMonths: 24, requiresDriverLicense: false, requiresPractical: true });
   };
 
   const startEditRac = (rac: RacDef) => {
@@ -275,7 +235,7 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
       setConfirmState({
           isOpen: true,
           title: 'Delete RAC Definition?',
-          message: 'Warning: Deleting this RAC Definition will affect the database matrix columns. Are you sure?',
+          message: 'Deleting this will affect matrix columns.',
           onConfirm: () => onUpdateRacs(racDefinitions.filter(r => r.id !== id)),
           isDestructive: true
       });
@@ -283,773 +243,273 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
   
   const handleGlobalSave = () => {
       setIsSaving(true);
-      // Simulate API delay and logging
-      logger.audit('System Configuration Updated', userRole, {
-          roomsCount: rooms.length,
-          trainersCount: trainers.length,
-          racsCount: racDefinitions.length
-      });
-      
       setTimeout(() => {
           setIsSaving(false);
-          alert('Configuration saved successfully to production database.');
+          alert('Configuration saved.');
       }, 800);
   };
 
   return (
     <div className="space-y-6 pb-24 animate-fade-in-up relative h-full">
-        {/* ... (Previous header code remains unchanged) ... */}
-        {/* --- HERO HEADER --- */}
+        {/* Header */}
         <div className="bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 rounded-3xl shadow-2xl p-8 text-white relative overflow-hidden border border-slate-700/50">
             <div className="absolute top-0 right-0 opacity-[0.03] pointer-events-none">
                 <Sliders size={400} />
             </div>
-            {/* Ambient Glow */}
-            <div className="absolute -bottom-24 -left-24 w-64 h-64 bg-blue-500/20 rounded-full blur-3xl pointer-events-none"></div>
-            
             <div className="relative z-10 flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
                 <div>
                     <div className="flex items-center gap-3 mb-2">
                         <div className="p-2 bg-blue-500/20 rounded-xl border border-blue-500/30 backdrop-blur-sm">
                             <Settings size={28} className="text-blue-400" />
                         </div>
-                        <h2 className="text-3xl font-black tracking-tight text-white">
-                            {t.settings.title}
-                        </h2>
+                        <h2 className="text-3xl font-black tracking-tight text-white">{t.settings.title}</h2>
                     </div>
                     <p className="text-slate-400 text-sm max-w-xl font-medium ml-1">
                         {canEditGlobalDefinitions ? "Global System Configuration & Source of Truth" : "Local Operational Settings"}
                     </p>
-                </div>
-                
-                <div className="flex gap-2 text-xs font-mono text-slate-500 bg-black/20 p-2 rounded-lg border border-white/5">
-                    <span>v2.5.0</span>
-                    <span className="text-slate-700">|</span>
-                    <span className="text-green-500">SYSTEM ONLINE</span>
                 </div>
             </div>
         </div>
 
         <div className="flex flex-col lg:flex-row gap-8 h-[calc(100vh-280px)]">
             
-            {/* --- NAVIGATION SIDEBAR --- */}
+            {/* Sidebar */}
             <div className="w-full lg:w-72 space-y-3 h-fit">
                 <nav className="bg-white dark:bg-slate-800 rounded-2xl shadow-xl border border-slate-100 dark:border-slate-700 p-3">
                     <button 
                         onClick={() => setActiveTab('General')}
-                        className={`w-full text-left px-4 py-4 rounded-xl text-sm font-bold transition-all flex items-center gap-4 group
-                            ${activeTab === 'General' 
-                                ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-lg shadow-blue-500/30 transform scale-[1.02]' 
-                                : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700/50 hover:text-slate-900 dark:hover:text-white'}
-                        `}
+                        className={`w-full text-left px-4 py-4 rounded-xl text-sm font-bold transition-all flex items-center gap-4 group ${activeTab === 'General' ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-lg' : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700/50'}`}
                     >
-                        <Box size={20} className={activeTab === 'General' ? 'text-white' : 'text-slate-400 group-hover:text-blue-500 transition-colors'} />
-                        <div className="flex flex-col">
-                            <span>{t.settings.tabs.general}</span>
-                            <span className={`text-[10px] font-normal ${activeTab === 'General' ? 'text-blue-100' : 'text-slate-400'}`}>Locations & Capacity</span>
-                        </div>
+                        <Box size={20} />
+                        <span>{t.settings.tabs.general}</span>
                     </button>
                     
                     <button 
                         onClick={() => setActiveTab('Trainers')}
-                        className={`w-full text-left px-4 py-4 rounded-xl text-sm font-bold transition-all flex items-center gap-4 group mt-2
-                            ${activeTab === 'Trainers' 
-                                ? 'bg-gradient-to-r from-purple-600 to-violet-600 text-white shadow-lg shadow-purple-500/30 transform scale-[1.02]' 
-                                : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700/50 hover:text-slate-900 dark:hover:text-white'}
-                        `}
+                        className={`w-full text-left px-4 py-4 rounded-xl text-sm font-bold transition-all flex items-center gap-4 group mt-2 ${activeTab === 'Trainers' ? 'bg-gradient-to-r from-purple-600 to-violet-600 text-white shadow-lg' : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700/50'}`}
                     >
-                        <Users size={20} className={activeTab === 'Trainers' ? 'text-white' : 'text-slate-400 group-hover:text-purple-500 transition-colors'} />
-                        <div className="flex flex-col">
-                            <span>{t.settings.tabs.trainers}</span>
-                            <span className={`text-[10px] font-normal ${activeTab === 'Trainers' ? 'text-purple-100' : 'text-slate-400'}`}>Staff & Qualifications</span>
-                        </div>
+                        <Users size={20} />
+                        <span>{t.settings.tabs.trainers}</span>
                     </button>
 
-                    {/* RACs - SYSTEM & ENTERPRISE ADMIN (Source of Truth) */}
                     {canEditGlobalDefinitions && (
                         <button 
                             onClick={() => setActiveTab('RACs')}
-                            className={`w-full text-left px-4 py-4 rounded-xl text-sm font-bold transition-all flex items-center gap-4 group mt-2
-                                ${activeTab === 'RACs' 
-                                    ? 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-lg shadow-emerald-500/30 transform scale-[1.02]' 
-                                    : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700/50 hover:text-slate-900 dark:hover:text-white'}
-                            `}
+                            className={`w-full text-left px-4 py-4 rounded-xl text-sm font-bold transition-all flex items-center gap-4 group mt-2 ${activeTab === 'RACs' ? 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-lg' : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700/50'}`}
                         >
-                            <Tag size={20} className={activeTab === 'RACs' ? 'text-white' : 'text-slate-400 group-hover:text-emerald-500 transition-colors'} />
-                            <div className="flex flex-col">
-                                <span>{t.settings.tabs.racs}</span>
-                                <span className={`text-[10px] font-normal ${activeTab === 'RACs' ? 'text-emerald-100' : 'text-slate-400'}`}>Enterprise Standards</span>
-                            </div>
+                            <Tag size={20} />
+                            <span>{t.settings.tabs.racs}</span>
                         </button>
                     )}
 
-                    {/* SITES - System & Enterprise Admin */}
                     {canEditGlobalDefinitions && (
                         <button 
                             onClick={() => setActiveTab('Sites')}
-                            className={`w-full text-left px-4 py-4 rounded-xl text-sm font-bold transition-all flex items-center gap-4 group mt-2
-                                ${activeTab === 'Sites' 
-                                    ? 'bg-gradient-to-r from-orange-500 to-red-500 text-white shadow-lg shadow-orange-500/30 transform scale-[1.02]' 
-                                    : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700/50 hover:text-slate-900 dark:hover:text-white'}
-                            `}
+                            className={`w-full text-left px-4 py-4 rounded-xl text-sm font-bold transition-all flex items-center gap-4 group mt-2 ${activeTab === 'Sites' ? 'bg-gradient-to-r from-orange-500 to-red-500 text-white shadow-lg' : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700/50'}`}
                         >
-                            <Map size={20} className={activeTab === 'Sites' ? 'text-white' : 'text-slate-400 group-hover:text-orange-500 transition-colors'} />
-                            <div className="flex flex-col">
-                                <span>Operation Sites</span>
-                                <span className={`text-[10px] font-normal ${activeTab === 'Sites' ? 'text-orange-100' : 'text-slate-400'}`}>Manage Locations</span>
-                            </div>
+                            <Map size={20} />
+                            <span>Operation Sites</span>
                         </button>
                     )}
 
-                    {/* COMPANIES - System Admin Only */}
                     {isSystemAdmin && (
                         <button 
                             onClick={() => setActiveTab('Companies')}
-                            className={`w-full text-left px-4 py-4 rounded-xl text-sm font-bold transition-all flex items-center gap-4 group mt-2
-                                ${activeTab === 'Companies' 
-                                    ? 'bg-gradient-to-r from-gray-700 to-gray-900 text-white shadow-lg transform scale-[1.02]' 
-                                    : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700/50 hover:text-slate-900 dark:hover:text-white'}
-                            `}
+                            className={`w-full text-left px-4 py-4 rounded-xl text-sm font-bold transition-all flex items-center gap-4 group mt-2 ${activeTab === 'Companies' ? 'bg-gradient-to-r from-gray-700 to-gray-900 text-white shadow-lg' : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700/50'}`}
                         >
-                            <Building2 size={20} className={activeTab === 'Companies' ? 'text-white' : 'text-slate-400 group-hover:text-gray-900 transition-colors'} />
-                            <div className="flex flex-col">
-                                <span>Companies</span>
-                                <span className={`text-[10px] font-normal ${activeTab === 'Companies' ? 'text-gray-300' : 'text-slate-400'}`}>Tenants & Clients</span>
-                            </div>
+                            <Building2 size={20} />
+                            <span>Companies</span>
                         </button>
                     )}
                 </nav>
-
-                {/* Status Box */}
-                <div className="bg-slate-50 dark:bg-slate-800/50 rounded-2xl p-4 border border-slate-100 dark:border-slate-700 text-center">
-                    <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider mb-3">System Status</p>
-                    <div className="flex justify-center gap-4">
-                        <div className="text-center">
-                            <div className="text-lg font-black text-slate-800 dark:text-white">{sites.length}</div>
-                            <div className="text-[9px] text-slate-500">Sites</div>
-                        </div>
-                        <div className="w-px bg-slate-200 dark:bg-slate-700"></div>
-                        <div className="text-center">
-                            <div className="text-lg font-black text-slate-800 dark:text-white">{trainers.length}</div>
-                            <div className="text-[9px] text-slate-500">Trainers</div>
-                        </div>
-                        <div className="w-px bg-slate-200 dark:bg-slate-700"></div>
-                        <div className="text-center">
-                            <div className="text-lg font-black text-slate-800 dark:text-white">{racDefinitions.length}</div>
-                            <div className="text-[9px] text-slate-500">RACs</div>
-                        </div>
-                    </div>
-                </div>
             </div>
 
-            {/* --- MAIN CONTENT AREA --- */}
+            {/* Main Content */}
             <div className="flex-1 bg-white dark:bg-slate-800 rounded-3xl shadow-xl border border-slate-100 dark:border-slate-700 flex flex-col overflow-hidden relative">
-                
                 <div className="flex-1 overflow-y-auto p-6 md:p-10 scrollbar-hide">
                     
-                    {/* General Rooms Tab */}
                     {activeTab === 'General' && (
-                        /* ... (General Rooms Content) ... */
                         <div className="max-w-4xl mx-auto animate-fade-in">
-                            <div className="flex justify-between items-end mb-6">
-                                <div>
-                                    <h3 className="text-xl font-bold text-slate-900 dark:text-white">{t.settings.rooms.title}</h3>
-                                    <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">Manage physical locations and capacity limits.</p>
-                                </div>
-                                <div className="bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 px-3 py-1 rounded-lg text-xs font-bold border border-blue-100 dark:border-blue-800 flex items-center gap-2">
-                                    <AlertCircle size={14} /> Capacity Limits Active
-                                </div>
-                            </div>
-
-                            {/* --- SYSTEM FEATURE TOGGLES --- */}
+                            <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-6">{t.settings.rooms.title}</h3>
+                            
                             {(isSystemAdmin || isEnterpriseAdmin) && (
-                                <div className="mb-8 p-6 bg-gradient-to-r from-slate-50 to-white dark:from-slate-700/30 dark:to-slate-800 rounded-2xl border border-slate-200 dark:border-slate-600 shadow-sm">
-                                    <h4 className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-4 flex items-center gap-2">
-                                        <Sliders size={14} /> System Feature Toggles
-                                    </h4>
-                                    
-                                    <div className="p-4 bg-white dark:bg-slate-800 rounded-xl border border-slate-100 dark:border-slate-700">
-                                        <div className="flex items-center gap-3 mb-4">
-                                            <div className="p-2 bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 rounded-lg">
-                                                <MessageSquare size={20} />
-                                            </div>
-                                            <div>
-                                                <div className="text-sm font-bold text-slate-800 dark:text-white">User Feedback Deployment</div>
-                                                <div className="text-xs text-slate-500 dark:text-slate-400">Control when users can submit bugs and suggestions via the floating button.</div>
-                                            </div>
-                                        </div>
-
-                                        <div className="flex flex-col md:flex-row gap-4 items-start md:items-center justify-between">
-                                            <div className="flex gap-2 p-1 bg-slate-100 dark:bg-slate-700 rounded-lg">
-                                                {['disabled', '1_week', '1_month', 'always'].map((m) => (
-                                                    <button
-                                                        key={m}
-                                                        onClick={() => onUpdateFeedbackConfig && onUpdateFeedbackConfig(m)}
-                                                        className={`px-3 py-1.5 rounded-md text-xs font-bold transition-all capitalize
-                                                            ${feedbackConfig.mode === m 
-                                                                ? 'bg-white dark:bg-slate-600 text-indigo-600 dark:text-indigo-300 shadow-sm' 
-                                                                : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white'
-                                                            }
-                                                        `}
-                                                    >
-                                                        {m.replace('_', ' ')}
-                                                    </button>
-                                                ))}
-                                            </div>
-
-                                            <div className="text-right">
-                                                {feedbackConfig.mode === 'disabled' ? (
-                                                    <span className="text-xs font-bold text-slate-400 flex items-center gap-1 justify-end">
-                                                        <X size={12}/> Feature Disabled
-                                                    </span>
-                                                ) : feedbackConfig.mode === 'always' ? (
-                                                    <span className="text-xs font-bold text-green-500 flex items-center gap-1 justify-end">
-                                                        <Check size={12}/> Always Active
-                                                    </span>
-                                                ) : feedbackConfig.expiry ? (
-                                                    <div className="flex flex-col items-end">
-                                                        <span className="text-xs font-bold text-indigo-500 flex items-center gap-1">
-                                                            <Clock size={12}/> Active Until
-                                                        </span>
-                                                        <span className="text-[10px] font-mono text-slate-500 dark:text-slate-400">
-                                                            {new Date(feedbackConfig.expiry).toLocaleString()}
-                                                        </span>
-                                                    </div>
-                                                ) : null}
-                                            </div>
-                                        </div>
+                                <div className="mb-8 p-6 bg-slate-50 dark:bg-slate-700/30 rounded-2xl border border-slate-200 dark:border-slate-600">
+                                    <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-4">Feedback Config</h4>
+                                    <div className="flex gap-2">
+                                        {['disabled', '1_week', '1_month', 'always'].map((m) => (
+                                            <button
+                                                key={m}
+                                                onClick={() => onUpdateFeedbackConfig && onUpdateFeedbackConfig(m)}
+                                                className={`px-3 py-1.5 rounded-md text-xs font-bold transition-all capitalize ${feedbackConfig.mode === m ? 'bg-indigo-600 text-white' : 'bg-white dark:bg-slate-600 text-slate-500 dark:text-slate-300'}`}
+                                            >
+                                                {m.replace('_', ' ')}
+                                            </button>
+                                        ))}
                                     </div>
                                 </div>
                             )}
 
-                            {/* Create Room Card */}
-                            <div className="bg-slate-50 dark:bg-slate-700/30 p-5 rounded-2xl border border-slate-200 dark:border-slate-600 mb-8 flex flex-col md:flex-row gap-4 items-end shadow-sm">
-                                <div className="flex-1 w-full">
-                                    <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider ml-1 mb-1.5 flex items-center gap-2">
-                                        <MapPin size={12} /> {t.settings.rooms.new}
-                                    </label>
-                                    <input 
-                                        className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-xl p-3 text-sm font-semibold focus:ring-2 focus:ring-blue-500 outline-none text-slate-800 dark:text-white placeholder-slate-400 transition-all" 
-                                        placeholder="e.g. Training Lab 4"
-                                        value={newRoom.name}
-                                        onChange={(e) => setNewRoom({...newRoom, name: e.target.value})}
-                                    />
+                            <div className="bg-slate-50 dark:bg-slate-700/30 p-5 rounded-2xl mb-8 flex gap-4 items-end">
+                                <div className="flex-1">
+                                    <label className="text-xs font-bold text-slate-500 uppercase mb-1 block">New Room</label>
+                                    <input className="w-full bg-white dark:bg-slate-800 border rounded-xl p-3 text-sm" value={newRoom.name} onChange={e => setNewRoom({...newRoom, name: e.target.value})} placeholder="Room Name" />
                                 </div>
-                                <div className="w-full md:w-32">
-                                    <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider ml-1 mb-1.5 flex items-center gap-2">
-                                        <Users size={12} /> Cap
-                                    </label>
-                                    <input 
-                                        type="number"
-                                        className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-xl p-3 text-sm font-semibold focus:ring-2 focus:ring-blue-500 outline-none text-slate-800 dark:text-white placeholder-slate-400 transition-all text-center" 
-                                        placeholder="20"
-                                        value={newRoom.capacity || ''}
-                                        onChange={(e) => setNewRoom({...newRoom, capacity: parseInt(e.target.value) || 0})}
-                                    />
+                                <div className="w-32">
+                                    <label className="text-xs font-bold text-slate-500 uppercase mb-1 block">Cap</label>
+                                    <input type="number" className="w-full bg-white dark:bg-slate-800 border rounded-xl p-3 text-sm" value={newRoom.capacity} onChange={e => setNewRoom({...newRoom, capacity: parseInt(e.target.value) || 0})} placeholder="20" />
                                 </div>
-                                <button 
-                                    onClick={handleAddRoom}
-                                    className="w-full md:w-auto bg-slate-900 dark:bg-blue-600 text-white p-3 rounded-xl hover:bg-slate-800 dark:hover:bg-blue-500 transition-all shadow-lg hover:shadow-xl active:scale-95 flex items-center justify-center"
-                                >
-                                    <Plus size={20} />
-                                </button>
+                                <button onClick={handleAddRoom} className="bg-slate-900 dark:bg-blue-600 text-white p-3 rounded-xl"><Plus size={20}/></button>
                             </div>
 
-                            {/* Rooms List */}
                             <div className="grid gap-3">
                                 {rooms.map(room => (
-                                    <div key={room.id} className="group flex items-center justify-between p-4 bg-white dark:bg-slate-800 rounded-xl border border-slate-100 dark:border-slate-700 hover:border-blue-200 dark:hover:border-blue-500 hover:shadow-md transition-all">
-                                        <div className="flex items-center gap-4 flex-1">
-                                            <div className="w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-700 flex items-center justify-center text-slate-500 dark:text-slate-400">
-                                                <Box size={18} />
+                                    <div key={room.id} className="flex justify-between items-center p-4 bg-white dark:bg-slate-800 border rounded-xl">
+                                        {editingRoomId === room.id ? (
+                                            <div className="flex gap-2">
+                                                <input className="border p-1 rounded" value={editRoomData.name} onChange={e => setEditRoomData({...editRoomData, name: e.target.value})} />
+                                                <input type="number" className="border p-1 rounded w-20" value={editRoomData.capacity} onChange={e => setEditRoomData({...editRoomData, capacity: parseInt(e.target.value)})} />
+                                                <button onClick={saveRoom}><Check size={16}/></button>
+                                                <button onClick={() => setEditingRoomId(null)}><X size={16}/></button>
                                             </div>
-                                            {editingRoomId === room.id ? (
-                                                <input 
-                                                    className="border-b-2 border-blue-500 bg-transparent px-1 py-0.5 text-sm font-bold text-slate-900 dark:text-white outline-none w-full"
-                                                    value={String(editRoomData.name)}
-                                                    onChange={(e) => setEditRoomData({...editRoomData, name: e.target.value})}
-                                                    autoFocus
-                                                />
-                                            ) : (
+                                        ) : (
+                                            <>
                                                 <div>
-                                                    <div className="font-bold text-slate-800 dark:text-white text-sm">{room.name}</div>
-                                                    <div className="text-[10px] text-slate-400 uppercase tracking-wide">Location ID: {room.id.substring(0,6)}</div>
+                                                    <div className="font-bold text-sm text-slate-800 dark:text-white">{room.name}</div>
+                                                    <div className="text-xs text-slate-500">Cap: {room.capacity}</div>
                                                 </div>
-                                            )}
-                                        </div>
-
-                                        <div className="flex items-center gap-6">
-                                            <div className="flex flex-col items-center">
-                                                {editingRoomId === room.id ? (
-                                                    <input 
-                                                        type="number"
-                                                        className="border-b-2 border-blue-500 bg-transparent text-center text-sm font-bold w-12 outline-none text-slate-900 dark:text-white"
-                                                        value={String(editRoomData.capacity)}
-                                                        onChange={(e) => setEditRoomData({...editRoomData, capacity: parseInt(e.target.value) || 0})}
-                                                    />
-                                                ) : (
-                                                    <span className="text-sm font-bold bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 px-3 py-1 rounded-full border border-slate-200 dark:border-slate-600 min-w-[3rem] text-center">
-                                                        {room.capacity}
-                                                    </span>
-                                                )}
-                                                <span className="text-[9px] text-slate-400 mt-0.5 font-bold uppercase">Seats</span>
-                                            </div>
-
-                                            <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                                {editingRoomId === room.id ? (
-                                                    <>
-                                                        <button onClick={saveRoom} className="p-2 bg-green-100 text-green-600 rounded-lg hover:bg-green-200"><Check size={16}/></button>
-                                                        <button onClick={() => setEditingRoomId(null)} className="p-2 bg-slate-100 text-slate-500 rounded-lg hover:bg-slate-200"><X size={16}/></button>
-                                                    </>
-                                                ) : (
-                                                    <>
-                                                        <button onClick={() => startEditRoom(room)} className="p-2 hover:bg-blue-50 text-slate-400 hover:text-blue-600 rounded-lg transition-colors"><Edit2 size={16}/></button>
-                                                        <button onClick={() => deleteRoom(room.id)} className="p-2 hover:bg-red-50 text-slate-400 hover:text-red-500 rounded-lg transition-colors"><Trash2 size={16}/></button>
-                                                    </>
-                                                )}
-                                            </div>
-                                        </div>
+                                                <div className="flex gap-2">
+                                                    <button onClick={() => startEditRoom(room)} className="text-slate-400 hover:text-blue-500"><Edit2 size={16}/></button>
+                                                    <button onClick={() => deleteRoom(room.id)} className="text-slate-400 hover:text-red-500"><Trash2 size={16}/></button>
+                                                </div>
+                                            </>
+                                        )}
                                     </div>
                                 ))}
                             </div>
                         </div>
                     )}
 
-                    {/* Trainers Tab */}
                     {activeTab === 'Trainers' && (
-                        /* ... (Trainers Content) ... */
                         <div className="max-w-4xl mx-auto animate-fade-in">
-                             <div className="flex justify-between items-end mb-6">
-                                <div>
-                                    <h3 className="text-xl font-bold text-slate-900 dark:text-white">{t.settings.trainers.title}</h3>
-                                    <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">Authorize personnel to conduct specific training modules.</p>
+                             <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-6">{t.settings.trainers.title}</h3>
+                             <div className="bg-slate-50 dark:bg-slate-700/30 p-5 rounded-2xl mb-8">
+                                <div className="flex gap-4 mb-4">
+                                    <input className="flex-1 bg-white dark:bg-slate-800 border rounded-xl p-3 text-sm" value={newTrainer.name} onChange={e => setNewTrainer({...newTrainer, name: e.target.value})} placeholder="Trainer Name" />
                                 </div>
+                                <div className="flex flex-wrap gap-2 mb-4">
+                                    {racDefinitions.map(rac => (
+                                        <button key={rac.id} onClick={() => toggleNewTrainerRac(rac.code)} className={`px-2 py-1 text-xs border rounded ${newTrainer.racs.includes(rac.code) ? 'bg-purple-600 text-white' : 'bg-white dark:bg-slate-800'}`}>{rac.code}</button>
+                                    ))}
+                                </div>
+                                <button onClick={handleAddTrainer} className="bg-slate-900 dark:bg-purple-600 text-white px-4 py-2 rounded-xl text-sm font-bold">Add Trainer</button>
                              </div>
-
-                             {/* Create Trainer Form */}
-                             <div className="bg-slate-50 dark:bg-slate-700/30 p-5 rounded-2xl border border-slate-200 dark:border-slate-600 mb-8 shadow-sm">
-                                <div className="flex flex-col gap-4">
-                                    <div className="w-full">
-                                        <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider ml-1 mb-1.5 flex items-center gap-2">
-                                            <UserIcon size={12} /> {t.settings.trainers.new}
-                                        </label>
-                                        <input 
-                                            className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-xl p-3 text-sm font-semibold focus:ring-2 focus:ring-purple-500 outline-none text-slate-800 dark:text-white placeholder-slate-400 transition-all" 
-                                            placeholder="Full Name"
-                                            value={newTrainer.name}
-                                            onChange={(e) => setNewTrainer({...newTrainer, name: e.target.value})}
-                                        />
-                                    </div>
-                                    
-                                    <div>
-                                        <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider ml-1 mb-1.5 flex items-center gap-2">
-                                            <Tag size={12} /> {t.settings.trainers.qualifiedRacs}
-                                        </label>
-                                        <div className="flex flex-wrap gap-2 p-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-xl">
-                                            {racDefinitions.map(rac => {
-                                                const isSelected = newTrainer.racs.includes(rac.code);
-                                                return (
-                                                    <button
-                                                        key={rac.id}
-                                                        onClick={() => toggleNewTrainerRac(rac.code)}
-                                                        className={`text-xs font-bold px-2 py-1 rounded transition-all ${
-                                                            isSelected 
-                                                            ? 'bg-purple-600 text-white shadow-sm' 
-                                                            : 'bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-600'
-                                                        }`}
-                                                    >
-                                                        {rac.code}
-                                                    </button>
-                                                )
-                                            })}
-                                        </div>
-                                    </div>
-
-                                    <div className="flex justify-end">
-                                        <button 
-                                            onClick={handleAddTrainer}
-                                            className="bg-slate-900 dark:bg-purple-600 text-white px-6 py-2 rounded-xl hover:bg-slate-800 dark:hover:bg-purple-500 transition-all shadow-lg active:scale-95 flex items-center gap-2"
-                                        >
-                                            <Plus size={16} /> Add Trainer
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-
-                            {/* Trainers List */}
-                            <div className="grid gap-3">
+                             <div className="grid gap-3">
                                 {trainers.map(trainer => (
-                                    <div key={trainer.id} className="group flex flex-col p-4 bg-white dark:bg-slate-800 rounded-xl border border-slate-100 dark:border-slate-700 hover:border-purple-200 dark:hover:border-purple-500 hover:shadow-md transition-all gap-4">
-                                        <div className="flex items-center justify-between">
-                                            <div className="flex items-center gap-4">
-                                                <div className="w-10 h-10 rounded-full bg-purple-50 dark:bg-purple-900/30 flex items-center justify-center text-purple-600 dark:text-purple-300 font-bold text-sm border border-purple-100 dark:border-purple-800">
-                                                    {trainer.name.charAt(0)}
-                                                </div>
-                                                {editingTrainerId === trainer.id ? (
-                                                    <input 
-                                                        className="border-b-2 border-purple-500 bg-transparent px-1 py-0.5 text-sm font-bold text-slate-900 dark:text-white outline-none"
-                                                        value={String(editTrainerData.name)}
-                                                        onChange={(e) => setEditTrainerData({...editTrainerData, name: e.target.value})}
-                                                        autoFocus
-                                                    />
-                                                ) : (
-                                                    <div className="font-bold text-slate-800 dark:text-white text-sm">{trainer.name}</div>
-                                                )}
-                                            </div>
-
-                                            <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                                {editingTrainerId === trainer.id ? (
-                                                    <>
-                                                        <button onClick={saveTrainer} className="p-2 bg-green-100 text-green-600 rounded-lg hover:bg-green-200"><Check size={16}/></button>
-                                                        <button onClick={() => setEditingTrainerId(null)} className="p-2 bg-slate-100 text-slate-500 rounded-lg hover:bg-slate-200"><X size={16}/></button>
-                                                    </>
-                                                ) : (
-                                                    <>
-                                                        <button onClick={() => startEditTrainer(trainer)} className="p-2 hover:bg-purple-50 text-slate-400 hover:text-purple-600 rounded-lg transition-colors"><Edit2 size={16}/></button>
-                                                        <button onClick={() => deleteTrainer(trainer.id)} className="p-2 hover:bg-red-50 text-slate-400 hover:text-red-500 rounded-lg transition-colors"><Trash2 size={16}/></button>
-                                                    </>
-                                                )}
-                                            </div>
+                                    <div key={trainer.id} className="p-4 bg-white dark:bg-slate-800 border rounded-xl flex justify-between">
+                                        <div>
+                                            <div className="font-bold text-slate-800 dark:text-white">{trainer.name}</div>
+                                            <div className="flex gap-1 mt-1">{trainer.racs.map(r => <span key={r} className="text-[10px] bg-slate-100 dark:bg-slate-700 px-1 rounded">{r}</span>)}</div>
                                         </div>
-
-                                        <div className="pl-14">
-                                            {editingTrainerId === trainer.id ? (
-                                                <div className="flex flex-wrap gap-2 p-2 bg-slate-50 dark:bg-slate-900/50 rounded-lg border border-slate-200 dark:border-slate-600">
-                                                    {racDefinitions.map(rac => {
-                                                        const isSelected = editTrainerData.racs.includes(rac.code);
-                                                        return (
-                                                            <button
-                                                                key={rac.id}
-                                                                onClick={() => toggleEditTrainerRac(rac.code)}
-                                                                className={`text-[10px] font-bold px-2 py-1 rounded transition-all ${
-                                                                    isSelected 
-                                                                    ? 'bg-purple-600 text-white' 
-                                                                    : 'bg-white dark:bg-slate-700 text-slate-400 border border-slate-200 dark:border-slate-600'
-                                                                }`}
-                                                            >
-                                                                {rac.code}
-                                                            </button>
-                                                        )
-                                                    })}
-                                                </div>
-                                            ) : (
-                                                <div className="flex flex-wrap gap-2">
-                                                    {trainer.racs.length > 0 ? trainer.racs.map(r => (
-                                                        <span key={r} className="text-[10px] font-bold bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 px-2 py-1 rounded border border-slate-200 dark:border-slate-600">
-                                                            {r}
-                                                        </span>
-                                                    )) : <span className="text-[10px] text-slate-400 italic">No qualifications assigned</span>}
-                                                </div>
-                                            )}
-                                        </div>
+                                        <button onClick={() => deleteTrainer(trainer.id)} className="text-slate-400 hover:text-red-500"><Trash2 size={16}/></button>
                                     </div>
                                 ))}
-                            </div>
+                             </div>
                         </div>
                     )}
 
-                    {/* RACs Tab - SYSTEM & ENTERPRISE ADMIN (Source of Truth) */}
                     {activeTab === 'RACs' && canEditGlobalDefinitions && (
                         <div className="max-w-4xl mx-auto animate-fade-in">
-                            <div className="flex justify-between items-end mb-6">
-                                <div>
-                                    <h3 className="text-xl font-bold text-slate-900 dark:text-white">{t.settings.racs.title}</h3>
-                                    <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">Define training modules. Changes here affect the database matrix.</p>
+                             <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-6">{t.settings.racs.title}</h3>
+                             <div className="bg-slate-50 dark:bg-slate-700/30 p-5 rounded-2xl mb-8">
+                                <div className="grid grid-cols-2 gap-4 mb-4">
+                                    <input className="bg-white dark:bg-slate-800 border rounded-xl p-3 text-sm" value={newRac.code} onChange={e => setNewRac({...newRac, code: e.target.value})} placeholder="Code (e.g. RAC01)" />
+                                    <input className="bg-white dark:bg-slate-800 border rounded-xl p-3 text-sm" value={newRac.name} onChange={e => setNewRac({...newRac, name: e.target.value})} placeholder="Description" />
                                 </div>
-                                <div className="bg-yellow-50 dark:bg-yellow-900/20 text-yellow-700 dark:text-yellow-300 px-3 py-1 rounded-lg text-xs font-bold border border-yellow-200 dark:border-yellow-800 flex items-center gap-2">
-                                    <Lock size={12} /> Source of Truth (Enterprise Controlled)
+                                <div className="flex gap-6 items-center mb-4">
+                                    <div className="w-32">
+                                        <label className="text-xs block mb-1">Validity (Mo)</label>
+                                        <input type="number" className="w-full bg-white dark:bg-slate-800 border rounded-xl p-2 text-sm" value={newRac.validityMonths} onChange={e => setNewRac({...newRac, validityMonths: parseInt(e.target.value)})} />
+                                    </div>
+                                    <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={newRac.requiresDriverLicense} onChange={e => setNewRac({...newRac, requiresDriverLicense: e.target.checked})} /> Requires DL</label>
+                                    <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={newRac.requiresPractical} onChange={e => setNewRac({...newRac, requiresPractical: e.target.checked})} /> Practical Exam</label>
                                 </div>
-                            </div>
-                            
-                            {/* Create RAC Form */}
-                            <div className="bg-slate-50 dark:bg-slate-700/30 p-5 rounded-2xl border border-slate-200 dark:border-slate-600 mb-8 flex flex-col md:flex-row gap-4 items-end shadow-sm">
-                                <div className="w-24">
-                                    <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider ml-1 mb-1.5 flex items-center gap-2">
-                                        <Hash size={12} /> Code
-                                    </label>
-                                    <input 
-                                        className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-xl p-3 text-sm font-mono font-semibold focus:ring-2 focus:ring-emerald-500 outline-none text-slate-800 dark:text-white placeholder-slate-400 transition-all uppercase" 
-                                        placeholder="RAC11" 
-                                        value={newRac.code}
-                                        onChange={(e) => setNewRac({...newRac, code: e.target.value})}
-                                    />
-                                </div>
-                                <div className="flex-1 w-full">
-                                    <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider ml-1 mb-1.5 flex items-center gap-2">
-                                        <LayoutGrid size={12} /> Description
-                                    </label>
-                                    <input 
-                                        className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-xl p-3 text-sm font-semibold focus:ring-2 focus:ring-emerald-500 outline-none text-slate-800 dark:text-white placeholder-slate-400 transition-all" 
-                                        placeholder="Hazard Description" 
-                                        value={newRac.name}
-                                        onChange={(e) => setNewRac({...newRac, name: e.target.value})}
-                                    />
-                                </div>
-                                <div className="w-24">
-                                    <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider ml-1 mb-1.5 flex items-center gap-2">
-                                        <Calendar size={12} /> Validity
-                                    </label>
-                                    <input 
-                                        type="number"
-                                        className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-xl p-3 text-sm font-semibold focus:ring-2 focus:ring-emerald-500 outline-none text-slate-800 dark:text-white placeholder-slate-400 transition-all text-center" 
-                                        placeholder="24"
-                                        value={newRac.validityMonths}
-                                        onChange={(e) => setNewRac({...newRac, validityMonths: parseInt(e.target.value) || 0})}
-                                    />
-                                </div>
-                                <button 
-                                    onClick={handleAddRac}
-                                    className="w-full md:w-auto bg-slate-900 dark:bg-emerald-600 text-white p-3 rounded-xl hover:bg-slate-800 dark:hover:bg-emerald-500 transition-all shadow-lg hover:shadow-xl active:scale-95 flex items-center justify-center"
-                                >
-                                    <Plus size={20} />
-                                </button>
-                            </div>
-
-                            {/* RAC List */}
-                            <div className="grid gap-3">
+                                <button onClick={handleAddRac} className="bg-slate-900 dark:bg-emerald-600 text-white px-4 py-2 rounded-xl text-sm font-bold">Add RAC</button>
+                             </div>
+                             <div className="grid gap-3">
                                 {racDefinitions.map(rac => (
-                                    <div key={rac.id} className="group flex items-center justify-between p-4 bg-white dark:bg-slate-800 rounded-xl border border-slate-100 dark:border-slate-700 hover:border-emerald-200 dark:hover:border-emerald-500 hover:shadow-md transition-all gap-4">
-                                        <div className="w-24 flex-shrink-0">
-                                             {editingRacId === rac.id ? (
-                                                <input 
-                                                    className="border-b-2 border-emerald-500 bg-transparent px-1 py-0.5 text-sm font-mono font-bold text-slate-900 dark:text-white outline-none w-full uppercase"
-                                                    value={String(editRacData.code)}
-                                                    onChange={(e) => setEditRacData({...editRacData, code: e.target.value})}
-                                                    autoFocus
-                                                />
-                                            ) : (
-                                                <span className="font-mono font-bold text-xs bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 px-3 py-1.5 rounded-lg border border-emerald-100 dark:border-emerald-800 block w-fit text-center">
-                                                    {rac.code}
-                                                </span>
-                                            )}
+                                    <div key={rac.id} className="p-4 bg-white dark:bg-slate-800 border rounded-xl flex justify-between items-center">
+                                        <div>
+                                            <div className="flex gap-2 items-center">
+                                                <span className="font-mono font-bold text-slate-800 dark:text-white">{rac.code}</span>
+                                                <span className="text-sm text-slate-600 dark:text-slate-300">{rac.name}</span>
+                                            </div>
+                                            <div className="flex gap-3 mt-1 text-[10px] text-slate-400 font-bold uppercase">
+                                                <span>{rac.validityMonths} Months</span>
+                                                {rac.requiresDriverLicense && <span className="text-red-500">Requires DL</span>}
+                                                {rac.requiresPractical && <span className="text-blue-500">Practical</span>}
+                                            </div>
                                         </div>
-
-                                        <div className="flex-1">
-                                            {editingRacId === rac.id ? (
-                                                <input 
-                                                    className="border-b-2 border-emerald-500 bg-transparent px-1 py-0.5 text-sm font-bold text-slate-900 dark:text-white outline-none w-full"
-                                                    value={String(editRacData.name)}
-                                                    onChange={(e) => setEditRacData({...editRacData, name: e.target.value})}
-                                                />
-                                            ) : (
-                                                <div className="text-sm font-medium text-slate-700 dark:text-slate-300">{rac.name}</div>
-                                            )}
-                                        </div>
-
-                                        <div className="w-20 text-center">
-                                            {editingRacId === rac.id ? (
-                                                <input 
-                                                    type="number"
-                                                    className="border-b-2 border-emerald-500 bg-transparent px-1 py-0.5 text-sm font-bold text-slate-900 dark:text-white outline-none w-full text-center"
-                                                    value={editRacData.validityMonths}
-                                                    onChange={(e) => setEditRacData({...editRacData, validityMonths: parseInt(e.target.value) || 0})}
-                                                />
-                                            ) : (
-                                                <div className="flex items-center justify-center gap-1 text-xs text-slate-500 font-bold bg-slate-100 dark:bg-slate-700 px-2 py-1 rounded">
-                                                    <Calendar size={10} />
-                                                    {rac.validityMonths || 24}m
-                                                </div>
-                                            )}
-                                        </div>
-
-                                        <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                            {editingRacId === rac.id ? (
-                                                <>
-                                                    <button onClick={saveRac} className="p-2 bg-green-100 text-green-600 rounded-lg hover:bg-green-200"><Check size={16}/></button>
-                                                    <button onClick={() => setEditingRacId(null)} className="p-2 bg-slate-100 text-slate-500 rounded-lg hover:bg-slate-200"><X size={16}/></button>
-                                                </>
-                                            ) : (
-                                                <>
-                                                    <button onClick={() => startEditRac(rac)} className="p-2 hover:bg-emerald-50 text-slate-400 hover:text-emerald-600 rounded-lg transition-colors"><Edit2 size={16}/></button>
-                                                    <button onClick={() => deleteRac(rac.id)} className="p-2 hover:bg-red-50 text-slate-400 hover:text-red-500 rounded-lg transition-colors"><Trash2 size={16}/></button>
-                                                </>
-                                            )}
+                                        <div className="flex gap-2">
+                                            <button onClick={() => startEditRac(rac)} className="text-slate-400 hover:text-blue-500"><Edit2 size={16}/></button>
+                                            <button onClick={() => deleteRac(rac.id)} className="text-slate-400 hover:text-red-500"><Trash2 size={16}/></button>
                                         </div>
                                     </div>
                                 ))}
-                            </div>
+                             </div>
                         </div>
                     )}
 
-                    {/* SITES Tab */}
-                    {activeTab === 'Sites' && canEditGlobalDefinitions && (
-                        /* ... (Sites Content) ... */
+                    {activeTab === 'Sites' && (
                         <div className="max-w-4xl mx-auto animate-fade-in">
-                            <div className="flex justify-between items-end mb-6">
-                                <div>
-                                    <h3 className="text-xl font-bold text-slate-900 dark:text-white">Operation Sites</h3>
-                                    <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">Manage physical locations for the organization.</p>
-                                </div>
+                            <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-6">Sites</h3>
+                            <div className="bg-slate-50 dark:bg-slate-700/30 p-5 rounded-2xl mb-8 flex gap-4 items-end">
+                                <input className="flex-1 bg-white dark:bg-slate-800 border rounded-xl p-3 text-sm" value={newSite.name} onChange={e => setNewSite({...newSite, name: e.target.value})} placeholder="Site Name" />
+                                <input className="flex-1 bg-white dark:bg-slate-800 border rounded-xl p-3 text-sm" value={newSite.location} onChange={e => setNewSite({...newSite, location: e.target.value})} placeholder="Location" />
+                                <button onClick={handleAddSite} className="bg-slate-900 dark:bg-orange-600 text-white p-3 rounded-xl"><Plus size={20}/></button>
                             </div>
-
-                            <div className="bg-slate-50 dark:bg-slate-700/30 p-5 rounded-2xl border border-slate-200 dark:border-slate-600 mb-8 flex flex-col md:flex-row gap-4 items-end shadow-sm">
-                                <div className="flex-1 w-full">
-                                    <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider ml-1 mb-1.5 flex items-center gap-2">
-                                        <Building2 size={12} /> Site Name
-                                    </label>
-                                    <input 
-                                        className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-xl p-3 text-sm font-semibold focus:ring-2 focus:ring-orange-500 outline-none text-slate-800 dark:text-white transition-all" 
-                                        placeholder="e.g. Moatize Mine"
-                                        value={newSite.name}
-                                        onChange={(e) => setNewSite({...newSite, name: e.target.value})}
-                                    />
-                                </div>
-                                <div className="w-full md:w-1/3">
-                                    <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider ml-1 mb-1.5 flex items-center gap-2">
-                                        <MapPin size={12} /> Location
-                                    </label>
-                                    <input 
-                                        className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-xl p-3 text-sm font-semibold focus:ring-2 focus:ring-orange-500 outline-none text-slate-800 dark:text-white transition-all" 
-                                        placeholder="City/Region"
-                                        value={newSite.location}
-                                        onChange={(e) => setNewSite({...newSite, location: e.target.value})}
-                                    />
-                                </div>
-                                <button 
-                                    onClick={handleAddSite}
-                                    className="w-full md:w-auto bg-slate-900 dark:bg-orange-600 text-white p-3 rounded-xl hover:bg-slate-800 dark:hover:bg-orange-500 transition-all shadow-lg hover:shadow-xl active:scale-95 flex items-center justify-center"
-                                >
-                                    <Plus size={20} />
-                                </button>
-                            </div>
-
                             <div className="grid gap-3">
-                                {sites.map(site => (
-                                    <div key={site.id} className="group flex items-center justify-between p-4 bg-white dark:bg-slate-800 rounded-xl border border-slate-100 dark:border-slate-700 hover:border-orange-200 dark:hover:border-orange-500 hover:shadow-md transition-all">
-                                        <div className="flex items-center gap-4 flex-1">
-                                            <div className="w-10 h-10 rounded-full bg-orange-50 dark:bg-orange-900/30 flex items-center justify-center text-orange-600 dark:text-orange-300 border border-orange-100 dark:border-orange-800">
-                                                <Map size={18} />
-                                            </div>
-                                            <div>
-                                                <div className="font-bold text-slate-800 dark:text-white text-sm">{site.name}</div>
-                                                <div className="text-[10px] text-slate-400 uppercase tracking-wide">{site.location}</div>
-                                            </div>
-                                        </div>
-                                        <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                            <button onClick={() => deleteSite(site.id)} className="p-2 hover:bg-red-50 text-slate-400 hover:text-red-500 rounded-lg transition-colors"><Trash2 size={16}/></button>
-                                        </div>
+                                {sites.map(s => (
+                                    <div key={s.id} className="p-4 bg-white dark:bg-slate-800 border rounded-xl flex justify-between">
+                                        <div><div className="font-bold text-slate-800 dark:text-white">{s.name}</div><div className="text-xs text-slate-500">{s.location}</div></div>
+                                        <button onClick={() => deleteSite(s.id)} className="text-slate-400 hover:text-red-500"><Trash2 size={16}/></button>
                                     </div>
                                 ))}
                             </div>
                         </div>
                     )}
 
-                    {/* COMPANIES Tab (System Admin Only) */}
                     {activeTab === 'Companies' && isSystemAdmin && (
-                        /* ... (Companies Content) ... */
                         <div className="max-w-4xl mx-auto animate-fade-in">
-                            <div className="flex justify-between items-end mb-6">
-                                <div>
-                                    <h3 className="text-xl font-bold text-slate-900 dark:text-white">Tenant Companies</h3>
-                                    <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">Manage client organizations and provision initial admins.</p>
+                            <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-6">Companies</h3>
+                            {provisionSuccess && <div className="mb-4 p-3 bg-green-100 text-green-700 rounded-lg text-sm">{provisionSuccess}</div>}
+                            <div className="bg-slate-50 dark:bg-slate-700/30 p-5 rounded-2xl mb-8 space-y-4">
+                                <input className="w-full bg-white dark:bg-slate-800 border rounded-xl p-3 text-sm" value={newCompany.name} onChange={e => setNewCompany({...newCompany, name: e.target.value})} placeholder="Company Name" />
+                                <div className="flex gap-4">
+                                    <input className="flex-1 bg-white dark:bg-slate-800 border rounded-xl p-3 text-sm" value={newCompany.adminName} onChange={e => setNewCompany({...newCompany, adminName: e.target.value})} placeholder="Admin Name" />
+                                    <input className="flex-1 bg-white dark:bg-slate-800 border rounded-xl p-3 text-sm" value={newCompany.adminEmail} onChange={e => setNewCompany({...newCompany, adminEmail: e.target.value})} placeholder="Admin Email" />
                                 </div>
+                                <button onClick={handleAddCompany} className="w-full bg-slate-900 dark:bg-white text-white dark:text-slate-900 p-3 rounded-xl font-bold text-sm">Provision</button>
                             </div>
-
-                            {/* Provision Success Message */}
-                            {provisionSuccess && (
-                                <div className="mb-6 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 p-4 rounded-xl flex items-center gap-3 animate-fade-in-down">
-                                    <div className="p-2 bg-green-100 dark:bg-green-800 rounded-full text-green-600 dark:text-green-300">
-                                        <ShieldCheck size={20} />
-                                    </div>
-                                    <div className="text-sm text-green-800 dark:text-green-300 font-medium">
-                                        {provisionSuccess}
-                                    </div>
-                                </div>
-                            )}
-
-                            {/* Add Company Form */}
-                            <div className="bg-slate-50 dark:bg-slate-700/30 p-6 rounded-2xl border border-slate-200 dark:border-slate-600 mb-8 shadow-sm">
-                                <h4 className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-4 flex items-center gap-2">
-                                    <Building2 size={14} /> New Enterprise Provisioning
-                                </h4>
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                                    <div>
-                                        <label className="text-xs font-bold text-slate-500 dark:text-slate-400 mb-1 block ml-1">Company Name</label>
-                                        <input 
-                                            className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-xl p-3 text-sm font-semibold focus:ring-2 focus:ring-gray-500 outline-none text-slate-800 dark:text-white transition-all" 
-                                            placeholder="e.g. Acme Corp"
-                                            value={newCompany.name}
-                                            onChange={(e) => setNewCompany({...newCompany, name: e.target.value})}
-                                        />
-                                    </div>
-                                    <div>
-                                        <label className="text-xs font-bold text-slate-500 dark:text-slate-400 mb-1 block ml-1">Admin Name</label>
-                                        <input 
-                                            className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-xl p-3 text-sm font-semibold focus:ring-2 focus:ring-gray-500 outline-none text-slate-800 dark:text-white transition-all" 
-                                            placeholder="Full Name"
-                                            value={newCompany.adminName}
-                                            onChange={(e) => setNewCompany({...newCompany, adminName: e.target.value})}
-                                        />
-                                    </div>
-                                    <div className="md:col-span-2">
-                                        <label className="text-xs font-bold text-slate-500 dark:text-slate-400 mb-1 block ml-1">Admin Email</label>
-                                        <div className="relative">
-                                            <input 
-                                                className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-xl p-3 pl-10 text-sm font-semibold focus:ring-2 focus:ring-gray-500 outline-none text-slate-800 dark:text-white transition-all" 
-                                                placeholder="admin@company.com"
-                                                value={newCompany.adminEmail}
-                                                onChange={(e) => setNewCompany({...newCompany, adminEmail: e.target.value})}
-                                            />
-                                            <Mail size={16} className="absolute left-3 top-3.5 text-slate-400" />
-                                        </div>
-                                    </div>
-                                </div>
-                                <div className="flex justify-end">
-                                    <button 
-                                        onClick={handleAddCompany}
-                                        className="w-full md:w-auto bg-slate-900 dark:bg-gray-600 text-white px-6 py-3 rounded-xl hover:bg-slate-800 dark:hover:bg-gray-500 transition-all shadow-lg hover:shadow-xl active:scale-95 flex items-center justify-center gap-2 font-bold text-sm"
-                                    >
-                                        <Plus size={18} /> Provision Enterprise
-                                    </button>
-                                </div>
-                            </div>
-
                             <div className="grid gap-3">
-                                {companies.map(comp => (
-                                    <div key={comp.id} className="group flex items-center justify-between p-4 bg-white dark:bg-slate-800 rounded-xl border border-slate-100 dark:border-slate-700 hover:border-gray-300 dark:hover:border-gray-500 hover:shadow-md transition-all">
-                                        <div className="flex items-center gap-4 flex-1">
-                                            <div className="w-10 h-10 rounded-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-gray-600">
-                                                <Building2 size={18} />
-                                            </div>
-                                            <div>
-                                                <div className="font-bold text-slate-800 dark:text-white text-sm">{comp.name}</div>
-                                                <div className="text-[10px] text-green-500 uppercase tracking-wide font-bold">{comp.status}</div>
-                                            </div>
-                                        </div>
+                                {companies.map(c => (
+                                    <div key={c.id} className="p-4 bg-white dark:bg-slate-800 border rounded-xl flex justify-between">
+                                        <div className="font-bold text-slate-800 dark:text-white">{c.name}</div>
+                                        <span className="text-xs text-green-500 font-bold">{c.status}</span>
                                     </div>
                                 ))}
                             </div>
                         </div>
                     )}
-
                 </div>
                 
-                {/* Global Save Footer */}
-                <div className="p-6 border-t border-slate-100 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800 flex justify-end backdrop-blur-md sticky bottom-0 z-20">
-                    <button 
-                        onClick={handleGlobalSave}
-                        disabled={isSaving}
-                        className={`flex items-center gap-2 bg-slate-900 dark:bg-white text-white dark:text-slate-900 px-8 py-4 rounded-xl font-bold shadow-xl transition-all transform hover:-translate-y-1
-                          ${isSaving ? 'opacity-70 cursor-wait' : 'hover:bg-slate-800 hover:shadow-2xl'}
-                        `}
-                    >
-                        {isSaving ? <div className="animate-spin h-5 w-5 border-2 border-current border-t-transparent rounded-full" /> : <Save size={20} />}
-                        <span className="tracking-wide">{isSaving ? t.settings.saving : t.settings.saveAll}</span>
+                <div className="p-6 border-t border-slate-100 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800 flex justify-end">
+                    <button onClick={handleGlobalSave} disabled={isSaving} className="flex items-center gap-2 bg-slate-900 dark:bg-white text-white dark:text-slate-900 px-8 py-4 rounded-xl font-bold shadow-xl hover:shadow-2xl transition-all">
+                        <Save size={20} /> {isSaving ? t.settings.saving : t.settings.saveAll}
                     </button>
                 </div>
             </div>
         </div>
-
-        {/* --- CONFIRMATION MODAL --- */}
-        <ConfirmModal 
-            isOpen={confirmState.isOpen}
-            title={confirmState.title}
-            message={confirmState.message}
-            onConfirm={confirmState.onConfirm}
-            onClose={() => setConfirmState(prev => ({ ...prev, isOpen: false }))}
-            isDestructive={confirmState.isDestructive}
-            confirmText="Delete"
-        />
+        <ConfirmModal isOpen={confirmState.isOpen} title={confirmState.title} message={confirmState.message} onConfirm={confirmState.onConfirm} onClose={() => setConfirmState(prev => ({...prev, isOpen: false}))} isDestructive={confirmState.isDestructive} />
     </div>
   );
 };

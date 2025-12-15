@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
-import { Employee, BookingStatus, Booking, UserRole, TrainingSession, SystemNotification, EmployeeRequirement } from '../types';
+import { Employee, BookingStatus, Booking, UserRole, TrainingSession, SystemNotification, EmployeeRequirement, RacDef } from '../types';
 import { COMPANIES, DEPARTMENTS, ROLES } from '../constants';
 import { Plus, Trash2, Save, Settings, ShieldCheck, Calendar, UserPlus, FileSignature, CheckCircle2, AlertCircle, Search, UserCheck, RefreshCw, Lock, Layers } from 'lucide-react';
 import { v4 as uuidv4 } from 'uuid';
@@ -15,8 +15,9 @@ interface BookingFormProps {
   userRole: UserRole;
   existingBookings?: Booking[];
   addNotification?: (notification: SystemNotification) => void; 
-  currentEmployeeId?: string; // Passed from App.tsx
-  requirements?: EmployeeRequirement[]; // Added requirements prop
+  currentEmployeeId?: string;
+  requirements?: EmployeeRequirement[];
+  racDefinitions: RacDef[];
 }
 
 interface RenewalBatch {
@@ -24,7 +25,7 @@ interface RenewalBatch {
     employees: Employee[];
 }
 
-const BookingForm: React.FC<BookingFormProps> = ({ addBookings, sessions, userRole, existingBookings = [], addNotification, currentEmployeeId, requirements = [] }) => {
+const BookingForm: React.FC<BookingFormProps> = ({ addBookings, sessions, userRole, existingBookings = [], addNotification, currentEmployeeId, requirements = [], racDefinitions }) => {
   const navigate = useNavigate();
   const location = useLocation();
   const { t } = useLanguage();
@@ -52,61 +53,42 @@ const BookingForm: React.FC<BookingFormProps> = ({ addBookings, sessions, userRo
   const [rows, setRows] = useState(initialRows);
   const [submitted, setSubmitted] = useState(false);
 
-  // Build a lookup map of existing employees for auto-population
+  // Build lookup
   const employeeLookup = useMemo(() => {
       const map = new Map<string, Employee>();
       existingBookings.forEach(b => {
           if (b.employee && b.employee.recordId) {
               const key = b.employee.recordId.trim().toLowerCase();
-              if (key && !map.has(key)) {
-                  map.set(key, b.employee);
-              }
-              // Also map by internal ID for self-service lookup
+              if (key && !map.has(key)) map.set(key, b.employee);
               map.set(b.employee.id, b.employee);
           }
       });
       return map;
   }, [existingBookings]);
 
-  // Filter available sessions based on Role
+  // Filter available sessions
   const availableSessions = useMemo(() => {
-      // 1. SELF-SERVICE VIEW: Restricted to mapped trainings only
       if (isSelfService && currentEmployeeId) {
-          // Find requirement for current logged-in user
           const myReq = requirements.find(r => r.employeeId === currentEmployeeId);
-          if (!myReq) return []; // If not mapped in DB, cannot book anything.
-
-          // Filter sessions: Only show if mapped in requirements matrix
+          if (!myReq) return [];
           return sessions.filter(session => {
               const racKey = session.racType.split(' - ')[0].replace(/\s+/g, '');
               return myReq.requiredRacs[racKey] === true;
           });
       }
-
-      // 2. ADMIN/MANAGER VIEW: Full visibility of all sessions
-      // System Admins, RAC Admins, and Dept Admins can see the entire schedule.
-      // Note: The 'handleSubmit' validation will still prevent them from booking 
-      // an unmapped employee, but they can view and select any session here.
       return sessions;
   }, [sessions, isSelfService, currentEmployeeId, requirements]);
 
   useEffect(() => {
     const state = location.state as { prefill?: any[]; targetRac?: string; remainingBatches?: RenewalBatch[] } | null;
     if (state) {
-        if (state.prefill) {
-            setRows(state.prefill);
-        }
-        if (state.targetRac) {
-            setTargetRac(state.targetRac);
-        }
-        if (state.remainingBatches) {
-            setRenewalQueue(state.remainingBatches);
-        }
+        if (state.prefill) setRows(state.prefill);
+        if (state.targetRac) setTargetRac(state.targetRac);
+        if (state.remainingBatches) setRenewalQueue(state.remainingBatches);
         window.history.replaceState({}, document.title);
     }
   }, [location]);
 
-  // SELF-SERVICE: Auto-populate if USER role
   useEffect(() => {
       if (isSelfService && currentEmployeeId) {
           const found = employeeLookup.get(currentEmployeeId) || 
@@ -119,13 +101,22 @@ const BookingForm: React.FC<BookingFormProps> = ({ addBookings, sessions, userRo
                   driverLicenseNumber: found.driverLicenseNumber || '',
                   driverLicenseClass: found.driverLicenseClass || '',
                   driverLicenseExpiry: found.driverLicenseExpiry || ''
-              }]); // Populate single row
+              }]); 
           }
       }
   }, [isSelfService, currentEmployeeId, employeeLookup]);
 
   const sessionData = availableSessions.find(s => s.id === selectedSession);
-  const isRac02Selected = sessionData?.racType.includes('RAC02') || sessionData?.racType.includes('RAC 02') || (targetRac && targetRac.includes('RAC02'));
+  
+  // DYNAMIC REQUIREMENT CHECK
+  const isDlRequired = useMemo(() => {
+      if (!sessionData) return false;
+      // Match session type to RAC Definition
+      // Try by full name or code
+      const racCode = sessionData.racType.split(' - ')[0].replace(/\s/g, '');
+      const def = racDefinitions.find(r => r.name === sessionData.racType || r.code === racCode);
+      return def ? !!def.requiresDriverLicense : false;
+  }, [sessionData, racDefinitions]);
 
   const handleRowChange = (index: number, field: keyof Employee, value: string) => {
     const safeValue = (field === 'name' || field === 'recordId' || field === 'driverLicenseNumber' || field === 'driverLicenseClass') 
@@ -194,8 +185,7 @@ const BookingForm: React.FC<BookingFormProps> = ({ addBookings, sessions, userRo
       })));
       setTargetRac(nextBatch.racType);
       setRenewalQueue(newQueue);
-      setSelectedSession(''); // Force user to pick new session
-      
+      setSelectedSession('');
       alert(`Batch Saved! Loading renewals for: ${nextBatch.racType}`);
   };
 
@@ -223,39 +213,31 @@ const BookingForm: React.FC<BookingFormProps> = ({ addBookings, sessions, userRo
       return;
     }
 
-    // Determine target RAC Key from session
     const racKey = sessionData.racType.split(' - ')[0].replace(/\s+/g, '');
 
-    // VALIDATION LOOP: Check Matrix Mapping (Applies to ALL roles for consistency)
+    // VALIDATION LOOP
     for (const row of validRows) {
-        // 1. Resolve to existing Employee record to find their internal ID
-        // Note: employeeLookup uses lowercase recordId keys
         const empRecord = employeeLookup.get(row.recordId.trim().toLowerCase());
-        
         if (!empRecord) {
-            alert(`Booking Blocked: Employee "${row.name}" (${row.recordId}) is not registered in the system database.\n\nPlease register them in the Database page first to assign requirements.`);
-            return; // Block entire batch
+            alert(`Booking Blocked: Employee "${row.name}" (${row.recordId}) is not registered in the system database.`);
+            return;
         }
-
-        // 2. Check Requirement Mapping
         const empReq = requirements.find(r => r.employeeId === empRecord.id);
-        
-        // If no req object found OR racKey is false/undefined -> Block
         if (!empReq || !empReq.requiredRacs[racKey]) {
-            alert(`Booking Blocked: Employee "${row.name}" is NOT mapped for ${racKey} in the database.\n\nPlease contact the Department Manager to update their training matrix.`);
-            return; // Block entire batch
-        }
-    }
-
-    if (isRac02Selected) {
-        const incompleteDl = validRows.find(r => !r.driverLicenseNumber || !r.driverLicenseClass || !r.driverLicenseExpiry);
-        if (incompleteDl) {
-            alert(`Driver License details are mandatory for RAC 02 bookings.\n\nPlease complete details for: ${incompleteDl.name}`);
+            alert(`Booking Blocked: Employee "${row.name}" is NOT mapped for ${racKey} in the database.`);
             return;
         }
     }
 
-    // 1. Check Capacity
+    if (isDlRequired) {
+        const incompleteDl = validRows.find(r => !r.driverLicenseNumber || !r.driverLicenseClass || !r.driverLicenseExpiry);
+        if (incompleteDl) {
+            alert(`Driver License details are mandatory for this module.\n\nPlease complete details for: ${incompleteDl.name}`);
+            return;
+        }
+    }
+
+    // Capacity Check
     const currentBookingsCount = existingBookings.filter(b => b.sessionId === selectedSession).length;
     const availableSlots = sessionData.capacity - currentBookingsCount;
     const requestedSlots = validRows.length;
@@ -264,11 +246,8 @@ const BookingForm: React.FC<BookingFormProps> = ({ addBookings, sessions, userRo
     let overflowEmployees: Employee[] = [];
 
     if (requestedSlots > availableSlots) {
-        // We have overflow
         const fittingRows = validRows.slice(0, availableSlots);
         const extraRows = validRows.slice(availableSlots);
-        
-        // Prepare valid bookings
         fittingRows.forEach(row => {
              finalBookings.push({
                 id: uuidv4(),
@@ -277,10 +256,8 @@ const BookingForm: React.FC<BookingFormProps> = ({ addBookings, sessions, userRo
                 status: BookingStatus.PENDING,
             });
         });
-
         overflowEmployees = extraRows.map(r => ({ ...r }));
     } else {
-        // All fit
         finalBookings = validRows.map(row => ({
             id: uuidv4(),
             sessionId: selectedSession,
@@ -289,22 +266,17 @@ const BookingForm: React.FC<BookingFormProps> = ({ addBookings, sessions, userRo
         }));
     }
 
-    // 2. Check Duplicates (One booking per RAC type per person)
+    // Duplicate Check
     const uniqueBookings = finalBookings.filter(newBooking => {
-        // Check if employee has a pending or passed booking for THIS RAC type (even if different session ID)
         const duplicate = existingBookings.find(b => {
             if (b.employee.recordId.toLowerCase() !== newBooking.employee.recordId.toLowerCase()) return false;
-            
-            // Resolve RAC Type of existing booking
             const existingSession = sessions.find(s => s.id === b.sessionId);
             const bRacType = existingSession ? existingSession.racType : (b.sessionId.includes(sessionData.racType) ? sessionData.racType : '');
-            
             if (bRacType === sessionData.racType && (b.status === BookingStatus.PENDING || b.status === BookingStatus.PASSED)) {
                 return true;
             }
             return false;
         });
-
         if (duplicate) {
             alert(`${t.notifications.duplicateMsg}: ${newBooking.employee.name} (${sessionData.racType})`);
             return false;
@@ -312,115 +284,52 @@ const BookingForm: React.FC<BookingFormProps> = ({ addBookings, sessions, userRo
         return true;
     });
 
-    // 3. Process Overflow (Find next session)
-    if (overflowEmployees.length > 0) {
-        // Find next session of same RAC type, after today
-        const nextSession = sessions
-            .filter(s => s.racType === sessionData.racType && s.id !== selectedSession && new Date(s.date) > new Date())
-            .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())[0];
-
-        if (nextSession) {
-            overflowEmployees.forEach(emp => {
-                 // Check dupes for overflow too
-                 const existing = existingBookings.find(b => b.employee.recordId === emp.recordId && b.sessionId === nextSession.id);
-                 if (!existing) {
-                     uniqueBookings.push({
-                        id: uuidv4(),
-                        sessionId: nextSession.id,
-                        employee: emp,
-                        status: BookingStatus.PENDING
-                     });
-                 }
-            });
-            
-            if (addNotification) {
-                addNotification({
-                    id: uuidv4(),
-                    type: 'warning',
-                    title: t.notifications.capacityTitle,
-                    message: `${overflowEmployees.length} ${t.notifications.capacityMsg} ${nextSession.date}.`,
-                    timestamp: new Date(),
-                    isRead: false
-                });
-            }
-            alert(`Note: Session full. ${overflowEmployees.length} employees were auto-booked to next available session: ${nextSession.date}.`);
-        } else {
-            alert(`Session Full! Could not find a future session for ${overflowEmployees.length} employees. Please contact Admin.`);
-        }
-    }
-
     if (uniqueBookings.length > 0) {
-        try {
-            addBookings(uniqueBookings);
-            logger.audit('Manual Booking Submitted', userRole, { count: uniqueBookings.length, session: selectedSession });
-
-            setSubmitted(true);
-            
-            // Notify User
-            if (addNotification) {
-                addNotification({
-                    id: uuidv4(),
-                    type: 'success',
-                    title: 'Booking Confirmed',
-                    message: `Successfully booked ${uniqueBookings.length} employees.`,
-                    timestamp: new Date(),
-                    isRead: false
-                });
-            }
-
-            setTimeout(() => {
-                setSubmitted(false);
-                // IF QUEUE EXISTS, LOAD NEXT
-                if (renewalQueue.length > 0) {
-                    loadNextBatch();
-                } else {
-                    // Reset
-                    if (!isSelfService) {
-                       setRows(initialRows);
-                    }
-                    setSelectedSession('');
-                    setTargetRac('');
-                }
-            }, 1500);
-
-        } catch (err) {
-            logger.error('Error submitting booking', err);
-            alert('An error occurred while processing the booking.');
+        addBookings(uniqueBookings);
+        logger.audit('Manual Booking Submitted', userRole, { count: uniqueBookings.length, session: selectedSession });
+        setSubmitted(true);
+        if (addNotification) {
+            addNotification({
+                id: uuidv4(),
+                type: 'success',
+                title: 'Booking Confirmed',
+                message: `Successfully booked ${uniqueBookings.length} employees.`,
+                timestamp: new Date(),
+                isRead: false
+            });
         }
+        setTimeout(() => {
+            setSubmitted(false);
+            if (renewalQueue.length > 0) {
+                loadNextBatch();
+            } else {
+                if (!isSelfService) setRows(initialRows);
+                setSelectedSession('');
+                setTargetRac('');
+            }
+        }, 1500);
     }
   };
 
   return (
     <div className="space-y-8 pb-20 animate-fade-in-up">
-      {/* Header Command Center */}
       <div className="bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 rounded-3xl shadow-2xl p-8 text-white relative overflow-hidden border border-slate-700">
-         {/* Background Decoration */}
-         <div className="absolute top-0 right-0 opacity-5 pointer-events-none">
-            <FileSignature size={300} />
-         </div>
-         <div className="absolute -bottom-10 -left-10 w-64 h-64 bg-yellow-500/10 rounded-full blur-3xl pointer-events-none"></div>
-
+         <div className="absolute top-0 right-0 opacity-5 pointer-events-none"><FileSignature size={300} /></div>
          <div className="relative z-10 flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
             <div>
                <div className="flex items-center gap-3 mb-2">
                   <div className="p-2 bg-yellow-500/20 rounded-lg backdrop-blur-sm border border-yellow-500/30">
                     <UserPlus size={28} className="text-yellow-500" />
                   </div>
-                  <h2 className="text-3xl font-black tracking-tight text-white">
-                      {isSelfService ? 'Self-Service Booking' : t.booking.title}
-                  </h2>
+                  <h2 className="text-3xl font-black tracking-tight text-white">{isSelfService ? 'Self-Service Booking' : t.booking.title}</h2>
                </div>
                <p className="text-slate-400 text-sm max-w-xl flex items-center gap-2 font-medium">
                   <ShieldCheck size={16} className="text-green-400" />
                   {isSelfService ? "View only trainings mapped to you." : "Full Schedule Access (Secure Mode)"}
                </p>
             </div>
-            
             {canManageSessions && (
-                <button 
-                    onClick={() => navigate('/settings')}
-                    className="group bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white px-5 py-3 rounded-xl text-sm font-bold border border-slate-700 hover:border-slate-600 flex items-center gap-3 transition-all"
-                >
+                <button onClick={() => navigate('/settings')} className="group bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white px-5 py-3 rounded-xl text-sm font-bold border border-slate-700 hover:border-slate-600 flex items-center gap-3 transition-all">
                     <Settings size={18} className="group-hover:rotate-90 transition-transform duration-500" />
                     <span>{t.booking.manageSchedule}</span>
                 </button>
@@ -428,27 +337,6 @@ const BookingForm: React.FC<BookingFormProps> = ({ addBookings, sessions, userRo
          </div>
       </div>
 
-      {/* Renewal Batch Indicator */}
-      {targetRac && (
-          <div className="bg-blue-50 dark:bg-blue-900/20 border-l-4 border-blue-500 p-4 rounded-r-xl shadow-sm animate-fade-in-down">
-              <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                      <RefreshCw size={24} className="text-blue-600 dark:text-blue-400 animate-spin-slow" />
-                      <div>
-                          <h3 className="font-bold text-blue-900 dark:text-blue-300 text-lg">Booking Renewals for: {targetRac}</h3>
-                          <p className="text-blue-700 dark:text-blue-400 text-sm">
-                              {renewalQueue.length > 0 ? `${renewalQueue.length} more batches remaining in queue.` : "Final batch in renewal queue."}
-                          </p>
-                      </div>
-                  </div>
-                  <div className="bg-blue-100 dark:bg-blue-800 text-blue-800 dark:text-blue-200 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider">
-                      Batch Processing Active
-                  </div>
-              </div>
-          </div>
-      )}
-
-      {/* Success Notification */}
       {submitted && (
         <div className="bg-green-500 text-white p-4 rounded-xl shadow-lg shadow-green-500/20 flex items-center justify-center gap-3 animate-bounce-in">
             <CheckCircle2 size={24} className="text-white" />
@@ -456,16 +344,12 @@ const BookingForm: React.FC<BookingFormProps> = ({ addBookings, sessions, userRo
         </div>
       )}
 
-      {/* Main Content Card */}
       <div className="bg-white dark:bg-slate-800 rounded-3xl shadow-xl border border-slate-100 dark:border-slate-700 overflow-hidden flex flex-col">
           <form onSubmit={handleSubmit} className="flex-1 flex flex-col">
-            
-            {/* Session Selector Zone */}
             <div className="p-8 bg-slate-50 dark:bg-slate-800/50 border-b border-slate-200 dark:border-slate-700">
                <div className="flex justify-between items-center mb-3">
                    <label className="text-xs font-bold text-slate-900 dark:text-slate-400 uppercase tracking-wider flex items-center gap-2 ml-1">
-                      <Calendar size={14} />
-                      {t.booking.selectSession}
+                      <Calendar size={14} />{t.booking.selectSession}
                    </label>
                    {!isSelfService && (
                        <span className="text-[10px] bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300 px-2 py-0.5 rounded font-bold uppercase flex items-center gap-1">
@@ -473,251 +357,89 @@ const BookingForm: React.FC<BookingFormProps> = ({ addBookings, sessions, userRo
                        </span>
                    )}
                </div>
-               
                <div className="relative group">
                    <select 
                       value={selectedSession} 
                       onChange={(e) => setSelectedSession(e.target.value)}
-                      className={`w-full bg-white dark:bg-slate-700 border-2 text-slate-900 dark:text-white rounded-2xl shadow-sm p-4 pl-5 text-xl font-bold transition-all appearance-none cursor-pointer hover:border-slate-300 dark:hover:border-slate-500
-                        ${targetRac ? 'border-blue-300 ring-2 ring-blue-500/20' : 'border-slate-200 dark:border-slate-600 focus:border-yellow-500 focus:ring-4 focus:ring-yellow-500/20'}
-                      `}
+                      className={`w-full bg-white dark:bg-slate-700 border-2 text-slate-900 dark:text-white rounded-2xl shadow-sm p-4 pl-5 text-xl font-bold transition-all appearance-none cursor-pointer hover:border-slate-300 dark:hover:border-slate-500 ${targetRac ? 'border-blue-300 ring-2 ring-blue-500/20' : 'border-slate-200 dark:border-slate-600 focus:border-yellow-500 focus:ring-4 focus:ring-yellow-500/20'}`}
                       required
                     >
                       <option value="">-- {t.booking.chooseSession} --</option>
                       {availableSessions.map(session => {
                         const count = existingBookings.filter(b => b.sessionId === session.id).length;
                         const isFull = count >= session.capacity;
-                        const langLabel = session.sessionLanguage === 'English' ? 'Eng' : 'Port';
-                        const displayLang = session.sessionLanguage ? `[${langLabel}]` : '';
-                        
-                        // Highlight matching RACs
                         const isMatch = targetRac && session.racType.includes(targetRac);
-                        
                         return (
-                            <option 
-                                key={session.id} 
-                                value={session.id} 
-                                className={`${isFull ? 'text-red-500' : ''} ${isMatch ? 'bg-blue-100 font-black' : ''}`}
-                            >
-                            {isMatch ? '★ ' : ''}{session.racType} {displayLang} • {session.date} • {session.location} • (Cap: {count}/{session.capacity}) {isFull ? '(FULL)' : ''}
+                            <option key={session.id} value={session.id} className={`${isFull ? 'text-red-500' : ''} ${isMatch ? 'bg-blue-100 font-black' : ''}`}>
+                            {isMatch ? '★ ' : ''}{session.racType} • {session.date} • {session.location} • (Cap: {count}/{session.capacity}) {isFull ? '(FULL)' : ''}
                             </option>
                         );
                       })}
                     </select>
-                    <div className="absolute right-5 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
-                        <Calendar size={24} />
-                    </div>
+                    <div className="absolute right-5 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400"><Calendar size={24} /></div>
                </div>
-                
-                {isSelfService && availableSessions.length === 0 && (
-                    <p className="text-xs text-red-500 mt-2 font-bold flex items-center gap-1">
-                        <AlertCircle size={12}/> No eligible training sessions available for your profile. Please check if you are correctly mapped in the Database.
-                    </p>
-                )}
-
-                {isRac02Selected && (
+                {isSelfService && availableSessions.length === 0 && <p className="text-xs text-red-500 mt-2 font-bold flex items-center gap-1"><AlertCircle size={12}/> No eligible training sessions available.</p>}
+                {isDlRequired && (
                     <div className="mt-4 flex items-start gap-3 text-red-700 bg-red-50 dark:bg-red-900/20 dark:text-red-300 p-4 rounded-xl border border-red-100 dark:border-red-900/50 animate-fade-in-down">
                         <AlertCircle size={20} className="mt-0.5 flex-shrink-0" />
-                        <div>
-                            <p className="font-bold text-sm">Critical Requirement</p>
-                            <p className="text-xs opacity-90">{t.booking.dlRequired}</p>
-                        </div>
+                        <div><p className="font-bold text-sm">Critical Requirement</p><p className="text-xs opacity-90">{t.booking.dlRequired}</p></div>
                     </div>
                 )}
             </div>
 
-            {/* High-Density Input Grid */}
             <div className="p-4 md:p-6 overflow-x-auto">
               <table className="min-w-full border-separate border-spacing-y-2">
                 <thead>
                   <tr className="bg-slate-100 dark:bg-slate-900/50 rounded-lg">
                     <th className="px-3 py-3 text-center text-[10px] font-bold text-slate-900 dark:text-slate-400 uppercase tracking-wider w-12 rounded-l-lg">#</th>
-                    <th className="px-3 py-3 text-left text-[10px] font-bold text-slate-900 dark:text-slate-400 uppercase tracking-wider w-36">
-                        {t.common.id} <span className="text-yellow-500">*</span>
-                    </th>
+                    <th className="px-3 py-3 text-left text-[10px] font-bold text-slate-900 dark:text-slate-400 uppercase tracking-wider w-36">{t.common.id} <span className="text-yellow-500">*</span></th>
                     <th className="px-3 py-3 text-left text-[10px] font-bold text-slate-900 dark:text-slate-400 uppercase tracking-wider w-32">{t.common.name}</th>
-                    
-                    {/* CONDITIONAL DL COLUMNS - BETWEEN NAME AND COMPANY */}
-                    {isRac02Selected && (
+                    {isDlRequired && (
                       <>
                         <th className="px-2 py-3 text-left text-[10px] font-bold text-red-600 dark:text-red-400 uppercase tracking-wider w-24">DL Num <span className="text-red-600">*</span></th>
                         <th className="px-2 py-3 text-left text-[10px] font-bold text-red-600 dark:text-red-400 uppercase tracking-wider w-16">Class <span className="text-red-600">*</span></th>
                         <th className="px-2 py-3 text-left text-[10px] font-bold text-red-600 dark:text-red-400 uppercase tracking-wider w-28">Expiry <span className="text-red-600">*</span></th>
                       </>
                     )}
-
                     <th className="px-3 py-3 text-left text-[10px] font-bold text-slate-900 dark:text-slate-400 uppercase tracking-wider w-40">{t.common.company}</th>
                     <th className="px-3 py-3 text-left text-[10px] font-bold text-slate-900 dark:text-slate-400 uppercase tracking-wider w-36">{t.common.department}</th>
                     <th className="px-3 py-3 text-left text-[10px] font-bold text-slate-900 dark:text-slate-400 uppercase tracking-wider w-32">{t.common.role}</th>
-                    
                     <th className="px-3 py-3 text-center text-[10px] font-bold text-slate-900 dark:text-slate-400 uppercase tracking-wider w-12 rounded-r-lg"></th>
                   </tr>
                 </thead>
                 <tbody>
                   {rows.map((row, index) => {
-                    // Check if current ID exists in DB
                     const isKnownId = !!(row.recordId && employeeLookup.has(row.recordId.toLowerCase()));
-                    // Lock inputs if Self-Service
                     const isLocked = isSelfService;
-
                     return (
                     <tr key={row.id} className="group transition-transform duration-200 hover:scale-[1.002]">
-                      
-                      {/* Row Number */}
-                      <td className="align-middle">
-                          <div className="w-6 h-6 mx-auto rounded-full bg-slate-100 dark:bg-slate-700 text-slate-900 dark:text-slate-400 flex items-center justify-center font-bold text-[10px] border border-slate-200 dark:border-slate-600">
-                              {index + 1}
-                          </div>
-                      </td>
-                      
-                      {/* ID Field (Auto-Pop Trigger) */}
+                      <td className="align-middle"><div className="w-6 h-6 mx-auto rounded-full bg-slate-100 dark:bg-slate-700 text-slate-900 dark:text-slate-400 flex items-center justify-center font-bold text-[10px] border border-slate-200 dark:border-slate-600">{index + 1}</div></td>
                       <td className="px-2 py-2">
                         <div className="relative">
-                            <input 
-                              type="text" 
-                              className={`w-full border rounded-lg px-3 py-2 text-xs font-mono transition-all outline-none
-                                ${isLocked 
-                                    ? 'bg-gray-100 dark:bg-slate-800 text-gray-500 cursor-not-allowed' 
-                                    : isKnownId 
-                                        ? 'bg-green-50 dark:bg-green-900/20 border-green-200 text-green-700 dark:text-green-300 focus:ring-2 focus:ring-green-500' 
-                                        : 'bg-slate-50 dark:bg-slate-700/50 border-slate-200 dark:border-slate-600 text-slate-900 dark:text-white placeholder-slate-400 focus:ring-2 focus:ring-blue-500'
-                                }`}
-                              placeholder="Search ID..."
-                              value={row.recordId}
-                              onChange={(e) => handleRowChange(index, 'recordId', e.target.value)}
-                              onBlur={() => handleIdBlur(index)}
-                              readOnly={isLocked}
-                            />
-                            {/* Visual indicator for search/found */}
-                            <div className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none">
-                                {isLocked ? <Lock size={12} className="text-gray-400"/> : isKnownId ? (
-                                    <UserCheck size={14} className="text-green-500" />
-                                ) : (
-                                    <Search size={12} className="text-slate-300" />
-                                )}
-                            </div>
+                            <input type="text" className={`w-full border rounded-lg px-3 py-2 text-xs font-mono transition-all outline-none ${isLocked ? 'bg-gray-100 dark:bg-slate-800 text-gray-500 cursor-not-allowed' : isKnownId ? 'bg-green-50 dark:bg-green-900/20 border-green-200 text-green-700 dark:text-green-300 focus:ring-2 focus:ring-green-500' : 'bg-slate-50 dark:bg-slate-700/50 border-slate-200 dark:border-slate-600 text-slate-900 dark:text-white placeholder-slate-400 focus:ring-2 focus:ring-blue-500'}`} placeholder="Search ID..." value={row.recordId} onChange={(e) => handleRowChange(index, 'recordId', e.target.value)} onBlur={() => handleIdBlur(index)} readOnly={isLocked} />
+                            <div className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none">{isLocked ? <Lock size={12} className="text-gray-400"/> : isKnownId ? <UserCheck size={14} className="text-green-500" /> : <Search size={12} className="text-slate-300" />}</div>
                         </div>
                       </td>
-
-                      {/* Name Field */}
-                      <td className="px-2 py-2">
-                        <input 
-                          type="text" 
-                          className={`w-full bg-slate-50 dark:bg-slate-700/50 border border-slate-200 dark:border-slate-600 rounded-lg px-3 py-2 text-xs font-bold text-slate-900 dark:text-white placeholder-slate-400 focus:bg-white dark:focus:bg-slate-700 focus:ring-2 focus:ring-blue-500 transition-all outline-none disabled:bg-gray-100 dark:disabled:bg-slate-800 disabled:text-gray-500 disabled:cursor-not-allowed
-                            ${isLocked ? 'cursor-not-allowed bg-gray-100 dark:bg-slate-800' : ''}`}
-                          placeholder={t.common.name}
-                          value={row.name}
-                          onChange={(e) => handleRowChange(index, 'name', e.target.value)}
-                          disabled={isKnownId || isLocked}
-                        />
-                      </td>
-
-                      {/* CONDITIONAL DL INPUTS - BETWEEN NAME AND COMPANY */}
-                      {isRac02Selected && (
+                      <td className="px-2 py-2"><input type="text" className={`w-full bg-slate-50 dark:bg-slate-700/50 border border-slate-200 dark:border-slate-600 rounded-lg px-3 py-2 text-xs font-bold text-slate-900 dark:text-white placeholder-slate-400 outline-none disabled:bg-gray-100 dark:disabled:bg-slate-800 disabled:text-gray-500 disabled:cursor-not-allowed ${isLocked ? 'cursor-not-allowed bg-gray-100 dark:bg-slate-800' : ''}`} placeholder={t.common.name} value={row.name} onChange={(e) => handleRowChange(index, 'name', e.target.value)} disabled={isKnownId || isLocked} /></td>
+                      {isDlRequired && (
                         <>
-                          <td className="px-1 py-2">
-                             <input 
-                                type="text" 
-                                className="w-full bg-red-50/50 dark:bg-red-900/10 border border-red-200 dark:border-red-900/30 rounded-lg px-2 py-2 text-xs text-slate-900 dark:text-slate-200 placeholder-red-300 focus:ring-2 focus:ring-red-500 outline-none"
-                                placeholder="Num"
-                                value={row.driverLicenseNumber}
-                                onChange={(e) => handleRowChange(index, 'driverLicenseNumber', e.target.value)}
-                              />
-                          </td>
-                          <td className="px-1 py-2">
-                              <input 
-                                type="text" 
-                                className="w-full bg-red-50/50 dark:bg-red-900/10 border border-red-200 dark:border-red-900/30 rounded-lg px-2 py-2 text-xs text-slate-900 dark:text-slate-200 placeholder-red-300 focus:ring-2 focus:ring-red-500 outline-none"
-                                placeholder="Cls"
-                                value={row.driverLicenseClass}
-                                onChange={(e) => handleRowChange(index, 'driverLicenseClass', e.target.value)}
-                              />
-                          </td>
-                          <td className="px-1 py-2">
-                              <input 
-                                type="date" 
-                                className="w-full bg-red-50/50 dark:bg-red-900/10 border border-red-200 dark:border-red-900/30 rounded-lg px-2 py-2 text-xs text-slate-900 dark:text-slate-300 focus:ring-2 focus:ring-red-500 outline-none"
-                                value={row.driverLicenseExpiry}
-                                onChange={(e) => handleRowChange(index, 'driverLicenseExpiry', e.target.value)}
-                              />
-                          </td>
+                          <td className="px-1 py-2"><input type="text" className="w-full bg-red-50/50 dark:bg-red-900/10 border border-red-200 dark:border-red-900/30 rounded-lg px-2 py-2 text-xs text-slate-900 dark:text-slate-200 placeholder-red-300 focus:ring-2 focus:ring-red-500 outline-none" placeholder="Num" value={row.driverLicenseNumber} onChange={(e) => handleRowChange(index, 'driverLicenseNumber', e.target.value)} /></td>
+                          <td className="px-1 py-2"><input type="text" className="w-full bg-red-50/50 dark:bg-red-900/10 border border-red-200 dark:border-red-900/30 rounded-lg px-2 py-2 text-xs text-slate-900 dark:text-slate-200 placeholder-red-300 focus:ring-2 focus:ring-red-500 outline-none" placeholder="Cls" value={row.driverLicenseClass} onChange={(e) => handleRowChange(index, 'driverLicenseClass', e.target.value)} /></td>
+                          <td className="px-1 py-2"><input type="date" className="w-full bg-red-50/50 dark:bg-red-900/10 border border-red-200 dark:border-red-900/30 rounded-lg px-2 py-2 text-xs text-slate-900 dark:text-slate-300 focus:ring-2 focus:ring-red-500 outline-none" value={row.driverLicenseExpiry} onChange={(e) => handleRowChange(index, 'driverLicenseExpiry', e.target.value)} /></td>
                         </>
                       )}
-
-                      {/* Company Select */}
-                      <td className="px-2 py-2">
-                        <select 
-                          className="w-full bg-slate-50 dark:bg-slate-700/50 border border-slate-200 dark:border-slate-600 rounded-lg px-2 py-2 text-xs text-slate-900 dark:text-slate-300 focus:ring-2 focus:ring-blue-500 outline-none appearance-none cursor-pointer truncate disabled:bg-gray-100 dark:disabled:bg-slate-800 disabled:text-gray-500 disabled:cursor-not-allowed"
-                          value={row.company}
-                          onChange={(e) => handleRowChange(index, 'company', e.target.value)}
-                          disabled={isKnownId || isLocked}
-                        >
-                          {COMPANIES.map(c => <option key={c} value={c}>{c}</option>)}
-                        </select>
-                      </td>
-
-                      {/* Department Select */}
-                      <td className="px-2 py-2">
-                        <select 
-                          className="w-full bg-slate-50 dark:bg-slate-700/50 border border-slate-200 dark:border-slate-600 rounded-lg px-2 py-2 text-xs text-slate-900 dark:text-slate-300 focus:ring-2 focus:ring-blue-500 outline-none appearance-none cursor-pointer truncate disabled:bg-gray-100 dark:disabled:bg-slate-800 disabled:text-gray-500 disabled:cursor-not-allowed"
-                          value={row.department}
-                          onChange={(e) => handleRowChange(index, 'department', e.target.value)}
-                          disabled={isKnownId || isLocked}
-                        >
-                          {DEPARTMENTS.map(d => <option key={d} value={d}>{d}</option>)}
-                        </select>
-                      </td>
-
-                      {/* Role Select */}
-                      <td className="px-2 py-2">
-                        <select 
-                          className="w-full bg-slate-50 dark:bg-slate-700/50 border border-slate-200 dark:border-slate-600 rounded-lg px-2 py-2 text-xs text-slate-900 dark:text-slate-300 focus:ring-2 focus:ring-blue-500 outline-none appearance-none cursor-pointer truncate disabled:bg-gray-100 dark:disabled:bg-slate-800 disabled:text-gray-500 disabled:cursor-not-allowed"
-                          value={row.role}
-                          onChange={(e) => handleRowChange(index, 'role', e.target.value)}
-                          disabled={isKnownId || isLocked}
-                        >
-                          {ROLES.map(r => <option key={r} value={r}>{r}</option>)}
-                        </select>
-                      </td>
-
-                      <td className="px-2 py-2 text-center">
-                        {!isLocked && (
-                            <button 
-                            type="button"
-                            onClick={() => removeRow(index)}
-                            className="p-1.5 text-slate-300 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-all"
-                            title="Remove Row"
-                            >
-                            <Trash2 size={16} />
-                            </button>
-                        )}
-                      </td>
+                      <td className="px-2 py-2"><select className="w-full bg-slate-50 dark:bg-slate-700/50 border border-slate-200 dark:border-slate-600 rounded-lg px-2 py-2 text-xs text-slate-900 dark:text-slate-300 outline-none disabled:bg-gray-100 dark:disabled:bg-slate-800 disabled:text-gray-500" value={row.company} onChange={(e) => handleRowChange(index, 'company', e.target.value)} disabled={isKnownId || isLocked}>{COMPANIES.map(c => <option key={c} value={c}>{c}</option>)}</select></td>
+                      <td className="px-2 py-2"><select className="w-full bg-slate-50 dark:bg-slate-700/50 border border-slate-200 dark:border-slate-600 rounded-lg px-2 py-2 text-xs text-slate-900 dark:text-slate-300 outline-none disabled:bg-gray-100 dark:disabled:bg-slate-800 disabled:text-gray-500" value={row.department} onChange={(e) => handleRowChange(index, 'department', e.target.value)} disabled={isKnownId || isLocked}>{DEPARTMENTS.map(d => <option key={d} value={d}>{d}</option>)}</select></td>
+                      <td className="px-2 py-2"><select className="w-full bg-slate-50 dark:bg-slate-700/50 border border-slate-200 dark:border-slate-600 rounded-lg px-2 py-2 text-xs text-slate-900 dark:text-slate-300 outline-none disabled:bg-gray-100 dark:disabled:bg-slate-800 disabled:text-gray-500" value={row.role} onChange={(e) => handleRowChange(index, 'role', e.target.value)} disabled={isKnownId || isLocked}>{ROLES.map(r => <option key={r} value={r}>{r}</option>)}</select></td>
+                      <td className="px-2 py-2 text-center">{!isLocked && <button type="button" onClick={() => removeRow(index)} className="p-1.5 text-slate-300 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-all"><Trash2 size={16} /></button>}</td>
                     </tr>
                   )})}
                 </tbody>
               </table>
             </div>
-
-            {/* Footer Actions */}
             <div className="p-6 md:p-8 border-t border-slate-100 dark:border-slate-700 flex flex-col md:flex-row justify-between items-center gap-6 bg-slate-50 dark:bg-slate-800/50">
-              {!isSelfService && (
-                  <button 
-                    type="button" 
-                    onClick={addRow}
-                    className="flex items-center gap-2 text-slate-700 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 font-bold px-6 py-3 rounded-xl hover:bg-white dark:hover:bg-slate-700 border border-transparent hover:border-slate-200 dark:hover:border-slate-600 transition-all shadow-sm hover:shadow-md"
-                  >
-                    <Plus size={20} />
-                    <span>{t.booking.addRow}</span>
-                  </button>
-              )}
-
-              <button 
-                type="submit"
-                className={`w-full md:w-auto flex items-center justify-center gap-3 bg-gradient-to-r from-yellow-500 to-amber-500 hover:from-yellow-400 hover:to-amber-400 text-slate-900 text-lg px-10 py-4 rounded-2xl font-black shadow-xl shadow-yellow-500/20 transition-all transform hover:-translate-y-1 active:scale-95 ${isSelfService ? 'mx-auto' : ''}`}
-              >
-                <Save size={24} />
-                <span>{t.booking.submitBooking}</span>
-              </button>
+              {!isSelfService && <button type="button" onClick={addRow} className="flex items-center gap-2 text-slate-700 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 font-bold px-6 py-3 rounded-xl hover:bg-white dark:hover:bg-slate-700 border border-transparent hover:border-slate-200 dark:hover:border-slate-600 transition-all shadow-sm hover:shadow-md"><Plus size={20} /><span>{t.booking.addRow}</span></button>}
+              <button type="submit" className={`w-full md:w-auto flex items-center justify-center gap-3 bg-gradient-to-r from-yellow-500 to-amber-500 hover:from-yellow-400 hover:to-amber-400 text-slate-900 text-lg px-10 py-4 rounded-2xl font-black shadow-xl shadow-yellow-500/20 transition-all transform hover:-translate-y-1 active:scale-95 ${isSelfService ? 'mx-auto' : ''}`}><Save size={24} /><span>{t.booking.submitBooking}</span></button>
             </div>
           </form>
       </div>

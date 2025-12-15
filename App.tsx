@@ -297,6 +297,7 @@ const App: React.FC = () => {
                     addNotification={addNotification}
                     currentEmployeeId={currentEmployeeId}
                     requirements={requirements}
+                    racDefinitions={racDefinitions}
                 />} />
                 
                 <Route path="/trainer-input" element={

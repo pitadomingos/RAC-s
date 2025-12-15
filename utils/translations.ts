@@ -383,6 +383,135 @@ export const translations = {
         }
       }
     },
+    proposal: {
+      title: 'Our Proposed Solution',
+      header: 'Technical Proposal',
+      hardware: 'Hardware',
+      software: 'Software',
+      security: 'Security',
+      faceCap: 'Face Capture: Verify identity during breath test.',
+      integration: 'Direct API Integration: Bypass OEM cloud for real-time data.',
+      projectScope: 'Project Scope: Requires separate contract for hardware installation.',
+      digitalTrans: 'Enterprise SaaS Platform',
+      aboutMe: {
+        title: 'About DigiSols',
+        name: 'Pita Domingos',
+        preferred: 'Lead Architect',
+        role: 'Full Stack Developer',
+        cert: 'Certified Solutions Architect',
+        bio: 'DigiSols specializes in enterprise-grade safety systems and digital transformation for the mining sector. Focused on zero-downtime compliance architectures and scalable SaaS solutions.'
+      },
+      letter: {
+        date: "12/11/2025",
+        to: "The Management Team\nVulcan Mining Operations\nTete, Mozambique",
+        subject: "Proposal for Implementation of Digital Safety Management System",
+        greeting: "Dear Management Team,",
+        body1: "We are pleased to submit this proposal for the development and implementation of the Vulcan Safety Manager (CARS Manager). This comprehensive digital solution is designed to optimize the management of Critical Activity Requirements (RAC) training, ensuring 100% compliance visibility and operational efficiency.",
+        body2: "Our solution addresses the current challenges of manual tracking, fragmented data, and delayed reporting. By centralizing employee data, training records, and digital credential issuance, we aim to significantly reduce administrative overhead and improve site safety standards.",
+        body3: "The proposed system includes advanced features such as AI-driven reporting, real-time dashboards, and secure role-based access control, specifically tailored for the mining environment context.",
+        closing: "We look forward to the opportunity to partner with Vulcan Mining on this critical safety initiative.",
+        signOff: "Sincerely,\nDigiSols Team\nPITA DOMINGOS",
+        address: "Near O Puarrou - Bairro Chingodzi, Tete"
+      },
+      execSummary: {
+        title: 'Executive Summary',
+        text: 'The CARS Manager is a specialized web application meticulously designed to revolutionize the safety training lifecycle for Critical Activity Requirements (RAC 01 - RAC 10). This innovative system directly addresses the inefficiencies inherent in traditional manual processes, such as disparate spreadsheets and fragmented communication channels. By consolidating these into a centralized digital platform, CARS Manager provides a comprehensive solution for managing every aspect of safety training—from initial scheduling and rigorous result tracking to the seamless issuance of certifications (CARs) and continuous compliance monitoring. This integrated approach ensures that all critical safety training data is easily accessible, accurate, and up-to-date, thereby significantly enhancing operational safety and regulatory adherence. The system\'s design prioritizes user experience while delivering robust functionality, making it an indispensable tool for organizations committed to maintaining the highest standards of workplace safety.',
+        quote: '"Safety is not just a priority, it is a core value. Our digital tools must reflect the same standard of excellence as our operational machinery."'
+      },
+      objectives: {
+        title: 'Core Objectives',
+        problemTitle: 'Key Goals',
+        problemText: 'The CARS Manager is driven by a set of clearly defined core objectives, each meticulously designed to transform and elevate the safety training management process. The primary goal is Digitalization, aiming to completely eliminate reliance on paper-based scheduling systems and manual card issuance. This transition to a fully digital workflow not only enhances efficiency but also significantly reduces human error.',
+        solutionTitle: 'Benefits',
+        goals: [
+          'Digitalization: Eliminate paper scheduling and manual cards.',
+          'Compliance: 100% visibility on validity/expiry.',
+          'Role-Based Security: Segregation of duties (Admin/Trainer/Viewer).',
+          'Efficiency: 90% reduction in admin time for card generation.'
+        ]
+      },
+      organogram: {
+        title: 'Project Organogram',
+        pm: 'Project Manager',
+        delivery: 'Service Delivery',
+        tech1: 'Frontend Engineer',
+        tech2: 'Backend Engineer',
+        regime: 'Hybrid Regime'
+      },
+      timeline: {
+        title: '11-Week Implementation Plan',
+        phase1: 'Phase 1: Discovery & Prototype (Weeks 1-2)',
+        phase1desc: 'Comprehensive requirement gathering, review of existing high-fidelity prototype with stakeholders, and finalizing database schema.',
+        phase2: 'Phase 2: Core Development (Weeks 3-6)',
+        phase2desc: 'Implementation of critical functionalities: Role-Based Access Control (RBAC), Scheduling Logic, and Trainer Input modules.',
+        phase3: 'Phase 3: Advanced Features (Weeks 7-8)',
+        phase3desc: 'PDF Card Generation, Automated Email Notifications, and Reporting/KPI Dashboards.',
+        phase4: 'Phase 4: UAT & Deployment (Weeks 9-10)',
+        phase4desc: 'User Acceptance Testing (UAT) by end-users, bug fixing, and production deployment.',
+        phase5: 'Phase 5: Training & Handover (Week 11)',
+        phase5desc: 'Staff training sessions tailored for all user roles and distribution of comprehensive User Manuals.'
+      },
+      techStack: {
+        title: 'Technical Architecture',
+        frontendTitle: 'Frontend Application',
+        frontend: 'Built on React.js (JavaScript library) with Tailwind CSS for utility-first styling. Features Client-Side PDF Generation for instant cards.',
+        backendTitle: 'Backend & Database',
+        backend: 'Serverless Cloud Architecture (Node.js Functions) for event-driven processing and cost efficiency.',
+        databaseTitle: 'Data Persistence',
+        database: 'Real-time NoSQL Database for high performance, low latency, and efficient handling of large datasets.',
+        securityTitle: 'Infrastructure & Security',
+        security: 'Global CDN for low-latency access. Secure Authentication (Email/SSO) and granular Role-Based Access Control (RBAC).'
+      },
+      financials: {
+        title: 'Financial Investment',
+        items: [
+          { name: 'Software Architecture & Development', type: 'One-Time', cost: '$20,000.00' },
+          { name: 'UI/UX Design & Prototyping', type: 'One-Time', cost: '$8,000.00' },
+          { name: 'Cloud Infrastructure Setup & Subscription', type: 'Monthly', cost: '$5,000.00' },
+          { name: 'Training & Documentation', type: 'One-Time', cost: '$10,000.00' },
+          { name: 'Maintenance/Support & Management Fee', type: 'Monthly', cost: '$15,000.00' }
+        ]
+      },
+      roadmap: {
+        title: 'Future Roadmap',
+        auth: 'SSO Integration',
+        authDesc: 'Connect with Azure AD for Single Sign-On.',
+        db: 'Cloud Migration',
+        dbDesc: 'Move from on-prem to Azure/AWS for scalability.',
+        email: 'Automated Emails',
+        emailDesc: 'Send PDF certificates directly to employee email.',
+        hosting: 'Mobile App',
+        hostingDesc: 'Native Android/iOS app for field verification.'
+      },
+      aiFeatures: {
+        title: 'AI & Smart Features',
+        chatbot: 'Safety Advisor Chatbot: Embedded AI assistant for queries on RAC standards.',
+        reporting: 'Automated Reporting: AI analyzes monthly trends to identify high-risk departments.'
+      },
+      futureUpdates: {
+        title: 'Alcohol & IoT Integration Scope',
+        moduleA: 'Module A: Software Integration - API Endpoints for Breathalyzer Data, "Fitness for Duty" Dashboard Widget, Logic to block card issuance.',
+        moduleB: 'Module B: Infrastructure (Independent Project) - Civil Works (Turnstiles), Cabling, Breathalyzer Hardware with Face-ID.'
+      },
+      enhancedCaps: {
+        title: 'Enhanced Operational Capabilities',
+        mobileVerify: { title: 'Mobile Verification (Digital Passport)', desc: 'Field security officers can verify employee compliance instantly by scanning the QR code on the safety card using any smartphone. Returns secure "Digital Passport" in real-time.' },
+        autoBooking: { title: 'Intelligent Auto-Booking', desc: 'System proactively monitors expiration dates. When a certification is < 7 days from expiring, the system automatically schedules a slot. Includes Admin Approval Flow.' },
+        massData: { title: 'Mass Data Management', desc: 'Efficiently handle large workforce datasets with bulk CSV import/export capabilities. Includes Automatic Record Matching.' },
+        auditLogs: { title: 'System Audit Trails', desc: 'Comprehensive logging of all system activities ensures accountability and security. Includes Timestamped Change Logs.' },
+        smartBatching: { title: 'SaaS Scalability', desc: 'Multi-tenant architecture allows managing multiple client companies and sites from a single dashboard.' },
+        matrixCompliance: { title: 'Site Governance', desc: 'Define and enforce mandatory training policies specific to each operational site.' }
+      },
+      conclusion: {
+        title: 'Conclusion',
+        text: 'The Vulcan Safety Manager represents a significant step towards operational safety excellence. By digitizing these critical workflows, Vulcan Mining will not only ensure compliance but also foster a culture of transparency and efficiency. We are committed to delivering a world-class solution that meets your rigorous standards.'
+      },
+      thankYou: {
+        title: 'Contact Us',
+        contact: 'pita.domingos@zd044.onmicrosoft.com',
+        phone: '+258 84 547 9481'
+      }
+    },
     alcohol: {
         banner: {
             title: 'IoT Alcohol Control',

@@ -17,6 +17,8 @@ export interface RacDef {
   code: string;
   name: string;
   validityMonths?: number; // Configurable validity period
+  requiresDriverLicense?: boolean;
+  requiresPractical?: boolean;
 }
 
 export interface Company {
