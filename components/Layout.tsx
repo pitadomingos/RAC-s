@@ -37,7 +37,9 @@ import {
   Building2,
   BarChart,
   GanttChart,
-  FileText
+  FileText,
+  Briefcase,
+  MessageSquare
 } from 'lucide-react';
 import { UserRole, SystemNotification, Site } from '../types';
 import { useLanguage } from '../contexts/LanguageContext';
@@ -52,7 +54,28 @@ interface LayoutProps {
   sites?: Site[];
   currentSiteId?: string;
   setCurrentSiteId?: (id: string) => void;
+  // New props for Simulation
+  simulatedJobTitle?: string;
+  setSimulatedJobTitle?: (title: string) => void;
+  simulatedDept?: string;
+  setSimulatedDept?: (dept: string) => void;
 }
+
+// --- ACCESS CONTROL UTILITY ---
+// This defines the granular logic: "Who can see the Alcohol Dashboard?"
+// Rule: System Admins OR (Managers/Supervisors/HSE in Operations/HSE depts)
+const canViewAlcoholDashboard = (role: UserRole, jobTitle: string, dept: string): boolean => {
+    if (role === UserRole.SYSTEM_ADMIN || role === UserRole.ENTERPRISE_ADMIN) return true;
+    
+    const allowedTitles = ['Manager', 'Supervisor', 'Superintendent', 'Director', 'Head'];
+    const allowedDepts = ['HSE', 'Operations', 'Security', 'Medical'];
+    
+    // Check if Title matches AND Dept matches
+    const hasTitle = allowedTitles.some(t => jobTitle.includes(t));
+    const hasDept = allowedDepts.some(d => dept.includes(d));
+    
+    return hasTitle && hasDept;
+};
 
 const Layout: React.FC<LayoutProps> = memo(({ 
   children, 
@@ -62,7 +85,11 @@ const Layout: React.FC<LayoutProps> = memo(({
   clearNotifications,
   sites = [],
   currentSiteId = 'all',
-  setCurrentSiteId
+  setCurrentSiteId,
+  simulatedJobTitle = 'General User',
+  setSimulatedJobTitle = (_t: string) => {},
+  simulatedDept = 'Operations',
+  setSimulatedDept = (_d: string) => {}
 }) => {
   const [isSidebarOpen, setSidebarOpen] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(false);
@@ -74,6 +101,9 @@ const Layout: React.FC<LayoutProps> = memo(({
   const { theme, setTheme } = useTheme();
 
   const unreadCount = notifications.filter(n => !n.isRead).length;
+
+  // Determine Alcohol Dashboard Access
+  const showAlcoholLink = canViewAlcoholDashboard(userRole, simulatedJobTitle, simulatedDept);
 
   // Safety check for translations
   if (!t || !t.nav) {
@@ -192,6 +222,12 @@ const Layout: React.FC<LayoutProps> = memo(({
       path: '/alcohol-control',
       label: t.nav.alcohol,
       icon: Wine,
+      visible: showAlcoholLink // GRANULAR VISIBILITY
+    },
+    {
+      path: '/feedback-admin',
+      label: t.nav.feedbackAdmin,
+      icon: MessageSquare,
       visible: [UserRole.SYSTEM_ADMIN, UserRole.ENTERPRISE_ADMIN].includes(userRole)
     },
     { 
@@ -304,6 +340,7 @@ const Layout: React.FC<LayoutProps> = memo(({
             const isActive = location.pathname === item.path;
             const isEnterprise = item.path === '/enterprise-dashboard' || item.path === '/site-governance';
             const isProposal = item.path === '/proposal';
+            const isFeedback = item.path === '/feedback-admin';
             
             return (
               <Link
@@ -314,7 +351,7 @@ const Layout: React.FC<LayoutProps> = memo(({
                 className={`
                   flex items-center rounded-lg transition-colors
                   ${isActive 
-                    ? (isEnterprise || isProposal ? 'bg-indigo-600 text-white font-medium shadow-lg shadow-indigo-500/30' : 'bg-yellow-500 text-slate-900 font-medium') 
+                    ? (isEnterprise || isProposal || isFeedback ? 'bg-indigo-600 text-white font-medium shadow-lg shadow-indigo-500/30' : 'bg-yellow-500 text-slate-900 font-medium') 
                     : 'text-gray-300 hover:bg-slate-800 hover:text-white'
                   }
                   ${isCollapsed ? 'justify-center p-3' : 'space-x-3 px-4 py-3'}
@@ -346,7 +383,7 @@ const Layout: React.FC<LayoutProps> = memo(({
                   <select 
                     value={userRole}
                     onChange={(e) => setUserRole(e.target.value as UserRole)}
-                    className="w-full bg-slate-800 dark:bg-slate-900 text-white text-xs p-2 rounded border border-slate-600 dark:border-slate-700 focus:border-yellow-500 outline-none"
+                    className="w-full bg-slate-800 dark:bg-slate-900 text-white text-xs p-2 rounded border border-slate-600 dark:border-slate-700 focus:border-yellow-500 outline-none mb-2"
                   >
                     <option value={UserRole.SYSTEM_ADMIN}>System Admin</option>
                     <option value={UserRole.ENTERPRISE_ADMIN}>Enterprise Admin</option>
@@ -354,7 +391,28 @@ const Layout: React.FC<LayoutProps> = memo(({
                     <option value={UserRole.RAC_TRAINER}>RAC Trainer</option>
                     <option value={UserRole.USER}>User</option>
                   </select>
-                  <div className="text-[10px] text-gray-500 text-center mt-1">
+
+                  {/* GRANULAR JOB TITLE SIMULATOR */}
+                  {!isCollapsed && userRole !== UserRole.SYSTEM_ADMIN && userRole !== UserRole.ENTERPRISE_ADMIN && (
+                      <div className="animate-fade-in">
+                          <div className="text-xs text-gray-400 flex items-center gap-2 mb-1">
+                             <Briefcase size={12} />
+                             <span>Simulate Job Title:</span>
+                          </div>
+                          <select 
+                            value={simulatedJobTitle}
+                            onChange={(e) => setSimulatedJobTitle && setSimulatedJobTitle(e.target.value)}
+                            className="w-full bg-slate-800 dark:bg-slate-900 text-white text-xs p-2 rounded border border-slate-600 dark:border-slate-700 focus:border-blue-500 outline-none"
+                          >
+                            <option value="General User">General User</option>
+                            <option value="Supervisor">Supervisor</option>
+                            <option value="HSE Manager">HSE Manager</option>
+                            <option value="Site Director">Site Director</option>
+                          </select>
+                      </div>
+                  )}
+
+                  <div className="text-[10px] text-gray-500 text-center mt-2">
                     {userRole === UserRole.SYSTEM_ADMIN ? t.common.superuser : t.common.restricted}
                   </div>
                 </>
@@ -365,6 +423,7 @@ const Layout: React.FC<LayoutProps> = memo(({
 
       {/* Main Content */}
       <div className="flex-1 flex flex-col h-full w-full overflow-hidden">
+        {/* ... (Header code remains unchanged) ... */}
         <header className="no-print h-16 bg-white dark:bg-slate-800 shadow-sm flex items-center justify-between px-4 md:px-6 z-10 relative border-b border-gray-200 dark:border-slate-700 transition-colors duration-200">
           <div className="flex items-center gap-4">
              <button onClick={() => setSidebarOpen(true)} className="md:hidden text-slate-600 dark:text-slate-300">
@@ -418,7 +477,7 @@ const Layout: React.FC<LayoutProps> = memo(({
 
             {/* Language Toggle */}
             <button 
-                onClick={toggleLanguage}
+                onClick={() => toggleLanguage()}
                 className="p-2 rounded-full text-slate-500 dark:text-slate-400 hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors border border-transparent hover:border-gray-200 dark:hover:border-slate-600 flex items-center gap-1"
                 title="Switch Language"
             >
@@ -428,7 +487,7 @@ const Layout: React.FC<LayoutProps> = memo(({
 
             {/* Theme Toggle */}
             <button 
-                onClick={cycleTheme}
+                onClick={() => cycleTheme()}
                 className="p-2 rounded-full text-slate-500 dark:text-slate-400 hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors"
                 title={`Theme: ${theme}`}
             >
@@ -437,7 +496,7 @@ const Layout: React.FC<LayoutProps> = memo(({
 
             {/* Fullscreen Toggle */}
             <button 
-                onClick={toggleFullScreen}
+                onClick={() => toggleFullScreen()}
                 className="hidden md:block p-2 rounded-full text-slate-500 dark:text-slate-400 hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors"
                 title={isFullscreen ? t.common.exitFullScreen : t.common.fullScreen}
             >
@@ -461,7 +520,7 @@ const Layout: React.FC<LayoutProps> = memo(({
                    <div className="p-4 border-b border-gray-200 dark:border-slate-700 flex justify-between items-center bg-gray-50 dark:bg-slate-800/50">
                        <h3 className="font-bold text-sm text-slate-800 dark:text-white">{t.common.notifications}</h3>
                        {unreadCount > 0 && (
-                           <button onClick={clearNotifications} className="text-xs text-blue-600 dark:text-blue-400 hover:underline">{t.common.clearAll}</button>
+                           <button onClick={() => clearNotifications && clearNotifications()} className="text-xs text-blue-600 dark:text-blue-400 hover:underline">{t.common.clearAll}</button>
                        )}
                    </div>
                    <div className="max-h-64 overflow-y-auto">
@@ -499,7 +558,7 @@ const Layout: React.FC<LayoutProps> = memo(({
                       {userRole === UserRole.USER ? 'Safe Worker 1' : userRole}
                   </div>
                   <div className="text-[10px] text-gray-500 dark:text-gray-400">
-                      {userRole === UserRole.SYSTEM_ADMIN ? 'System Admin' : 'Active Session'}
+                      {simulatedJobTitle}
                   </div>
                </div>
             </div>

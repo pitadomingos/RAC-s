@@ -3,10 +3,11 @@ import React, { useState, useEffect, useMemo } from 'react';
 import DashboardStats from '../components/DashboardStats';
 import { Booking, UserRole, EmployeeRequirement, TrainingSession, BookingStatus, RacDef } from '../types';
 import { COMPANIES, DEPARTMENTS, OPS_KEYS, RAC_KEYS } from '../constants';
-import { Calendar, Clock, MapPin, ChevronRight, Filter, Timer, User, CheckCircle, XCircle, ChevronLeft, Zap, Layers, Briefcase, Printer } from 'lucide-react';
+import { Calendar, Clock, MapPin, ChevronRight, Filter, Timer, User, CheckCircle, XCircle, ChevronLeft, Zap, Layers, Briefcase, Printer, MessageCircle, Send } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { v4 as uuidv4 } from 'uuid';
 import { useLanguage } from '../contexts/LanguageContext';
+import { sendSms } from '../services/smsService';
 
 interface DashboardProps {
   bookings: Booking[];
@@ -46,6 +47,8 @@ const Dashboard: React.FC<DashboardProps> = ({
   const [empFilterCompany, setEmpFilterCompany] = useState<string>('All');
   const [empFilterRac, setEmpFilterRac] = useState<string>('All');
   const [empFilterDate, setEmpFilterDate] = useState<string>('');
+
+  const [isSendingSms, setIsSendingSms] = useState(false);
 
   useEffect(() => {
     const timer = setInterval(() => setTick(t => t + 1), 60000);
@@ -262,6 +265,7 @@ const Dashboard: React.FC<DashboardProps> = ({
               company: b.employee.company,
               department: b.employee.department,
               role: b.employee.role,
+              phoneNumber: b.employee.phoneNumber, // Include phone
               driverLicenseNumber: b.employee.driverLicenseNumber || '',
               driverLicenseClass: b.employee.driverLicenseClass || '',
               driverLicenseExpiry: b.employee.driverLicenseExpiry || ''
@@ -272,6 +276,41 @@ const Dashboard: React.FC<DashboardProps> = ({
       if (batchQueue.length > 0) {
           navigate('/booking', { state: { prefill: batchQueue[0].employees, targetRac: batchQueue[0].racType, remainingBatches: batchQueue.slice(1) } });
       }
+  };
+
+  const handleSendSmsBlast = async () => {
+      if (expiringBookings.length === 0 && autoBookings.length === 0) return;
+      setIsSendingSms(true);
+
+      let sentCount = 0;
+      
+      // 1. Send for Expiring (< 30 Days)
+      const uniqueExpiring = new Set<string>();
+      for (const b of expiringBookings) {
+          if (b.employee.phoneNumber && !uniqueExpiring.has(b.employee.id)) {
+              const msg = `VULCAN SAFETY: Hi ${b.employee.name}, your training is expiring soon. Please contact HSE.`;
+              await sendSms(b.employee.phoneNumber, msg);
+              uniqueExpiring.add(b.employee.id);
+              sentCount++;
+          }
+      }
+
+      // 2. Send for Critical Auto-Bookings (< 7 Days)
+      const uniqueCritical = new Set<string>();
+      for (const b of autoBookings) {
+          if (b.employee.phoneNumber && !uniqueCritical.has(b.employee.id)) {
+              // Ensure we don't double message if they are in both lists (unlikely but possible logic overlap)
+              if (!uniqueExpiring.has(b.employee.id)) {
+                  const msg = `VULCAN CRITICAL: ${b.employee.name}, you have been auto-booked to prevent lockout. Check schedule immediately.`;
+                  await sendSms(b.employee.phoneNumber, msg);
+                  uniqueCritical.add(b.employee.id);
+                  sentCount++;
+              }
+          }
+      }
+
+      setIsSendingSms(false);
+      alert(`SMS Blast Complete. Sent notifications to ${sentCount} employees with valid phone numbers.`);
   };
 
   const employeeBookingsList = useMemo(() => {
@@ -505,6 +544,38 @@ const Dashboard: React.FC<DashboardProps> = ({
              </div>
           </div>
        )}
+
+      {/* Expiring Notification - Below Charts */}
+      {expiringBookings.length > 0 && (
+        <div className="bg-yellow-50 dark:bg-yellow-900/20 border-l-4 border-yellow-500 p-4 rounded-r-lg flex flex-col md:flex-row justify-between items-start md:items-center animate-fade-in-down">
+          <div className="mb-4 md:mb-0">
+            <h3 className="text-lg font-bold text-yellow-800 dark:text-yellow-400">{t.dashboard.renewal.title}</h3>
+            <p className="text-sm text-yellow-700 dark:text-yellow-300">
+              {String(expiringBookings.length)} {t.dashboard.renewal.message} 
+              {expiringBookings.length <= 5 && (
+                  <span className="font-bold ml-1">
+                      ({expiringBookings.map(e => e.employee.name).join(', ')})
+                  </span>
+              )}
+            </p>
+          </div>
+          <div className="flex gap-2">
+              <button 
+                onClick={handleSendSmsBlast}
+                disabled={isSendingSms}
+                className="bg-slate-800 dark:bg-slate-700 text-white px-4 py-2 rounded-md hover:bg-slate-700 dark:hover:bg-slate-600 transition shadow-sm text-sm font-medium flex items-center gap-2"
+              >
+                {isSendingSms ? 'Sending...' : <><MessageCircle size={16} /> SMS Blast</>}
+              </button>
+              <button 
+                onClick={handleBookRenewals}
+                className="bg-yellow-600 text-white px-4 py-2 rounded-md hover:bg-yellow-700 transition shadow-sm text-sm font-medium"
+              >
+                {t.dashboard.renewal.button}
+              </button>
+          </div>
+        </div>
+      )}
 
       {/* Main Content Grid: Upcoming Sessions (Left) vs Employee Bookings (Right) */}
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 print:grid-cols-1">

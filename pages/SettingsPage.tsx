@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { Settings, Users, Box, Save, Plus, Trash2, Tag, Edit2, Check, X, AlertCircle, Sliders, MapPin, User as UserIcon, Hash, LayoutGrid, Building2, Map, ShieldCheck, Mail } from 'lucide-react';
+import { Settings, Users, Box, Save, Plus, Trash2, Tag, Edit2, Check, X, AlertCircle, Sliders, MapPin, User as UserIcon, Hash, LayoutGrid, Building2, Map, ShieldCheck, Mail, Lock, Calendar, MessageSquare, Clock } from 'lucide-react';
 import { RacDef, Room, Trainer, Site, Company, UserRole, User } from '../types';
 import { v4 as uuidv4 } from 'uuid';
 import { logger } from '../utils/logger';
@@ -21,6 +21,10 @@ interface SettingsPageProps {
     userRole?: UserRole;
     users?: User[];
     onUpdateUsers?: (newUsers: User[]) => void;
+    
+    // Updated props for feedback config
+    feedbackConfig?: { mode: string, expiry: string | null };
+    onUpdateFeedbackConfig?: (mode: string) => void;
 }
 
 const SettingsPage: React.FC<SettingsPageProps> = ({ 
@@ -30,11 +34,19 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
     sites = [], onUpdateSites,
     companies = [], onUpdateCompanies,
     userRole = UserRole.SYSTEM_ADMIN,
-    users = [], onUpdateUsers
+    users = [], onUpdateUsers,
+    feedbackConfig = { mode: 'always', expiry: null },
+    onUpdateFeedbackConfig
 }) => {
   const { t } = useLanguage();
   const [activeTab, setActiveTab] = useState<'General' | 'Trainers' | 'RACs' | 'Sites' | 'Companies'>('General');
   const [isSaving, setIsSaving] = useState(false);
+
+  // Permission Checkers
+  const isSystemAdmin = userRole === UserRole.SYSTEM_ADMIN;
+  const isEnterpriseAdmin = userRole === UserRole.ENTERPRISE_ADMIN;
+  // Enterprise Admins can define the Source of Truth for Modules
+  const canEditGlobalDefinitions = isSystemAdmin || isEnterpriseAdmin;
 
   // Confirmation Modal State
   const [confirmState, setConfirmState] = useState<{
@@ -134,7 +146,6 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
       setTimeout(() => setProvisionSuccess(null), 5000);
   };
 
-  // ... existing CRUD handlers ...
   // --- ROOMS CRUD ---
   const [newRoom, setNewRoom] = useState({ name: '', capacity: 0 });
   const [editingRoomId, setEditingRoomId] = useState<string | null>(null);
@@ -175,31 +186,47 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
 
 
   // --- TRAINERS STATE & CRUD ---
-  const [newTrainer, setNewTrainer] = useState({ name: '', racs: '' });
+  const [newTrainer, setNewTrainer] = useState<{name: string, racs: string[]}>({ name: '', racs: [] });
   const [editingTrainerId, setEditingTrainerId] = useState<string | null>(null);
-  const [editTrainerData, setEditTrainerData] = useState<{name: string, racs: string}>({ name: '', racs: '' });
+  const [editTrainerData, setEditTrainerData] = useState<{name: string, racs: string[]}>({ name: '', racs: [] });
+
+  const toggleNewTrainerRac = (racCode: string) => {
+      setNewTrainer(prev => ({
+          ...prev,
+          racs: prev.racs.includes(racCode) 
+              ? prev.racs.filter(r => r !== racCode)
+              : [...prev.racs, racCode]
+      }));
+  };
+
+  const toggleEditTrainerRac = (racCode: string) => {
+      setEditTrainerData(prev => ({
+          ...prev,
+          racs: prev.racs.includes(racCode)
+              ? prev.racs.filter(r => r !== racCode)
+              : [...prev.racs, racCode]
+      }));
+  };
 
   const handleAddTrainer = () => {
       if (!newTrainer.name) return;
-      const racList = newTrainer.racs.split(',').map(s => s.trim()).filter(s => s);
       const trainer: Trainer = {
           id: uuidv4(),
           name: newTrainer.name,
-          racs: racList.length > 0 ? racList : ['General']
+          racs: newTrainer.racs.length > 0 ? newTrainer.racs : []
       };
       onUpdateTrainers([...trainers, trainer]);
-      setNewTrainer({ name: '', racs: '' });
+      setNewTrainer({ name: '', racs: [] });
   };
 
   const startEditTrainer = (trainer: Trainer) => {
       setEditingTrainerId(trainer.id);
-      setEditTrainerData({ name: trainer.name, racs: trainer.racs.join(', ') });
+      setEditTrainerData({ name: trainer.name, racs: trainer.racs });
   };
 
   const saveTrainer = () => {
       if (editingTrainerId && editTrainerData.name) {
-          const racList = editTrainerData.racs.split(',').map(s => s.trim()).filter(s => s);
-          onUpdateTrainers(trainers.map(t => t.id === editingTrainerId ? { ...t, name: editTrainerData.name, racs: racList } : t));
+          onUpdateTrainers(trainers.map(t => t.id === editingTrainerId ? { ...t, name: editTrainerData.name, racs: editTrainerData.racs } : t));
           setEditingTrainerId(null);
       }
   };
@@ -216,7 +243,7 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
 
 
   // --- RACS STATE & CRUD (Now using Props) ---
-  const [newRac, setNewRac] = useState({ code: '', name: '' });
+  const [newRac, setNewRac] = useState({ code: '', name: '', validityMonths: 24 });
   const [editingRacId, setEditingRacId] = useState<string | null>(null);
   const [editRacData, setEditRacData] = useState<Partial<RacDef>>({});
 
@@ -225,10 +252,11 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
       const rac: RacDef = {
           id: uuidv4(),
           code: newRac.code,
-          name: newRac.name
+          name: newRac.name,
+          validityMonths: newRac.validityMonths || 24
       };
       onUpdateRacs([...racDefinitions, rac]);
-      setNewRac({ code: '', name: '' });
+      setNewRac({ code: '', name: '', validityMonths: 24 });
   };
 
   const startEditRac = (rac: RacDef) => {
@@ -256,7 +284,7 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
   const handleGlobalSave = () => {
       setIsSaving(true);
       // Simulate API delay and logging
-      logger.audit('System Configuration Updated', 'Current Admin User', {
+      logger.audit('System Configuration Updated', userRole, {
           roomsCount: rooms.length,
           trainersCount: trainers.length,
           racsCount: racDefinitions.length
@@ -270,6 +298,7 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
 
   return (
     <div className="space-y-6 pb-24 animate-fade-in-up relative h-full">
+        {/* ... (Previous header code remains unchanged) ... */}
         {/* --- HERO HEADER --- */}
         <div className="bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 rounded-3xl shadow-2xl p-8 text-white relative overflow-hidden border border-slate-700/50">
             <div className="absolute top-0 right-0 opacity-[0.03] pointer-events-none">
@@ -289,7 +318,7 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
                         </h2>
                     </div>
                     <p className="text-slate-400 text-sm max-w-xl font-medium ml-1">
-                        {t.settings.subtitle}
+                        {canEditGlobalDefinitions ? "Global System Configuration & Source of Truth" : "Local Operational Settings"}
                     </p>
                 </div>
                 
@@ -336,23 +365,26 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
                         </div>
                     </button>
 
-                    <button 
-                        onClick={() => setActiveTab('RACs')}
-                        className={`w-full text-left px-4 py-4 rounded-xl text-sm font-bold transition-all flex items-center gap-4 group mt-2
-                            ${activeTab === 'RACs' 
-                                ? 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-lg shadow-emerald-500/30 transform scale-[1.02]' 
-                                : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700/50 hover:text-slate-900 dark:hover:text-white'}
-                        `}
-                    >
-                        <Tag size={20} className={activeTab === 'RACs' ? 'text-white' : 'text-slate-400 group-hover:text-emerald-500 transition-colors'} />
-                        <div className="flex flex-col">
-                            <span>{t.settings.tabs.racs}</span>
-                            <span className={`text-[10px] font-normal ${activeTab === 'RACs' ? 'text-emerald-100' : 'text-slate-400'}`}>Module Definitions</span>
-                        </div>
-                    </button>
+                    {/* RACs - SYSTEM & ENTERPRISE ADMIN (Source of Truth) */}
+                    {canEditGlobalDefinitions && (
+                        <button 
+                            onClick={() => setActiveTab('RACs')}
+                            className={`w-full text-left px-4 py-4 rounded-xl text-sm font-bold transition-all flex items-center gap-4 group mt-2
+                                ${activeTab === 'RACs' 
+                                    ? 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-lg shadow-emerald-500/30 transform scale-[1.02]' 
+                                    : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700/50 hover:text-slate-900 dark:hover:text-white'}
+                            `}
+                        >
+                            <Tag size={20} className={activeTab === 'RACs' ? 'text-white' : 'text-slate-400 group-hover:text-emerald-500 transition-colors'} />
+                            <div className="flex flex-col">
+                                <span>{t.settings.tabs.racs}</span>
+                                <span className={`text-[10px] font-normal ${activeTab === 'RACs' ? 'text-emerald-100' : 'text-slate-400'}`}>Enterprise Standards</span>
+                            </div>
+                        </button>
+                    )}
 
-                    {/* NEW: SITES (RAC Admin+) */}
-                    {[UserRole.SYSTEM_ADMIN, UserRole.ENTERPRISE_ADMIN].includes(userRole!) && (
+                    {/* SITES - System & Enterprise Admin */}
+                    {canEditGlobalDefinitions && (
                         <button 
                             onClick={() => setActiveTab('Sites')}
                             className={`w-full text-left px-4 py-4 rounded-xl text-sm font-bold transition-all flex items-center gap-4 group mt-2
@@ -369,8 +401,8 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
                         </button>
                     )}
 
-                    {/* NEW: COMPANIES (System Admin Only) */}
-                    {userRole === UserRole.SYSTEM_ADMIN && (
+                    {/* COMPANIES - System Admin Only */}
+                    {isSystemAdmin && (
                         <button 
                             onClick={() => setActiveTab('Companies')}
                             className={`w-full text-left px-4 py-4 rounded-xl text-sm font-bold transition-all flex items-center gap-4 group mt-2
@@ -388,6 +420,7 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
                     )}
                 </nav>
 
+                {/* Status Box */}
                 <div className="bg-slate-50 dark:bg-slate-800/50 rounded-2xl p-4 border border-slate-100 dark:border-slate-700 text-center">
                     <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider mb-3">System Status</p>
                     <div className="flex justify-center gap-4">
@@ -413,8 +446,10 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
             <div className="flex-1 bg-white dark:bg-slate-800 rounded-3xl shadow-xl border border-slate-100 dark:border-slate-700 flex flex-col overflow-hidden relative">
                 
                 <div className="flex-1 overflow-y-auto p-6 md:p-10 scrollbar-hide">
+                    
                     {/* General Rooms Tab */}
                     {activeTab === 'General' && (
+                        /* ... (General Rooms Content) ... */
                         <div className="max-w-4xl mx-auto animate-fade-in">
                             <div className="flex justify-between items-end mb-6">
                                 <div>
@@ -425,6 +460,67 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
                                     <AlertCircle size={14} /> Capacity Limits Active
                                 </div>
                             </div>
+
+                            {/* --- SYSTEM FEATURE TOGGLES --- */}
+                            {(isSystemAdmin || isEnterpriseAdmin) && (
+                                <div className="mb-8 p-6 bg-gradient-to-r from-slate-50 to-white dark:from-slate-700/30 dark:to-slate-800 rounded-2xl border border-slate-200 dark:border-slate-600 shadow-sm">
+                                    <h4 className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-4 flex items-center gap-2">
+                                        <Sliders size={14} /> System Feature Toggles
+                                    </h4>
+                                    
+                                    <div className="p-4 bg-white dark:bg-slate-800 rounded-xl border border-slate-100 dark:border-slate-700">
+                                        <div className="flex items-center gap-3 mb-4">
+                                            <div className="p-2 bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 rounded-lg">
+                                                <MessageSquare size={20} />
+                                            </div>
+                                            <div>
+                                                <div className="text-sm font-bold text-slate-800 dark:text-white">User Feedback Deployment</div>
+                                                <div className="text-xs text-slate-500 dark:text-slate-400">Control when users can submit bugs and suggestions via the floating button.</div>
+                                            </div>
+                                        </div>
+
+                                        <div className="flex flex-col md:flex-row gap-4 items-start md:items-center justify-between">
+                                            <div className="flex gap-2 p-1 bg-slate-100 dark:bg-slate-700 rounded-lg">
+                                                {['disabled', '1_week', '1_month', 'always'].map((m) => (
+                                                    <button
+                                                        key={m}
+                                                        onClick={() => onUpdateFeedbackConfig && onUpdateFeedbackConfig(m)}
+                                                        className={`px-3 py-1.5 rounded-md text-xs font-bold transition-all capitalize
+                                                            ${feedbackConfig.mode === m 
+                                                                ? 'bg-white dark:bg-slate-600 text-indigo-600 dark:text-indigo-300 shadow-sm' 
+                                                                : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white'
+                                                            }
+                                                        `}
+                                                    >
+                                                        {m.replace('_', ' ')}
+                                                    </button>
+                                                ))}
+                                            </div>
+
+                                            <div className="text-right">
+                                                {feedbackConfig.mode === 'disabled' ? (
+                                                    <span className="text-xs font-bold text-slate-400 flex items-center gap-1 justify-end">
+                                                        <X size={12}/> Feature Disabled
+                                                    </span>
+                                                ) : feedbackConfig.mode === 'always' ? (
+                                                    <span className="text-xs font-bold text-green-500 flex items-center gap-1 justify-end">
+                                                        <Check size={12}/> Always Active
+                                                    </span>
+                                                ) : feedbackConfig.expiry ? (
+                                                    <div className="flex flex-col items-end">
+                                                        <span className="text-xs font-bold text-indigo-500 flex items-center gap-1">
+                                                            <Clock size={12}/> Active Until
+                                                        </span>
+                                                        <span className="text-[10px] font-mono text-slate-500 dark:text-slate-400">
+                                                            {new Date(feedbackConfig.expiry).toLocaleString()}
+                                                        </span>
+                                                    </div>
+                                                ) : null}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
 
                             {/* Create Room Card */}
                             <div className="bg-slate-50 dark:bg-slate-700/30 p-5 rounded-2xl border border-slate-200 dark:border-slate-600 mb-8 flex flex-col md:flex-row gap-4 items-end shadow-sm">
@@ -521,6 +617,7 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
 
                     {/* Trainers Tab */}
                     {activeTab === 'Trainers' && (
+                        /* ... (Trainers Content) ... */
                         <div className="max-w-4xl mx-auto animate-fade-in">
                              <div className="flex justify-between items-end mb-6">
                                 <div>
@@ -530,87 +627,119 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
                              </div>
 
                              {/* Create Trainer Form */}
-                             <div className="bg-slate-50 dark:bg-slate-700/30 p-5 rounded-2xl border border-slate-200 dark:border-slate-600 mb-8 flex flex-col md:flex-row gap-4 items-end shadow-sm">
-                                <div className="w-full md:w-1/3">
-                                    <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider ml-1 mb-1.5 flex items-center gap-2">
-                                        <UserIcon size={12} /> {t.settings.trainers.new}
-                                    </label>
-                                    <input 
-                                        className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-xl p-3 text-sm font-semibold focus:ring-2 focus:ring-purple-500 outline-none text-slate-800 dark:text-white placeholder-slate-400 transition-all" 
-                                        placeholder="Full Name"
-                                        value={newTrainer.name}
-                                        onChange={(e) => setNewTrainer({...newTrainer, name: e.target.value})}
-                                    />
+                             <div className="bg-slate-50 dark:bg-slate-700/30 p-5 rounded-2xl border border-slate-200 dark:border-slate-600 mb-8 shadow-sm">
+                                <div className="flex flex-col gap-4">
+                                    <div className="w-full">
+                                        <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider ml-1 mb-1.5 flex items-center gap-2">
+                                            <UserIcon size={12} /> {t.settings.trainers.new}
+                                        </label>
+                                        <input 
+                                            className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-xl p-3 text-sm font-semibold focus:ring-2 focus:ring-purple-500 outline-none text-slate-800 dark:text-white placeholder-slate-400 transition-all" 
+                                            placeholder="Full Name"
+                                            value={newTrainer.name}
+                                            onChange={(e) => setNewTrainer({...newTrainer, name: e.target.value})}
+                                        />
+                                    </div>
+                                    
+                                    <div>
+                                        <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider ml-1 mb-1.5 flex items-center gap-2">
+                                            <Tag size={12} /> {t.settings.trainers.qualifiedRacs}
+                                        </label>
+                                        <div className="flex flex-wrap gap-2 p-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-xl">
+                                            {racDefinitions.map(rac => {
+                                                const isSelected = newTrainer.racs.includes(rac.code);
+                                                return (
+                                                    <button
+                                                        key={rac.id}
+                                                        onClick={() => toggleNewTrainerRac(rac.code)}
+                                                        className={`text-xs font-bold px-2 py-1 rounded transition-all ${
+                                                            isSelected 
+                                                            ? 'bg-purple-600 text-white shadow-sm' 
+                                                            : 'bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-600'
+                                                        }`}
+                                                    >
+                                                        {rac.code}
+                                                    </button>
+                                                )
+                                            })}
+                                        </div>
+                                    </div>
+
+                                    <div className="flex justify-end">
+                                        <button 
+                                            onClick={handleAddTrainer}
+                                            className="bg-slate-900 dark:bg-purple-600 text-white px-6 py-2 rounded-xl hover:bg-slate-800 dark:hover:bg-purple-500 transition-all shadow-lg active:scale-95 flex items-center gap-2"
+                                        >
+                                            <Plus size={16} /> Add Trainer
+                                        </button>
+                                    </div>
                                 </div>
-                                <div className="flex-1 w-full">
-                                    <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider ml-1 mb-1.5 flex items-center gap-2">
-                                        <Tag size={12} /> {t.settings.trainers.qualifiedRacs}
-                                    </label>
-                                    <input 
-                                        className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-xl p-3 text-sm font-semibold focus:ring-2 focus:ring-purple-500 outline-none text-slate-800 dark:text-white placeholder-slate-400 transition-all" 
-                                        placeholder="e.g. RAC01, RAC02"
-                                        value={newTrainer.racs}
-                                        onChange={(e) => setNewTrainer({...newTrainer, racs: e.target.value})}
-                                    />
-                                </div>
-                                <button 
-                                    onClick={handleAddTrainer}
-                                    className="w-full md:w-auto bg-slate-900 dark:bg-purple-600 text-white p-3 rounded-xl hover:bg-slate-800 dark:hover:bg-purple-500 transition-all shadow-lg hover:shadow-xl active:scale-95 flex items-center justify-center"
-                                >
-                                    <Plus size={20} />
-                                </button>
                             </div>
 
                             {/* Trainers List */}
                             <div className="grid gap-3">
                                 {trainers.map(trainer => (
-                                    <div key={trainer.id} className="group flex flex-col md:flex-row md:items-center justify-between p-4 bg-white dark:bg-slate-800 rounded-xl border border-slate-100 dark:border-slate-700 hover:border-purple-200 dark:hover:border-purple-500 hover:shadow-md transition-all gap-4">
-                                        <div className="flex items-center gap-4 flex-1">
-                                            <div className="w-10 h-10 rounded-full bg-purple-50 dark:bg-purple-900/30 flex items-center justify-center text-purple-600 dark:text-purple-300 font-bold text-sm border border-purple-100 dark:border-purple-800">
-                                                {trainer.name.charAt(0)}
+                                    <div key={trainer.id} className="group flex flex-col p-4 bg-white dark:bg-slate-800 rounded-xl border border-slate-100 dark:border-slate-700 hover:border-purple-200 dark:hover:border-purple-500 hover:shadow-md transition-all gap-4">
+                                        <div className="flex items-center justify-between">
+                                            <div className="flex items-center gap-4">
+                                                <div className="w-10 h-10 rounded-full bg-purple-50 dark:bg-purple-900/30 flex items-center justify-center text-purple-600 dark:text-purple-300 font-bold text-sm border border-purple-100 dark:border-purple-800">
+                                                    {trainer.name.charAt(0)}
+                                                </div>
+                                                {editingTrainerId === trainer.id ? (
+                                                    <input 
+                                                        className="border-b-2 border-purple-500 bg-transparent px-1 py-0.5 text-sm font-bold text-slate-900 dark:text-white outline-none"
+                                                        value={String(editTrainerData.name)}
+                                                        onChange={(e) => setEditTrainerData({...editTrainerData, name: e.target.value})}
+                                                        autoFocus
+                                                    />
+                                                ) : (
+                                                    <div className="font-bold text-slate-800 dark:text-white text-sm">{trainer.name}</div>
+                                                )}
                                             </div>
-                                            {editingTrainerId === trainer.id ? (
-                                                <input 
-                                                    className="border-b-2 border-purple-500 bg-transparent px-1 py-0.5 text-sm font-bold text-slate-900 dark:text-white outline-none w-full"
-                                                    value={String(editTrainerData.name)}
-                                                    onChange={(e) => setEditTrainerData({...editTrainerData, name: e.target.value})}
-                                                    autoFocus
-                                                />
-                                            ) : (
-                                                <div className="font-bold text-slate-800 dark:text-white text-sm">{trainer.name}</div>
-                                            )}
+
+                                            <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                {editingTrainerId === trainer.id ? (
+                                                    <>
+                                                        <button onClick={saveTrainer} className="p-2 bg-green-100 text-green-600 rounded-lg hover:bg-green-200"><Check size={16}/></button>
+                                                        <button onClick={() => setEditingTrainerId(null)} className="p-2 bg-slate-100 text-slate-500 rounded-lg hover:bg-slate-200"><X size={16}/></button>
+                                                    </>
+                                                ) : (
+                                                    <>
+                                                        <button onClick={() => startEditTrainer(trainer)} className="p-2 hover:bg-purple-50 text-slate-400 hover:text-purple-600 rounded-lg transition-colors"><Edit2 size={16}/></button>
+                                                        <button onClick={() => deleteTrainer(trainer.id)} className="p-2 hover:bg-red-50 text-slate-400 hover:text-red-500 rounded-lg transition-colors"><Trash2 size={16}/></button>
+                                                    </>
+                                                )}
+                                            </div>
                                         </div>
 
-                                        <div className="flex-1">
+                                        <div className="pl-14">
                                             {editingTrainerId === trainer.id ? (
-                                                <input 
-                                                    className="border-b-2 border-purple-500 bg-transparent px-1 py-0.5 text-sm w-full outline-none text-slate-900 dark:text-white"
-                                                    placeholder="RAC01, RAC02"
-                                                    value={String(editTrainerData.racs)}
-                                                    onChange={(e) => setEditTrainerData({...editTrainerData, racs: e.target.value})}
-                                                />
+                                                <div className="flex flex-wrap gap-2 p-2 bg-slate-50 dark:bg-slate-900/50 rounded-lg border border-slate-200 dark:border-slate-600">
+                                                    {racDefinitions.map(rac => {
+                                                        const isSelected = editTrainerData.racs.includes(rac.code);
+                                                        return (
+                                                            <button
+                                                                key={rac.id}
+                                                                onClick={() => toggleEditTrainerRac(rac.code)}
+                                                                className={`text-[10px] font-bold px-2 py-1 rounded transition-all ${
+                                                                    isSelected 
+                                                                    ? 'bg-purple-600 text-white' 
+                                                                    : 'bg-white dark:bg-slate-700 text-slate-400 border border-slate-200 dark:border-slate-600'
+                                                                }`}
+                                                            >
+                                                                {rac.code}
+                                                            </button>
+                                                        )
+                                                    })}
+                                                </div>
                                             ) : (
                                                 <div className="flex flex-wrap gap-2">
-                                                    {trainer.racs.map(r => (
+                                                    {trainer.racs.length > 0 ? trainer.racs.map(r => (
                                                         <span key={r} className="text-[10px] font-bold bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 px-2 py-1 rounded border border-slate-200 dark:border-slate-600">
                                                             {r}
                                                         </span>
-                                                    ))}
+                                                    )) : <span className="text-[10px] text-slate-400 italic">No qualifications assigned</span>}
                                                 </div>
-                                            )}
-                                        </div>
-
-                                        <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity self-end md:self-center">
-                                            {editingTrainerId === trainer.id ? (
-                                                <>
-                                                    <button onClick={saveTrainer} className="p-2 bg-green-100 text-green-600 rounded-lg hover:bg-green-200"><Check size={16}/></button>
-                                                    <button onClick={() => setEditingTrainerId(null)} className="p-2 bg-slate-100 text-slate-500 rounded-lg hover:bg-slate-200"><X size={16}/></button>
-                                                </>
-                                            ) : (
-                                                <>
-                                                    <button onClick={() => startEditTrainer(trainer)} className="p-2 hover:bg-purple-50 text-slate-400 hover:text-purple-600 rounded-lg transition-colors"><Edit2 size={16}/></button>
-                                                    <button onClick={() => deleteTrainer(trainer.id)} className="p-2 hover:bg-red-50 text-slate-400 hover:text-red-500 rounded-lg transition-colors"><Trash2 size={16}/></button>
-                                                </>
                                             )}
                                         </div>
                                     </div>
@@ -619,21 +748,24 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
                         </div>
                     )}
 
-                    {/* RACs Tab */}
-                    {activeTab === 'RACs' && (
+                    {/* RACs Tab - SYSTEM & ENTERPRISE ADMIN (Source of Truth) */}
+                    {activeTab === 'RACs' && canEditGlobalDefinitions && (
                         <div className="max-w-4xl mx-auto animate-fade-in">
                             <div className="flex justify-between items-end mb-6">
                                 <div>
                                     <h3 className="text-xl font-bold text-slate-900 dark:text-white">{t.settings.racs.title}</h3>
                                     <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">Define training modules. Changes here affect the database matrix.</p>
                                 </div>
+                                <div className="bg-yellow-50 dark:bg-yellow-900/20 text-yellow-700 dark:text-yellow-300 px-3 py-1 rounded-lg text-xs font-bold border border-yellow-200 dark:border-yellow-800 flex items-center gap-2">
+                                    <Lock size={12} /> Source of Truth (Enterprise Controlled)
+                                </div>
                             </div>
                             
                             {/* Create RAC Form */}
                             <div className="bg-slate-50 dark:bg-slate-700/30 p-5 rounded-2xl border border-slate-200 dark:border-slate-600 mb-8 flex flex-col md:flex-row gap-4 items-end shadow-sm">
-                                <div className="w-32">
+                                <div className="w-24">
                                     <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider ml-1 mb-1.5 flex items-center gap-2">
-                                        <Hash size={12} /> {t.settings.racs.code}
+                                        <Hash size={12} /> Code
                                     </label>
                                     <input 
                                         className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-xl p-3 text-sm font-mono font-semibold focus:ring-2 focus:ring-emerald-500 outline-none text-slate-800 dark:text-white placeholder-slate-400 transition-all uppercase" 
@@ -644,13 +776,25 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
                                 </div>
                                 <div className="flex-1 w-full">
                                     <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider ml-1 mb-1.5 flex items-center gap-2">
-                                        <LayoutGrid size={12} /> {t.settings.racs.description}
+                                        <LayoutGrid size={12} /> Description
                                     </label>
                                     <input 
                                         className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-xl p-3 text-sm font-semibold focus:ring-2 focus:ring-emerald-500 outline-none text-slate-800 dark:text-white placeholder-slate-400 transition-all" 
                                         placeholder="Hazard Description" 
                                         value={newRac.name}
                                         onChange={(e) => setNewRac({...newRac, name: e.target.value})}
+                                    />
+                                </div>
+                                <div className="w-24">
+                                    <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider ml-1 mb-1.5 flex items-center gap-2">
+                                        <Calendar size={12} /> Validity
+                                    </label>
+                                    <input 
+                                        type="number"
+                                        className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-xl p-3 text-sm font-semibold focus:ring-2 focus:ring-emerald-500 outline-none text-slate-800 dark:text-white placeholder-slate-400 transition-all text-center" 
+                                        placeholder="24"
+                                        value={newRac.validityMonths}
+                                        onChange={(e) => setNewRac({...newRac, validityMonths: parseInt(e.target.value) || 0})}
                                     />
                                 </div>
                                 <button 
@@ -665,7 +809,7 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
                             <div className="grid gap-3">
                                 {racDefinitions.map(rac => (
                                     <div key={rac.id} className="group flex items-center justify-between p-4 bg-white dark:bg-slate-800 rounded-xl border border-slate-100 dark:border-slate-700 hover:border-emerald-200 dark:hover:border-emerald-500 hover:shadow-md transition-all gap-4">
-                                        <div className="w-32 flex-shrink-0">
+                                        <div className="w-24 flex-shrink-0">
                                              {editingRacId === rac.id ? (
                                                 <input 
                                                     className="border-b-2 border-emerald-500 bg-transparent px-1 py-0.5 text-sm font-mono font-bold text-slate-900 dark:text-white outline-none w-full uppercase"
@@ -692,6 +836,22 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
                                             )}
                                         </div>
 
+                                        <div className="w-20 text-center">
+                                            {editingRacId === rac.id ? (
+                                                <input 
+                                                    type="number"
+                                                    className="border-b-2 border-emerald-500 bg-transparent px-1 py-0.5 text-sm font-bold text-slate-900 dark:text-white outline-none w-full text-center"
+                                                    value={editRacData.validityMonths}
+                                                    onChange={(e) => setEditRacData({...editRacData, validityMonths: parseInt(e.target.value) || 0})}
+                                                />
+                                            ) : (
+                                                <div className="flex items-center justify-center gap-1 text-xs text-slate-500 font-bold bg-slate-100 dark:bg-slate-700 px-2 py-1 rounded">
+                                                    <Calendar size={10} />
+                                                    {rac.validityMonths || 24}m
+                                                </div>
+                                            )}
+                                        </div>
+
                                         <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                                             {editingRacId === rac.id ? (
                                                 <>
@@ -712,7 +872,8 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
                     )}
 
                     {/* SITES Tab */}
-                    {activeTab === 'Sites' && (
+                    {activeTab === 'Sites' && canEditGlobalDefinitions && (
+                        /* ... (Sites Content) ... */
                         <div className="max-w-4xl mx-auto animate-fade-in">
                             <div className="flex justify-between items-end mb-6">
                                 <div>
@@ -774,7 +935,8 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
                     )}
 
                     {/* COMPANIES Tab (System Admin Only) */}
-                    {activeTab === 'Companies' && (
+                    {activeTab === 'Companies' && isSystemAdmin && (
+                        /* ... (Companies Content) ... */
                         <div className="max-w-4xl mx-auto animate-fade-in">
                             <div className="flex justify-between items-end mb-6">
                                 <div>

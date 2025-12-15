@@ -1,257 +1,435 @@
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useLanguage } from '../contexts/LanguageContext';
 import { 
-  Wine, Zap, Lock, Activity, 
-  Bluetooth, AlertOctagon,
-  AlertTriangle, HardHat, ServerOff, ScanFace,
-  Wifi, Database, UserX, Clock, RotateCcw,
-  ShieldCheck, ArrowRight
+  Wine, Activity, Wifi, Lock, UserX, AlertTriangle, 
+  Server, Mail, Smartphone,
+  CheckCircle2, XCircle, TrendingUp,
+  Map as MapIcon, FileText, ArrowRight, FileCode
 } from 'lucide-react';
+import { 
+  AreaChart, Area, Tooltip, ResponsiveContainer
+} from 'recharts';
+import { BreathalyzerTest, SystemNotification } from '../types';
+import { v4 as uuidv4 } from 'uuid';
+import { useNavigate } from 'react-router-dom';
 
-const AlcoholIntegration: React.FC = () => {
+interface AlcoholIntegrationProps {
+    addNotification?: (notif: SystemNotification) => void;
+}
+
+const AlcoholIntegration: React.FC<AlcoholIntegrationProps> = ({ addNotification }) => {
   const { t } = useLanguage();
+  const navigate = useNavigate();
+  const [viewLocalSpecs, setViewLocalSpecs] = useState(false);
+  
+  // --- STATE FOR SIMULATION ---
+  const [tests, setTests] = useState<BreathalyzerTest[]>([]);
+  const [devices, setDevices] = useState([
+      { id: 'GT-01', name: 'Main Gate Turnstile A', status: 'Online', location: 'Gate 1' },
+      { id: 'GT-02', name: 'Main Gate Turnstile B', status: 'Online', location: 'Gate 1' },
+      { id: 'GT-03', name: 'Contractor Gate C', status: 'Online', location: 'Gate 2' },
+      { id: 'WS-01', name: 'Workshop Entrance', status: 'Online', location: 'Workshop' },
+  ]);
+  const [activeAlert, setActiveAlert] = useState<BreathalyzerTest | null>(null);
+  const [isReporting, setIsReporting] = useState(false);
 
-  if (!t || !t.alcohol) {
-    return <div className="p-6 text-slate-500">Loading module...</div>;
-  }
+  // --- MOCK DATA GENERATOR ---
+  const generateMockTest = () => {
+      const names = ['Paulo Manjate', 'Jose Cossa', 'Maria Silva', 'Antonio Sitoe', 'Sarah Connor', 'John Doe', 'Luis Tete'];
+      const randomName = names[Math.floor(Math.random() * names.length)];
+      const randomDevice = devices[Math.floor(Math.random() * devices.length)];
+      
+      // 5% chance of positive test
+      const isPositive = Math.random() < 0.05;
+      const bac = isPositive ? (Math.random() * 0.15).toFixed(3) : '0.000';
+      const now = new Date();
+
+      return {
+          id: uuidv4(),
+          deviceId: randomDevice.id,
+          employeeId: `VUL-${Math.floor(Math.random() * 9000) + 1000}`,
+          employeeName: randomName,
+          date: now.toISOString().split('T')[0],
+          timestamp: now.toLocaleTimeString(),
+          result: parseFloat(bac),
+          status: isPositive ? 'FAIL' : 'PASS',
+      } as BreathalyzerTest;
+  };
+
+  // --- SIMULATION LOOP ---
+  useEffect(() => {
+      if (viewLocalSpecs) return; // Pause simulation if viewing specs
+
+      const interval = setInterval(() => {
+          const newTest = generateMockTest();
+          setTests(prev => [newTest, ...prev].slice(0, 50)); // Keep last 50
+
+          // Trigger Alert if Positive
+          if (newTest.status === 'FAIL') {
+              setActiveAlert(newTest);
+              // Trigger automated reporting logic
+              handleAutomaticReporting(newTest);
+          }
+      }, 3500); // New test every 3.5 seconds
+
+      return () => clearInterval(interval);
+  }, [viewLocalSpecs]);
+
+  const handleAutomaticReporting = (test: BreathalyzerTest) => {
+      setIsReporting(true);
+      
+      // Simulate API Delay for sending emails/SMS
+      setTimeout(() => {
+          setIsReporting(false);
+          if (addNotification) {
+              addNotification({
+                  id: uuidv4(),
+                  type: 'alert',
+                  title: t.alcohol.dashboard.alert.title,
+                  message: `Access denied for ${test.employeeName}. Supervisor notified via SMS/Email.`,
+                  timestamp: new Date(),
+                  isRead: false
+              });
+          }
+      }, 3000);
+  };
+
+  // --- METRICS ---
+  const stats = {
+      totalToday: 1240 + tests.length,
+      positives: tests.filter(t => t.status === 'FAIL').length,
+      avgTime: '1.2s',
+      onlineDevices: 4
+  };
+
+  const chartData = [
+      { time: '06:00', tests: 45, fails: 0 },
+      { time: '07:00', tests: 120, fails: 1 },
+      { time: '08:00', tests: 350, fails: 2 },
+      { time: '09:00', tests: 180, fails: 0 },
+      { time: '10:00', tests: 60, fails: 0 },
+      { time: '11:00', tests: 40, fails: 0 },
+      { time: '12:00', tests: 90, fails: 1 },
+  ];
 
   return (
-    <div className="flex flex-col h-full space-y-8 pb-24 animate-fade-in-up">
+    <div className="space-y-6 pb-24 animate-fade-in-up h-full">
       
-      {/* --- HERO SECTION --- */}
-      <div className="relative rounded-[3rem] overflow-hidden shadow-2xl bg-slate-900 text-white min-h-[450px] flex items-center justify-center p-8 md:p-16 border border-slate-800">
-          {/* Animated Background Elements */}
-          <div className="absolute inset-0 bg-gradient-to-br from-indigo-950 via-slate-900 to-purple-950 opacity-90"></div>
-          <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-5"></div>
-          <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none">
-              <div className="absolute -top-[20%] -left-[10%] w-[50%] h-[50%] bg-blue-600/20 rounded-full blur-[120px] animate-pulse-slow"></div>
-              <div className="absolute top-[40%] -right-[10%] w-[40%] h-[40%] bg-pink-600/10 rounded-full blur-[120px] animate-pulse-slow delay-700"></div>
+      {/* --- COMMAND CENTER HEADER --- */}
+      <div className="bg-slate-900 text-white p-8 rounded-3xl shadow-2xl relative overflow-hidden border border-slate-700">
+          <div className="absolute top-0 right-0 opacity-10 pointer-events-none">
+              <Activity size={300} />
           </div>
           
-          <div className="relative z-10 flex flex-col items-center text-center max-w-4xl mx-auto">
-              <div className="mb-8 p-6 bg-white/5 backdrop-blur-xl rounded-[2rem] border border-white/10 shadow-2xl inline-block transform hover:scale-105 transition-transform duration-500">
-                  <Wine size={64} className="text-rose-400 drop-shadow-[0_0_15px_rgba(251,113,133,0.5)]" />
-              </div>
-              
-              <h1 className="text-5xl md:text-7xl font-black mb-8 tracking-tighter leading-tight text-transparent bg-clip-text bg-gradient-to-b from-white to-slate-400">
-                  {t.alcohol.banner.title}
-              </h1>
-              
-              <p className="text-xl md:text-2xl text-slate-300 leading-relaxed mb-12 max-w-3xl font-light">
-                  {t.alcohol.banner.desc}
-              </p>
-
-              <div className="flex items-center gap-4 px-6 py-3 bg-yellow-500/10 border border-yellow-500/30 rounded-full text-yellow-400 font-bold text-sm tracking-widest uppercase backdrop-blur-md shadow-[0_0_20px_rgba(234,179,8,0.2)]">
-                  <div className="relative flex h-3 w-3">
-                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-yellow-400 opacity-75"></span>
-                    <span className="relative inline-flex rounded-full h-3 w-3 bg-yellow-500"></span>
+          {/* Animated Pulse for Live Status (Only if Dashboard Mode) */}
+          <div className="absolute top-6 right-6 flex flex-col items-end gap-3">
+              {!viewLocalSpecs && (
+                  <div className="flex items-center gap-2 bg-red-500/20 px-4 py-2 rounded-full border border-red-500/50 animate-pulse">
+                      <div className="w-3 h-3 bg-red-500 rounded-full"></div>
+                      <span className="text-xs font-bold uppercase tracking-widest text-red-200">{t.alcohol.dashboard.live}</span>
                   </div>
-                  {t.alcohol.banner.status}
+              )}
+              
+              <div className="flex gap-2">
+                  <button 
+                    onClick={() => setViewLocalSpecs(!viewLocalSpecs)}
+                    className="flex items-center gap-2 text-xs font-bold text-slate-400 hover:text-white bg-white/5 hover:bg-white/10 px-3 py-1.5 rounded-lg transition-colors border border-white/10"
+                  >
+                      {viewLocalSpecs ? <Activity size={14} /> : <FileCode size={14} />}
+                      {viewLocalSpecs ? t.alcohol.dashboard.backToLive : "Technical Specs"}
+                  </button>
+                  <button 
+                    onClick={() => navigate('/proposal')}
+                    className="flex items-center gap-2 text-xs font-bold text-blue-300 hover:text-white bg-blue-500/10 hover:bg-blue-500/20 px-3 py-1.5 rounded-lg transition-colors border border-blue-500/30"
+                  >
+                      <FileText size={14} /> {t.alcohol.dashboard.viewRoadmap}
+                  </button>
               </div>
+          </div>
+
+          <div className="relative z-10">
+              <div className="flex items-center gap-4 mb-4">
+                  <div className="p-3 bg-indigo-500/20 rounded-2xl border border-indigo-500/30 backdrop-blur-md">
+                      <Wine size={32} className="text-indigo-400" />
+                  </div>
+                  <div>
+                      <h1 className="text-3xl font-black tracking-tight">{t.alcohol.dashboard.title}</h1>
+                      <p className="text-slate-400">{t.alcohol.dashboard.subtitle}</p>
+                  </div>
+              </div>
+
+              {!viewLocalSpecs && (
+                  /* KPI ROW */
+                  <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mt-8">
+                      <div className="bg-slate-800/50 p-4 rounded-2xl border border-slate-700">
+                          <p className="text-xs text-slate-400 font-bold uppercase tracking-wider mb-1">{t.alcohol.dashboard.kpi.total}</p>
+                          <div className="text-3xl font-black text-white">{stats.totalToday}</div>
+                      </div>
+                      <div className="bg-red-900/20 p-4 rounded-2xl border border-red-900/50">
+                          <p className="text-xs text-red-400 font-bold uppercase tracking-wider mb-1">{t.alcohol.dashboard.kpi.violations}</p>
+                          <div className="text-3xl font-black text-red-500">{stats.positives}</div>
+                      </div>
+                      <div className="bg-slate-800/50 p-4 rounded-2xl border border-slate-700">
+                          <p className="text-xs text-slate-400 font-bold uppercase tracking-wider mb-1">{t.alcohol.dashboard.kpi.throughput}</p>
+                          <div className="text-3xl font-black text-blue-400">{stats.avgTime} <span className="text-sm text-slate-500 font-normal">/ {t.alcohol.dashboard.person}</span></div>
+                      </div>
+                      <div className="bg-emerald-900/20 p-4 rounded-2xl border border-emerald-900/50">
+                          <p className="text-xs text-emerald-400 font-bold uppercase tracking-wider mb-1">{t.alcohol.dashboard.kpi.health}</p>
+                          <div className="text-3xl font-black text-emerald-500">100% <span className="text-sm text-emerald-400/60 font-normal">{t.alcohol.dashboard.online}</span></div>
+                      </div>
+                  </div>
+              )}
           </div>
       </div>
 
-      {/* --- GRID LAYOUT --- */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          
-          {/* LEFT COL: VISION & FEATURES */}
-          <div className="lg:col-span-2 space-y-8">
-              
-              {/* Vision Cards */}
-              <div className="bg-white dark:bg-slate-800 rounded-[2.5rem] p-10 shadow-xl border border-slate-100 dark:border-slate-700">
-                  <div className="flex items-center gap-4 mb-10">
-                      <div className="p-3 bg-blue-500/10 rounded-2xl text-blue-600 dark:text-blue-400">
-                        <Activity size={32} />
+      {viewLocalSpecs ? (
+          /* --- TECHNICAL SPECS VIEW --- */
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 animate-fade-in-up">
+              <div className="bg-white dark:bg-slate-800 p-8 rounded-2xl shadow-lg border border-slate-200 dark:border-slate-700">
+                  <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-6 flex items-center gap-2">
+                      <Lock className="text-blue-500" size={24}/> {t.alcohol.protocol.title}
+                  </h3>
+                  <div className="space-y-6">
+                      <div className="p-4 bg-slate-50 dark:bg-slate-900/50 rounded-xl border-l-4 border-blue-500">
+                          <h4 className="font-bold text-slate-800 dark:text-white">{t.alcohol.protocol.positiveTitle}</h4>
+                          <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">{t.alcohol.protocol.positiveDesc}</p>
                       </div>
-                      <h3 className="text-3xl font-black text-slate-800 dark:text-white tracking-tight">
-                          {t.alcohol.features.title}
-                      </h3>
+                      <div className="p-4 bg-slate-50 dark:bg-slate-900/50 rounded-xl border-l-4 border-green-500">
+                          <h4 className="font-bold text-slate-800 dark:text-white">{t.alcohol.protocol.resetTitle}</h4>
+                          <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">{t.alcohol.protocol.resetDesc}</p>
+                      </div>
                   </div>
-                  
+              </div>
+
+              <div className="bg-white dark:bg-slate-800 p-8 rounded-2xl shadow-lg border border-slate-200 dark:border-slate-700">
+                  <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-6 flex items-center gap-2">
+                      <MapIcon className="text-purple-500" size={24}/> {t.alcohol.features.title}
+                  </h3>
+                  <ul className="space-y-4">
+                      <li className="flex gap-4 items-start">
+                          <div className="p-2 bg-purple-100 dark:bg-purple-900/30 rounded-lg text-purple-600"><Wifi size={18}/></div>
+                          <div>
+                              <h4 className="font-bold text-sm text-slate-800 dark:text-white">{t.alcohol.features.iotTitle}</h4>
+                              <p className="text-xs text-slate-500 dark:text-slate-400">{t.alcohol.features.iotDesc}</p>
+                          </div>
+                      </li>
+                      <li className="flex gap-4 items-start">
+                          <div className="p-2 bg-red-100 dark:bg-red-900/30 rounded-lg text-red-600"><Lock size={18}/></div>
+                          <div>
+                              <h4 className="font-bold text-sm text-slate-800 dark:text-white">{t.alcohol.features.accessTitle}</h4>
+                              <p className="text-xs text-slate-500 dark:text-slate-400">{t.alcohol.features.accessDesc}</p>
+                          </div>
+                      </li>
+                      <li className="flex gap-4 items-start">
+                          <div className="p-2 bg-green-100 dark:bg-green-900/30 rounded-lg text-green-600"><FileText size={18}/></div>
+                          <div>
+                              <h4 className="font-bold text-sm text-slate-800 dark:text-white">{t.alcohol.features.complianceTitle}</h4>
+                              <p className="text-xs text-slate-500 dark:text-slate-400">{t.alcohol.features.complianceDesc}</p>
+                          </div>
+                      </li>
+                  </ul>
+              </div>
+
+              <div className="md:col-span-2 bg-gradient-to-r from-slate-100 to-slate-200 dark:from-slate-800 dark:to-slate-900 p-8 rounded-2xl border border-slate-300 dark:border-slate-700">
+                  <h3 className="text-lg font-bold text-slate-800 dark:text-white mb-4">{t.alcohol.proposal.header}</h3>
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                      <FeatureCard 
-                          icon={Wifi} 
-                          color="blue" 
-                          title={t.alcohol.features.iotTitle} 
-                          desc={t.alcohol.features.iotDesc} 
-                      />
-                      <FeatureCard 
-                          icon={UserX} 
-                          color="red" 
-                          title={t.alcohol.features.accessTitle} 
-                          desc={t.alcohol.features.accessDesc} 
-                      />
-                      <FeatureCard 
-                          icon={Database} 
-                          color="green" 
-                          title={t.alcohol.features.complianceTitle} 
-                          desc={t.alcohol.features.complianceDesc} 
-                      />
-                  </div>
-              </div>
-
-              {/* Protocol Flow */}
-              <div className="bg-gradient-to-br from-slate-900 to-slate-800 rounded-[2.5rem] p-10 shadow-2xl border border-slate-700 text-white relative overflow-hidden group">
-                  <div className="absolute -top-10 -right-10 p-10 opacity-[0.03] group-hover:opacity-10 transition-opacity duration-700 transform group-hover:rotate-12">
-                      <RotateCcw size={300} />
-                  </div>
-                  
-                  <div className="flex items-center gap-4 mb-10 relative z-10">
-                      <div className="p-3 bg-emerald-500/20 rounded-2xl text-emerald-400 border border-emerald-500/30">
-                        <ShieldCheck size={32} />
+                      <div className="p-4 bg-white dark:bg-slate-800 rounded-xl shadow-sm">
+                          <h5 className="font-bold text-xs text-slate-500 uppercase tracking-wider mb-2">{t.alcohol.proposal.hardware}</h5>
+                          <p className="text-sm font-medium text-slate-800 dark:text-white">{t.alcohol.challenges.gateSetup}</p>
                       </div>
-                      <h3 className="text-3xl font-black tracking-tight">
-                          {t.alcohol.protocol.title}
-                      </h3>
-                  </div>
-
-                  <div className="flex flex-col md:flex-row gap-8 relative z-10">
-                      {/* Step 1: Positive */}
-                      <div className="flex-1 bg-red-500/10 border border-red-500/30 p-8 rounded-[2rem] backdrop-blur-sm hover:bg-red-500/20 transition-colors">
-                          <div className="flex items-center gap-4 mb-4">
-                              <div className="w-14 h-14 bg-red-500/20 rounded-2xl flex items-center justify-center text-red-400 shadow-[0_0_20px_rgba(239,68,68,0.2)]">
-                                  <AlertTriangle size={28} />
-                              </div>
-                              <h4 className="font-bold text-xl text-red-200 tracking-tight">{t.alcohol.protocol.positiveTitle}</h4>
-                          </div>
-                          <p className="text-slate-400 text-base leading-relaxed font-medium">
-                              {t.alcohol.protocol.positiveDesc}
-                          </p>
+                      <div className="p-4 bg-white dark:bg-slate-800 rounded-xl shadow-sm">
+                          <h5 className="font-bold text-xs text-slate-500 uppercase tracking-wider mb-2">{t.alcohol.proposal.software}</h5>
+                          <p className="text-sm font-medium text-slate-800 dark:text-white">{t.alcohol.proposal.integration}</p>
                       </div>
-
-                      {/* Arrow */}
-                      <div className="hidden md:flex items-center justify-center text-slate-600">
-                          <ArrowRight size={40} strokeWidth={3} />
-                      </div>
-
-                      {/* Step 2: Reset */}
-                      <div className="flex-1 bg-emerald-500/10 border border-emerald-500/30 p-8 rounded-[2rem] backdrop-blur-sm hover:bg-emerald-500/20 transition-colors">
-                          <div className="flex items-center gap-4 mb-4">
-                              <div className="w-14 h-14 bg-emerald-500/20 rounded-2xl flex items-center justify-center text-emerald-400 shadow-[0_0_20px_rgba(16,185,129,0.2)]">
-                                  <Clock size={28} />
-                              </div>
-                              <h4 className="font-bold text-xl text-emerald-200 tracking-tight">{t.alcohol.protocol.resetTitle}</h4>
-                          </div>
-                          <p className="text-slate-400 text-base leading-relaxed font-medium">
-                              {t.alcohol.protocol.resetDesc}
-                          </p>
+                      <div className="p-4 bg-white dark:bg-slate-800 rounded-xl shadow-sm">
+                          <h5 className="font-bold text-xs text-slate-500 uppercase tracking-wider mb-2">{t.alcohol.proposal.security}</h5>
+                          <p className="text-sm font-medium text-slate-800 dark:text-white">{t.alcohol.proposal.faceCap}</p>
                       </div>
                   </div>
               </div>
           </div>
-
-          {/* RIGHT COL: CHALLENGES & SOLUTIONS */}
-          <div className="space-y-8">
+      ) : (
+          /* --- LIVE DASHBOARD VIEW --- */
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 animate-fade-in">
               
-              {/* Challenges */}
-              <div className="bg-amber-50 dark:bg-amber-950/30 rounded-[2.5rem] p-8 border border-amber-100 dark:border-amber-900/30 shadow-lg">
-                  <div className="flex items-center gap-3 mb-6">
-                      <div className="p-2 bg-amber-100 dark:bg-amber-900/50 rounded-xl text-amber-600 dark:text-amber-500">
-                        <AlertOctagon size={24} />
-                      </div>
-                      <h3 className="text-xl font-bold text-amber-900 dark:text-amber-400 tracking-tight">
-                          {t.alcohol.challenges.title}
+              {/* --- LEFT COL: LIVE FEED --- */}
+              <div className="lg:col-span-2 bg-white dark:bg-slate-800 rounded-2xl shadow-lg border border-slate-100 dark:border-slate-700 flex flex-col h-[500px]">
+                  <div className="p-6 border-b border-slate-100 dark:border-slate-700 flex justify-between items-center">
+                      <h3 className="font-bold text-slate-800 dark:text-white flex items-center gap-2">
+                          <Wifi size={20} className="text-blue-500" /> {t.alcohol.dashboard.log}
                       </h3>
+                      <div className="flex gap-2">
+                          <span className="text-[10px] bg-slate-100 dark:bg-slate-700 text-slate-500 px-2 py-1 rounded">{t.alcohol.dashboard.mqtt}</span>
+                      </div>
                   </div>
-                  
-                  <div className="space-y-4">
-                      <div className="bg-white dark:bg-slate-800 p-5 rounded-2xl border border-amber-200 dark:border-amber-900/50 shadow-sm hover:shadow-md transition-shadow">
-                          <h5 className="font-bold text-slate-800 dark:text-white text-sm mb-2 flex items-center gap-2">
-                              <ServerOff size={16} className="text-amber-500"/> OEM Cloud Issue
-                          </h5>
-                          <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed font-medium">
-                              {t.alcohol.challenges.oemIssue}
-                          </p>
-                      </div>
-                      <div className="bg-white dark:bg-slate-800 p-5 rounded-2xl border border-amber-200 dark:border-amber-900/50 shadow-sm hover:shadow-md transition-shadow">
-                          <h5 className="font-bold text-slate-800 dark:text-white text-sm mb-2 flex items-center gap-2">
-                              <Lock size={16} className="text-amber-500"/> Gate Workflow
-                          </h5>
-                          <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed font-medium">
-                              {t.alcohol.challenges.gateSetup}
-                          </p>
-                      </div>
+                  <div className="flex-1 overflow-auto p-0">
+                      <table className="w-full text-sm text-left">
+                          <thead className="bg-slate-50 dark:bg-slate-900/50 text-xs text-slate-500 uppercase font-bold sticky top-0 z-10">
+                              <tr>
+                                  <th className="px-6 py-3">{t.common.date}</th>
+                                  <th className="px-6 py-3">{t.common.time}</th>
+                                  <th className="px-6 py-3">{t.alcohol.dashboard.table.device}</th>
+                                  <th className="px-6 py-3">{t.results.table.employee}</th>
+                                  <th className="px-6 py-3">{t.alcohol.dashboard.table.result}</th>
+                                  <th className="px-6 py-3">{t.common.status}</th>
+                              </tr>
+                          </thead>
+                          <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
+                              {tests.map((test) => (
+                                  <tr key={test.id} className={`hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors ${test.status === 'FAIL' ? 'bg-red-50 dark:bg-red-900/10' : ''}`}>
+                                      <td className="px-6 py-3 font-mono text-slate-600 dark:text-slate-400">{test.date}</td>
+                                      <td className="px-6 py-3 font-mono text-slate-600 dark:text-slate-400">{test.timestamp}</td>
+                                      <td className="px-6 py-3 text-slate-800 dark:text-white font-medium">{test.deviceId}</td>
+                                      <td className="px-6 py-3">
+                                          <div className="font-bold text-slate-800 dark:text-white">{test.employeeName}</div>
+                                          <div className="text-[10px] text-slate-500">{test.employeeId}</div>
+                                      </td>
+                                      <td className="px-6 py-3">
+                                          <span className={`font-mono font-bold ${test.result > 0 ? 'text-red-600' : 'text-slate-500'}`}>
+                                              {test.result.toFixed(3)}%
+                                          </span>
+                                      </td>
+                                      <td className="px-6 py-3">
+                                          {test.status === 'PASS' ? (
+                                              <span className="inline-flex items-center gap-1 px-2 py-1 rounded bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 text-xs font-bold">
+                                                  <CheckCircle2 size={12} /> {t.alcohol.dashboard.table.ok}
+                                              </span>
+                                          ) : (
+                                              <span className="inline-flex items-center gap-1 px-2 py-1 rounded bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 text-xs font-bold animate-pulse">
+                                                  <XCircle size={12} /> {t.alcohol.dashboard.table.blocked}
+                                              </span>
+                                          )}
+                                      </td>
+                                  </tr>
+                              ))}
+                          </tbody>
+                      </table>
                   </div>
               </div>
 
-              {/* Solution Stack */}
-              <div className="bg-white dark:bg-slate-800 rounded-[2.5rem] p-8 shadow-xl border border-slate-100 dark:border-slate-700 flex flex-col h-full">
-                  <div className="flex items-center gap-3 mb-8">
-                      <div className="p-2 bg-purple-100 dark:bg-purple-900/30 rounded-xl text-purple-600 dark:text-purple-400">
-                        <Zap size={24} />
-                      </div>
-                      <h3 className="text-xl font-bold text-slate-800 dark:text-white tracking-tight">
-                          {t.alcohol.proposal.title}
+              {/* --- RIGHT COL: ANALYTICS --- */}
+              <div className="space-y-6">
+                  {/* Chart */}
+                  <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-lg border border-slate-100 dark:border-slate-700 p-6">
+                      <h3 className="font-bold text-slate-800 dark:text-white mb-4 flex items-center gap-2">
+                          <TrendingUp size={20} className="text-indigo-500" /> {t.alcohol.dashboard.throughputChart}
                       </h3>
+                      <div className="h-48 w-full">
+                          <ResponsiveContainer width="100%" height="100%">
+                              <AreaChart data={chartData}>
+                                  <defs>
+                                      <linearGradient id="colorTests" x1="0" y1="0" x2="0" y2="1">
+                                          <stop offset="5%" stopColor="#6366f1" stopOpacity={0.3}/>
+                                          <stop offset="95%" stopColor="#6366f1" stopOpacity={0}/>
+                                      </linearGradient>
+                                  </defs>
+                                  <Tooltip 
+                                      contentStyle={{ backgroundColor: '#1e293b', border: 'none', borderRadius: '8px', color: '#fff' }}
+                                  />
+                                  <Area type="monotone" dataKey="tests" stroke="#6366f1" fillOpacity={1} fill="url(#colorTests)" />
+                              </AreaChart>
+                          </ResponsiveContainer>
+                      </div>
                   </div>
 
-                  <div className="space-y-6 flex-1">
-                      <SolutionItem 
-                          icon={ScanFace} 
-                          title="Face Capture" 
-                          desc={t.alcohol.proposal.faceCap} 
-                          color="indigo" 
-                      />
-                      <SolutionItem 
-                          icon={Bluetooth} 
-                          title="Direct API" 
-                          desc={t.alcohol.proposal.integration} 
-                          color="blue" 
-                      />
-                      <SolutionItem 
-                          icon={HardHat} 
-                          title="Infrastructure" 
-                          desc={t.alcohol.proposal.projectScope} 
-                          color="slate" 
-                      />
+                  {/* Device Status */}
+                  <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-lg border border-slate-100 dark:border-slate-700 p-6">
+                      <h3 className="font-bold text-slate-800 dark:text-white mb-4 flex items-center gap-2">
+                          <Server size={20} className="text-emerald-500" /> {t.alcohol.dashboard.deviceStatus}
+                      </h3>
+                      <div className="space-y-3">
+                          {devices.map(d => (
+                              <div key={d.id} className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-700/50 rounded-xl border border-slate-100 dark:border-slate-600">
+                                  <div className="flex items-center gap-3">
+                                      <div className="w-2 h-2 rounded-full bg-green-500 shadow-[0_0_8px_rgba(16,185,129,0.6)]"></div>
+                                      <div>
+                                          <div className="font-bold text-xs text-slate-800 dark:text-white">{d.name}</div>
+                                          <div className="text-[10px] text-slate-500">{d.location} • {d.id}</div>
+                                      </div>
+                                  </div>
+                                  <span className="text-[10px] font-bold text-green-600 dark:text-green-400 bg-green-100 dark:bg-green-900/30 px-2 py-1 rounded">{t.alcohol.dashboard.online}</span>
+                              </div>
+                          ))}
+                      </div>
                   </div>
               </div>
-
           </div>
-      </div>
+      )}
+
+      {/* --- ALERT MODAL (SIMULATED) --- */}
+      {activeAlert && (
+          <div className="fixed inset-0 z-50 bg-red-900/40 backdrop-blur-md flex items-center justify-center p-4 animate-fade-in">
+              <div className="bg-white dark:bg-slate-800 rounded-3xl shadow-2xl w-full max-w-lg overflow-hidden border-2 border-red-500 relative">
+                  
+                  {/* Header */}
+                  <div className="bg-red-600 p-6 flex justify-between items-center text-white">
+                      <div className="flex items-center gap-3">
+                          <AlertTriangle size={32} className="animate-bounce" />
+                          <div>
+                              <h2 className="text-xl font-black uppercase tracking-wider">{t.alcohol.dashboard.alert.title}</h2>
+                              <p className="text-xs text-red-100">{t.alcohol.dashboard.alert.desc}</p>
+                          </div>
+                      </div>
+                      <button onClick={() => setActiveAlert(null)} className="p-2 hover:bg-white/20 rounded-full transition-colors"><XCircle size={24} /></button>
+                  </div>
+
+                  <div className="p-8">
+                      <div className="flex gap-6 mb-8">
+                          <div className="w-24 h-24 bg-slate-200 dark:bg-slate-700 rounded-xl flex items-center justify-center text-slate-400 shadow-inner border border-slate-300 dark:border-slate-600">
+                              <UserX size={48} />
+                          </div>
+                          <div>
+                              <h3 className="text-2xl font-bold text-slate-900 dark:text-white mb-1">{activeAlert.employeeName}</h3>
+                              <p className="text-sm font-mono text-slate-500 mb-4">{activeAlert.employeeId}</p>
+                              <div className="inline-flex items-center gap-2 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300 px-3 py-1.5 rounded-lg border border-red-200 dark:border-red-800">
+                                  <span className="text-xs font-bold uppercase">{t.alcohol.dashboard.alert.measured}</span>
+                                  <span className="text-lg font-black">{activeAlert.result.toFixed(3)}%</span>
+                              </div>
+                          </div>
+                      </div>
+
+                      {/* Automated Actions Log */}
+                      <div className="space-y-4">
+                          <h4 className="text-xs font-bold text-slate-400 uppercase tracking-widest border-b border-slate-200 dark:border-slate-700 pb-2">{t.alcohol.dashboard.actions}</h4>
+                          
+                          <div className="flex items-center gap-3 text-sm text-slate-700 dark:text-slate-300">
+                              <div className="p-1.5 bg-green-100 dark:bg-green-900/30 text-green-600 rounded-full"><Lock size={14}/></div>
+                              <span dangerouslySetInnerHTML={{ __html: t.alcohol.dashboard.actionLog.locked.replace('Locked', '<strong>Locked</strong>').replace('Bloqueada', '<strong>Bloqueada</strong>') }}></span>
+                          </div>
+
+                          <div className={`flex items-center gap-3 text-sm transition-all duration-500 ${isReporting ? 'opacity-50' : 'opacity-100 text-slate-700 dark:text-slate-300'}`}>
+                              <div className="p-1.5 bg-blue-100 dark:bg-blue-900/30 text-blue-600 rounded-full">
+                                  {isReporting ? <div className="w-3.5 h-3.5 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div> : <Mail size={14}/>}
+                              </div>
+                              <span>
+                                  {isReporting ? t.alcohol.dashboard.actionLog.generating : t.alcohol.dashboard.actionLog.logged}
+                              </span>
+                          </div>
+
+                          <div className={`flex items-center gap-3 text-sm transition-all duration-500 delay-150 ${isReporting ? 'opacity-30' : 'opacity-100 text-slate-700 dark:text-slate-300'}`}>
+                              <div className="p-1.5 bg-purple-100 dark:bg-purple-900/30 text-purple-600 rounded-full"><Smartphone size={14}/></div>
+                              <span>
+                                  {isReporting ? t.alcohol.dashboard.actionLog.contacting : <strong>{t.alcohol.dashboard.actionLog.sent}</strong>}
+                              </span>
+                          </div>
+                      </div>
+                  </div>
+
+                  <div className="p-4 bg-slate-50 dark:bg-slate-900/50 border-t border-slate-200 dark:border-slate-700 flex justify-end">
+                      <button 
+                        onClick={() => setActiveAlert(null)}
+                        className="px-6 py-2 bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-white rounded-lg font-bold hover:bg-slate-300 dark:hover:bg-slate-600 transition-colors"
+                      >
+                          {t.alcohol.dashboard.close}
+                      </button>
+                  </div>
+              </div>
+          </div>
+      )}
+
     </div>
   );
-};
-
-// --- Sub-Components ---
-
-const FeatureCard = ({ icon: Icon, color, title, desc }: any) => {
-    const colorStyles = {
-        blue: 'bg-blue-50 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400 border-blue-100 dark:border-blue-800',
-        red: 'bg-rose-50 text-rose-600 dark:bg-rose-900/30 dark:text-rose-400 border-rose-100 dark:border-rose-800',
-        green: 'bg-emerald-50 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400 border-emerald-100 dark:border-emerald-800'
-    };
-
-    return (
-        <div className="p-6 rounded-[2rem] bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 hover:border-blue-300 dark:hover:border-blue-500 hover:-translate-y-2 transition-all duration-300 group shadow-sm hover:shadow-lg">
-            <div className={`w-14 h-14 rounded-2xl flex items-center justify-center mb-5 border ${colorStyles[color as keyof typeof colorStyles]} shadow-sm group-hover:scale-110 transition-transform`}>
-                <Icon size={28} />
-            </div>
-            <h4 className="font-bold text-lg text-slate-900 dark:text-white mb-2 tracking-tight">{title}</h4>
-            <p className="text-sm text-slate-500 dark:text-slate-400 leading-relaxed font-medium">{desc}</p>
-        </div>
-    );
-};
-
-const SolutionItem = ({ icon: Icon, title, desc, color }: any) => {
-    const colorStyles = {
-        indigo: 'bg-indigo-100 text-indigo-600 dark:bg-indigo-900/30 dark:text-indigo-400',
-        blue: 'bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400',
-        slate: 'bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-300'
-    };
-
-    return (
-        <div className="flex items-start gap-5 p-4 rounded-2xl hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors">
-            <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 shadow-sm ${colorStyles[color as keyof typeof colorStyles]}`}>
-                <Icon size={24} />
-            </div>
-            <div>
-                <h5 className="font-bold text-slate-800 dark:text-white text-base mb-1">{title}</h5>
-                <p className="text-xs text-slate-500 dark:text-slate-400 font-medium leading-relaxed">{desc}</p>
-            </div>
-        </div>
-    );
 };
 
 export default AlcoholIntegration;

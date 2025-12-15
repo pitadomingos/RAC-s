@@ -2,7 +2,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { Booking, BookingStatus, EmployeeRequirement, Employee, TrainingSession, RacDef } from '../types';
 import { COMPANIES, OPS_KEYS, PERMISSION_KEYS, DEPARTMENTS } from '../constants';
-import { Search, CheckCircle, XCircle, Edit, ChevronLeft, ChevronRight, Download, X, Trash2, QrCode, Printer, Phone, AlertTriangle, Loader2, Archive, Filter } from 'lucide-react';
+import { Search, CheckCircle, XCircle, Edit, ChevronLeft, ChevronRight, Download, X, Trash2, QrCode, Printer, Phone, AlertTriangle, Loader2, Archive, Filter, Smartphone } from 'lucide-react';
 import { useLanguage } from '../contexts/LanguageContext';
 import JSZip from 'jszip';
 import ConfirmModal from '../components/ConfirmModal';
@@ -199,6 +199,7 @@ const DatabasePage: React.FC<DatabasePageProps> = ({ bookings, requirements, upd
               company: editingEmployee.company,
               department: editingEmployee.department,
               role: editingEmployee.role,
+              phoneNumber: editingEmployee.phoneNumber, // Include Phone
               driverLicenseNumber: editingEmployee.driverLicenseNumber,
               driverLicenseClass: editingEmployee.driverLicenseClass,
               driverLicenseExpiry: editingEmployee.driverLicenseExpiry
@@ -304,7 +305,7 @@ const DatabasePage: React.FC<DatabasePageProps> = ({ bookings, requirements, upd
 
   const handleExportDatabase = () => {
       const baseHeaders = [
-          "Full Name", "Record ID", "Company", "Department", "Role", "Active", "Access Status",
+          "Full Name", "Record ID", "Company", "Department", "Role", "Active", "Access Status", "Phone Number",
           "ASO Expiry", "DL Number", "DL Class", "DL Expiry"
       ];
       
@@ -325,6 +326,7 @@ const DatabasePage: React.FC<DatabasePageProps> = ({ bookings, requirements, upd
               emp.role,
               emp.isActive ? 'TRUE' : 'FALSE',
               status,
+              emp.phoneNumber || '',
               req.asoExpiryDate || '',
               emp.driverLicenseNumber || '',
               emp.driverLicenseClass || '',
@@ -669,6 +671,21 @@ const DatabasePage: React.FC<DatabasePageProps> = ({ bookings, requirements, upd
                                 {COMPANIES.map(c => <option key={c} value={c}>{c}</option>)}
                             </select>
                         </div>
+                        
+                        {/* New Phone Number Field */}
+                        <div>
+                            <p className="text-xs font-bold text-gray-500 uppercase mb-1">Contact Info</p>
+                            <div className="flex gap-2 items-center border rounded p-2">
+                                <Smartphone size={16} className="text-slate-400" />
+                                <input 
+                                    className="flex-1 outline-none text-sm text-black" 
+                                    placeholder="Cell Number (e.g. +258...)" 
+                                    value={editingEmployee.phoneNumber || ''} 
+                                    onChange={e => setEditingEmployee({...editingEmployee, phoneNumber: e.target.value})} 
+                                />
+                            </div>
+                        </div>
+
                         <div className="border-t pt-2 mt-2">
                             <p className="text-xs font-bold text-gray-500 uppercase mb-2">Driver License Details</p>
                             <div className="grid grid-cols-3 gap-2">

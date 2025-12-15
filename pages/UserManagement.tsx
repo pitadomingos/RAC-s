@@ -1,7 +1,7 @@
 
 import React, { useState, useRef } from 'react';
 import { UserRole, User } from '../types';
-import { Shield, MoreVertical, Plus, X, Trash2, Edit, Users, Lock, Key, ChevronLeft, ChevronRight, Mail, Briefcase, CheckCircle2, XCircle, Search, Upload, Download } from 'lucide-react';
+import { Shield, MoreVertical, Plus, X, Trash2, Edit, Users, Lock, Key, ChevronLeft, ChevronRight, Mail, Briefcase, CheckCircle2, XCircle, Search, Upload, Download, Smartphone } from 'lucide-react';
 import { useLanguage } from '../contexts/LanguageContext';
 import { COMPANIES } from '../constants';
 import ConfirmModal from '../components/ConfirmModal';
@@ -17,7 +17,7 @@ const UserManagement: React.FC<UserManagementProps> = ({ users, setUsers }) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [filterQuery, setFilterQuery] = useState('');
   const [newUser, setNewUser] = useState<Partial<User>>({
-      name: '', email: '', role: UserRole.USER, status: 'Active', company: COMPANIES[0], jobTitle: ''
+      name: '', email: '', phoneNumber: '', role: UserRole.USER, status: 'Active', company: COMPANIES[0], jobTitle: ''
   });
   const [openActionId, setOpenActionId] = useState<number | null>(null);
 
@@ -49,6 +49,7 @@ const UserManagement: React.FC<UserManagementProps> = ({ users, setUsers }) => {
           id: Date.now(),
           name: newUser.name,
           email: newUser.email,
+          phoneNumber: newUser.phoneNumber || '',
           role: newUser.role || UserRole.USER,
           status: newUser.status || 'Active',
           company: newUser.company || 'Unknown',
@@ -56,7 +57,7 @@ const UserManagement: React.FC<UserManagementProps> = ({ users, setUsers }) => {
       };
       setUsers([...users, userToAdd]);
       setIsModalOpen(false);
-      setNewUser({ name: '', email: '', role: UserRole.USER, status: 'Active', company: COMPANIES[0], jobTitle: '' });
+      setNewUser({ name: '', email: '', phoneNumber: '', role: UserRole.USER, status: 'Active', company: COMPANIES[0], jobTitle: '' });
   };
 
   const handleDeleteUser = (id: number) => {
@@ -419,6 +420,19 @@ const UserManagement: React.FC<UserManagementProps> = ({ users, setUsers }) => {
                              onChange={e => setNewUser({...newUser, email: e.target.value})}
                              placeholder="email@example.com"
                            />
+                       </div>
+
+                       <div>
+                           <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2 block ml-1">Phone Number</label>
+                           <div className="relative">
+                               <input 
+                                    className="w-full bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-xl p-3 pl-10 text-sm font-semibold focus:ring-2 focus:ring-green-500 outline-none text-slate-900 dark:text-white transition-all"
+                                    value={String(newUser.phoneNumber || '')}
+                                    onChange={e => setNewUser({...newUser, phoneNumber: e.target.value})}
+                                    placeholder="+258 84..."
+                                />
+                                <Smartphone size={16} className="absolute left-3 top-3.5 text-slate-400" />
+                           </div>
                        </div>
 
                        <div className="grid grid-cols-2 gap-5">

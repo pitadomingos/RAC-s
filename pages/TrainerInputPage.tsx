@@ -1,9 +1,9 @@
 
 import React, { useState, useMemo } from 'react';
-import { Booking, BookingStatus, RAC, TrainingSession, UserRole } from '../types';
+import { Booking, BookingStatus, RAC, TrainingSession, UserRole, RacDef } from '../types';
 import { Save, AlertCircle, CheckCircle, Lock, Users, ClipboardList, ShieldAlert, UserCheck, GraduationCap, CheckCircle2, Search, CheckSquare, X } from 'lucide-react';
 import { useLanguage } from '../contexts/LanguageContext';
-import { addYears, format } from 'date-fns';
+import { addMonths, format } from 'date-fns';
 
 interface TrainerInputPageProps {
   bookings: Booking[];
@@ -11,6 +11,7 @@ interface TrainerInputPageProps {
   sessions: TrainingSession[];
   userRole?: UserRole;
   currentUserName?: string;
+  racDefinitions: RacDef[];
 }
 
 const TrainerInputPage: React.FC<TrainerInputPageProps> = ({ 
@@ -18,7 +19,8 @@ const TrainerInputPage: React.FC<TrainerInputPageProps> = ({
   updateBookings, 
   sessions,
   userRole = UserRole.SYSTEM_ADMIN,
-  currentUserName = ''
+  currentUserName = '',
+  racDefinitions
 }) => {
   const { t } = useLanguage();
   const [selectedSessionId, setSelectedSessionId] = useState('');
@@ -125,11 +127,28 @@ const TrainerInputPage: React.FC<TrainerInputPageProps> = ({
     const selectedSession = sessions.find(s => s.id === selectedSessionId);
     const sessionDateStr = selectedSession?.date || new Date().toISOString().split('T')[0];
     
-    // Calculate Expiry Date (Session Date + 2 Years)
+    // Find the RAC definition to get dynamic validity
+    let racValidity = 24; // Default
+    if (selectedSession) {
+        // Try to match exact RAC Type name (e.g. "RAC 01 - ...")
+        const foundRac = racDefinitions.find(r => r.name === selectedSession.racType);
+        if (foundRac && foundRac.validityMonths) {
+            racValidity = foundRac.validityMonths;
+        } else {
+            // Try to match code (e.g. "RAC01") by splitting session racType
+            const code = selectedSession.racType.split(' - ')[0].replace(/\s/g, '');
+            const foundByCode = racDefinitions.find(r => r.code === code);
+            if (foundByCode && foundByCode.validityMonths) {
+                racValidity = foundByCode.validityMonths;
+            }
+        }
+    }
+
+    // Calculate Expiry Date (Session Date + Validity Months)
     let expiryDateStr = '';
     try {
         const d = new Date(sessionDateStr);
-        expiryDateStr = format(addYears(d, 2), 'yyyy-MM-dd');
+        expiryDateStr = format(addMonths(d, racValidity), 'yyyy-MM-dd');
     } catch(e) {
         expiryDateStr = sessionDateStr; // Fallback
     }

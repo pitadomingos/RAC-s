@@ -16,6 +16,7 @@ export interface RacDef {
   id: string;
   code: string;
   name: string;
+  validityMonths?: number; // Configurable validity period
 }
 
 export interface Company {
@@ -60,10 +61,12 @@ export interface User {
     id: number;
     name: string;
     email: string;
+    phoneNumber?: string; // New field for SMS
     role: UserRole;
     status: 'Active' | 'Inactive';
     company?: string;
     jobTitle?: string;
+    department?: string; // Added for Access Control
 }
 
 export interface Employee {
@@ -75,6 +78,7 @@ export interface Employee {
   role: string;
   isActive?: boolean;
   siteId?: string; // Multi-site support
+  phoneNumber?: string; // New field for SMS alerts
   // Driver License Details (Specific for RAC 02)
   driverLicenseNumber?: string;
   driverLicenseClass?: string;
@@ -110,7 +114,7 @@ export interface Booking {
   expiryDate?: string; // Valid for 2 years
   attendance?: boolean;
   theoryScore?: number;
-  practicalScore?: number; // Only for RAC 02 typically
+  practicalScore?: number;
   driverLicenseVerified?: boolean; // New field for Trainer validation
   isAutoBooked?: boolean;
 }
@@ -133,4 +137,41 @@ export interface SystemNotification {
   message: string;
   timestamp: Date;
   isRead: boolean;
+}
+
+// --- NEW TYPES FOR ALCOHOL IOT ---
+export interface BreathalyzerTest {
+  id: string;
+  deviceId: string;
+  employeeId: string;
+  employeeName: string;
+  date: string; // Added Date field
+  timestamp: string;
+  result: number; // BAC level
+  status: 'PASS' | 'FAIL';
+  imageUrl?: string; // Face capture placeholder
+}
+
+export interface IotDevice {
+  id: string;
+  name: string;
+  location: string;
+  status: 'Online' | 'Offline' | 'Maintenance';
+  lastPing: string;
+}
+
+// --- NEW TYPES FOR FEEDBACK SYSTEM ---
+export type FeedbackType = 'Bug' | 'Improvement' | 'General';
+export type FeedbackStatus = 'New' | 'In Progress' | 'Resolved' | 'Dismissed';
+
+export interface Feedback {
+  id: string;
+  userId?: string; // Optional if anonymous
+  userName: string;
+  type: FeedbackType;
+  message: string;
+  status: FeedbackStatus;
+  isActionable: boolean;
+  timestamp: string;
+  adminNotes?: string;
 }

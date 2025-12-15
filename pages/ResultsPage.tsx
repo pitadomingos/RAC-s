@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { Booking, BookingStatus, UserRole, TrainingSession, Employee, EmployeeRequirement } from '../types';
+import { Booking, BookingStatus, UserRole, TrainingSession, Employee, EmployeeRequirement, RacDef } from '../types';
 import { 
   Upload, FileSpreadsheet, Search, Filter, Download, 
   CheckCircle2, XCircle, Award, Users, TrendingUp,
@@ -9,7 +9,7 @@ import {
   ChevronLeft, ChevronRight, Briefcase, QrCode, Printer, Phone, AlertTriangle, X
 } from 'lucide-react';
 import { v4 as uuidv4 } from 'uuid';
-import { format, addYears, isValid } from 'date-fns';
+import { format, addMonths, isValid } from 'date-fns';
 import { useLanguage } from '../contexts/LanguageContext';
 import { RAC_KEYS, OPS_KEYS } from '../constants';
 
@@ -21,9 +21,10 @@ interface ResultsPageProps {
   userRole: UserRole;
   sessions: TrainingSession[];
   currentEmployeeId?: string;
+  racDefinitions: RacDef[];
 }
 
-const ResultsPage: React.FC<ResultsPageProps> = ({ bookings, updateBookingStatus, importBookings, userRole, sessions, currentEmployeeId }) => {
+const ResultsPage: React.FC<ResultsPageProps> = ({ bookings, updateBookingStatus, importBookings, userRole, sessions, currentEmployeeId, racDefinitions }) => {
   // ... (No changes to state or filtering logic)
   const [searchParams] = useSearchParams();
   const initialQuery = searchParams.get('q') || '';
@@ -314,7 +315,12 @@ const ResultsPage: React.FC<ResultsPageProps> = ({ bookings, updateBookingStatus
                 
                 let expiryDate = '';
                 if (status === BookingStatus.PASSED && parsedDate) {
-                    expiryDate = format(addYears(parsedDate, 2), 'yyyy-MM-dd');
+                    // DYNAMIC VALIDITY CALCULATION
+                    // Look up RAC Definition by Code
+                    const racDef = racDefinitions.find(r => r.code === cleanRac);
+                    const validityMonths = racDef ? (racDef.validityMonths || 24) : 24;
+                    
+                    expiryDate = format(addMonths(parsedDate, validityMonths), 'yyyy-MM-dd');
                 }
 
                 const trainer = idxTrainer > -1 ? cols[idxTrainer] : 'Unknown';

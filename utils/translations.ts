@@ -35,7 +35,8 @@ export const translations = {
       logs: 'System Logs',
       proposal: 'Project Proposal',
       presentation: 'Presentation Mode',
-      alcohol: 'Alcohol Control'
+      alcohol: 'Alcohol Control',
+      feedbackAdmin: 'Feedback Manager'
     },
     common: {
       vulcan: 'CARS Manager',
@@ -83,6 +84,32 @@ export const translations = {
       of: 'of',
       siteContext: 'Site Context',
       enterpriseView: 'Enterprise View (All Sites)'
+    },
+    feedback: {
+        button: 'Send Feedback',
+        title: 'Share Your Experience',
+        subtitle: 'Help us improve the CARS Manager.',
+        typeLabel: 'Feedback Type',
+        messageLabel: 'Your Message',
+        msgPlaceholder: 'Describe the bug, improvement, or experience...',
+        success: 'Thank you! Your feedback has been logged.',
+        adminTitle: 'User Feedback Logs',
+        adminSubtitle: 'Track user reported issues and suggestions.',
+        types: {
+            Bug: 'Bug Report',
+            Improvement: 'Improvement',
+            General: 'General Comment'
+        },
+        status: {
+            New: 'New',
+            InProgress: 'In Progress',
+            Resolved: 'Resolved',
+            Dismissed: 'Dismissed'
+        },
+        actionable: 'Actionable',
+        notActionable: 'Not Actionable',
+        markActionable: 'Mark Actionable',
+        markNotActionable: 'Mark Not Actionable'
     },
     verification: {
       title: 'Digital Safety Passport',
@@ -356,126 +383,84 @@ export const translations = {
         }
       }
     },
-    proposal: {
-      digitalTrans: 'Enterprise SaaS Platform',
-      aboutMe: {
-        title: 'About DigiSols',
-        name: 'Pita Domingos',
-        preferred: 'Lead Architect',
-        role: 'Full Stack Developer',
-        cert: 'Certified Solutions Architect',
-        bio: 'DigiSols specializes in enterprise-grade safety systems and digital transformation for the mining sector. Focused on zero-downtime compliance architectures and scalable SaaS solutions.'
-      },
-      letter: {
-        date: "12/11/2025",
-        to: "The Management Team\nVulcan Mining Operations\nTete, Mozambique",
-        subject: "Proposal for Digital Safety Management System Implementation",
-        greeting: "Dear Management Team,",
-        body1: "We are pleased to submit this proposal for the development and implementation of the Vulcan Safety Manager (CARs Manager). This comprehensive digital solution is designed to streamline your Critical Activity Requisitions (RAC) training management, ensuring 100% compliance visibility and operational efficiency.",
-        body2: "Our solution addresses the current challenges of manual tracking, fragmented data, and delayed reporting. By centralizing employee data, training records, and issuance of digital credentials, we aim to significantly reduce administrative overhead and improve site safety standards.",
-        body3: "The proposed system includes advanced features such as AI-driven reporting, real-time dashboards, and secure role-based access control, tailored specifically for the mining environment context.",
-        closing: "We look forward to the opportunity to partner with Vulcan Mining on this critical safety initiative.",
-        signOff: "Sincerely,\nDigiSols Team\nPITA DOMINGOS",
-        address: "Perto de O Puarrou - Bairro Chingodzi, Tete"
-      },
-      execSummary: {
-        title: 'Executive Summary',
-        text: 'The CARS Manager is a specialized web application meticulously engineered to revolutionize the safety training lifecycle for Critical Activity Requisitions (RAC 01 - RAC 10). This innovative system directly addresses the inefficiencies inherent in traditional, manual processes, such as disparate spreadsheets and fragmented communication channels. By consolidating these into a centralized digital platform, the CARS Manager provides a comprehensive solution for managing every aspect of safety training, from initial booking and rigorous results tracking to the seamless issuance of certifications (CARs) and continuous compliance monitoring. This integrated approach ensures that all critical safety training data is readily accessible, accurate, and up-to-date, significantly enhancing operational safety and regulatory adherence. The system\'s design prioritizes user experience while delivering robust functionality, making it an indispensable tool for organizations committed to maintaining the highest standards of workplace safety.',
-        quote: '"Safety is not just a priority, it is a core value. Our digital tools must reflect the same standard of excellence as our operational machinery."'
-      },
-      objectives: {
-        title: 'Core Objectives',
-        problemTitle: 'Key Goals',
-        problemText: 'The CARS Manager is driven by a set of clearly defined core objectives, each meticulously designed to transform and elevate the safety training management process. The primary goal is Digitalization, aiming to completely eliminate reliance on cumbersome paper-based booking systems and manual card issuance. This transition to a fully digital workflow not only enhances efficiency but also significantly reduces human error.',
-        solutionTitle: 'Benefits',
-        goals: [
-          'Digitalization: Eliminate paper-based booking & manual cards.',
-          'Compliance: 100% visibility into validity/expiry.',
-          'Role-Based Security: Segregation of duties (Admin/Trainer/Viewer).',
-          'Efficiency: 90% reduction in admin time for card generation.'
-        ]
-      },
-      organogram: {
-        title: 'Project Organogram',
-        pm: 'Project Manager',
-        delivery: 'Service Delivery',
-        tech1: 'Frontend Engineer',
-        tech2: 'Backend Engineer',
-        regime: 'Hybrid Regime'
-      },
-      timeline: {
-        title: '11-Week Implementation Plan',
-        phase1: 'Phase 1: Discovery & Prototype (Weeks 1-2)',
-        phase1desc: 'Comprehensive requirement gathering, review of existing high-fidelity prototype with stakeholders, and finalization of database schema.',
-        phase2: 'Phase 2: Core Development (Weeks 3-6)',
-        phase2desc: 'Implementation of critical functionalities: Role-Based Access Control (RBAC), Booking Logic, and Trainer Input modules.',
-        phase3: 'Phase 3: Advanced Features (Weeks 7-8)',
-        phase3desc: 'PDF Card Generation, Automated Email Notifications, and Reporting/KPI Dashboards.',
-        phase4: 'Phase 4: UAT & Deployment (Weeks 9-10)',
-        phase4desc: 'User Acceptance Testing (UAT) by end-users, bug fixing, and production deployment.',
-        phase5: 'Phase 5: Training & Handover (Week 11)',
-        phase5desc: 'Staff training sessions tailored for all user roles and distribution of comprehensive User Manuals.'
-      },
-      techStack: {
-        title: 'Technical Architecture',
-        frontendTitle: 'Frontend Application',
-        frontend: 'Built on React.js (JavaScript library) with Tailwind CSS for utility-first styling. Features Client-Side PDF Generation for instant cards.',
-        backendTitle: 'Backend & Database',
-        backend: 'Serverless Cloud Architecture (Node.js Functions) for event-driven processing and cost efficiency.',
-        databaseTitle: 'Data Persistence',
-        database: 'NoSQL Realtime Database for high performance, low latency, and handling large datasets efficiently.',
-        securityTitle: 'Infrastructure & Security',
-        security: 'Global CDN for low-latency access. Secure Authentication (Email/SSO) and granular Role-Based Access Control (RBAC).'
-      },
-      financials: {
-        title: 'Financial Investment',
-        items: [
-          { name: 'Software Architecture & Development', type: 'Once-off', cost: '$20,000.00' },
-          { name: 'UI/UX Design & Prototyping', type: 'Once-off', cost: '$8,000.00' },
-          { name: 'Cloud Structure Setup & Subscription', type: 'Monthly', cost: '$5,000.00' },
-          { name: 'Training & Documentation', type: 'Once-off', cost: '$10,000.00' },
-          { name: 'Maintenance/Support & Management Fee', type: 'Monthly', cost: '$15,000.00' }
-        ]
-      },
-      roadmap: {
-        title: 'Future Roadmap',
-        auth: 'SSO Integration',
-        authDesc: 'Connect with Azure AD for Single Sign-On.',
-        db: 'Cloud Migration',
-        dbDesc: 'Move from on-premise to Azure/AWS for scalability.',
-        email: 'Automated Emails',
-        emailDesc: 'Send PDF certificates directly to employee email.',
-        hosting: 'Mobile App',
-        hostingDesc: 'Native Android/iOS app for field verification.'
-      },
-      aiFeatures: {
-        title: 'AI & Smart Features',
-        chatbot: 'Safety Advisor Chatbot: Embedded AI assistant for RAC standards questions.',
-        reporting: 'Automated Reporting: AI analyzes monthly trends to identify high-risk departments.'
-      },
-      futureUpdates: {
-        title: 'Alcohol & IoT Integration Scope',
-        moduleA: 'Module A: Software Integration - API Endpoints for Breathalyzer Data, "Fitness-for-Duty" Dashboard Widget, Logic to block card issuance.',
-        moduleB: 'Module B: Infrastructure (Independent Project) - Civil Works (Turnstiles), Cabling, Face-ID Breathalyzer Hardware.'
-      },
-      enhancedCaps: {
-        title: 'Enhanced Operational Capabilities',
-        mobileVerify: { title: 'Mobile Verification (Digital Passport)', desc: 'Field safety officers can verify employee compliance instantly by scanning the QR code on the safety card using any smartphone. Returns secure, real-time "Digital Passport".' },
-        autoBooking: { title: 'Intelligent Auto-Booking', desc: 'System proactively monitors expiry dates. When a certification is < 7 days from expiring, the system automatically books a slot. Includes Admin Approval Workflow.' },
-        massData: { title: 'Mass Data Management', desc: 'Efficiently handle large workforce datasets with bulk import/export capabilities via CSV. Includes Automated Record Matching.' },
-        auditLogs: { title: 'System Audit Trails', desc: 'Comprehensive logging of all system activities ensures accountability and security. Includes Timestamped Change Logs.' },
-        smartBatching: { title: 'SaaS Scalability', desc: 'Multi-tenant architecture allows managing multiple client companies and sites from a single dashboard.' },
-        matrixCompliance: { title: 'Site Governance', desc: 'Define and enforce mandatory training policies specific to each operational site.' }
-      },
-      conclusion: {
-        title: 'Conclusion',
-        text: 'The Vulcan Safety Manager represents a significant step forward for operational safety excellence. By digitizing these critical workflows, Vulcan Mining will not only ensure compliance but also foster a culture of transparency and efficiency. We are committed to delivering a world-class solution that meets your rigorous standards.'
-      },
-      thankYou: {
-        title: 'Contact Us',
-        contact: 'pita.domingos@zd044.onmicrosoft.com',
-        phone: '+258 84 547 9481'
-      }
+    alcohol: {
+        banner: {
+            title: 'IoT Alcohol Control',
+            desc: 'Real-time integration with industrial breathalyzer hardware and turnstile access control systems.',
+            status: 'Roadmap v3.0'
+        },
+        features: {
+            title: 'Core Capabilities',
+            iotTitle: 'IoT Connectivity',
+            iotDesc: 'Direct MQTT communication with AlcoCheck breathalyzer devices.',
+            accessTitle: 'Access Denial',
+            accessDesc: 'Positive results (>0.00) trigger immediate site lockout.',
+            complianceTitle: 'Data Compliance',
+            complianceDesc: 'Encrypted log storage for Legal & HR auditing.'
+        },
+        protocol: {
+            title: 'Security Protocol',
+            positiveTitle: 'Positive Detected',
+            positiveDesc: 'If alcohol level exceeds 0.00%, the turnstile locks and card access is suspended.',
+            resetTitle: 'Auto-Reset',
+            resetDesc: 'Access remains revoked until 02:00 AM the next day or manual Admin override.'
+        },
+        challenges: {
+            title: 'Challenges & Mitigation',
+            oemIssue: 'OEM Cloud Restrictions: Current hardware requires proprietary middleware.',
+            gateSetup: 'Physical Gate Setup: Requires dedicated LAN network infrastructure at the gate.'
+        },
+        proposal: {
+            title: 'Our Proposed Solution',
+            header: 'Technical Proposal',
+            hardware: 'Hardware',
+            software: 'Software',
+            security: 'Security',
+            faceCap: 'Face Capture: Verify identity during breath test.',
+            integration: 'Direct API Integration: Bypass OEM cloud for real-time data.',
+            projectScope: 'Project Scope: Requires separate contract for hardware installation.'
+        },
+        dashboard: {
+            title: 'IoT Alcohol Control Center',
+            subtitle: 'Real-time Turnstile Integration & Automated Reporting',
+            live: 'Live Feed',
+            viewRoadmap: 'View Project Roadmap',
+            backToLive: 'Back to Live Dashboard',
+            kpi: {
+                total: 'Total Readings',
+                violations: 'Violations Detected',
+                throughput: 'Gate Throughput',
+                health: 'Device Health'
+            },
+            log: 'Live Access Log',
+            throughputChart: 'Hourly Throughput',
+            deviceStatus: 'Device Status',
+            online: 'ONLINE',
+            offline: 'OFFLINE',
+            mqtt: 'MQTT Connected',
+            table: {
+                device: 'Device',
+                result: 'Result (BAC)',
+                ok: 'OK',
+                blocked: 'BLOCKED'
+            },
+            alert: {
+                title: 'Access Denied',
+                desc: 'Zero Tolerance Policy Violation',
+                measured: 'Measured BAC:'
+            },
+            actions: 'Automated Actions',
+            actionLog: {
+                locked: 'Turnstile Locked Immediately',
+                generating: 'Generating Incident Report...',
+                logged: 'Incident Report Logged to DB',
+                contacting: 'Contacting Supervisor...',
+                sent: 'SMS Alert Sent to Supervisor (Maputo HQ)'
+            },
+            close: 'Close Alert',
+            simActive: 'Simulation Active',
+            person: 'Person'
+        }
     }
   },
   pt: {
@@ -497,7 +482,8 @@ export const translations = {
       logs: 'Logs do Sistema',
       proposal: 'Proposta do Projeto',
       presentation: 'Modo Apresentação',
-      alcohol: 'Controle de Álcool'
+      alcohol: 'Controle de Álcool',
+      feedbackAdmin: 'Gestor de Feedback'
     },
     common: {
       vulcan: 'Gestor de RACS',
@@ -545,6 +531,32 @@ export const translations = {
       of: 'de',
       siteContext: 'Contexto do Site',
       enterpriseView: 'Visão Empresarial (Todos os Sites)'
+    },
+    feedback: {
+        button: 'Enviar Feedback',
+        title: 'Compartilhe sua Experiência',
+        subtitle: 'Ajude-nos a melhorar o Gestor CARS.',
+        typeLabel: 'Tipo de Feedback',
+        messageLabel: 'Sua Mensagem',
+        msgPlaceholder: 'Descreva o erro, melhoria ou experiência...',
+        success: 'Obrigado! Seu feedback foi registrado.',
+        adminTitle: 'Registros de Feedback do Usuário',
+        adminSubtitle: 'Acompanhe problemas e sugestões reportados por usuários.',
+        types: {
+            Bug: 'Relatório de Erro',
+            Improvement: 'Melhoria',
+            General: 'Comentário Geral'
+        },
+        status: {
+            New: 'Novo',
+            InProgress: 'Em Progresso',
+            Resolved: 'Resolvido',
+            Dismissed: 'Dispensado'
+        },
+        actionable: 'Acionável',
+        notActionable: 'Não Acionável',
+        markActionable: 'Marcar como Acionável',
+        markNotActionable: 'Marcar como Não Acionável'
     },
     verification: {
       title: 'Passaporte Digital de Segurança',
@@ -819,6 +831,14 @@ export const translations = {
       }
     },
     proposal: {
+      title: 'Nossa Solução Proposta',
+      header: 'Proposta Técnica',
+      hardware: 'Hardware',
+      software: 'Software',
+      security: 'Segurança',
+      faceCap: 'Captura Facial: Verificar identidade durante o teste de sopro.',
+      integration: 'Integração via API Direta: Ignorar nuvem OEM para dados em tempo real.',
+      projectScope: 'Escopo do Projeto: Requer contrato separado para instalação de hardware.',
       digitalTrans: 'Plataforma SaaS Empresarial',
       aboutMe: {
         title: 'Sobre a DigiSols',
@@ -843,7 +863,7 @@ export const translations = {
       execSummary: {
         title: 'Resumo Executivo',
         text: 'O Gestor de RACS é uma aplicação web especializada meticulosamente projetada para revolucionar o ciclo de vida do treinamento de segurança para Requisitos de Atividade Crítica (RAC 01 - RAC 10). Este sistema inovador aborda diretamente as ineficiências inerentes aos processos manuais tradicionais, como planilhas díspares e canais de comunicação fragmentados. Ao consolidar isso em uma plataforma digital centralizada, o Gestor de RACS fornece uma solução abrangente para gerenciar todos os aspectos do treinamento de segurança, desde o agendamento inicial e rastreamento rigoroso de resultados até a emissão perfeita de certificações (CARs) e monitoramento contínuo de conformidade. Essa abordagem integrada garante que todos os dados críticos de treinamento de segurança sejam facilmente acessíveis, precisos e atualizados, melhorando significativamente a segurança operacional e a adesão regulatória. O design do sistema prioriza a experiência do usuário enquanto oferece funcionalidade robusta, tornando-o uma ferramenta indispensável para organizações comprometidas em manter os mais altos padrões de segurança no local de trabalho.',
-        quote: '"Segurança não é apenas uma prioridade, é um valor fundamental. Nossas ferramentas digitais devem refletir o mesmo padrão de excelência de nosso maquinário operacional."'
+        quote: '"Segurança não é apenas uma prioridade, it é um valor fundamental. Nossas ferramentas digitais devem refletir o mesmo padrão de excelência de nosso maquinário operacional."'
       },
       objectives: {
         title: 'Objetivos Principais',
@@ -968,9 +988,54 @@ export const translations = {
         },
         proposal: {
             title: 'Nossa Solução Proposta',
+            header: 'Proposta Técnica',
+            hardware: 'Hardware',
+            software: 'Software',
+            security: 'Segurança',
             faceCap: 'Captura Facial: Verificar identidade durante o teste de sopro.',
             integration: 'Integração via API Direta: Ignorar nuvem OEM para dados em tempo real.',
             projectScope: 'Escopo do Projeto: Requer contrato separado para instalação de hardware.'
+        },
+        dashboard: {
+            title: 'Centro de Controle de Álcool IoT',
+            subtitle: 'Integração de Catracas em Tempo Real e Relatórios Automatizados',
+            live: 'Transmissão ao Vivo',
+            viewRoadmap: 'Ver Roteiro do Projeto',
+            backToLive: 'Voltar ao Painel ao Vivo',
+            kpi: {
+                total: 'Total de Leituras',
+                violations: 'Violações Detectadas',
+                throughput: 'Fluxo da Portaria',
+                health: 'Saúde dos Dispositivos'
+            },
+            log: 'Registro de Acesso ao Vivo',
+            throughputChart: 'Fluxo Horário',
+            deviceStatus: 'Status do Dispositivo',
+            online: 'ONLINE',
+            offline: 'OFFLINE',
+            mqtt: 'MQTT Conectado',
+            table: {
+                device: 'Dispositivo',
+                result: 'Resultado (TAS)',
+                ok: 'OK',
+                blocked: 'BLOQUEADO'
+            },
+            alert: {
+                title: 'Acesso Negado',
+                desc: 'Violação da Política de Tolerância Zero',
+                measured: 'TAS Medida:'
+            },
+            actions: 'Ações Automatizadas',
+            actionLog: {
+                locked: 'Catraca Bloqueada Imediatamente',
+                generating: 'Gerando Relatório de Incidente...',
+                logged: 'Relatório de Incidente Registrado no BD',
+                contacting: 'Contatando Supervisor...',
+                sent: 'Alerta SMS Enviado ao Supervisor (Maputo HQ)'
+            },
+            close: 'Fechar Alerta',
+            simActive: 'Simulação Ativa',
+            person: 'Pessoa'
         }
     }
   }
