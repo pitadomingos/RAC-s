@@ -66,6 +66,11 @@ interface LayoutProps {
 // This defines the granular logic: "Who can see the Alcohol Dashboard?"
 // Rule: System Admins OR (Managers/Supervisors/HSE in Operations/HSE depts)
 const canViewAlcoholDashboard = (role: UserRole, jobTitle: string, dept: string): boolean => {
+    // EXPLICIT BLOCK: General Users cannot access Alcohol Control
+    if (role === UserRole.USER) return false;
+    // EXPLICIT BLOCK: RAC Trainers cannot access Alcohol Control (as requested)
+    if (role === UserRole.RAC_TRAINER) return false;
+
     if (role === UserRole.SYSTEM_ADMIN || role === UserRole.ENTERPRISE_ADMIN) return true;
     
     const allowedTitles = ['Manager', 'Supervisor', 'Superintendent', 'Director', 'Head'];
@@ -175,12 +180,12 @@ const Layout: React.FC<LayoutProps> = ({
       icon: LayoutDashboard, 
       visible: userRole !== UserRole.USER && userRole !== UserRole.ENTERPRISE_ADMIN
     },
-    // 2. Booking (Action)
+    // 2. Booking (Action) - Blocked for SITE_ADMIN, ENTERPRISE_ADMIN, RAC_TRAINER
     { 
       path: '/booking', 
       label: t.nav.booking, 
       icon: CalendarPlus, 
-      visible: userRole !== UserRole.RAC_TRAINER && userRole !== UserRole.ENTERPRISE_ADMIN
+      visible: userRole !== UserRole.RAC_TRAINER && userRole !== UserRole.ENTERPRISE_ADMIN && userRole !== UserRole.SITE_ADMIN
     },
     // 3. Results (Data)
     { 
@@ -210,26 +215,26 @@ const Layout: React.FC<LayoutProps> = ({
       icon: BarChart,
       visible: [UserRole.SYSTEM_ADMIN, UserRole.ENTERPRISE_ADMIN].includes(userRole)
     },
-    // 7. Alcohol (IoT)
+    // 7. Alcohol (IoT) - RAC_TRAINER removed via showAlcoholLink check
     {
       path: '/alcohol-control',
       label: t.nav.alcohol,
       icon: Wine,
       visible: showAlcoholLink
     },
-    // 8. Request Cards (Output)
+    // 8. Request Cards (Output) - Blocked for RAC_TRAINER and ENTERPRISE_ADMIN
     { 
       path: '/request-cards', 
       label: t.nav.requestCards, 
       icon: Mail, 
-      visible: userRole !== UserRole.ENTERPRISE_ADMIN
+      visible: userRole !== UserRole.ENTERPRISE_ADMIN && userRole !== UserRole.RAC_TRAINER
     },
-    // 9. Communications (NEW)
+    // 9. Communications (NEW) - Blocked for ENTERPRISE_ADMIN and SITE_ADMIN
     {
       path: '/messages',
       label: t.nav.communications,
       icon: Send,
-      visible: [UserRole.SYSTEM_ADMIN, UserRole.ENTERPRISE_ADMIN, UserRole.SITE_ADMIN].includes(userRole)
+      visible: userRole === UserRole.SYSTEM_ADMIN 
     },
     // 10. Schedule
     { 
@@ -245,12 +250,12 @@ const Layout: React.FC<LayoutProps> = ({
       icon: GanttChart,
       visible: [UserRole.SYSTEM_ADMIN, UserRole.ENTERPRISE_ADMIN].includes(userRole)
     },
-    // 12. Trainer Input
+    // 12. Trainer Input - Blocked for SITE_ADMIN
     { 
       path: '/trainer-input', 
       label: t.nav.trainerInput, 
       icon: PenTool, 
-      visible: [UserRole.SYSTEM_ADMIN, UserRole.RAC_TRAINER, UserRole.SITE_ADMIN].includes(userRole) 
+      visible: [UserRole.SYSTEM_ADMIN, UserRole.RAC_TRAINER].includes(userRole) 
     },
     // 13. Users
     { 

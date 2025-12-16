@@ -317,6 +317,11 @@ const App: React.FC = () => {
 
   // GRANULAR ACCESS CHECK FUNCTION
   const canViewAlcoholDashboard = () => {
+      // EXPLICIT BLOCK: General Users cannot access Alcohol Control
+      if (userRole === UserRole.USER) return false;
+      // EXPLICIT BLOCK: RAC Trainers cannot access Alcohol Control
+      if (userRole === UserRole.RAC_TRAINER) return false;
+
       if (userRole === UserRole.SYSTEM_ADMIN || userRole === UserRole.ENTERPRISE_ADMIN) return true;
       const allowedTitles = ['Manager', 'Supervisor', 'Superintendent', 'Director', 'Head'];
       // Ensure simulatedJobTitle is defined
@@ -396,19 +401,25 @@ const App: React.FC = () => {
 
                   <Route path="/reports" element={<ReportsPage bookings={bookings} sessions={sessions} />} />
                   
-                  <Route path="/booking" element={<BookingForm 
-                      addBookings={handleBookingsUpdate} 
-                      sessions={sessions} 
-                      userRole={userRole} 
-                      existingBookings={bookings}
-                      addNotification={addNotification}
-                      currentEmployeeId={currentEmployeeId}
-                      requirements={requirements}
-                      racDefinitions={racDefinitions}
-                  />} />
+                  {/* BOOKING: Hidden for Site Admin, Enterprise Admin, RAC Trainer */}
+                  <Route path="/booking" element={
+                      userRole !== UserRole.RAC_TRAINER && userRole !== UserRole.ENTERPRISE_ADMIN && userRole !== UserRole.SITE_ADMIN
+                      ? <BookingForm 
+                          addBookings={handleBookingsUpdate} 
+                          sessions={sessions} 
+                          userRole={userRole} 
+                          existingBookings={bookings}
+                          addNotification={addNotification}
+                          currentEmployeeId={currentEmployeeId}
+                          requirements={requirements}
+                          racDefinitions={racDefinitions}
+                        /> 
+                      : <Navigate to="/" replace />
+                  } />
                   
+                  {/* TRAINER INPUT: Hidden for Site Admin */}
                   <Route path="/trainer-input" element={
-                      [UserRole.SYSTEM_ADMIN, UserRole.RAC_TRAINER, UserRole.SITE_ADMIN].includes(userRole) 
+                      [UserRole.SYSTEM_ADMIN, UserRole.RAC_TRAINER].includes(userRole) 
                       ? <TrainerInputPage 
                           bookings={bookings} 
                           updateBookings={updateBookingsStatus} 
@@ -459,14 +470,19 @@ const App: React.FC = () => {
                     /> : <Navigate to="/" replace />} 
                   />
                   
-                  <Route path="/request-cards" element={<RequestCardsPage 
-                      bookings={bookings} 
-                      requirements={requirements} 
-                      racDefinitions={racDefinitions} 
-                      sessions={sessions} 
-                      userRole={userRole}
-                      currentEmployeeId={currentEmployeeId}
-                  />} />
+                  {/* REQUEST CARDS: Hidden for RAC Trainer & Enterprise Admin */}
+                  <Route path="/request-cards" element={
+                      userRole !== UserRole.ENTERPRISE_ADMIN && userRole !== UserRole.RAC_TRAINER
+                      ? <RequestCardsPage 
+                          bookings={bookings} 
+                          requirements={requirements} 
+                          racDefinitions={racDefinitions} 
+                          sessions={sessions} 
+                          userRole={userRole}
+                          currentEmployeeId={currentEmployeeId}
+                        />
+                      : <Navigate to="/" replace />
+                  } />
                   
                   <Route path="/manuals" element={<UserManualsPage userRole={userRole} />} />
                   <Route path="/admin-manual" element={userRole === UserRole.SYSTEM_ADMIN ? <AdminManualPage /> : <Navigate to="/" replace />} />
@@ -484,14 +500,14 @@ const App: React.FC = () => {
                       : <Navigate to="/" replace />
                   } />
 
-                  {/* MESSAGES LOG ROUTE */}
+                  {/* MESSAGES LOG ROUTE - System Admin Only */}
                   <Route path="/messages" element={
-                      [UserRole.SYSTEM_ADMIN, UserRole.ENTERPRISE_ADMIN, UserRole.SITE_ADMIN].includes(userRole) 
+                      userRole === UserRole.SYSTEM_ADMIN 
                       ? <MessageLogPage />
                       : <Navigate to="/" replace />
                   } />
 
-                  {/* PROTECTED ALCOHOL ROUTE */}
+                  {/* PROTECTED ALCOHOL ROUTE - Uses dynamic granular check */}
                   <Route path="/alcohol-control" element={
                       canViewAlcoholDashboard() 
                       ? <AlcoholIntegration addNotification={addNotification} /> 

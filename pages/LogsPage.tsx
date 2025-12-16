@@ -1,5 +1,6 @@
+
 import React, { useState, useEffect } from 'react';
-import { ScrollText, Filter, AlertTriangle, CheckCircle, Info, ShieldAlert, Clock, Terminal, ChevronLeft, ChevronRight, Zap, Bot } from 'lucide-react';
+import { ScrollText, Filter, AlertTriangle, CheckCircle, Info, ShieldAlert, Clock, Terminal, ChevronLeft, ChevronRight, Zap, Bot, Skull, Activity, CheckCircle2, Cpu } from 'lucide-react';
 import { useLanguage } from '../contexts/LanguageContext';
 
 type LogLevel = 'INFO' | 'WARN' | 'ERROR' | 'AUDIT';
@@ -24,10 +25,18 @@ const MOCK_LOGS_DATA: LogEntry[] = [
     { id: '7', level: 'AUDIT', messageKey: 'User System Admin deleted User ID 45', user: 'System Admin', timestamp: '2024-05-18 16:45:00' },
 ];
 
+// Helper component to actually throw the error for the Boundary to catch
+const CrashTrigger = () => {
+    throw new Error("MANUAL SYSTEM CRASH: UAT Simulation Initiated by Admin");
+};
+
 const LogsPage: React.FC = () => {
     const { t, language } = useLanguage();
     const [filterLevel, setFilterLevel] = useState<LogLevel | 'ALL'>('ALL');
     const [allLogs, setAllLogs] = useState<LogEntry[]>(MOCK_LOGS_DATA);
+    
+    // State to trigger the crash component
+    const [shouldCrash, setShouldCrash] = useState(false);
 
     // Pagination State
     const [currentPage, setCurrentPage] = useState(1);
@@ -88,6 +97,12 @@ const LogsPage: React.FC = () => {
         }
     };
 
+    // If simulating, render the CrashTrigger which throws immediately,
+    // activating the ErrorBoundary parent.
+    if (shouldCrash) {
+        return <CrashTrigger />;
+    }
+
     return (
         <div className="space-y-6 pb-20 animate-fade-in-up h-[calc(100vh-100px)] flex flex-col">
             {/* Header */}
@@ -106,19 +121,29 @@ const LogsPage: React.FC = () => {
                         </p>
                     </div>
                     
-                    <div className="flex items-center gap-2 bg-slate-800 p-1.5 rounded-xl border border-slate-700">
-                        <Filter size={16} className="text-slate-400 ml-2" />
-                        <select 
-                            className="bg-transparent text-white text-sm font-bold focus:outline-none p-1.5 cursor-pointer"
-                            value={filterLevel}
-                            onChange={(e) => setFilterLevel(e.target.value as any)}
+                    <div className="flex gap-4">
+                        <button 
+                            onClick={() => setShouldCrash(true)}
+                            className="flex items-center gap-2 bg-red-900/50 hover:bg-red-800 text-red-200 px-4 py-2 rounded-xl border border-red-800 transition-colors text-xs font-bold uppercase tracking-wider shadow-lg hover:shadow-red-900/20"
+                            title="Safe Test of Self-Healing System (Triggers ErrorBoundary)"
                         >
-                            <option value="ALL">{t.logs.levels.all}</option>
-                            <option value="INFO">{t.logs.levels.info}</option>
-                            <option value="WARN">{t.logs.levels.warn}</option>
-                            <option value="ERROR">{t.logs.levels.error}</option>
-                            <option value="AUDIT">{t.logs.levels.audit}</option>
-                        </select>
+                            <Skull size={16} /> Simulate Crash
+                        </button>
+
+                        <div className="flex items-center gap-2 bg-slate-800 p-1.5 rounded-xl border border-slate-700">
+                            <Filter size={16} className="text-slate-400 ml-2" />
+                            <select 
+                                className="bg-transparent text-white text-sm font-bold focus:outline-none p-1.5 cursor-pointer"
+                                value={filterLevel}
+                                onChange={(e) => setFilterLevel(e.target.value as any)}
+                            >
+                                <option value="ALL">{t.logs.levels.all}</option>
+                                <option value="INFO">{t.logs.levels.info}</option>
+                                <option value="WARN">{t.logs.levels.warn}</option>
+                                <option value="ERROR">{t.logs.levels.error}</option>
+                                <option value="AUDIT">{t.logs.levels.audit}</option>
+                            </select>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -157,7 +182,7 @@ const LogsPage: React.FC = () => {
                                             {log.timestamp}
                                         </td>
                                         <td className="px-6 py-3 whitespace-nowrap text-slate-900 dark:text-white font-bold flex items-center gap-2">
-                                            {log.user === 'Gemini Watchdog' && <Bot size={14} className="text-indigo-500" />}
+                                            {log.user === 'RoboTech AI' && <Bot size={14} className="text-indigo-500" />}
                                             {log.user}
                                         </td>
                                         <td className="px-6 py-3 text-slate-800 dark:text-slate-300">

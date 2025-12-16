@@ -1,10 +1,9 @@
-
 import React, { useState } from 'react';
 import { 
   FileCode, Database, Layers, Code, Terminal, AlertTriangle, 
   Cpu, GitBranch, Shield, Key, FolderOpen, ChevronRight, FileText,
   Rocket, CloudLightning, Wifi, Smartphone, Lock, Server, Radio,
-  Globe, CreditCard, LayoutTemplate, GitMerge, RefreshCw
+  Globe, CreditCard, LayoutTemplate, GitMerge, RefreshCw, Bot, Zap, Activity
 } from 'lucide-react';
 
 const TechnicalDocs: React.FC = () => {
@@ -13,8 +12,9 @@ const TechnicalDocs: React.FC = () => {
   const sections = [
     { id: 'arch', label: 'Architecture (Current)', icon: Layers },
     { id: 'files', label: 'File Structure', icon: FolderOpen },
-    { id: 'integration', label: 'Legacy Integration', icon: GitMerge }, // NEW
+    { id: 'integration', label: 'Legacy Integration', icon: GitMerge },
     { id: 'data', label: 'Data Models', icon: Database },
+    { id: 'robotics', label: 'Robotics & AI', icon: Bot }, // NEW
     { id: 'roadmap', label: 'Future Roadmap', icon: Rocket }, 
     { id: 'state', label: 'State & Logic', icon: Cpu },
     { id: 'debug', label: 'Debugging', icon: Terminal },
@@ -118,7 +118,7 @@ const TechnicalDocs: React.FC = () => {
                   </div>
               )}
 
-              {/* SECTION: LEGACY INTEGRATION (NEW) */}
+              {/* SECTION: LEGACY INTEGRATION */}
               {activeSection === 'integration' && (
                   <div className="space-y-8 animate-fade-in">
                       <div className="border-b border-slate-200 dark:border-slate-700 pb-4">
@@ -191,7 +191,7 @@ const TechnicalDocs: React.FC = () => {
                   </div>
               )}
 
-              {/* SECTION: FILE STRUCTURE */}
+              {/* SECTION: FILES */}
               {activeSection === 'files' && (
                   <div className="space-y-8 animate-fade-in">
                       <div className="border-b border-slate-200 dark:border-slate-700 pb-4">
@@ -233,6 +233,76 @@ const TechnicalDocs: React.FC = () => {
                             name="components/CardTemplate.tsx" 
                             desc="The visual representation of the ID Card. Contains the printable layout and logic to display the *latest* valid date for each RAC." 
                           />
+                      </div>
+                  </div>
+              )}
+
+              {/* NEW SECTION: ROBOTICS */}
+              {activeSection === 'robotics' && (
+                  <div className="space-y-10 animate-fade-in">
+                      <div className="border-b border-slate-200 dark:border-slate-700 pb-4">
+                          <h3 className="text-3xl font-black text-slate-800 dark:text-white mb-2 flex items-center gap-3">
+                              <Bot className="text-cyan-500" />
+                              Robotic Self-Healing Architecture
+                          </h3>
+                          <p className="text-slate-500 dark:text-slate-400 text-sm">
+                              Technical documentation for the 'RoboTech' automated resilience layer.
+                          </p>
+                      </div>
+
+                      <div className="grid grid-cols-1 gap-8">
+                          {/* Error Boundary Logic */}
+                          <div className="bg-slate-50 dark:bg-slate-900/50 p-6 rounded-2xl border border-slate-200 dark:border-slate-700">
+                              <h4 className="text-xl font-bold text-slate-800 dark:text-white mb-4 flex items-center gap-2">
+                                  <Shield className="text-red-500" /> 
+                                  1. Error Boundary Interception
+                              </h4>
+                              <p className="text-sm text-slate-600 dark:text-slate-300 mb-4">
+                                  The application is wrapped in a high-order <code>ErrorBoundary.tsx</code> component. 
+                                  This acts as a "safety net" for the React Virtual DOM.
+                              </p>
+                              <CodeBlock title="Lifecycle Method: componentDidCatch" code={`
+public componentDidCatch(error: Error, errorInfo: ErrorInfo) {
+  // 1. Log to visual console (Simulated Terminal)
+  this.startRepairSimulation(); 
+
+  // 2. Trigger Recovery Logic
+  if (error.message.includes("MANUAL SYSTEM CRASH")) {
+      console.warn("Crash Simulation Triggered"); // Suppress console noise
+  } else {
+      // 3. Automated Resolution (Gemini AI or Heuristic)
+      this.runSilentDiagnosis(error.message, errorInfo);
+  }
+}
+                              `} />
+                          </div>
+
+                          {/* Self-Healing Logic */}
+                          <div className="bg-slate-50 dark:bg-slate-900/50 p-6 rounded-2xl border border-slate-200 dark:border-slate-700">
+                              <h4 className="text-xl font-bold text-slate-800 dark:text-white mb-4 flex items-center gap-2">
+                                  <Zap className="text-green-500" /> 
+                                  2. Diagnostics Loop (Settings Page)
+                              </h4>
+                              <p className="text-sm text-slate-600 dark:text-slate-300 mb-4">
+                                  The "Robotic Self-Healing" feature in Settings is a simulated background process governed by a `setInterval` loop that mimics server-side health checks.
+                              </p>
+                              <CodeBlock title="Simulation Loop Logic" code={`
+const runSelfHealing = () => {
+  const steps = [
+      "Scanning Neural Pathways...",
+      "Optimizing Memory Shards...",
+      "Reparing User State Fragmentation...",
+      "Flushing Cache Nodes..."
+  ];
+  
+  // Timed execution to mimic async operations
+  const interval = setInterval(() => {
+      // Updates React State to show terminal logs
+      setHealingLogs(prev => [...prev, steps[currentStep]]);
+  }, 1000);
+};
+                              `} />
+                          </div>
                       </div>
                   </div>
               )}

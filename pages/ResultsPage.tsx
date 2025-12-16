@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useRef, useMemo } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 import { Booking, BookingStatus, UserRole, TrainingSession, Employee, EmployeeRequirement, RacDef, SystemNotification } from '../types';
 import { 
   Upload, FileSpreadsheet, Search, Filter, Download, 
@@ -27,6 +27,7 @@ interface ResultsPageProps {
 
 const ResultsPage: React.FC<ResultsPageProps> = ({ bookings, updateBookingStatus, importBookings, userRole, sessions, currentEmployeeId, racDefinitions, addNotification }) => {
   const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
   const initialQuery = searchParams.get('q') || '';
   const [filter, setFilter] = useState(initialQuery);
   const [statusFilter, setStatusFilter] = useState<string>('All');
@@ -403,6 +404,15 @@ const ResultsPage: React.FC<ResultsPageProps> = ({ bookings, updateBookingStatus
       if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
+  // Determine current user's record ID for the "My Digital Passport" feature
+  const currentUserRecordId = useMemo(() => {
+      if (userRole === UserRole.USER && currentEmployeeId) {
+          const booking = bookings.find(b => b.employee.id === currentEmployeeId);
+          return booking?.employee.recordId;
+      }
+      return null;
+  }, [userRole, currentEmployeeId, bookings]);
+
   return (
     <div className="space-y-6 pb-24 animate-fade-in-up h-full flex flex-col">
         
@@ -480,6 +490,17 @@ const ResultsPage: React.FC<ResultsPageProps> = ({ bookings, updateBookingStatus
             </div>
 
             <div className="flex items-center gap-2">
+                {/* --- Add Passport Button for User Role --- */}
+                {userRole === UserRole.USER && currentUserRecordId && (
+                    <button 
+                        onClick={() => navigate(`/verify/${currentUserRecordId}`)}
+                        className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2 rounded-lg text-xs font-bold transition-all shadow-sm"
+                        title={t.results.passport}
+                    >
+                        <QrCode size={16} /> {t.results.passport}
+                    </button>
+                )}
+
                 <button 
                     onClick={handleDownloadTemplate}
                     className="flex items-center gap-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-600 dark:text-slate-300 px-4 py-2 rounded-lg text-xs font-bold transition-all shadow-sm"

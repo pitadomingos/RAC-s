@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { 
   Shield, Database, Calendar, Users, 
@@ -6,7 +5,8 @@ import {
   CheckCircle, Smartphone,
   ChevronLeft, ChevronRight, Maximize, Minimize, X,
   Lock, Server, CheckCircle2, XCircle, Search,
-  Building2, Map, Layout, Zap, Terminal, Workflow, Settings
+  Building2, Map, Layout, Zap, Terminal, Workflow, Settings,
+  Cpu, GitPullRequest // Added Icons
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useLanguage } from '../contexts/LanguageContext';
@@ -60,6 +60,7 @@ const AdminManualPage: React.FC = () => {
       { id: 'dashboard', title: t.adminManual.slides.dashboard },
       { id: 'workflows', title: t.adminManual.slides.workflows },
       { id: 'advanced', title: t.adminManual.slides.advanced },
+      { id: 'robotics', title: t.adminManual.slides.robotics || 'Robotic Protocols' }, // NEW SLIDE
       { id: 'troubleshoot', title: t.adminManual.slides.troubleshoot },
       { id: 'architecture', title: t.adminManual.slides.architecture }
   ];
@@ -234,6 +235,77 @@ const AdminManualPage: React.FC = () => {
       </div>
   );
 
+  // --- NEW ROBOTICS SLIDE ---
+  const RoboticsSlide = () => {
+      // Fallback in case translations aren't updated yet (though they should be)
+      const robo = t.adminManual.content.robotics || {
+          title: 'Robotic Self-Healing Protocols',
+          subtitle: 'Automated resilience and diagnostic systems.',
+          crash: {
+              title: 'Auto-Recovery Engine',
+              desc: 'The system utilizes a React Error Boundary wrapper. If a critical runtime error occurs (e.g., memory leak or unhandled exception), the "RoboTech" protocol intercepts the crash, displays a diagnostic visualization to the user, and attempts a soft-reload of the state to prevent a hard browser crash.'
+          },
+          diagnostics: {
+              title: 'Active Diagnostics',
+              desc: 'System Admins can manually trigger the "RoboTech Healer Protocol" from the Settings page. This runs a background thread that scans for database latency, optimizes memory shards, and verifies API integrity without interrupting active users.'
+          }
+      };
+
+      return (
+      <div className="flex flex-col justify-center h-full max-w-6xl mx-auto px-6 relative z-10 animate-fade-in-up">
+          <h2 className="text-4xl md:text-6xl font-black text-white mb-6 text-center tracking-tight flex items-center justify-center gap-4">
+              <Cpu size={48} className="text-cyan-400" />
+              {robo.title}
+          </h2>
+          <p className="text-xl text-cyan-200 text-center mb-16">{robo.subtitle}</p>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+              
+              {/* Feature 1: Recovery */}
+              <div className="bg-slate-900/90 border border-red-500/30 p-8 rounded-[2.5rem] relative overflow-hidden group">
+                  <div className="absolute top-0 right-0 p-6 opacity-10"><Zap size={100} /></div>
+                  <div className="relative z-10">
+                      <div className="flex items-center gap-4 mb-4">
+                          <div className="p-3 bg-red-900/30 rounded-2xl text-red-400 border border-red-500/20">
+                              <GitPullRequest size={32} />
+                          </div>
+                          <h3 className="text-2xl font-bold text-white">{robo.crash.title}</h3>
+                      </div>
+                      <p className="text-lg text-slate-400 leading-relaxed">
+                          {robo.crash.desc}
+                      </p>
+                      <div className="mt-6 flex items-center gap-2 text-sm font-mono text-red-400">
+                          <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse"></span>
+                          Demo: Click "Simulate Crash" in Logs Page
+                      </div>
+                  </div>
+              </div>
+
+              {/* Feature 2: Diagnostics */}
+              <div className="bg-slate-900/90 border border-cyan-500/30 p-8 rounded-[2.5rem] relative overflow-hidden group">
+                  <div className="absolute top-0 right-0 p-6 opacity-10"><Activity size={100} /></div>
+                  <div className="relative z-10">
+                      <div className="flex items-center gap-4 mb-4">
+                          <div className="p-3 bg-cyan-900/30 rounded-2xl text-cyan-400 border border-cyan-500/20">
+                              <Terminal size={32} />
+                          </div>
+                          <h3 className="text-2xl font-bold text-white">{robo.diagnostics.title}</h3>
+                      </div>
+                      <p className="text-lg text-slate-400 leading-relaxed">
+                          {robo.diagnostics.desc}
+                      </p>
+                      <div className="mt-6 flex items-center gap-2 text-sm font-mono text-cyan-400">
+                          <span className="w-2 h-2 rounded-full bg-cyan-500 animate-pulse"></span>
+                          Action: Settings &gt; Diagnostics &gt; Initiate
+                      </div>
+                  </div>
+              </div>
+
+          </div>
+      </div>
+      );
+  };
+
   const TroubleshootSlide = () => (
       <div className="flex flex-col justify-center h-full max-w-6xl mx-auto px-6 relative z-10 animate-fade-in-up">
           <h2 className="text-4xl md:text-6xl font-black text-white mb-16 text-center">{t.adminManual.slides.troubleshoot}</h2>
@@ -338,6 +410,7 @@ const AdminManualPage: React.FC = () => {
           case 'dashboard': return <DashboardSlide />;
           case 'workflows': return <WorkflowsSlide />;
           case 'advanced': return <AdvancedSlide />;
+          case 'robotics': return <RoboticsSlide />; // NEW
           case 'troubleshoot': return <TroubleshootSlide />;
           case 'architecture': return <ArchitectureSlide />;
           default: return <IntroSlide />;
