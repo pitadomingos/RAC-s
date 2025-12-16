@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo } from 'react';
 import { Feedback, FeedbackStatus } from '../types';
 import { useLanguage } from '../contexts/LanguageContext';
@@ -93,16 +92,16 @@ const FeedbackAdminPage: React.FC<FeedbackAdminPageProps> = ({ feedbackList, onU
                     <div className="flex justify-between items-start">
                         <div>
                             <h2 className="text-2xl font-black tracking-tight">{t.feedback.adminTitle}</h2>
-                            <p className="text-slate-400 text-sm mt-1">Manage user reports and suggestions</p>
+                            <p className="text-slate-400 text-sm mt-1">{t.feedback.manage}</p>
                         </div>
                         <div className="flex gap-2">
                             <div className="bg-white/10 px-3 py-1.5 rounded-lg border border-white/10 text-center">
                                 <span className="block text-xl font-bold">{feedbackList.filter(f => f.status === 'New').length}</span>
-                                <span className="text-[10px] uppercase text-slate-400 font-bold">New</span>
+                                <span className="text-[10px] uppercase text-slate-400 font-bold">{t.feedback.status.New}</span>
                             </div>
                             <div className="bg-white/10 px-3 py-1.5 rounded-lg border border-white/10 text-center">
                                 <span className="block text-xl font-bold text-amber-400">{feedbackList.filter(f => f.status === 'In Progress').length}</span>
-                                <span className="text-[10px] uppercase text-slate-400 font-bold">Pending</span>
+                                <span className="text-[10px] uppercase text-slate-400 font-bold">{t.feedback.status.InProgress}</span>
                             </div>
                         </div>
                     </div>
@@ -114,7 +113,7 @@ const FeedbackAdminPage: React.FC<FeedbackAdminPageProps> = ({ feedbackList, onU
                         <Search className="absolute left-3 top-2.5 text-slate-400" size={16} />
                         <input 
                             type="text" 
-                            placeholder="Search..." 
+                            placeholder={t.common.search}
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
                             className="w-full pl-9 pr-3 py-2 bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none"
@@ -126,20 +125,20 @@ const FeedbackAdminPage: React.FC<FeedbackAdminPageProps> = ({ feedbackList, onU
                             onChange={(e) => setFilterStatus(e.target.value)}
                             className="bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 text-sm rounded-lg px-3 py-2 outline-none font-medium"
                         >
-                            <option value="All">All Status</option>
-                            <option value="New">New</option>
-                            <option value="In Progress">In Progress</option>
-                            <option value="Resolved">Resolved</option>
+                            <option value="All">{t.common.all} Status</option>
+                            <option value="New">{t.feedback.status.New}</option>
+                            <option value="In Progress">{t.feedback.status.InProgress}</option>
+                            <option value="Resolved">{t.feedback.status.Resolved}</option>
                         </select>
                         <select 
                             value={filterType}
                             onChange={(e) => setFilterType(e.target.value)}
                             className="bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 text-sm rounded-lg px-3 py-2 outline-none font-medium"
                         >
-                            <option value="All">All Types</option>
-                            <option value="Bug">Bugs</option>
-                            <option value="Improvement">Improvements</option>
-                            <option value="General">General</option>
+                            <option value="All">{t.common.all}</option>
+                            <option value="Bug">{t.feedback.types.Bug}</option>
+                            <option value="Improvement">{t.feedback.types.Improvement}</option>
+                            <option value="General">{t.feedback.types.General}</option>
                         </select>
                     </div>
                 </div>
@@ -164,7 +163,7 @@ const FeedbackAdminPage: React.FC<FeedbackAdminPageProps> = ({ feedbackList, onU
                                     <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">{item.type}</span>
                                     {item.isActionable && (
                                         <span className="flex items-center gap-1 text-[10px] font-black bg-orange-100 text-orange-600 px-1.5 py-0.5 rounded border border-orange-200">
-                                            <Zap size={8} fill="currentColor" /> ACTION
+                                            <Zap size={8} fill="currentColor" /> {t.feedback.actionable.toUpperCase()}
                                         </span>
                                     )}
                                 </div>
@@ -190,7 +189,7 @@ const FeedbackAdminPage: React.FC<FeedbackAdminPageProps> = ({ feedbackList, onU
                     {filteredList.length === 0 && (
                         <div className="flex flex-col items-center justify-center h-64 text-slate-400">
                             <MessageSquare size={48} className="mb-4 opacity-20" />
-                            <p>No feedback found matching filters.</p>
+                            <p>{t.feedback.noSelection}</p>
                         </div>
                     )}
                 </div>
@@ -208,12 +207,12 @@ const FeedbackAdminPage: React.FC<FeedbackAdminPageProps> = ({ feedbackList, onU
                             </div>
                             <div>
                                 <div className="flex items-center gap-2 mb-1">
-                                    <span className="text-xs font-bold uppercase text-slate-400 tracking-wider">Feedback ID: {selectedFeedback.id.slice(0,8)}</span>
+                                    <span className="text-xs font-bold uppercase text-slate-400 tracking-wider">ID: {selectedFeedback.id.slice(0,8)}</span>
                                     <span className="text-xs text-slate-300">|</span>
                                     <span className="text-xs font-mono text-slate-500">{new Date(selectedFeedback.timestamp).toLocaleString()}</span>
                                 </div>
                                 <h2 className="text-xl font-black text-slate-900 dark:text-white flex items-center gap-2">
-                                    {selectedFeedback.type} Report
+                                    {selectedFeedback.type}
                                     {selectedFeedback.isActionable && <Zap size={18} className="text-orange-500 fill-orange-500" />}
                                 </h2>
                             </div>
@@ -228,7 +227,7 @@ const FeedbackAdminPage: React.FC<FeedbackAdminPageProps> = ({ feedbackList, onU
                         {/* Status Control */}
                         <div className="flex flex-col md:flex-row gap-6 mb-8">
                             <div className="flex-1">
-                                <label className="block text-xs font-bold text-slate-500 uppercase mb-2 ml-1">Workflow Status</label>
+                                <label className="block text-xs font-bold text-slate-500 uppercase mb-2 ml-1">{t.feedback.workflow}</label>
                                 <div className="relative">
                                     <select 
                                         value={selectedFeedback.status}
@@ -240,10 +239,10 @@ const FeedbackAdminPage: React.FC<FeedbackAdminPageProps> = ({ feedbackList, onU
                                             'border-blue-200 bg-blue-50 text-blue-700'
                                         }`}
                                     >
-                                        <option value="New">New</option>
-                                        <option value="In Progress">In Progress</option>
-                                        <option value="Resolved">Resolved</option>
-                                        <option value="Dismissed">Dismissed</option>
+                                        <option value="New">{t.feedback.status.New}</option>
+                                        <option value="In Progress">{t.feedback.status.InProgress}</option>
+                                        <option value="Resolved">{t.feedback.status.Resolved}</option>
+                                        <option value="Dismissed">{t.feedback.status.Dismissed}</option>
                                     </select>
                                     <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none">
                                         <ChevronRight className="rotate-90 opacity-50" size={16} />
@@ -252,7 +251,7 @@ const FeedbackAdminPage: React.FC<FeedbackAdminPageProps> = ({ feedbackList, onU
                             </div>
                             
                             <div className="flex-1">
-                                <label className="block text-xs font-bold text-slate-500 uppercase mb-2 ml-1">Priority Action</label>
+                                <label className="block text-xs font-bold text-slate-500 uppercase mb-2 ml-1">{t.feedback.priority}</label>
                                 <button 
                                     onClick={() => onUpdateFeedback(selectedFeedback.id, { isActionable: !selectedFeedback.isActionable })}
                                     className={`w-full py-3 px-4 rounded-xl border-2 font-bold text-sm flex items-center justify-center gap-2 transition-all ${
@@ -262,7 +261,7 @@ const FeedbackAdminPage: React.FC<FeedbackAdminPageProps> = ({ feedbackList, onU
                                     }`}
                                 >
                                     <Zap size={16} className={selectedFeedback.isActionable ? 'fill-current' : ''} />
-                                    {selectedFeedback.isActionable ? 'Marked as Actionable' : 'Mark as Actionable'}
+                                    {selectedFeedback.isActionable ? t.feedback.markedActionable : t.feedback.markActionable}
                                 </button>
                             </div>
                         </div>
@@ -275,7 +274,7 @@ const FeedbackAdminPage: React.FC<FeedbackAdminPageProps> = ({ feedbackList, onU
                                 </div>
                                 <div>
                                     <div className="text-sm font-bold text-slate-900 dark:text-white">{selectedFeedback.userName}</div>
-                                    <div className="text-xs text-slate-500">Submitted User</div>
+                                    <div className="text-xs text-slate-500">{t.feedback.submittedBy}</div>
                                 </div>
                             </div>
                             <p className="text-slate-800 dark:text-slate-200 leading-relaxed text-base whitespace-pre-wrap">
@@ -287,7 +286,7 @@ const FeedbackAdminPage: React.FC<FeedbackAdminPageProps> = ({ feedbackList, onU
                         <div className="space-y-3">
                             <div className="flex items-center gap-2 text-indigo-600 dark:text-indigo-400">
                                 <Edit3 size={18} />
-                                <h3 className="font-bold text-sm uppercase tracking-wider">Internal Notes</h3>
+                                <h3 className="font-bold text-sm uppercase tracking-wider">{t.feedback.internalNotes}</h3>
                             </div>
                             
                             <div className="relative">
@@ -301,7 +300,7 @@ const FeedbackAdminPage: React.FC<FeedbackAdminPageProps> = ({ feedbackList, onU
                                     <button 
                                         onClick={handleSaveNote}
                                         className="bg-indigo-600 text-white p-2 rounded-lg hover:bg-indigo-500 transition-colors shadow-lg"
-                                        title="Save Note"
+                                        title={t.common.save}
                                     >
                                         <Save size={16} />
                                     </button>
@@ -309,7 +308,7 @@ const FeedbackAdminPage: React.FC<FeedbackAdminPageProps> = ({ feedbackList, onU
                             </div>
                             <p className="text-xs text-slate-400 flex items-center gap-1">
                                 <CornerDownRight size={12} />
-                                Notes are only visible to system administrators.
+                                {t.feedback.visibleAdmin}
                             </p>
                         </div>
 
@@ -321,7 +320,7 @@ const FeedbackAdminPage: React.FC<FeedbackAdminPageProps> = ({ feedbackList, onU
                             onClick={() => { onDeleteFeedback(selectedFeedback.id); setSelectedFeedbackId(null); }}
                             className="text-red-500 hover:text-red-600 text-sm font-bold flex items-center gap-2 px-4 py-2 hover:bg-red-50 rounded-lg transition-colors"
                         >
-                            <Trash2 size={16} /> Delete Record
+                            <Trash2 size={16} /> {t.feedback.deleteRecord}
                         </button>
                         
                         <div className="text-xs text-slate-400 font-mono">
@@ -336,8 +335,8 @@ const FeedbackAdminPage: React.FC<FeedbackAdminPageProps> = ({ feedbackList, onU
                     <div className="p-6 bg-white dark:bg-slate-800 rounded-full shadow-sm mb-4">
                         <MessageSquare size={48} className="text-slate-300" />
                     </div>
-                    <h3 className="text-lg font-bold text-slate-500">No Feedback Selected</h3>
-                    <p className="text-sm">Select an item from the list to view details.</p>
+                    <h3 className="text-lg font-bold text-slate-500">{t.feedback.noSelection}</h3>
+                    <p className="text-sm">{t.feedback.selectPrompt}</p>
                 </div>
             )}
 

@@ -66,6 +66,13 @@ const Dashboard: React.FC<DashboardProps> = ({
       );
   }
 
+  // --- HELPER: Translate RACs ---
+  const getTranslatedRacName = (racType: string) => {
+      const racCode = racType.split(' - ')[0].replace(/\s+/g, '');
+      // @ts-ignore
+      return t.racDefs?.[racCode] || racType;
+  };
+
   // --- CORE LOGIC: Access Status Calculation (Replicated from DatabasePage) ---
   const employeesWithStatus = useMemo(() => {
       // 1. Get Unique Employees
@@ -596,7 +603,7 @@ const Dashboard: React.FC<DashboardProps> = ({
                 disabled={isSendingSms}
                 className="bg-slate-800 dark:bg-slate-700 text-white px-4 py-2 rounded-md hover:bg-slate-700 dark:hover:bg-slate-600 transition shadow-sm text-sm font-medium flex items-center gap-2"
               >
-                {isSendingSms ? t.common.sending : <><MessageCircle size={16} /> {t.common.smsBlast || 'SMS Blast'}</>}
+                {isSendingSms ? t.common.sending : <><MessageCircle size={16} /> {t.common.smsBlast}</>}
               </button>
               <button 
                 onClick={handleBookRenewals}
@@ -643,7 +650,7 @@ const Dashboard: React.FC<DashboardProps> = ({
                       </div>
                     </td>
                     <td className="px-4 py-3">
-                      <div className="text-sm font-bold text-slate-800 dark:text-slate-200">{String(session.racType)}</div>
+                      <div className="text-sm font-bold text-slate-800 dark:text-slate-200">{getTranslatedRacName(session.racType)}</div>
                       <div className="flex items-center gap-3 text-xs text-slate-600 dark:text-gray-400 mt-1">
                         <span className="flex items-center gap-1"><MapPin size={12} /> {String(session.location)}</span>
                         <span className="flex items-center gap-1"><User size={12} /> {String(session.instructor)}</span>

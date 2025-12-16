@@ -2,7 +2,7 @@
 import React, { memo } from 'react';
 import { Booking, EmployeeRequirement, RacDef, TrainingSession } from '../types';
 import { OPS_KEYS, PERMISSION_KEYS, INITIAL_RAC_DEFINITIONS } from '../constants';
-import { Phone, Scissors } from 'lucide-react';
+import { Phone, Shield, Star } from 'lucide-react';
 import { formatDate } from '../utils/translations';
 
 interface CardTemplateProps {
@@ -41,7 +41,8 @@ const CardTemplate: React.FC<CardTemplateProps> = memo(({
   const isRac02Mapped = requirement?.requiredRacs ? !!requirement.requiredRacs['RAC02'] : false;
 
   const appOrigin = typeof window !== 'undefined' ? window.location.origin : '';
-  const qrUrl = `${appOrigin}/#/verify/${safeRecordId}`;
+  // Ensure the hash router path is correct for the QR
+  const qrUrl = `${appOrigin}${window.location.pathname}#/verify/${safeRecordId}`;
 
   // Company Header Logic
   const isVulcan = safeCompany.includes('VULCAN');
@@ -201,6 +202,7 @@ const CardTemplate: React.FC<CardTemplateProps> = memo(({
         <div className="flex h-[10mm] border-b-[1px] border-black relative justify-between items-center px-1 overflow-hidden">
             {/* Logo - Aligned Left and Enlarged */}
             <div className="flex items-center justify-start h-full w-[24mm] relative">
+                {/* Fallback Text if Image fails, but Image preferred */}
                 <img 
                     src="assets/vulcan.png" 
                     alt="Vulcan" 
@@ -316,15 +318,20 @@ const CardTemplate: React.FC<CardTemplateProps> = memo(({
                     />
                 </div>
                 
-                {/* Golden Rules Shield */}
+                {/* Golden Rules Shield - VECTOR REPLACEMENT */}
                 <div className="flex items-center justify-center w-full h-[50%]">
-                    <img 
-                        src="assets/Golden_Rules.png" 
-                        alt="Golden Rules"
-                        className="w-[18mm] h-[20mm] object-contain"
-                        style={{ display: 'block' }}
-                        onError={(e) => { e.currentTarget.style.display = 'none'; }}
-                    />
+                    <div className="w-[18mm] h-[20mm] flex flex-col items-center justify-center relative">
+                        {/* Custom Shield Shape via CSS/SVG */}
+                        <div className="relative text-[#d97706]">
+                            <Shield size={50} fill="currentColor" strokeWidth={1.5} />
+                            <div className="absolute inset-0 flex items-center justify-center pb-2">
+                                <Star size={24} className="text-white" fill="white" />
+                            </div>
+                        </div>
+                        <div className="text-[5px] font-black uppercase text-[#d97706] mt-[1px] tracking-tight text-center leading-none">
+                            Golden<br/>Rules
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>

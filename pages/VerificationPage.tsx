@@ -22,7 +22,13 @@ const VerificationPage: React.FC<VerificationPageProps> = ({
   const { recordId } = useParams<{ recordId: string }>();
   const { t } = useLanguage();
 
-  const foundBooking = bookings.find(b => b.employee.recordId === recordId);
+  // FIX: Case-Insensitive Lookup
+  const foundBooking = bookings.find(b => 
+      b.employee.recordId && 
+      recordId && 
+      b.employee.recordId.toLowerCase().trim() === recordId.toLowerCase().trim()
+  );
+
   const employee: Employee | undefined = foundBooking?.employee;
   const employeeId = employee?.id;
   
@@ -137,7 +143,7 @@ const VerificationPage: React.FC<VerificationPageProps> = ({
               <div className="bg-white p-8 rounded-2xl shadow-xl w-full max-w-sm flex flex-col items-center">
                   <XCircle size={64} className="text-gray-400 mb-4" />
                   <h1 className="text-2xl font-black text-slate-800 mb-2">{t.verification.notFound}</h1>
-                  <p className="text-gray-500 mb-6">ID: {recordId}</p>
+                  <p className="text-gray-500 mb-6 font-mono">ID: {recordId}</p>
                   <Link to="/" className="text-blue-600 font-bold text-sm">Return to Home</Link>
               </div>
           </div>

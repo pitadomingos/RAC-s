@@ -80,6 +80,37 @@ const ResultsPage: React.FC<ResultsPageProps> = ({ bookings, updateBookingStatus
       return null;
   }, [bookings, userRole, currentEmployeeId]);
 
+  // --- Translation Helper ---
+  const getTranslatedRacName = (rawInput: string) => {
+      if (!rawInput) return '';
+      
+      let code = rawInput;
+      let isImport = false;
+
+      // Extract Code
+      if (code.includes(' - ')) {
+          code = code.split(' - ')[0];
+      } else if (code.includes('|')) {
+          code = code.split('|')[0];
+          isImport = true;
+      }
+      
+      // Normalize: "RAC 01" -> "RAC01"
+      const cleanCode = code.replace(/\s+/g, '').toUpperCase().replace('(IMP)', '').replace('(IMP)', '');
+      
+      // 1. Try Translation Source of Truth
+      // @ts-ignore
+      const translated = t.racDefs?.[cleanCode];
+      if (translated) return translated;
+
+      // 2. Try Dynamic Global Definitions
+      const def = racDefinitions.find(r => r.code.replace(/\s+/g, '').toUpperCase() === cleanCode);
+      if (def) return def.name;
+
+      // 3. Fallback to clean code
+      return isImport ? cleanCode : rawInput;
+  };
+
   const filteredBookings = useMemo(() => {
     return bookings.filter(b => {
       if (userRole === UserRole.USER && currentEmployeeId) {
@@ -442,17 +473,17 @@ const ResultsPage: React.FC<ResultsPageProps> = ({ bookings, updateBookingStatus
                     <div>
                         <h2 className="text-3xl font-black tracking-tight flex items-center gap-3">
                             <FileText size={32} className="text-yellow-500" />
-                            {userRole === UserRole.USER ? 'My Training Records' : t.results.title}
+                            {userRole === UserRole.USER ? t.results.myRecords : t.results.title}
                         </h2>
                         <p className="text-slate-400 mt-2 text-sm max-w-xl">
                             {userRole === UserRole.USER 
-                                ? 'View your personal training history and certification status.'
-                                : 'High-definition view of all training records.'}
+                                ? t.results.myRecordsDesc
+                                : t.results.adminDesc}
                         </p>
                     </div>
                     {userRole === UserRole.SYSTEM_ADMIN && (
                         <div className="flex gap-3">
-                            <button onClick={handleExportData} className="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2.5 rounded-lg text-sm font-bold shadow-lg shadow-emerald-500/20 flex items-center gap-2 transition-all transform hover:-translate-y-0.5"><Download size={16} /> Export Records</button>
+                            <button onClick={handleExportData} className="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2.5 rounded-lg text-sm font-bold shadow-lg shadow-emerald-500/20 flex items-center gap-2 transition-all transform hover:-translate-y-0.5"><Download size={16} /> {t.results.export}</button>
                             <button onClick={handleDownloadTemplate} className="bg-white/10 hover:bg-white/20 text-white px-4 py-2.5 rounded-lg text-sm font-bold backdrop-blur-sm border border-white/10 flex items-center gap-2 transition-all"><FileSpreadsheet size={16} />{t.common.template}</button>
                             <button onClick={() => fileInputRef.current?.click()} className="bg-yellow-500 hover:bg-yellow-400 text-slate-900 px-4 py-2.5 rounded-lg text-sm font-bold shadow-lg shadow-yellow-500/20 flex items-center gap-2 transition-all transform hover:-translate-y-0.5"><Upload size={16} />{t.common.import}</button>
                             <input type="file" ref={fileInputRef} className="hidden" accept=".csv" onChange={handleFileUpload} />
@@ -464,26 +495,26 @@ const ResultsPage: React.FC<ResultsPageProps> = ({ bookings, updateBookingStatus
                             className="bg-purple-600 hover:bg-purple-500 text-white px-5 py-3 rounded-xl text-sm font-bold shadow-lg shadow-purple-500/30 flex items-center gap-2 transition-all transform hover:-translate-y-0.5"
                         >
                             <QrCode size={20} />
-                            My Digital Passport
+                            {t.results.passport}
                         </button>
                     )}
                 </div>
                 {/* Stats Cards */}
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mt-8 relative z-10">
                     <div className="bg-white/5 backdrop-blur-sm border border-white/10 p-4 rounded-xl">
-                        <p className="text-xs text-slate-400 uppercase tracking-wider font-bold mb-1">Total Records</p>
+                        <p className="text-xs text-slate-400 uppercase tracking-wider font-bold mb-1">{t.common.stats.totalRecords}</p>
                         <div className="flex items-end justify-between"><span className="text-2xl font-black">{stats.total}</span><Users size={18} className="text-blue-400 mb-1" /></div>
                     </div>
                     <div className="bg-white/5 backdrop-blur-sm border border-white/10 p-4 rounded-xl">
-                        <p className="text-xs text-slate-400 uppercase tracking-wider font-bold mb-1">Pass Rate</p>
+                        <p className="text-xs text-slate-400 uppercase tracking-wider font-bold mb-1">{t.common.stats.passRate}</p>
                         <div className="flex items-end justify-between"><span className={`text-2xl font-black ${Number(stats.passRate) >= 80 ? 'text-green-400' : 'text-yellow-400'}`}>{stats.passRate}%</span><TrendingUp size={18} className={Number(stats.passRate) >= 80 ? 'text-green-400' : 'text-yellow-400 mb-1'} /></div>
                     </div>
                     <div className="bg-white/5 backdrop-blur-sm border border-white/10 p-4 rounded-xl">
-                        <p className="text-xs text-slate-400 uppercase tracking-wider font-bold mb-1">Avg Score</p>
+                        <p className="text-xs text-slate-400 uppercase tracking-wider font-bold mb-1">{t.common.stats.avgScore}</p>
                         <div className="flex items-end justify-between"><span className="text-2xl font-black">{stats.avgTheory}</span><Award size={18} className="text-purple-400 mb-1" /></div>
                     </div>
                     <div className="bg-white/5 backdrop-blur-sm border border-white/10 p-4 rounded-xl">
-                        <p className="text-xs text-slate-400 uppercase tracking-wider font-bold mb-1">Certifications</p>
+                        <p className="text-xs text-slate-400 uppercase tracking-wider font-bold mb-1">{t.common.stats.certifications}</p>
                         <div className="flex items-end justify-between"><span className="text-2xl font-black text-white">{stats.passed}</span><CheckCircle2 size={18} className="text-green-400 mb-1" /></div>
                     </div>
                 </div>
@@ -523,7 +554,7 @@ const ResultsPage: React.FC<ResultsPageProps> = ({ bookings, updateBookingStatus
                     </div>
                 </div>
                 <div className="text-xs text-slate-600 dark:text-slate-400 font-medium bg-slate-100 dark:bg-slate-700 px-3 py-1.5 rounded-full whitespace-nowrap">
-                    {filteredBookings.length} records found
+                    {filteredBookings.length} {t.common.recordsFound}
                 </div>
             </div>
         </div>
@@ -571,14 +602,7 @@ const ResultsPage: React.FC<ResultsPageProps> = ({ bookings, updateBookingStatus
                                     if (parts.length >= 4) displayRoom = parts[3];
                                 }
 
-                                let displaySessionName = booking.sessionId;
-                                if (session) {
-                                    displaySessionName = session.racType;
-                                } else if (booking.sessionId.includes('|')) {
-                                    displaySessionName = booking.sessionId.split('|')[0] + ' (Imp)';
-                                } else {
-                                    displaySessionName = booking.sessionId.split(' - ')[0];
-                                }
+                                const displaySessionName = getTranslatedRacName(session ? session.racType : booking.sessionId);
 
                                 const bgColors = ['bg-blue-100 text-blue-600', 'bg-purple-100 text-purple-600', 'bg-pink-100 text-pink-600', 'bg-indigo-100 text-indigo-600', 'bg-orange-100 text-orange-600'];
                                 const colorClass = bgColors[booking.employee.name.length % bgColors.length];
@@ -628,13 +652,13 @@ const ResultsPage: React.FC<ResultsPageProps> = ({ bookings, updateBookingStatus
             <div className="shrink-0 px-6 py-4 border-t border-slate-100 dark:border-slate-700 flex flex-col md:flex-row justify-between items-center bg-slate-50 dark:bg-slate-800/50 gap-4">
                 <div className="flex items-center gap-4">
                     <div className="flex items-center gap-2">
-                        <span className="text-xs text-slate-600 dark:text-slate-400">Rows per page:</span>
+                        <span className="text-xs text-slate-600 dark:text-slate-400">{t.common.rowsPerPage}</span>
                         <select value={itemsPerPage} onChange={handlePageSizeChange} className="text-xs border border-slate-300 dark:border-slate-600 rounded bg-white dark:bg-slate-700 text-slate-800 dark:text-white px-2 py-1 outline-none focus:ring-1 focus:ring-blue-500">
                             <option value={10}>10</option><option value={20}>20</option><option value={30}>30</option><option value={50}>50</option><option value={100}>100</option><option value={120}>120</option>
                         </select>
                     </div>
                     <div className="flex items-center gap-4 border-l border-slate-300 dark:border-slate-600 pl-4">
-                        <div className="text-xs text-slate-500">Page {currentPage} of {Math.max(1, totalPages)} ({filteredBookings.length} total)</div>
+                        <div className="text-xs text-slate-500">{t.common.page} {currentPage} {t.common.of} {Math.max(1, totalPages)} ({filteredBookings.length} total)</div>
                         <div className="flex gap-2">
                             <button onClick={() => setCurrentPage(p => Math.max(1, p - 1))} disabled={currentPage === 1} className="p-1.5 rounded-lg border border-slate-200 dark:border-slate-600 hover:bg-white dark:hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed text-slate-600 dark:text-slate-300 transition-colors"><ChevronLeft size={16} /></button>
                             <button onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))} disabled={currentPage === totalPages} className="p-1.5 rounded-lg border border-slate-200 dark:border-slate-600 hover:bg-white dark:hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed text-slate-600 dark:text-slate-300 transition-colors"><ChevronRight size={16} /></button>

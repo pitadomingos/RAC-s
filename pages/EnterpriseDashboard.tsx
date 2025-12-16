@@ -249,10 +249,10 @@ const EnterpriseDashboard: React.FC<EnterpriseDashboardProps> = ({ sites, bookin
                 </div>
                 <div>
                     <h2 className="text-2xl font-black text-slate-800 dark:text-white tracking-tight">
-                        {userRole === UserRole.SYSTEM_ADMIN ? 'System Command Center' : t.enterprise.title}
+                        {userRole === UserRole.SYSTEM_ADMIN ? t.enterprise.systemTitle : t.enterprise.title}
                     </h2>
                     <p className="text-sm text-slate-600 dark:text-slate-400 font-medium">
-                        {userRole === UserRole.SYSTEM_ADMIN ? 'Multi-Tenant Platform Compliance Overview' : t.enterprise.subtitle}
+                        {userRole === UserRole.SYSTEM_ADMIN ? t.enterprise.systemSubtitle : t.enterprise.subtitle}
                     </p>
                 </div>
             </div>
@@ -265,7 +265,7 @@ const EnterpriseDashboard: React.FC<EnterpriseDashboardProps> = ({ sites, bookin
                         onChange={(e) => setSelectedSiteId(e.target.value)}
                         className="bg-transparent text-sm font-bold text-slate-700 dark:text-slate-200 outline-none cursor-pointer pr-2"
                     >
-                        <option value="All">All Sites</option>
+                        <option value="All">{t.common.all} {t.enterprise.siteName}s</option>
                         {sites.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
                     </select>
                 </div>
@@ -277,7 +277,7 @@ const EnterpriseDashboard: React.FC<EnterpriseDashboardProps> = ({ sites, bookin
                         onChange={(e) => setSelectedCompany(e.target.value)}
                         className="bg-transparent text-sm font-bold text-slate-700 dark:text-slate-200 outline-none cursor-pointer pr-2"
                     >
-                        <option value="All">All Companies</option>
+                        <option value="All">{t.common.all} {t.common.company}s</option>
                         {COMPANIES.map(c => <option key={c} value={c}>{c}</option>)}
                     </select>
                 </div>
@@ -289,7 +289,7 @@ const EnterpriseDashboard: React.FC<EnterpriseDashboardProps> = ({ sites, bookin
                         onChange={(e) => setSelectedDept(e.target.value)}
                         className="bg-transparent text-sm font-bold text-slate-700 dark:text-slate-200 outline-none cursor-pointer pr-2"
                     >
-                        <option value="All">All Depts</option>
+                        <option value="All">{t.common.all} Depts</option>
                         {DEPARTMENTS.map(d => <option key={d} value={d}>{d}</option>)}
                     </select>
                 </div>
@@ -334,7 +334,7 @@ const EnterpriseDashboard: React.FC<EnterpriseDashboardProps> = ({ sites, bookin
                         <span className="text-sm font-bold text-slate-400">{deptHeatmapData[0].rate.toFixed(1)}% Compliance</span>
                     </div>
                 ) : (
-                    <span className="text-sm text-slate-400">No Data</span>
+                    <span className="text-sm text-slate-400">{t.enterprise.noData}</span>
                 )}
             </div>
         </div>
@@ -344,9 +344,9 @@ const EnterpriseDashboard: React.FC<EnterpriseDashboardProps> = ({ sites, bookin
             <div className="bg-gradient-to-r from-slate-900 to-slate-800 p-6 rounded-2xl shadow-xl border border-slate-700 text-white animate-fade-in-down">
                 <div className="flex justify-between items-center mb-6">
                     <h3 className="text-lg font-bold flex items-center gap-2">
-                        <Building2 size={20} className="text-cyan-400"/> Tenant Performance Matrix
+                        <Building2 size={20} className="text-cyan-400"/> {t.enterprise.tenantMatrix}
                     </h3>
-                    <span className="text-xs font-mono bg-slate-700 px-2 py-1 rounded">SYSTEM VIEW</span>
+                    <span className="text-xs font-mono bg-slate-700 px-2 py-1 rounded">{t.enterprise.systemView}</span>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                     {companyComparisonData.map((comp, i) => (
@@ -383,7 +383,7 @@ const EnterpriseDashboard: React.FC<EnterpriseDashboardProps> = ({ sites, bookin
                                 <XAxis type="number" domain={[0, 100]} hide />
                                 <YAxis dataKey="name" type="category" width={100} tick={{ fontSize: 11, fontWeight: 'bold', fill: '#64748b' }} axisLine={false} tickLine={false} />
                                 <Tooltip cursor={{ fill: 'transparent' }} contentStyle={{ borderRadius: '12px' }} />
-                                <Bar dataKey="rate" fill="#6366f1" radius={[0, 4, 4, 0]} barSize={20}>
+                                <Bar dataKey="rate" name={t.common.complianceRate} fill="#6366f1" radius={[0, 4, 4, 0]} barSize={20}>
                                     {siteComparisonData.map((entry, index) => (
                                         <Cell key={`cell-${index}`} fill={parseFloat(entry.rate) >= 90 ? '#10b981' : parseFloat(entry.rate) >= 75 ? '#f59e0b' : '#ef4444'} />
                                     ))}
@@ -392,7 +392,7 @@ const EnterpriseDashboard: React.FC<EnterpriseDashboardProps> = ({ sites, bookin
                         </ResponsiveContainer>
                     ) : (
                         <div className="h-full flex items-center justify-center text-slate-400">
-                            Select "All Sites" to view comparison
+                            {t.enterprise.selectPrompt}
                         </div>
                     )}
                 </div>
@@ -400,7 +400,7 @@ const EnterpriseDashboard: React.FC<EnterpriseDashboardProps> = ({ sites, bookin
 
             {/* Department Risk Heatmap */}
             <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-lg border border-slate-100 dark:border-slate-700 flex flex-col">
-                <h3 className="text-lg font-bold text-slate-800 dark:text-white mb-2">Department Risk Heatmap</h3>
+                <h3 className="text-lg font-bold text-slate-800 dark:text-white mb-2">{t.enterprise.riskHeatmap}</h3>
                 <p className="text-xs text-slate-500 mb-6">Lowest compliance departments shown first</p>
                 
                 <div className="flex-1 space-y-4 overflow-y-auto max-h-80 pr-2">
@@ -441,10 +441,10 @@ const EnterpriseDashboard: React.FC<EnterpriseDashboardProps> = ({ sites, bookin
                             </div>
                             <div>
                                 <h3 className="text-lg font-bold text-slate-800 dark:text-white">
-                                    {userRole === UserRole.SYSTEM_ADMIN ? 'System AI Auditor' : 'Executive AI Director'}
+                                    {userRole === UserRole.SYSTEM_ADMIN ? t.enterprise.aiAuditor : t.enterprise.aiDirector}
                                 </h3>
                                 <p className="text-xs text-slate-500">
-                                    {userRole === UserRole.SYSTEM_ADMIN ? 'Platform-wide safety intelligence' : `Strategic insights for ${selectedCompany}`}
+                                    {userRole === UserRole.SYSTEM_ADMIN ? t.enterprise.systemIntelligence : `${t.enterprise.companyIntelligence} ${selectedCompany}`}
                                 </p>
                             </div>
                         </div>
@@ -456,7 +456,7 @@ const EnterpriseDashboard: React.FC<EnterpriseDashboardProps> = ({ sites, bookin
                             `}
                         >
                             {isGenerating ? <div className="animate-spin h-4 w-4 border-2 border-white/50 border-t-white rounded-full"/> : <Sparkles size={14}/>}
-                            {isGenerating ? 'Analyzing System Data...' : 'Generate Strategic Report'}
+                            {isGenerating ? t.reports.analyzing : t.reports.generate}
                         </button>
                     </div>
 
@@ -474,7 +474,7 @@ const EnterpriseDashboard: React.FC<EnterpriseDashboardProps> = ({ sites, bookin
                         ) : (
                             <div className="h-full flex flex-col items-center justify-center text-slate-400 opacity-60">
                                 <Zap size={48} className={`mb-4 ${userRole === UserRole.SYSTEM_ADMIN ? 'text-slate-300' : 'text-violet-300 dark:text-violet-900'}`} />
-                                <p className="text-center font-medium">Click generate to receive <br/> {userRole === UserRole.SYSTEM_ADMIN ? 'multi-tenant safety diagnostics.' : 'enterprise-level safety intelligence.'}</p>
+                                <p className="text-center font-medium">{t.enterprise.aiPrompt} <br/> {userRole === UserRole.SYSTEM_ADMIN ? t.enterprise.aiPromptSystem : t.enterprise.aiPromptEnterprise}</p>
                             </div>
                         )}
                     </div>
@@ -484,21 +484,21 @@ const EnterpriseDashboard: React.FC<EnterpriseDashboardProps> = ({ sites, bookin
             {/* Training Bottlenecks */}
             <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-lg border border-slate-100 dark:border-slate-700">
                 <h3 className="text-lg font-bold text-slate-800 dark:text-white mb-4 flex items-center gap-2">
-                    <AlertTriangle size={20} className="text-orange-500" /> Training Bottlenecks
+                    <AlertTriangle size={20} className="text-orange-500" /> {t.enterprise.bottlenecks}
                 </h3>
                 <div className="space-y-4">
                     {racBottleneckData.map((rac, i) => (
                         <div key={i} className="group p-4 rounded-xl bg-orange-50 dark:bg-orange-900/10 border border-orange-100 dark:border-orange-800/30 hover:shadow-md transition-all">
                             <div className="flex justify-between items-center mb-2">
                                 <span className="font-bold text-slate-800 dark:text-orange-200 text-sm">{rac.name}</span>
-                                <span className="text-xs font-black text-red-500">{rac.failRate.toFixed(1)}% Failure</span>
+                                <span className="text-xs font-black text-red-500">{rac.failRate.toFixed(1)}% {t.enterprise.failure}</span>
                             </div>
                             <div className="w-full bg-orange-200 dark:bg-orange-900/30 h-2 rounded-full overflow-hidden">
                                 <div className="bg-red-500 h-full rounded-full" style={{ width: `${rac.failRate}%` }}></div>
                             </div>
                         </div>
                     ))}
-                    {racBottleneckData.length === 0 && <p className="text-slate-400 text-sm text-center py-4">No bottlenecks detected.</p>}
+                    {racBottleneckData.length === 0 && <p className="text-slate-400 text-sm text-center py-4">{t.enterprise.noData}</p>}
                 </div>
             </div>
 

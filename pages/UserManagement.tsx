@@ -64,8 +64,8 @@ const UserManagement: React.FC<UserManagementProps> = ({ users, setUsers }) => {
       setOpenActionId(null); // Close dropdown first
       setConfirmState({
           isOpen: true,
-          title: 'Delete User Account?',
-          message: 'Are you sure you want to delete this user? This action cannot be undone.',
+          title: t.database.confirmDelete,
+          message: t.database.confirmDeleteMsg,
           onConfirm: () => setUsers(users.filter(u => u.id !== id)),
           isDestructive: true
       });
@@ -134,7 +134,7 @@ const UserManagement: React.FC<UserManagementProps> = ({ users, setUsers }) => {
 
           if (newUsers.length > 0) {
               setUsers(prev => [...prev, ...newUsers]);
-              alert(`Successfully imported ${newUsers.length} users.`);
+              alert(`${t.database.importSuccess}: ${newUsers.length}`);
           } else {
               alert("No valid user records found.");
           }
@@ -202,13 +202,13 @@ const UserManagement: React.FC<UserManagementProps> = ({ users, setUsers }) => {
                     onClick={handleDownloadTemplate}
                     className="flex items-center gap-2 bg-white/10 hover:bg-white/20 text-white px-4 py-3 rounded-xl font-bold backdrop-blur-sm border border-white/10 transition-all text-xs"
                 >
-                    <Download size={16} /> Template
+                    <Download size={16} /> {t.common.template}
                 </button>
                 <button 
                     onClick={() => fileInputRef.current?.click()}
                     className="flex items-center gap-2 bg-white/10 hover:bg-white/20 text-white px-4 py-3 rounded-xl font-bold backdrop-blur-sm border border-white/10 transition-all text-xs"
                 >
-                    <Upload size={16} /> Import CSV
+                    <Upload size={16} /> {t.database.importCsv}
                 </button>
                 <input type="file" ref={fileInputRef} className="hidden" accept=".csv" onChange={handleFileUpload} />
                 
@@ -226,17 +226,17 @@ const UserManagement: React.FC<UserManagementProps> = ({ users, setUsers }) => {
          <div className="flex gap-8 mt-8 border-t border-white/10 pt-6">
              <div>
                  <div className="text-3xl font-black">{users.length}</div>
-                 <div className="text-[10px] uppercase text-slate-400 font-bold tracking-wider">Total Users</div>
+                 <div className="text-[10px] uppercase text-slate-400 font-bold tracking-wider">{t.common.stats.totalUsers}</div>
              </div>
              <div className="w-px bg-white/10 h-10"></div>
              <div>
                  <div className="text-3xl font-black text-green-400">{users.filter(u => u.status === 'Active').length}</div>
-                 <div className="text-[10px] uppercase text-slate-400 font-bold tracking-wider">Active</div>
+                 <div className="text-[10px] uppercase text-slate-400 font-bold tracking-wider">{t.common.stats.active}</div>
              </div>
              <div className="w-px bg-white/10 h-10"></div>
              <div>
                  <div className="text-3xl font-black text-blue-400">{users.filter(u => u.role === UserRole.SYSTEM_ADMIN).length}</div>
-                 <div className="text-[10px] uppercase text-slate-400 font-bold tracking-wider">Admins</div>
+                 <div className="text-[10px] uppercase text-slate-400 font-bold tracking-wider">{t.common.stats.admins}</div>
              </div>
          </div>
       </div>
@@ -250,7 +250,7 @@ const UserManagement: React.FC<UserManagementProps> = ({ users, setUsers }) => {
                 <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
                 <input 
                   type="text" 
-                  placeholder="Search users..." 
+                  placeholder={t.common.search}
                   className="w-full pl-10 pr-4 py-3 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-xl text-sm font-medium focus:ring-2 focus:ring-green-500 outline-none transition-all shadow-sm"
                   value={filterQuery}
                   onChange={(e) => { setFilterQuery(e.target.value); setCurrentPage(1); }}
@@ -259,7 +259,7 @@ const UserManagement: React.FC<UserManagementProps> = ({ users, setUsers }) => {
             
             <div className="flex items-center gap-3">
                 <div className="flex items-center gap-2 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-xl px-3 py-2 shadow-sm">
-                    <span className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Rows</span>
+                    <span className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">{t.common.rowsPerPage}</span>
                     <select 
                         value={itemsPerPage}
                         onChange={handlePageSizeChange}
@@ -324,7 +324,7 @@ const UserManagement: React.FC<UserManagementProps> = ({ users, setUsers }) => {
                     <td className="px-6 py-4 whitespace-nowrap text-center">
                         {user.status === 'Active' ? (
                             <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-green-50 text-green-600 border border-green-200 dark:bg-green-900/30 dark:text-green-400 dark:border-green-800">
-                                <CheckCircle2 size={12} /> Active
+                                <CheckCircle2 size={12} /> {t.database.active}
                             </span>
                         ) : (
                             <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-red-50 text-red-600 border border-red-200 dark:bg-red-900/30 dark:text-red-400 dark:border-red-800">
@@ -364,7 +364,7 @@ const UserManagement: React.FC<UserManagementProps> = ({ users, setUsers }) => {
         <div className="p-4 border-t border-slate-100 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 flex flex-col md:flex-row justify-between items-center gap-4">
              <div className="flex items-center gap-4">
                  <div className="text-xs font-bold text-slate-400 uppercase tracking-wider">
-                     Page {currentPage} of {Math.max(1, totalPages)} • {users.length} Total
+                     {t.common.page} {currentPage} {t.common.of} {Math.max(1, totalPages)} • {users.length} Total
                  </div>
                  
                  <div className="flex gap-2">
@@ -383,7 +383,8 @@ const UserManagement: React.FC<UserManagementProps> = ({ users, setUsers }) => {
           onConfirm={confirmState.onConfirm}
           onClose={() => setConfirmState(prev => ({ ...prev, isOpen: false }))}
           isDestructive={confirmState.isDestructive}
-          confirmText="Delete"
+          confirmText={t.common.delete}
+          cancelText={t.common.cancel}
       />
 
       {/* Modern Modal */}
@@ -474,7 +475,7 @@ const UserManagement: React.FC<UserManagementProps> = ({ users, setUsers }) => {
                             onClick={() => setIsModalOpen(false)}
                             className="px-6 py-3 text-sm text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-xl font-bold transition-colors"
                         >
-                            Cancel
+                            {t.common.cancel}
                         </button>
                        <button 
                             onClick={handleAddUser} 

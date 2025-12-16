@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, memo } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { 
   LayoutDashboard, 
@@ -82,7 +82,7 @@ const canViewAlcoholDashboard = (role: UserRole, jobTitle: string, dept: string)
     return hasTitle && hasDept;
 };
 
-const Layout: React.FC<LayoutProps> = memo(({ 
+const Layout: React.FC<LayoutProps> = ({ 
   children, 
   userRole, 
   setUserRole, 
@@ -206,7 +206,7 @@ const Layout: React.FC<LayoutProps> = memo(({
     // 6. Enterprise Dashboard (Admin)
     {
       path: '/enterprise-dashboard',
-      label: 'Corporate Dashboard',
+      label: t.nav.enterpriseDashboard,
       icon: BarChart,
       visible: [UserRole.SYSTEM_ADMIN, UserRole.ENTERPRISE_ADMIN].includes(userRole)
     },
@@ -227,7 +227,7 @@ const Layout: React.FC<LayoutProps> = memo(({
     // 9. Communications (NEW)
     {
       path: '/messages',
-      label: t.nav.communications || 'Communications',
+      label: t.nav.communications,
       icon: Send,
       visible: [UserRole.SYSTEM_ADMIN, UserRole.ENTERPRISE_ADMIN, UserRole.SITE_ADMIN].includes(userRole)
     },
@@ -241,7 +241,7 @@ const Layout: React.FC<LayoutProps> = memo(({
     // 11. Governance
     {
       path: '/site-governance',
-      label: 'Site Governance',
+      label: t.nav.siteGovernance,
       icon: GanttChart,
       visible: [UserRole.SYSTEM_ADMIN, UserRole.ENTERPRISE_ADMIN].includes(userRole)
     },
@@ -327,9 +327,9 @@ const Layout: React.FC<LayoutProps> = memo(({
   } else if (location.pathname === '/tech-docs') {
     pageTitle = 'Technical Documentation';
   } else if (location.pathname === '/admin-manual') {
-    pageTitle = 'System Administrator Manual';
+    pageTitle = String(t.nav.adminGuide);
   } else if (location.pathname === '/messages') {
-    pageTitle = 'Communication Center';
+    pageTitle = String(t.communications.title);
   }
 
   return (
@@ -453,7 +453,6 @@ const Layout: React.FC<LayoutProps> = memo(({
 
       {/* Main Content */}
       <div className="flex-1 flex flex-col h-full w-full overflow-hidden">
-        {/* ... (Header code remains unchanged) ... */}
         <header className="no-print h-16 bg-white dark:bg-slate-800 shadow-sm flex items-center justify-between px-4 md:px-6 z-10 relative border-b border-gray-200 dark:border-slate-700 transition-colors duration-200">
           <div className="flex items-center gap-4">
              <button onClick={() => setSidebarOpen(true)} className="md:hidden text-slate-600 dark:text-slate-300">
@@ -601,6 +600,6 @@ const Layout: React.FC<LayoutProps> = memo(({
       </div>
     </div>
   );
-});
+};
 
 export default Layout;

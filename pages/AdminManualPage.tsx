@@ -259,7 +259,25 @@ const AdminManualPage: React.FC = () => {
       </div>
   );
 
-  const ArchitectureSlide = () => (
+  const ArchitectureSlide = () => {
+      // Use fallback if architecture keys are missing (for safety, though they should be there)
+      const arch = t.adminManual.content.architecture || {
+          ui: '[ USER INTERFACE ]',
+          gate: '[ PERMISSION GATE ]',
+          gateDesc: 'Checks User Role (System Admin vs User)',
+          logic: '[ LOGIC ENGINE ]',
+          checkCap: 'Check Capacity',
+          checkMatrix: 'Check Matrix Lock',
+          checkDl: 'Check DL Validity',
+          dbState: '[ DATABASE STATE ]',
+          updateRecord: 'Updates Booking / Employee Record',
+          automation: '[ AUTOMATION ]',
+          emailTrig: '📧 Email/SMS Trigger',
+          printTrig: '🖨️ Auto-Print Register',
+          aiTrig: '🤖 AI Analysis Update'
+      };
+
+      return (
       <div className="flex flex-col justify-center h-full max-w-4xl mx-auto px-6 relative z-10 animate-fade-in-up">
           <h2 className="text-4xl md:text-6xl font-black text-white mb-12 text-center">{t.adminManual.slides.architecture}</h2>
           
@@ -267,33 +285,51 @@ const AdminManualPage: React.FC = () => {
               <div className="absolute top-0 right-0 p-8 opacity-10"><Workflow size={200} /></div>
               
               <div className="flex flex-col items-center gap-6 relative z-10 text-slate-300">
-                  <div className="px-6 py-3 bg-slate-800 rounded-lg border border-slate-600 w-64 text-center font-bold text-white shadow-lg">[ USER INTERFACE ]</div>
+                  <div className="px-6 py-3 bg-slate-800 rounded-lg border border-slate-600 w-72 text-center font-bold text-white shadow-lg">{arch.ui}</div>
                   <div className="h-8 w-0.5 bg-slate-600"></div>
-                  <div className="px-6 py-3 bg-slate-800 rounded-lg border border-slate-600 w-64 text-center font-bold text-white shadow-lg">[ PERMISSION GATE ]</div>
+                  
+                  <div className="relative">
+                      <div className="px-6 py-3 bg-slate-800 rounded-lg border border-slate-600 w-72 text-center font-bold text-white shadow-lg">{arch.gate}</div>
+                      <div className="absolute left-full top-1/2 -translate-y-1/2 ml-4 w-40 text-[10px] text-slate-500 italic hidden md:block">
+                          &lt;-- {arch.gateDesc}
+                      </div>
+                  </div>
+                  
                   <div className="h-8 w-0.5 bg-slate-600"></div>
                   
                   <div className="p-6 bg-slate-900 rounded-xl border border-blue-500/30 w-full text-center relative shadow-lg shadow-blue-900/20">
-                      <div className="font-bold text-blue-400 text-xl mb-4">[ LOGIC ENGINE ]</div>
-                      <div className="grid grid-cols-3 gap-4 text-xs">
-                          <div className="bg-slate-800 p-2 rounded border border-slate-700">Check Capacity</div>
-                          <div className="bg-slate-800 p-2 rounded border border-slate-700">Check Matrix Lock</div>
-                          <div className="bg-slate-800 p-2 rounded border border-slate-700">Check DL Validity</div>
+                      <div className="font-bold text-blue-400 text-xl mb-4">{arch.logic}</div>
+                      <div className="grid grid-cols-3 gap-4 text-[10px] md:text-xs">
+                          <div className="bg-slate-800 p-2 rounded border border-slate-700">{arch.checkCap}</div>
+                          <div className="bg-slate-800 p-2 rounded border border-slate-700">{arch.checkMatrix}</div>
+                          <div className="bg-slate-800 p-2 rounded border border-slate-700">{arch.checkDl}</div>
                       </div>
                   </div>
 
                   <div className="h-8 w-0.5 bg-slate-600"></div>
-                  <div className="px-6 py-3 bg-slate-800 rounded-lg border border-slate-600 w-64 text-center font-bold text-white shadow-lg">[ DATABASE STATE ]</div>
+                  
+                  <div className="relative">
+                      <div className="px-6 py-3 bg-slate-800 rounded-lg border border-slate-600 w-72 text-center font-bold text-white shadow-lg">{arch.dbState}</div>
+                      <div className="absolute right-full top-1/2 -translate-y-1/2 mr-4 w-40 text-[10px] text-right text-slate-500 italic hidden md:block">
+                          {arch.updateRecord} --&gt;
+                      </div>
+                  </div>
+
                   <div className="h-8 w-0.5 bg-slate-600"></div>
 
-                  <div className="grid grid-cols-3 gap-4 w-full">
-                      <div className="bg-slate-900 p-3 rounded-lg border border-green-500/30 text-center text-xs text-green-300 shadow-lg">📧 Email/SMS</div>
-                      <div className="bg-slate-900 p-3 rounded-lg border border-green-500/30 text-center text-xs text-green-300 shadow-lg">🖨️ Auto-Print</div>
-                      <div className="bg-slate-900 p-3 rounded-lg border border-green-500/30 text-center text-xs text-green-300 shadow-lg">🤖 AI Analysis</div>
+                  <div className="w-full">
+                      <div className="text-center text-xs text-green-500 font-bold mb-2 uppercase tracking-widest">{arch.automation}</div>
+                      <div className="grid grid-cols-3 gap-4 w-full">
+                          <div className="bg-slate-900 p-3 rounded-lg border border-green-500/30 text-center text-[10px] md:text-xs text-green-300 shadow-lg">{arch.emailTrig}</div>
+                          <div className="bg-slate-900 p-3 rounded-lg border border-green-500/30 text-center text-[10px] md:text-xs text-green-300 shadow-lg">{arch.printTrig}</div>
+                          <div className="bg-slate-900 p-3 rounded-lg border border-green-500/30 text-center text-[10px] md:text-xs text-green-300 shadow-lg">{arch.aiTrig}</div>
+                      </div>
                   </div>
               </div>
           </div>
       </div>
-  );
+      );
+  };
 
   const renderSlide = () => {
       switch(slides[currentSlide].id) {

@@ -123,15 +123,15 @@ const ReportsPage: React.FC<ReportsPageProps> = ({ bookings, sessions }) => {
      }));
 
      const pieData = [
-        { name: 'Passed', value: passed, color: '#10b981' }, // Emerald-500
-        { name: 'Failed', value: failed, color: '#ef4444' }, // Red-500
-        { name: 'Pending', value: total - passed - failed, color: '#f59e0b' } // Amber-500
+        { name: t.common.passed, value: passed, color: '#10b981' }, // Emerald-500
+        { name: t.common.failed, value: failed, color: '#ef4444' }, // Red-500
+        { name: t.common.pending, value: total - passed - failed, color: '#f59e0b' } // Amber-500
      ].filter(d => d.value > 0);
 
      return {
         total, passed, failed, passRate, attendanceRate, racStats, failingRacs, chartData, pieData
      };
-  }, [filteredBookings]);
+  }, [filteredBookings, t]);
 
   // -- 3. Trainer Stats --
   const trainerStats = useMemo(() => {
@@ -333,7 +333,7 @@ const ReportsPage: React.FC<ReportsPageProps> = ({ bookings, sessions }) => {
                       <TrendingUp className="text-blue-500" size={20} />
                       {t.reports.charts.performance}
                    </h3>
-                   <p className="text-xs text-slate-500">Pass vs Fail count per Module</p>
+                   <p className="text-xs text-slate-500">{t.reports.charts.breakdownTitle}</p>
                 </div>
              </div>
              <div className="h-80 w-full" style={{ minWidth: 0 }}>
@@ -347,8 +347,8 @@ const ReportsPage: React.FC<ReportsPageProps> = ({ bookings, sessions }) => {
                          contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)' }}
                       />
                       <Legend iconType="circle" wrapperStyle={{ paddingTop: '20px' }} />
-                      <Bar dataKey="Passed" fill="#10b981" radius={[4, 4, 0, 0]} barSize={30} />
-                      <Bar dataKey="Failed" fill="#ef4444" radius={[4, 4, 0, 0]} barSize={30} />
+                      <Bar dataKey="Passed" name={t.common.passed} fill="#10b981" radius={[4, 4, 0, 0]} barSize={30} />
+                      <Bar dataKey="Failed" name={t.common.failed} fill="#ef4444" radius={[4, 4, 0, 0]} barSize={30} />
                    </BarChart>
                 </ResponsiveContainer>
              </div>
@@ -356,8 +356,8 @@ const ReportsPage: React.FC<ReportsPageProps> = ({ bookings, sessions }) => {
 
           {/* Pass Ratio Donut Chart */}
           <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-lg border border-slate-100 dark:border-slate-700 flex flex-col h-full">
-             <h3 className="text-lg font-bold text-slate-800 dark:text-white mb-2">Outcome Distribution</h3>
-             <p className="text-xs text-slate-500 mb-6">Visual breakdown of results</p>
+             <h3 className="text-lg font-bold text-slate-800 dark:text-white mb-2">{t.reports.charts.distributionTitle}</h3>
+             <p className="text-xs text-slate-500 mb-6">{t.reports.charts.distributionSubtitle}</p>
              
              <div className="flex-1 w-full min-h-[250px] relative" style={{ minWidth: 0 }}>
                 <ResponsiveContainer width="100%" height="100%">
@@ -402,7 +402,7 @@ const ReportsPage: React.FC<ReportsPageProps> = ({ bookings, sessions }) => {
                       </div>
                       <div>
                          <h3 className="text-lg font-bold text-slate-800 dark:text-white">{t.reports.executiveAnalysis}</h3>
-                         <p className="text-xs text-slate-500">AI-Powered Insights based on filtered data</p>
+                         <p className="text-xs text-slate-500">{t.reports.charts.aiSubtitle}</p>
                       </div>
                    </div>
                    <button 
@@ -443,7 +443,7 @@ const ReportsPage: React.FC<ReportsPageProps> = ({ bookings, sessions }) => {
           <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-lg border border-slate-100 dark:border-slate-700 p-6 flex flex-col h-full">
              <div className="flex items-center gap-2 mb-6">
                 <Award className="text-yellow-500" size={24} />
-                <h3 className="text-lg font-bold text-slate-800 dark:text-white">Trainer Leaderboard</h3>
+                <h3 className="text-lg font-bold text-slate-800 dark:text-white">{t.reports.leaderboard}</h3>
              </div>
              
              <div className="flex-1 overflow-y-auto pr-2 space-y-4">
@@ -467,8 +467,8 @@ const ReportsPage: React.FC<ReportsPageProps> = ({ bookings, sessions }) => {
                             />
                          </div>
                          <div className="mt-1 flex justify-between text-[10px] text-slate-400">
-                            <span>{trainer.students} Students</span>
-                            <span>Avg Theory: {trainer.avgTheory}</span>
+                            <span>{trainer.students} {t.reports.trainerMetrics.students}</span>
+                            <span>{t.reports.trainerMetrics.avgTheory}: {trainer.avgTheory}</span>
                          </div>
                       </div>
                    </div>
@@ -483,7 +483,7 @@ const ReportsPage: React.FC<ReportsPageProps> = ({ bookings, sessions }) => {
           <div className="bg-red-50 dark:bg-red-900/20 rounded-2xl p-6 border border-red-100 dark:border-red-900/50">
              <div className="flex items-center gap-3 mb-4 text-red-700 dark:text-red-400">
                 <AlertCircle size={24} />
-                <h3 className="text-lg font-bold">Recorded Absences (No-Shows)</h3>
+                <h3 className="text-lg font-bold">{t.reports.noShowsTitle}</h3>
                 <span className="bg-red-200 dark:bg-red-800 text-red-800 dark:text-red-100 text-xs px-2 py-0.5 rounded-full font-bold">
                    {noShowList.length}
                 </span>
@@ -493,11 +493,11 @@ const ReportsPage: React.FC<ReportsPageProps> = ({ bookings, sessions }) => {
                 <table className="w-full text-left">
                    <thead>
                       <tr className="border-b border-red-200 dark:border-red-800 text-xs font-bold text-red-500 dark:text-red-300 uppercase tracking-wider">
-                         <th className="pb-2 pl-2">ID</th>
-                         <th className="pb-2">Name</th>
-                         <th className="pb-2">Company</th>
+                         <th className="pb-2 pl-2">{t.common.id}</th>
+                         <th className="pb-2">{t.common.name}</th>
+                         <th className="pb-2">{t.common.company}</th>
                          <th className="pb-2">RAC</th>
-                         <th className="pb-2">Date</th>
+                         <th className="pb-2">{t.common.date}</th>
                       </tr>
                    </thead>
                    <tbody className="text-sm">

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { ScrollText, Filter, AlertTriangle, CheckCircle, Info, ShieldAlert, Clock, Terminal, ChevronLeft, ChevronRight, Zap, Bot } from 'lucide-react';
 import { useLanguage } from '../contexts/LanguageContext';
@@ -184,7 +183,7 @@ const LogsPage: React.FC = () => {
                 <div className="p-3 border-t border-slate-100 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 flex flex-col md:flex-row justify-between items-center gap-4">
                     <div className="flex items-center gap-4">
                         <div className="flex items-center gap-2">
-                            <span className="text-xs text-slate-600 dark:text-slate-400">Rows per page:</span>
+                            <span className="text-xs text-slate-600 dark:text-slate-400">{t.common.rowsPerPage}</span>
                             <select 
                                 value={itemsPerPage}
                                 onChange={handlePageSizeChange}
@@ -201,7 +200,7 @@ const LogsPage: React.FC = () => {
                         
                         <div className="flex items-center gap-4 border-l border-slate-300 dark:border-slate-600 pl-4">
                             <div className="text-xs text-slate-600 dark:text-slate-400">
-                                Page {currentPage} of {Math.max(1, totalPages)} ({filteredLogs.length} total)
+                                {t.common.page} {currentPage} {t.common.of} {Math.max(1, totalPages)} ({filteredLogs.length} total)
                             </div>
                             <div className="flex items-center gap-1">
                                 <button onClick={() => goToPage(currentPage - 1)} disabled={currentPage === 1} className="p-1 rounded hover:bg-gray-200 dark:hover:bg-slate-700 disabled:opacity-30 text-slate-600 dark:text-slate-300"><ChevronLeft size={16} /></button>

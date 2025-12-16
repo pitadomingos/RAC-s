@@ -1,11 +1,12 @@
-
 import React, { useState } from 'react';
 import { useMessages } from '../contexts/MessageContext';
 import { Mail, Smartphone, Search, Trash2, Clock, CheckCircle2, User, Send } from 'lucide-react';
 import { format } from 'date-fns';
+import { useLanguage } from '../contexts/LanguageContext';
 
 const MessageLogPage: React.FC = () => {
   const { messages, clearMessages } = useMessages();
+  const { t } = useLanguage();
   const [selectedId, setSelectedId] = useState<string | null>(messages.length > 0 ? messages[0].id : null);
   const [filter, setFilter] = useState('');
 
@@ -24,15 +25,15 @@ const MessageLogPage: React.FC = () => {
         <div>
           <h2 className="text-2xl font-black text-slate-800 dark:text-white flex items-center gap-3">
             <Send className="text-blue-500" size={28} />
-            Communication Center
+            {t.communications.title}
           </h2>
-          <p className="text-sm text-slate-500 dark:text-slate-400">Real-time log of automated system notifications (SMS & Email).</p>
+          <p className="text-sm text-slate-500 dark:text-slate-400">{t.communications.subtitle}</p>
         </div>
         <button 
           onClick={clearMessages}
           className="text-xs font-bold text-red-500 hover:text-red-600 flex items-center gap-1 px-3 py-2 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
         >
-          <Trash2 size={14} /> Clear Log
+          <Trash2 size={14} /> {t.communications.clear}
         </button>
       </div>
 
@@ -45,7 +46,7 @@ const MessageLogPage: React.FC = () => {
               <Search className="absolute left-3 top-2.5 text-slate-400" size={16} />
               <input 
                 type="text" 
-                placeholder="Search logs..." 
+                placeholder={t.communications.search}
                 className="w-full pl-9 pr-4 py-2 bg-slate-100 dark:bg-slate-700 rounded-lg text-sm outline-none focus:ring-2 focus:ring-blue-500 text-slate-800 dark:text-white"
                 value={filter}
                 onChange={(e) => setFilter(e.target.value)}
@@ -55,7 +56,7 @@ const MessageLogPage: React.FC = () => {
           
           <div className="flex-1 overflow-y-auto">
             {filteredMessages.length === 0 ? (
-              <div className="p-8 text-center text-slate-400 text-sm">No messages found.</div>
+              <div className="p-8 text-center text-slate-400 text-sm">{t.communications.empty}</div>
             ) : (
               filteredMessages.map(msg => (
                 <div 
@@ -84,7 +85,7 @@ const MessageLogPage: React.FC = () => {
           {!selectedMessage ? (
             <div className="text-center text-slate-400">
               <Send size={48} className="mx-auto mb-4 opacity-20" />
-              <p>Select a message to view details</p>
+              <p>{t.communications.select}</p>
             </div>
           ) : (
             <>
@@ -99,14 +100,14 @@ const MessageLogPage: React.FC = () => {
                             <User size={20} />
                         </div>
                         <span className="text-xs font-medium text-slate-900">VULCAN SAFETY</span>
-                        <span className="text-[10px] text-slate-400">Text Message • Today {format(selectedMessage.timestamp, 'HH:mm')}</span>
+                        <span className="text-[10px] text-slate-400">{t.communications.sms} • Today {format(selectedMessage.timestamp, 'HH:mm')}</span>
                     </div>
                     {/* Message Body */}
                     <div className="flex-1 p-4 flex flex-col gap-2 overflow-y-auto">
                         <div className="self-start max-w-[80%] bg-slate-200 rounded-2xl rounded-tl-none px-4 py-2 text-sm text-slate-800 shadow-sm">
                             {selectedMessage.content}
                         </div>
-                        <div className="text-[10px] text-slate-400 self-start ml-2">Sent via Gateway</div>
+                        <div className="text-[10px] text-slate-400 self-start ml-2">{t.communications.gateway}</div>
                     </div>
                     {/* iOS Input Area */}
                     <div className="p-3 bg-slate-100 border-t border-slate-200">
@@ -125,7 +126,7 @@ const MessageLogPage: React.FC = () => {
                             </div>
                             <div>
                                 <div className="font-bold text-slate-900 dark:text-white">Vulcan Safety System <span className="text-slate-400 font-normal">&lt;no-reply@vulcan.com&gt;</span></div>
-                                <div className="text-slate-500 dark:text-slate-400">To: {selectedMessage.recipientName} &lt;{selectedMessage.recipient}&gt;</div>
+                                <div className="text-slate-500 dark:text-slate-400">{t.communications.to}: {selectedMessage.recipientName} &lt;{selectedMessage.recipient}&gt;</div>
                             </div>
                             <div className="ml-auto text-xs text-slate-400">
                                 {format(selectedMessage.timestamp, 'MMM dd, yyyy, h:mm a')}
@@ -136,7 +137,7 @@ const MessageLogPage: React.FC = () => {
                         {selectedMessage.content}
                     </div>
                     <div className="p-4 bg-slate-50 dark:bg-slate-900/50 border-t border-slate-100 dark:border-slate-700 text-xs text-slate-400 text-center">
-                        This is an automated notification. Please do not reply.
+                        {t.communications.automated}
                     </div>
                 </div>
               )}

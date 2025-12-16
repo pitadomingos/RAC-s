@@ -3,9 +3,8 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useLanguage } from '../contexts/LanguageContext';
 import { 
   Wine, Activity, Wifi, Lock, UserX, AlertTriangle, 
-  Server, Mail, Smartphone,
-  CheckCircle2, XCircle, TrendingUp,
-  Map as MapIcon, FileText, FileCode, Filter, Calendar, BarChart3, PieChart as PieIcon
+  FileCode, Mail, Smartphone, XCircle, TrendingUp, BarChart3, PieChart as PieIcon,
+  Map as MapIcon, Filter, Calendar
 } from 'lucide-react';
 import { 
   AreaChart, Area, Tooltip, ResponsiveContainer, XAxis, YAxis, CartesianGrid, 
@@ -14,7 +13,7 @@ import {
 import { BreathalyzerTest, SystemNotification } from '../types';
 import { v4 as uuidv4 } from 'uuid';
 import { useNavigate } from 'react-router-dom';
-import { format, subDays, subHours } from 'date-fns';
+import { format, subDays } from 'date-fns';
 
 interface AlcoholIntegrationProps {
     addNotification?: (notif: SystemNotification) => void;
@@ -32,7 +31,7 @@ const AlcoholIntegration: React.FC<AlcoholIntegrationProps> = ({ addNotification
 
   // --- STATE FOR SIMULATION ---
   const [tests, setTests] = useState<BreathalyzerTest[]>([]);
-  const [devices, setDevices] = useState([
+  const [devices] = useState([
       { id: 'GT-01', name: 'Main Gate Turnstile A', status: 'Online', location: 'Gate 1' },
       { id: 'GT-02', name: 'Main Gate Turnstile B', status: 'Online', location: 'Gate 1' },
       { id: 'GT-03', name: 'Contractor Gate C', status: 'Online', location: 'Gate 2' },
@@ -159,8 +158,6 @@ const AlcoholIntegration: React.FC<AlcoholIntegrationProps> = ({ addNotification
       const total = filteredData.length;
       const positives = filteredData.filter(t => t.status === 'FAIL').length;
       const passRate = total > 0 ? ((total - positives) / total * 100).toFixed(1) : '100.0';
-      // Calculate throughput (tests per hour in selected range)
-      // Simplified: Just total / 12 (assuming 12 hour shift) or similar
       const avgPerHour = total > 0 ? (total / (dateFilter === 'Today' ? new Date().getHours() + 1 : 24)).toFixed(0) : '0';
 
       return { total, positives, passRate, avgPerHour };
@@ -194,8 +191,8 @@ const AlcoholIntegration: React.FC<AlcoholIntegrationProps> = ({ addNotification
 
   // Chart Data: Pie
   const pieData = [
-      { name: 'Pass', value: stats.total - stats.positives, color: '#10b981' },
-      { name: 'Fail', value: stats.positives, color: '#ef4444' }
+      { name: t.common.passed, value: stats.total - stats.positives, color: '#10b981' },
+      { name: t.common.failed, value: stats.positives, color: '#ef4444' }
   ];
 
   return (
@@ -227,7 +224,7 @@ const AlcoholIntegration: React.FC<AlcoholIntegrationProps> = ({ addNotification
                     onClick={() => setViewLocalSpecs(!viewLocalSpecs)}
                     className="flex items-center gap-2 text-xs font-bold text-slate-400 hover:text-white bg-white/5 hover:bg-white/10 px-3 py-1.5 rounded-lg transition-colors border border-white/10"
                   >
-                      <Activity size={14} /> {viewLocalSpecs ? t.alcohol.dashboard.backToLive : "Module Specs"}
+                      <Activity size={14} /> {viewLocalSpecs ? t.alcohol.dashboard.backToLive : t.alcohol.dashboard.specs}
                   </button>
               </div>
           </div>
@@ -310,13 +307,13 @@ const AlcoholIntegration: React.FC<AlcoholIntegrationProps> = ({ addNotification
                   </div>
               </div>
               <div className="text-xs text-slate-500 font-mono">
-                  Showing {filteredData.length} records
+                  {t.common.recordsFound}: {filteredData.length}
               </div>
           </div>
       )}
 
       {viewLocalSpecs ? (
-          /* --- TECHNICAL SPECS VIEW (Unchanged) --- */
+          /* --- TECHNICAL SPECS VIEW --- */
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 animate-fade-in-up">
               <div className="bg-white dark:bg-slate-800 p-8 rounded-2xl shadow-lg border border-slate-200 dark:border-slate-700">
                   <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-6 flex items-center gap-2">
@@ -354,7 +351,7 @@ const AlcoholIntegration: React.FC<AlcoholIntegrationProps> = ({ addNotification
                           </div>
                       </li>
                       <li className="flex gap-4 items-start">
-                          <div className="p-2 bg-green-100 dark:bg-green-900/30 rounded-lg text-green-600"><FileText size={18}/></div>
+                          <div className="p-2 bg-green-100 dark:bg-green-900/30 rounded-lg text-green-600"><FileCode size={18}/></div>
                           <div>
                               <h4 className="font-bold text-sm text-slate-800 dark:text-white">{t.alcohol.features.complianceTitle}</h4>
                               <p className="text-xs text-slate-500 dark:text-slate-400">{t.alcohol.features.complianceDesc}</p>
@@ -374,7 +371,7 @@ const AlcoholIntegration: React.FC<AlcoholIntegrationProps> = ({ addNotification
                   <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-lg border border-slate-100 dark:border-slate-700 p-6">
                       <h3 className="font-bold text-slate-800 dark:text-white mb-4 flex items-center gap-2">
                           <TrendingUp size={20} className="text-indigo-500" /> 
-                          {dateFilter === 'Today' ? 'Hourly Activity Trend' : 'Daily Trend'}
+                          {dateFilter === 'Today' ? t.alcohol.dashboard.hourlyTrend : t.alcohol.dashboard.dailyTrend}
                       </h3>
                       <div className="h-64 w-full">
                           <ResponsiveContainer width="100%" height="100%">
@@ -394,8 +391,8 @@ const AlcoholIntegration: React.FC<AlcoholIntegrationProps> = ({ addNotification
                                   <YAxis axisLine={false} tickLine={false} tick={{fill: '#94a3b8', fontSize: 10}} />
                                   <Tooltip contentStyle={{ backgroundColor: '#1e293b', border: 'none', borderRadius: '8px', color: '#fff' }} />
                                   <Legend />
-                                  <Area type="monotone" dataKey="tests" stroke="#6366f1" fillOpacity={1} fill="url(#colorTests)" name="Total Tests" />
-                                  <Area type="monotone" dataKey="violations" stroke="#ef4444" fillOpacity={1} fill="url(#colorFails)" name="Violations" />
+                                  <Area type="monotone" dataKey="tests" stroke="#6366f1" fillOpacity={1} fill="url(#colorTests)" name={t.alcohol.dashboard.kpi.total} />
+                                  <Area type="monotone" dataKey="violations" stroke="#ef4444" fillOpacity={1} fill="url(#colorFails)" name={t.alcohol.dashboard.kpi.violations} />
                               </AreaChart>
                           </ResponsiveContainer>
                       </div>
@@ -405,7 +402,7 @@ const AlcoholIntegration: React.FC<AlcoholIntegrationProps> = ({ addNotification
                       {/* Chart 2: Device Load */}
                       <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-lg border border-slate-100 dark:border-slate-700 p-6">
                           <h3 className="font-bold text-slate-800 dark:text-white mb-4 flex items-center gap-2">
-                              <BarChart3 size={20} className="text-blue-500" /> Device Load
+                              <BarChart3 size={20} className="text-blue-500" /> {t.alcohol.dashboard.deviceLoad}
                           </h3>
                           <div className="h-48 w-full">
                               <ResponsiveContainer width="100%" height="100%">
@@ -413,7 +410,7 @@ const AlcoholIntegration: React.FC<AlcoholIntegrationProps> = ({ addNotification
                                       <XAxis type="number" hide />
                                       <YAxis dataKey="name" type="category" width={50} tick={{fill: '#94a3b8', fontSize: 10}} />
                                       <Tooltip cursor={{fill: 'transparent'}} contentStyle={{ backgroundColor: '#1e293b', border: 'none', borderRadius: '8px', color: '#fff' }}/>
-                                      <Bar dataKey="value" fill="#3b82f6" radius={[0, 4, 4, 0]} barSize={20} name="Tests Processed" />
+                                      <Bar dataKey="value" fill="#3b82f6" radius={[0, 4, 4, 0]} barSize={20} name={t.common.testsProcessed} />
                                   </BarChart>
                               </ResponsiveContainer>
                           </div>
@@ -422,7 +419,7 @@ const AlcoholIntegration: React.FC<AlcoholIntegrationProps> = ({ addNotification
                       {/* Chart 3: Compliance Ratio */}
                       <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-lg border border-slate-100 dark:border-slate-700 p-6 flex flex-col items-center">
                           <h3 className="font-bold text-slate-800 dark:text-white mb-2 flex items-center gap-2 self-start">
-                              <PieIcon size={20} className="text-emerald-500" /> Compliance Ratio
+                              <PieIcon size={20} className="text-emerald-500" /> {t.alcohol.dashboard.complianceRatio}
                           </h3>
                           <div className="h-48 w-full relative">
                               <ResponsiveContainer width="100%" height="100%">
@@ -445,7 +442,7 @@ const AlcoholIntegration: React.FC<AlcoholIntegrationProps> = ({ addNotification
                               <div className="absolute inset-0 flex items-center justify-center pointer-events-none pb-8">
                                   <div className="text-center">
                                       <span className="text-2xl font-black text-slate-800 dark:text-white">{stats.passRate}%</span>
-                                      <div className="text-[10px] text-slate-500 uppercase font-bold">Pass Rate</div>
+                                      <div className="text-[10px] text-slate-500 uppercase font-bold">{t.common.passed}</div>
                                   </div>
                               </div>
                           </div>
@@ -457,7 +454,7 @@ const AlcoholIntegration: React.FC<AlcoholIntegrationProps> = ({ addNotification
               <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-lg border border-slate-100 dark:border-slate-700 flex flex-col h-[650px]">
                   <div className="p-6 border-b border-slate-100 dark:border-slate-700 flex justify-between items-center bg-slate-50 dark:bg-slate-900/50">
                       <h3 className="font-bold text-slate-800 dark:text-white flex items-center gap-2">
-                          <Wifi size={20} className="text-blue-500 animate-pulse" /> Live Stream
+                          <Wifi size={20} className="text-blue-500 animate-pulse" /> {t.alcohol.dashboard.liveStream}
                       </h3>
                       <div className="flex gap-2">
                           <span className="text-[10px] bg-white dark:bg-slate-700 text-slate-500 px-2 py-1 rounded border border-slate-200 dark:border-slate-600">{t.alcohol.dashboard.mqtt}</span>
@@ -467,7 +464,7 @@ const AlcoholIntegration: React.FC<AlcoholIntegrationProps> = ({ addNotification
                       <table className="w-full text-sm text-left">
                           <thead className="bg-slate-50 dark:bg-slate-800/80 text-xs text-slate-500 uppercase font-bold sticky top-0 z-10 backdrop-blur-sm">
                               <tr>
-                                  <th className="px-4 py-3">Time</th>
+                                  <th className="px-4 py-3">{t.common.time}</th>
                                   <th className="px-4 py-3">User</th>
                                   <th className="px-4 py-3 text-right">Result</th>
                               </tr>
@@ -506,8 +503,8 @@ const AlcoholIntegration: React.FC<AlcoholIntegrationProps> = ({ addNotification
                   {/* Device Status Footer */}
                   <div className="p-4 border-t border-slate-100 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50">
                       <div className="flex justify-between items-center text-xs text-slate-500 mb-2">
-                          <span className="font-bold uppercase tracking-wider">Device Health</span>
-                          <span className="text-emerald-500 font-bold">100% Online</span>
+                          <span className="font-bold uppercase tracking-wider">{t.alcohol.dashboard.deviceHealth}</span>
+                          <span className="text-emerald-500 font-bold">100% {t.alcohol.dashboard.online}</span>
                       </div>
                       <div className="flex gap-1 h-1.5 w-full">
                           {devices.map(d => (
@@ -557,7 +554,7 @@ const AlcoholIntegration: React.FC<AlcoholIntegrationProps> = ({ addNotification
                           
                           <div className="flex items-center gap-3 text-sm text-slate-700 dark:text-slate-300">
                               <div className="p-1.5 bg-green-100 dark:bg-green-900/30 text-green-600 rounded-full"><Lock size={14}/></div>
-                              <span dangerouslySetInnerHTML={{ __html: t.alcohol.dashboard.actionLog.locked.replace('Locked', '<strong>Locked</strong>').replace('Bloqueada', '<strong>Bloqueada</strong>') }}></span>
+                              <span dangerouslySetInnerHTML={{ __html: t.alcohol.dashboard.actionLog.locked.replace('Locked', '<strong>Locked</strong>').replace('Bloqueado', '<strong>Bloqueado</strong>') }}></span>
                           </div>
 
                           <div className={`flex items-center gap-3 text-sm transition-all duration-500 ${isReporting ? 'opacity-50' : 'opacity-100 text-slate-700 dark:text-slate-300'}`}>

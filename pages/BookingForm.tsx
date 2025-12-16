@@ -194,6 +194,12 @@ const BookingForm: React.FC<BookingFormProps> = ({ addBookings, sessions, userRo
       return session.racType.split(' - ')[0].replace(/\s+/g, '').toUpperCase();
   };
 
+  const getTranslatedRacName = (session: TrainingSession) => {
+      const racCode = getRacCodeFromSession(session);
+      // @ts-ignore
+      return t.racDefs?.[racCode] || session.racType;
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedSession || !sessionData) {
@@ -420,11 +426,11 @@ const BookingForm: React.FC<BookingFormProps> = ({ addBookings, sessions, userRo
                   <div className="p-2 bg-yellow-500/20 rounded-lg backdrop-blur-sm border border-yellow-500/30">
                     <UserPlus size={28} className="text-yellow-500" />
                   </div>
-                  <h2 className="text-3xl font-black tracking-tight text-white">{isSelfService ? 'Self-Service Booking' : t.booking.title}</h2>
+                  <h2 className="text-3xl font-black tracking-tight text-white">{isSelfService ? t.booking.selfServiceTitle : t.booking.title}</h2>
                </div>
                <p className="text-slate-400 text-sm max-w-xl flex items-center gap-2 font-medium">
                   <ShieldCheck size={16} className="text-green-400" />
-                  {isSelfService ? "View only trainings mapped to you." : "Full Schedule Access (Secure Mode)"}
+                  {isSelfService ? t.booking.selfServiceDesc : t.booking.secureMode}
                </p>
             </div>
             {canManageSessions && (
@@ -470,7 +476,7 @@ const BookingForm: React.FC<BookingFormProps> = ({ addBookings, sessions, userRo
                         const isMatch = targetRac && session.racType.includes(targetRac);
                         return (
                             <option key={session.id} value={session.id} className={`${isFull ? 'text-red-500 font-bold' : ''} ${isMatch ? 'bg-blue-100 font-black' : ''}`}>
-                            {isMatch ? '★ ' : ''}{session.racType} • {session.date} • {session.location} • (Cap: {count}/{session.capacity}) {isFull ? '(FULL - Auto-Waitlist)' : ''}
+                            {isMatch ? '★ ' : ''}{getTranslatedRacName(session)} • {session.date} • {session.location} • (Cap: {count}/{session.capacity}) {isFull ? '(FULL - Auto-Waitlist)' : ''}
                             </option>
                         );
                       })}

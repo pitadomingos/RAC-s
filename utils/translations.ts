@@ -90,7 +90,51 @@ const enTranslations = {
       operationalMatrix: 'Operational Matrix',
       owner: 'Owner',
       smsBlast: 'SMS Blast',
-      sending: 'Sending...'
+      sending: 'Sending...',
+      passed: 'Passed',
+      failed: 'Failed',
+      pending: 'Pending',
+      complianceRate: 'Compliance Rate',
+      testsProcessed: 'Tests Processed',
+      stats: {
+          totalUsers: 'Total Users',
+          active: 'Active',
+          admins: 'Admins',
+          totalRecords: 'Total Records',
+          passRate: 'Pass Rate',
+          avgScore: 'Avg Score',
+          certifications: 'Certifications'
+      }
+    },
+    racDefs: {
+        RAC01: 'RAC 01 - Working at Height',
+        RAC02: 'RAC 02 - Vehicles and Mobile Equipment',
+        RAC03: 'RAC 03 - Mobile Equipment Lockout',
+        RAC04: 'RAC 04 - Machine Guarding',
+        RAC05: 'RAC 05 - Confined Space',
+        RAC06: 'RAC 06 - Lifting Operations',
+        RAC07: 'RAC 07 - Ground Stability',
+        RAC08: 'RAC 08 - Electricity',
+        RAC09: 'RAC 09 - Explosives',
+        RAC10: 'RAC 10 - Liquid Metal',
+        RAC11: 'RAC 11 - Mine Traffic',
+        PTS: 'PTS - Safe Work Permit',
+        ART: 'ART - Task Risk Analysis',
+        LIB_OPS: 'LIB-OPS - Operational Release',
+        LIB_MOV: 'LIB-MOV - Movement Release'
+    },
+    communications: {
+        title: 'Communication Center',
+        subtitle: 'Real-time log of automated system notifications (SMS & Email).',
+        clear: 'Clear Log',
+        search: 'Search logs...',
+        empty: 'No messages found.',
+        select: 'Select a message to view details',
+        sms: 'Text Message',
+        email: 'Email',
+        gateway: 'Sent via Gateway',
+        automated: 'This is an automated notification. Please do not reply.',
+        to: 'To'
     },
     feedback: {
         button: 'Send Feedback',
@@ -116,7 +160,60 @@ const enTranslations = {
         actionable: 'Actionable',
         notActionable: 'Not Actionable',
         markActionable: 'Mark Actionable',
-        markNotActionable: 'Mark Not Actionable'
+        markedActionable: 'Marked as Actionable',
+        internalNotes: 'Internal Notes',
+        visibleAdmin: 'Notes are only visible to system administrators.',
+        deleteRecord: 'Delete Record',
+        noSelection: 'No Feedback Selected',
+        selectPrompt: 'Select an item from the list to view details.',
+        priority: 'Priority Action',
+        workflow: 'Workflow Status',
+        manage: 'Manage user reports and suggestions',
+        submittedBy: 'Submitted User'
+    },
+    alcohol: {
+        dashboard: {
+            title: 'Alcohol Control',
+            subtitle: 'Real-time monitoring.',
+            live: 'Live Feed',
+            backToLive: 'Back to Live',
+            specs: 'Module Specs',
+            kpi: { total: 'Total Tests', violations: 'Violations', health: 'System Health' },
+            online: 'Online',
+            mqtt: 'MQTT Stream',
+            alert: { title: 'Alcohol Violation', desc: 'Positive breathalyzer result detected.', measured: 'Measured BAC' },
+            actions: 'Automated Actions',
+            actionLog: {
+                locked: 'Turnstile Locked',
+                generating: 'Generating Incident Report...',
+                logged: 'Incident Logged',
+                contacting: 'Contacting Supervisor...',
+                sent: 'Alert Sent'
+            },
+            close: 'Close Alert',
+            hourlyTrend: 'Hourly Activity Trend',
+            dailyTrend: 'Daily Trend',
+            deviceLoad: 'Device Load',
+            complianceRatio: 'Compliance Ratio',
+            deviceHealth: 'Device Health',
+            liveStream: 'Live Stream'
+        },
+        protocol: {
+            title: 'Safety Protocol',
+            positiveTitle: 'Positive Result Protocol',
+            positiveDesc: 'Immediate access denial and supervisor notification.',
+            resetTitle: 'System Reset',
+            resetDesc: 'Manual reset required after violation.'
+        },
+        features: {
+            title: 'System Features',
+            iotTitle: 'IoT Integration',
+            iotDesc: 'Connects with standard breathalyzers.',
+            accessTitle: 'Access Control',
+            accessDesc: 'Integrates with turnstile systems.',
+            complianceTitle: 'Compliance Logging',
+            complianceDesc: 'All tests are logged for audit.'
+        }
     },
     verification: {
       title: 'Digital Safety Passport',
@@ -190,7 +287,24 @@ const enTranslations = {
         governanceTitle: 'Site Governance',
         governanceSubtitle: 'Define mandatory safety training policies per location.',
         pushPolicy: 'Save & Push Policy',
-        policyApplied: 'Policy Applied'
+        policyApplied: 'Policy Applied',
+        riskHeatmap: 'Department Risk Heatmap',
+        trainerLeaderboard: 'Trainer Leaderboard',
+        noData: 'No Data',
+        systemTitle: 'System Command Center',
+        systemSubtitle: 'Multi-Tenant Platform Compliance Overview',
+        tenantMatrix: 'Tenant Performance Matrix',
+        systemView: 'SYSTEM VIEW',
+        aiAuditor: 'System AI Auditor',
+        aiDirector: 'Executive AI Director',
+        systemIntelligence: 'Platform-wide safety intelligence',
+        companyIntelligence: 'Strategic insights for',
+        bottlenecks: 'Training Bottlenecks',
+        failure: 'Failure',
+        selectPrompt: 'Select "All Sites" to view comparison',
+        aiPrompt: 'Click generate to receive',
+        aiPromptSystem: 'multi-tenant safety diagnostics.',
+        aiPromptEnterprise: 'enterprise-level safety intelligence.'
     },
     database: {
       title: 'Master Employee Database',
@@ -249,7 +363,9 @@ const enTranslations = {
     },
     booking: {
       title: 'Book Training Session',
-      secureMode: 'Secure Data Entry Mode',
+      selfServiceTitle: 'Self-Service Booking',
+      secureMode: 'Full Schedule Access (Secure Mode)',
+      selfServiceDesc: 'View only trainings mapped to you.',
       manageSchedule: 'Manage Schedule',
       dlRequired: 'Driver License details required for RAC 02',
       success: 'Booking submitted successfully!',
@@ -285,7 +401,17 @@ const enTranslations = {
         systemPromptReport: "You are an HSE Data Analyst. Analyze the following training statistics for the {language} period. Highlight key trends, risks, and recommendations. Keep it executive and concise."
     },
     advisor: { button: 'Safety Advisor', title: 'CARS AI Safety Advisor', sender: 'CARS Advisor', emptyState: 'How can I assist?', placeholder: 'Ask about RAC standards...' },
-    results: { title: 'Training Records', subtitle: 'View results.', searchPlaceholder: 'Search...', table: { employee: 'Employee', session: 'Session', date: 'Date', trainer: 'Trainer', room: 'Room', dlRac02: 'DL (RAC 02)', theory: 'Theory', prac: 'Practical', status: 'Status', expiry: 'Expiry' } },
+    results: { 
+        title: 'Training Records', 
+        myRecords: 'My Training Records',
+        myRecordsDesc: 'View your personal training history and certification status.',
+        adminDesc: 'High-definition view of all training records.',
+        export: 'Export Records',
+        passport: 'My Digital Passport',
+        subtitle: 'View results.', 
+        searchPlaceholder: 'Search...', 
+        table: { employee: 'Employee', session: 'Session', date: 'Date', trainer: 'Trainer', room: 'Room', dlRac02: 'DL (RAC 02)', theory: 'Theory', prac: 'Practical', status: 'Status', expiry: 'Expiry' } 
+    },
     cards: { 
         title: 'Safety Cards', 
         showing: 'Showing', 
@@ -333,7 +459,35 @@ const enTranslations = {
             logs: 'Synchronization Logs'
         }
     },
-    reports: { title: 'Reports', subtitle: 'Analytics.', printReport: 'Print', filters: { period: 'Period', department: 'Dept', racType: 'RAC', startDate: 'Start Date', endDate: 'End Date' }, periods: { weekly: 'Weekly', monthly: 'Monthly', ytd: 'YTD', custom: 'Custom' }, generate: 'Generate AI', analyzing: 'Analyzing...', stats: { totalTrained: 'Total', passRate: 'Pass Rate', attendance: 'Attendance', noShows: 'No Shows' }, charts: { performance: 'Performance' }, executiveAnalysis: 'Executive AI Analysis', trainerMetrics: { title: 'Trainer Metrics', name: 'Trainer', sessions: 'Sessions', passRate: 'Pass Rate', avgTheory: 'Theory', avgPrac: 'Prac' } },
+    reports: { 
+        title: 'Reports', 
+        subtitle: 'Analytics.', 
+        printReport: 'Print', 
+        filters: { period: 'Period', department: 'Dept', racType: 'RAC', startDate: 'Start Date', endDate: 'End Date' }, 
+        periods: { weekly: 'Weekly', monthly: 'Monthly', ytd: 'YTD', custom: 'Custom' }, 
+        generate: 'Generate AI', 
+        analyzing: 'Analyzing...', 
+        stats: { totalTrained: 'Total', passRate: 'Pass Rate', attendance: 'Attendance', noShows: 'No Shows' }, 
+        charts: { 
+            performance: 'Performance',
+            breakdownTitle: 'Pass vs Fail count per Module',
+            distributionTitle: 'Outcome Distribution',
+            distributionSubtitle: 'Visual breakdown of results',
+            aiSubtitle: 'AI-Powered Insights based on filtered data'
+        }, 
+        executiveAnalysis: 'Executive AI Analysis', 
+        leaderboard: 'Trainer Leaderboard',
+        noShowsTitle: 'Recorded Absences (No-Shows)',
+        trainerMetrics: { 
+            title: 'Trainer Metrics', 
+            name: 'Trainer', 
+            sessions: 'Sessions', 
+            passRate: 'Pass Rate', 
+            avgTheory: 'Avg Theory', 
+            avgPrac: 'Avg Practical',
+            students: 'Students'
+        } 
+    },
     logs: { title: 'System Logs', levels: { all: 'All Levels', info: 'Info', warn: 'Warning', error: 'Error', audit: 'Audit' }, table: { level: 'Level', timestamp: 'Timestamp', user: 'User', message: 'Message' } },
     adminManual: {
         title: 'System Administrator Manual',
@@ -422,6 +576,21 @@ const enTranslations = {
                 t3: { issue: 'RAC 02 Failed Auto', solution: 'Driver License expired in database. Update DL info.' },
                 t4: { issue: 'QR Code "Not Found"', solution: 'Record ID mismatch. Ensure exact case (VUL-101).' },
                 t5: { issue: 'System Sluggish', solution: 'Check Logs. Wait for Middleware Sync to finish.' }
+            },
+            architecture: {
+                ui: '[ USER INTERFACE ]',
+                gate: '[ PERMISSION GATE ]',
+                gateDesc: 'Checks User Role (System Admin vs User)',
+                logic: '[ LOGIC ENGINE ]',
+                checkCap: 'Check Capacity',
+                checkMatrix: 'Check Matrix Lock',
+                checkDl: 'Check DL Validity',
+                dbState: '[ DATABASE STATE ]',
+                updateRecord: 'Updates Booking / Employee Record',
+                automation: '[ AUTOMATION ]',
+                emailTrig: '📧 Email/SMS Trigger',
+                printTrig: '🖨️ Auto-Print Register',
+                aiTrig: '🤖 AI Analysis Update'
             }
         }
     },
@@ -529,43 +698,6 @@ const enTranslations = {
             phone: '+258 84 123 4567'
         }
     },
-    alcohol: {
-        dashboard: {
-            title: 'Alcohol Control',
-            subtitle: 'Real-time monitoring.',
-            live: 'Live Feed',
-            backToLive: 'Back to Live',
-            kpi: { total: 'Total Tests', violations: 'Violations', health: 'System Health' },
-            online: 'Online',
-            mqtt: 'MQTT Stream',
-            alert: { title: 'Alcohol Violation', desc: 'Positive breathalyzer result detected.', measured: 'Measured BAC' },
-            actions: 'Automated Actions',
-            actionLog: {
-                locked: 'Turnstile Locked',
-                generating: 'Generating Incident Report...',
-                logged: 'Incident Logged',
-                contacting: 'Contacting Supervisor...',
-                sent: 'Alert Sent'
-            },
-            close: 'Close Alert'
-        },
-        protocol: {
-            title: 'Safety Protocol',
-            positiveTitle: 'Positive Result Protocol',
-            positiveDesc: 'Immediate access denial and supervisor notification.',
-            resetTitle: 'System Reset',
-            resetDesc: 'Manual reset required after violation.'
-        },
-        features: {
-            title: 'System Features',
-            iotTitle: 'IoT Integration',
-            iotDesc: 'Connects with standard breathalyzers.',
-            accessTitle: 'Access Control',
-            accessDesc: 'Integrates with turnstile systems.',
-            complianceTitle: 'Compliance Logging',
-            complianceDesc: 'All tests are logged for audit.'
-        }
-    },
     manuals: {
         title: 'User Manuals',
         subtitle: 'Guides for all user roles.',
@@ -653,27 +785,553 @@ export const translations = {
       feedbackAdmin: 'Gestor de Feedback',
       communications: 'Comunicações'
     },
-    common: enTranslations.common,
-    feedback: enTranslations.feedback,
-    verification: enTranslations.verification,
-    dashboard: enTranslations.dashboard,
-    enterprise: enTranslations.enterprise,
-    database: enTranslations.database,
-    booking: enTranslations.booking,
-    notifications: enTranslations.notifications,
-    ai: enTranslations.ai,
-    advisor: enTranslations.advisor,
-    results: enTranslations.results,
-    cards: enTranslations.cards,
-    trainer: enTranslations.trainer,
-    users: enTranslations.users,
-    schedule: enTranslations.schedule,
-    settings: enTranslations.settings,
-    reports: enTranslations.reports,
-    logs: enTranslations.logs,
-    adminManual: enTranslations.adminManual,
+    common: {
+      ...enTranslations.common,
+      vulcan: 'Gestor de RACS',
+      safetySystem: 'Sistema de Gestão de Segurança',
+      role: 'Função',
+      activeSession: 'Sessão Ativa',
+      notifications: 'Notificações',
+      clearAll: 'Limpar Tudo',
+      noNotifications: 'Sem novas notificações',
+      viewProposal: 'Ver Proposta',
+      simulateRole: 'Simular Função',
+      superuser: 'Acesso de Superusuário',
+      restricted: 'Acesso Restrito',
+      loading: 'Carregando...',
+      save: 'Salvar',
+      cancel: 'Cancelar',
+      actions: 'Ações',
+      edit: 'Editar',
+      delete: 'Excluir',
+      submit: 'Enviar',
+      search: 'Pesquisar...',
+      all: 'Todos',
+      date: 'Data',
+      time: 'Hora',
+      status: 'Status',
+      name: 'Nome',
+      email: 'Email',
+      id: 'ID',
+      company: 'Empresa',
+      jobTitle: 'Cargo',
+      department: 'Departamento',
+      yes: 'Sim',
+      no: 'Não',
+      required: 'Obrigatório',
+      optional: 'Opcional',
+      download: 'Baixar',
+      upload: 'Carregar',
+      template: 'Modelo',
+      import: 'Importar Dados',
+      print: 'Imprimir',
+      fullScreen: 'Tela Cheia',
+      exitFullScreen: 'Sair da Tela Cheia',
+      rowsPerPage: 'Linhas por página:',
+      page: 'Página',
+      of: 'de',
+      siteContext: 'Contexto do Site',
+      enterpriseView: 'Visão Corporativa (Todos Sites)',
+      completed: 'Concluído',
+      timeLeft: 'restantes',
+      recordsFound: 'registros encontrados',
+      operationalMatrix: 'Matriz Operacional',
+      owner: 'Dono',
+      smsBlast: 'Envio de SMS',
+      sending: 'Enviando...',
+      passed: 'Aprovado',
+      failed: 'Reprovado',
+      pending: 'Pendente',
+      complianceRate: 'Taxa de Conformidade',
+      testsProcessed: 'Testes Processados',
+      stats: {
+          totalUsers: 'Total de Usuários',
+          active: 'Ativo',
+          admins: 'Admins',
+          totalRecords: 'Total de Registros',
+          passRate: 'Taxa de Aprovação',
+          avgScore: 'Nota Média',
+          certifications: 'Certificações'
+      }
+    },
+    racDefs: {
+        RAC01: 'RAC 01 - Trabalhos em Altura',
+        RAC02: 'RAC 02 - Veículos e Equipamentos Móveis',
+        RAC03: 'RAC 03 - Bloqueio de Equipamentos Móveis',
+        RAC04: 'RAC 04 - Proteção de Máquinas',
+        RAC05: 'RAC 05 - Espaço Confinado',
+        RAC06: 'RAC 06 - Operações de Elevação',
+        RAC07: 'RAC 07 - Estabilidade de Terreno',
+        RAC08: 'RAC 08 - Eletricidade',
+        RAC09: 'RAC 09 - Explosivos',
+        RAC10: 'RAC 10 - Metal Líquido',
+        RAC11: 'RAC 11 - Tráfego na Mina',
+        PTS: 'PTS - Permissão de Trabalho Seguro',
+        ART: 'ART - Análise de Risco da Tarefa',
+        LIB_OPS: 'LIB-OPS - Liberação Operacional',
+        LIB_MOV: 'LIB-MOV - Liberação de Movimentação'
+    },
+    communications: {
+        title: 'Centro de Comunicações',
+        subtitle: 'Log em tempo real de notificações automatizadas (SMS e Email).',
+        clear: 'Limpar Log',
+        search: 'Pesquisar logs...',
+        empty: 'Nenhuma mensagem encontrada.',
+        select: 'Selecione uma mensagem para ver detalhes',
+        sms: 'Mensagem de Texto',
+        email: 'Email',
+        gateway: 'Enviado via Gateway',
+        automated: 'Esta é uma notificação automática. Por favor, não responda.',
+        to: 'Para'
+    },
+    feedback: {
+        ...enTranslations.feedback,
+        button: 'Enviar Feedback',
+        title: 'Compartilhe sua Experiência',
+        subtitle: 'Ajude-nos a melhorar o Gestor de RACS.',
+        typeLabel: 'Tipo de Feedback',
+        messageLabel: 'Sua Mensagem',
+        msgPlaceholder: 'Descreva o erro, melhoria ou experiência...',
+        success: 'Obrigado! Seu feedback foi registrado.',
+        adminTitle: 'Logs de Feedback do Usuário',
+        adminSubtitle: 'Rastreie problemas e sugestões reportados por usuários.',
+        types: {
+            Bug: 'Relatório de Erro',
+            Improvement: 'Melhoria',
+            General: 'Comentário Geral'
+        },
+        status: {
+            New: 'Novo',
+            InProgress: 'Em Andamento',
+            Resolved: 'Resolvido',
+            Dismissed: 'Ignorado'
+        },
+        actionable: 'Acionável',
+        notActionable: 'Não Acionável',
+        markActionable: 'Marcar como Acionável',
+        markedActionable: 'Marcado como Acionável',
+        markNotActionable: 'Marcar como Não Acionável',
+        internalNotes: 'Notas Internas',
+        visibleAdmin: 'Notas visíveis apenas para administradores do sistema.',
+        deleteRecord: 'Excluir Registro',
+        noSelection: 'Nenhum Feedback Selecionado',
+        selectPrompt: 'Selecione um item da lista para ver detalhes.',
+        priority: 'Ação Prioritária',
+        workflow: 'Status do Fluxo',
+        manage: 'Gerenciar relatórios e sugestões de usuários',
+        submittedBy: 'Usuário Remetente'
+    },
+    verification: {
+      ...enTranslations.verification,
+      title: 'Passaporte de Segurança Digital',
+      verified: 'VERIFICADO',
+      notVerified: 'NÃO CONFORME',
+      notFound: 'REGISTRO NÃO ENCONTRADO',
+      employeeDetails: 'Detalhes do Funcionário',
+      activeRacs: 'Certificações Ativas',
+      asoStatus: 'Médico (ASO)',
+      dlStatus: 'Carta de Condução',
+      validUntil: 'Válido Até',
+      scanTime: 'Escaneado em'
+    },
+    dashboard: {
+      title: 'Visão Geral Operacional',
+      subtitle: 'Métricas de treinamento de segurança em tempo real.',
+      kpi: {
+        adherence: 'Adesão SMS',
+        certifications: 'Total Certificações',
+        pending: 'Pendentes Avaliação',
+        expiring: 'Expirando (30 Dias)',
+        scheduled: 'Sessões Agendadas'
+      },
+      charts: {
+        complianceTitle: 'Conformidade por RAC e ASO',
+        complianceSubtitle: 'Mostra status obrigatório. Verde = Válido. Vermelho = Ausente/Expirado.',
+        accessTitle: 'Status de Acesso da Força de Trabalho',
+        compliant: 'Conforme',
+        missing: 'Ausente / Expirado',
+        nonCompliant: 'Não Conforme'
+      },
+      upcoming: {
+        title: 'Próximas Sessões',
+        viewSchedule: 'Ver Agenda',
+        capacity: 'Capacidade',
+        status: 'Status',
+        date: 'Data / Hora',
+        session: 'Info Sessão'
+      },
+      booked: {
+        title: 'Funcionários Agendados',
+        tableEmployee: 'Funcionário / Empresa',
+        tableRac: 'RAC Agendado',
+        tableDate: 'Data',
+        tableRoom: 'Sala',
+        tableTrainer: 'Formador',
+        noData: 'Nenhum agendamento encontrado'
+      },
+      renewal: {
+        title: 'Ação Necessária: Renovação de Treinamento',
+        message: 'funcionários têm treinamentos críticos expirando em 30 dias.',
+        button: 'Agendar Renovações'
+      },
+      autoBooking: {
+        title: 'Ação Necessária: Auto-Agendamentos Pendentes',
+        subPart1: 'O sistema detectou riscos de expiração',
+        subPart2: 'e reservou vagas para evitar bloqueio. Aprove para finalizar.'
+      }
+    },
+    enterprise: {
+        ...enTranslations.enterprise,
+        title: 'Centro de Comando Corporativo',
+        subtitle: 'Visão Geral da Conformidade de Segurança Global',
+        globalHealth: 'Pontuação Global de Saúde',
+        totalWorkforce: 'Força de Trabalho Total',
+        topPerformer: 'Melhor Desempenho',
+        needsAttention: 'Precisa de Atenção',
+        siteComparison: 'Comparação de Desempenho do Site',
+        operationsOverview: 'Visão Geral das Operações',
+        siteName: 'Nome do Site',
+        staff: 'Equipe',
+        governanceTitle: 'Governança do Site',
+        governanceSubtitle: 'Defina políticas de treinamento de segurança obrigatórias por local.',
+        pushPolicy: 'Salvar e Aplicar Política',
+        policyApplied: 'Política Aplicada',
+        riskHeatmap: 'Mapa de Risco por Departamento',
+        trainerLeaderboard: 'Classificação de Formadores',
+        noData: 'Sem Dados',
+        systemTitle: 'Centro de Comando do Sistema',
+        systemSubtitle: 'Visão Geral da Conformidade da Plataforma Multi-Inquilino',
+        tenantMatrix: 'Matriz de Desempenho de Inquilinos',
+        systemView: 'VISÃO DO SISTEMA',
+        aiAuditor: 'Auditor IA do Sistema',
+        aiDirector: 'Diretor Executivo de IA',
+        systemIntelligence: 'Inteligência de segurança em toda a plataforma',
+        companyIntelligence: 'Insights estratégicos para',
+        bottlenecks: 'Gargalos de Treinamento',
+        failure: 'Reprovação',
+        selectPrompt: 'Selecione "Todos os Sites" para ver a comparação',
+        aiPrompt: 'Clique em gerar para receber',
+        aiPromptSystem: 'diagnósticos de segurança multi-inquilino.',
+        aiPromptEnterprise: 'inteligência de segurança de nível empresarial.'
+    },
+    database: {
+        ...enTranslations.database,
+        title: 'Base de Dados Mestre de Funcionários',
+        subtitle: 'Gerencie requisitos. RAC 02 é desativado automaticamente se a Carta estiver expirada.',
+        filters: 'Filtros',
+        accessStatus: 'Status de Acesso',
+        granted: 'Concedido',
+        blocked: 'Bloqueado',
+        employeeInfo: 'Info Funcionário e Carta',
+        aso: 'ASO (Médico)',
+        license: 'Carta',
+        class: 'Classe',
+        number: 'Número',
+        expired: 'EXP',
+        active: 'Ativo',
+        importCsv: 'Importar CSV',
+        downloadTemplate: 'Modelo CSV',
+        opsMatrix: 'Matriz Operacional',
+        massQr: 'QRs em Massa',
+        zipping: 'Compactando...',
+        wizard: 'Assistente de Importação',
+        exportDb: 'Exportar BD',
+        editModal: 'Editar Funcionário',
+        contactInfo: 'Info de Contato',
+        cell: 'Celular',
+        dlDetails: 'Detalhes da Carta de Condução',
+        mappingTitle: 'Mapeamento de Colunas de Importação',
+        mappingSubtitle: 'Mapeie colunas CSV para campos do sistema.',
+        preview: 'Pré-visualização do Arquivo',
+        coreData: 'Dados Principais do Funcionário',
+        complianceTrain: 'Licença, Médico e Treinamento',
+        sourceCol: 'Coluna de Origem',
+        processImport: 'Processar Importação',
+        cardBack: 'Pré-visualização do Verso do Cartão',
+        confirmDeactivate: 'Desativar Funcionário?',
+        confirmDeactivateMsg: 'Marcar como Inativo ocultará este funcionário das pesquisas. Continuar?',
+        confirmDelete: 'Excluir Registro?',
+        confirmDeleteMsg: 'Isso removerá permanentemente o funcionário e todos os registros de treinamento. Isso não pode ser desfeito.',
+        importSuccess: 'Importação Bem-sucedida',
+        bulkQrMessage: 'Isso gerará e baixará {count} códigos QR. Isso pode demorar um pouco.'
+    },
+    booking: {
+        ...enTranslations.booking,
+        title: 'Agendar Sessão de Treinamento',
+        selfServiceTitle: 'Auto-Agendamento',
+        secureMode: 'Acesso Total à Agenda (Modo Seguro)',
+        selfServiceDesc: 'Veja apenas os treinamentos mapeados para você.',
+        manageSchedule: 'Gerenciar Agenda',
+        dlRequired: 'Detalhes da Carta de Condução obrigatórios para RAC 02',
+        success: 'Agendamento enviado com sucesso!',
+        selectSession: 'Selecionar Sessão de Treinamento',
+        chooseSession: 'Escolha uma sessão...',
+        table: {
+            no: 'Nº',
+            nameId: 'Nome / ID',
+            details: 'Empresa / Dept',
+            dlNoClass: 'Nº Carta / Classe',
+            dlExpiry: 'Validade Carta',
+            action: 'Ação'
+        },
+        addRow: 'Adicionar Linha',
+        submitBooking: 'Enviar Agendamento'
+    },
+    notifications: {
+        expiryTitle: 'Treinamento Expirando',
+        expiryMsg: 'Treinamento de {name} ({rac}) expira em {days} dias.',
+        autoBookTitle: 'Auto-Agendamento Criado',
+        autoBookMsg: '{name} foi auto-agendado para {rac} em {date} (expira em {days} dias).',
+        autoBookFailTitle: 'Falha no Auto-Agendamento',
+        autoBookFailMsg: 'Não foi possível auto-agendar {name} para {rac}. Nenhuma sessão disponível.',
+        capacityTitle: 'Sessão Cheia - Realocação Automática',
+        capacityMsg: 'funcionários foram movidos para a próxima sessão disponível em',
+        demandTitle: 'Alerta de Alta Demanda',
+        demandMsg: 'Alta demanda detectada para',
+        duplicateTitle: 'Agendamento Duplicado',
+        duplicateMsg: 'Usuário já agendado para este tipo de treinamento.'
+    },
+    ai: {
+        systemPromptAdvice: "Você é um Consultor de Segurança especialista para a Vulcan Mining. Você se especializa nas Regras Críticas de Segurança (RACs). Responda à pergunta do usuário sobre {rac}. Forneça conselhos concisos e acionáveis. Mantenha menos de 100 palavras. Idioma: {language}.",
+        systemPromptReport: "Você é um Analista de Dados de HSE. Analise as seguintes estatísticas de treinamento para o período {language}. Destaque as principais tendências, riscos e recomendações. Mantenha executivo e conciso."
+    },
+    advisor: { 
+        button: 'Consultor de Segurança', 
+        title: 'Consultor IA de Segurança CARS', 
+        sender: 'Consultor CARS', 
+        emptyState: 'Como posso ajudar?', 
+        placeholder: 'Pergunte sobre padrões RAC...' 
+    },
+    results: { 
+        title: 'Histórico de Treinamento', 
+        myRecords: 'Meus Treinamentos',
+        myRecordsDesc: 'Veja seu histórico pessoal e status das certificações.',
+        adminDesc: 'Visão detalhada de todos os registros de treinamento.',
+        export: 'Exportar Registros',
+        passport: 'Meu Passaporte Digital',
+        subtitle: 'Resultados e certificados.', 
+        searchPlaceholder: 'Pesquisar...', 
+        table: { employee: 'Funcionário', session: 'Sessão', date: 'Data', trainer: 'Formador', room: 'Sala', dlRac02: 'Carta (RAC 02)', theory: 'Teoria', prac: 'Prática', status: 'Status', expiry: 'Validade' } 
+    },
+    cards: { 
+        title: 'Cartões de Segurança', 
+        showing: 'Mostrando', 
+        subtitle: 'Selecione funcionários.', 
+        goToPrint: 'Ir para Impressão', 
+        selected: 'Selecionado', 
+        successTitle: 'Solicitação Enviada', 
+        successMsg: 'Solicitação de cartão encaminhada.', 
+        noRecords: 'Sem Registros Elegíveis', 
+        noRecordsSub: 'Apenas registros aprovados aparecem aqui.', 
+        selectAll: 'Selecionar Tudo', 
+        sending: 'Enviando...', 
+        requestButton: 'Solicitar Cartões', 
+        validation: { ineligible: 'Funcionário inelegível.', maxSelection: 'Máx 8 cartões.', incomplete: 'Incompleto' },
+        eligibility: {
+            failedTitle: 'Verificação de Elegibilidade Falhou',
+            failedMsg: 'Você não atende aos requisitos para um cartão de segurança. Verifique se o ASO é válido e se passou em todos os treinamentos obrigatórios.',
+            checkReqs: 'Verificar Requisitos'
+        }
+    },
+    trainer: { 
+        title: 'Entrada do Formador', 
+        subtitle: 'Inserir notas.', 
+        passMark: 'Aprovação: 70%', 
+        loggedInAs: 'Logado como', 
+        selectSession: 'Selecionar Sessão', 
+        noSessions: 'Sem sessões.', 
+        chooseSession: 'Escolha uma sessão...', 
+        dlWarning: 'Verificar Carta para RAC 02.', 
+        saveResults: 'Salvar Resultados', 
+        table: { employee: 'Funcionário', attendance: 'Presente', dlCheck: 'Verif. Carta', verified: 'Verificado', theory: 'Teoria', practical: 'Prática', rac02Only: '(RAC 02)', status: 'Status' } 
+    },
+    users: { 
+        title: 'Gestão de Usuários', 
+        subtitle: 'Gerenciar acesso.', 
+        addUser: 'Adic. Usuário', 
+        table: { user: 'Usuário', role: 'Função', status: 'Status', actions: 'Ações' }, 
+        modal: { title: 'Adic. Usuário', name: 'Nome', email: 'Email', createUser: 'Criar' } 
+    },
+    schedule: { 
+        title: 'Cronograma de Treinamento', 
+        subtitle: 'Gerenciar sessões.', 
+        newSession: 'Nova Sessão', 
+        table: { date: 'Data/Hora', rac: 'RAC', room: 'Local', trainer: 'Instrutor' }, 
+        modal: { title: 'Agendar', racType: 'RAC', date: 'Data', startTime: 'Início', location: 'Local', capacity: 'Cap', instructor: 'Instr', saveSession: 'Salvar', language: 'Idioma', english: 'Inglês', portuguese: 'Português' } 
+    },
+    settings: { 
+        title: 'Configurações', 
+        subtitle: 'Config.', 
+        saveAll: 'Salvar Tudo', 
+        saving: 'Salvando...', 
+        globalConfig: 'Configuração Global do Sistema & Fonte da Verdade',
+        localConfig: 'Configurações Operacionais Locais',
+        feedbackConfig: 'Config. de Feedback',
+        integration: 'Integração de Dados',
+        tabs: { general: 'Geral', trainers: 'Formadores', racs: 'RACs', sites: 'Sites', companies: 'Empresas', integration: 'Integração' }, 
+        rooms: { title: 'Salas', name: 'Nome', capacity: 'Cap', new: 'Nova Sala' }, 
+        trainers: { title: 'Formadores', name: 'Nome', qualifiedRacs: 'RACs', new: 'Novo Formador' }, 
+        racs: { title: 'RACs', code: 'Código', description: 'Desc', new: 'Novo RAC' },
+        integrationPage: {
+            title: 'Integração de Dados (Simulação)',
+            middleware: 'Motor Middleware CARS',
+            syncNow: 'Sincronizar Agora',
+            processing: 'Processando...',
+            waiting: 'Aguardando gatilho...',
+            sourceA: 'Fonte A: BD RH',
+            sourceB: 'Fonte B: BD Empreiteiras',
+            logs: 'Logs de Sincronização'
+        }
+    },
+    reports: { 
+        title: 'Relatórios', 
+        subtitle: 'Análises.', 
+        printReport: 'Imprimir', 
+        filters: { period: 'Período', department: 'Dept', racType: 'RAC', startDate: 'Data Início', endDate: 'Data Fim' }, 
+        periods: { weekly: 'Semanal', monthly: 'Mensal', ytd: 'Anual (YTD)', custom: 'Personalizado' }, 
+        generate: 'Gerar IA', 
+        analyzing: 'Analisando...', 
+        stats: { totalTrained: 'Total', passRate: 'Taxa Aprov.', attendance: 'Presença', noShows: 'Faltas' }, 
+        charts: { 
+            performance: 'Desempenho',
+            breakdownTitle: 'Aprovados vs Reprovados por Módulo',
+            distributionTitle: 'Distribuição de Resultados',
+            distributionSubtitle: 'Detalhamento visual dos resultados',
+            aiSubtitle: 'Insights de IA baseados em dados filtrados'
+        }, 
+        executiveAnalysis: 'Análise Executiva IA', 
+        leaderboard: 'Classificação de Formadores',
+        noShowsTitle: 'Ausências Registradas (Faltas)',
+        trainerMetrics: { 
+            title: 'Métricas do Formador', 
+            name: 'Formador', 
+            sessions: 'Sessões', 
+            passRate: 'Taxa Aprov.', 
+            avgTheory: 'Média Teoria', 
+            avgPrac: 'Média Prática',
+            students: 'Alunos'
+        } 
+    },
+    logs: { 
+        title: 'Logs do Sistema', 
+        levels: { all: 'Todos Níveis', info: 'Info', warn: 'Aviso', error: 'Erro', audit: 'Auditoria' }, 
+        table: { level: 'Nível', timestamp: 'Carimbo de Data/Hora', user: 'Usuário', message: 'Mensagem' } 
+    },
+    adminManual: {
+        title: 'Manual do Administrador do Sistema',
+        subtitle: 'Guia completo para manutenção do Ecossistema CARS Manager.',
+        slides: {
+            intro: 'Introdução',
+            logic: '1. Visão Geral da Lógica do Sistema',
+            dashboard: '2. Navegação no Painel',
+            workflows: '3. Fluxos de Trabalho Principais',
+            advanced: '4. Configurações Avançadas',
+            troubleshoot: '5. Troubleshooting Guide',
+            architecture: '6. Arquitetura do Sistema'
+        },
+        content: {
+            confidential: 'CONFIDENCIAL',
+            production: 'PRODUÇÃO',
+            logic: {
+                title: 'Lógica do Sistema: O Semáforo',
+                desc: 'O CARS Manager é um Motor Lógico. A conformidade é calculada dinamicamente com base em três pilares principais.',
+                active: 'Usuário Ativo?',
+                aso: 'ASO Válido? (Médico)',
+                racs: 'RACs Válidos? (Treinamento)',
+                result: 'ACESSO CONCEDIDO'
+            },
+            dashboard: {
+                operational: {
+                    title: 'Painel Operacional',
+                    kpi: 'Cartões KPI: Contagens em tempo real para Certificações, Pendentes e Expirando.',
+                    renewal: 'Widget de Renovação: Alerta para expiração < 30 dias. "Agendar Renovações" carrega automaticamente o assistente.',
+                    auto: 'Auto-Agendamento: Aprovações para agendamentos gerados pelo sistema (expiração < 7 dias).'
+                },
+                enterprise: {
+                    title: 'Painel Corporativo',
+                    global: 'Pontuação Global de Saúde: % de conformidade agregada.',
+                    risk: 'Mapa de Calor de Risco: Departamentos com baixa conformidade.',
+                    ai: 'Análise IA: Gera resumo de texto executivo.'
+                }
+            },
+            workflows: {
+                a: {
+                    title: 'A. Integração & Matriz',
+                    steps: [
+                        'Vá para Base de Dados -> Assistente de Importação (CSV).',
+                        'Definir Matriz: Alterne as colunas RAC para Verde (Obrigatório).',
+                        'Resultado: Funcionário bloqueado até que o RAC específico seja aprovado.'
+                    ]
+                },
+                b: {
+                    title: 'B. Agendamento & Marcação',
+                    steps: [
+                        'Cronograma -> Criar Sessão.',
+                        'Agendar Treinamento -> Selecionar Sessão -> Adicionar Funcionários.',
+                        'Capacidade Inteligente: Excesso auto-roteado para próxima sessão ou Lista de Espera.'
+                    ]
+                },
+                c: {
+                    title: 'C. Avaliação (Entrada do Formador)',
+                    steps: [
+                        'Selecionar Sessão -> Marcar Presença.',
+                        'Inserir Pontuações (Teoria < 70% = Reprovado).',
+                        'Regra RAC 02: Caixa de seleção "Carta Verificada" é obrigatória.'
+                    ]
+                },
+                d: {
+                    title: 'D. Emissão de Cartões',
+                    steps: [
+                        'Solicitar Cartões -> Filtrar Funcionários Conformes.',
+                        'Impressão em Lote (8 por página).',
+                        'Verso do Cartão: Imprimir da Base de Dados (QR).'
+                    ]
+                }
+            },
+            advanced: {
+                gov: {
+                    title: 'Governança de Site',
+                    desc: 'Defina RACs obrigatórios por local. "Aplicar Política" atualiza todos os funcionários do site instantaneamente.'
+                },
+                alcohol: {
+                    title: 'Controle de Álcool (IoT)',
+                    desc: 'Fluxo MQTT em tempo real. Teste positivo aciona bloqueio imediato e alerta.'
+                }
+            },
+            troubleshoot: {
+                t1: { issue: 'Acesso Negado mas Treinado', solution: 'Verifique a Data do ASO. Exame médico vencido bloqueia o acesso mesmo com treinamento válido.' },
+                t2: { issue: 'Não é possível agendar funcionário', solution: 'Verifique a Matriz na Base de Dados. O treinamento deve estar marcado como "Obrigatório".' },
+                t3: { issue: 'RAC 02 Reprovado Automaticamente', solution: 'Carta de Condução expirada na base de dados. Atualize as informações da Carta.' },
+                t4: { issue: 'Código QR "Não Encontrado"', solution: 'Incompatibilidade de ID de Registro. Garanta o caso exato (VUL-101).' },
+                t5: { issue: 'Sistema Lento', solution: 'Verifique os Logs. Aguarde a conclusão da sincronização do Middleware.' }
+            },
+            architecture: {
+                ui: '[ INTERFACE DO USUÁRIO ]',
+                gate: '[ PORTAL DE PERMISSÃO ]',
+                gateDesc: 'Verifica Função (Admin vs Usuário)',
+                logic: '[ MOTOR LÓGICO ]',
+                checkCap: 'Verificar Capacidade',
+                checkMatrix: 'Verificar Matriz',
+                checkDl: 'Verificar Validade Carta',
+                dbState: '[ ESTADO DA BASE DE DADOS ]',
+                updateRecord: 'Atualiza Registro de Agendamento',
+                automation: '[ AUTOMAÇÃO ]',
+                emailTrig: '📧 Gatilho Email/SMS',
+                printTrig: '🖨️ Auto-Impressão',
+                aiTrig: '🤖 Atualização Análise IA'
+            }
+        }
+    },
     proposal: {
-        ...enTranslations.proposal,
+        digitalTrans: 'Transformação Digital',
+        aboutMe: {
+            title: 'Sobre o Arquiteto',
+            name: 'Pita Domingos',
+            preferred: 'Nome Preferido',
+            cert: 'Desenvolvedor Full Stack',
+            role: 'Arquiteto Líder',
+            bio: 'Desenvolvedor experiente especializado em sistemas de gestão de segurança.'
+        },
         execSummary: {
             title: 'Sumário Executivo',
             text: "O Gestor de RACS é uma aplicação web especializada, meticulosamente projetada para revolucionar o ciclo de vida do treinamento de segurança para Requisitos de Atividades Críticas (RAC 01 - RAC 10). Este sistema inovador aborda diretamente as ineficiências inerentes aos processos manuais tradicionais, como planilhas díspares e canais de comunicação fragmentados. Ao consolidar esses elementos em uma plataforma digital centralizada, o Gestor de RACS fornece uma solução abrangente para gerenciar todos os aspectos do treinamento de segurança, desde o agendamento inicial e rastreamento rigoroso de resultados até a emissão perfeita de certificações (CARs) e monitoramento contínuo de conformidade. Essa abordagem integrada garante que todos os dados críticos de treinamento de segurança sejam facilmente acessíveis, precisos e atualizados, melhorando significativamente a segurança operacional e a adesão regulatória. O design do sistema prioriza a experiência do usuário enquanto oferece funcionalidade robusta, tornando-o uma ferramenta indispensável para organizações comprometidas em manter os mais altos padrões de segurança no local de trabalho.",
@@ -691,9 +1349,142 @@ export const translations = {
                 'Controle de Acesso Baseado em Função (RBAC)',
                 'Análise de Segurança Impulsionada por IA'
             ]
+        },
+        organogram: {
+            title: 'Estrutura do Projeto',
+            tech1: 'Frontend',
+            tech2: 'Backend'
+        },
+        timeline: {
+            title: 'Cronograma do Projeto',
+            phase1: 'Fase 1',
+            phase1desc: 'Levantamento de Requisitos',
+            phase2: 'Fase 2',
+            phase2desc: 'Design e Prototipagem',
+            phase3: 'Fase 3',
+            phase3desc: 'Desenvolvimento',
+            phase4: 'Fase 4',
+            phase4desc: 'Testes e QA',
+            phase5: 'Fase 5',
+            phase5desc: 'Implantação'
+        },
+        techStack: {
+            title: 'Stack Tecnológico',
+            frontendTitle: 'Frontend',
+            frontend: 'React, TypeScript, Tailwind',
+            backendTitle: 'Backend',
+            backend: 'Node.js, Express',
+            databaseTitle: 'Base de Dados',
+            database: 'PostgreSQL',
+            securityTitle: 'Segurança',
+            security: 'OAuth2, JWT'
+        },
+        financials: {
+            title: 'Proposta Financeira',
+            items: [
+                { name: 'Arquitetura e Desenvolvimento de Software', type: 'Pagamento Único', cost: '$20,000.00' },
+                { name: 'Design UI/UX e Prototipagem', type: 'Pagamento Único', cost: '$8,000.00' },
+                { name: 'Configuração de Estrutura Cloud e Assinatura', type: 'Mensal', cost: '$5,000.00' },
+                { name: 'Treinamento e Documentação', type: 'Pagamento Único', cost: '$10,000.00' },
+                { name: 'Taxa de Manutenção e Gestão', type: 'Mensal', cost: '$15,000.00' }
+            ]
+        },
+        roadmap: {
+            title: 'Roteiro do Produto',
+            auth: 'Autenticação',
+            authDesc: 'Integração SSO',
+            db: 'Base de Dados',
+            dbDesc: 'Migração para Cloud',
+            email: 'Notificações',
+            emailDesc: 'Email e SMS',
+            hosting: 'Hospedagem',
+            hostingDesc: 'Implantação Cloud'
+        },
+        aiFeatures: {
+            title: 'Capacidades de IA',
+            chatbot: 'Chatbot Consultor de Segurança',
+            reporting: 'Insights Automatizados'
+        },
+        futureUpdates: {
+            title: 'Módulos Futuros',
+            moduleA: 'Módulo A - Gestão de Riscos',
+            moduleB: 'Módulo B - Relatório de Incidentes'
+        },
+        enhancedCaps: {
+            title: 'Capacidades Aprimoradas',
+            mobileVerify: { desc: 'App Móvel para verificação em campo.' },
+            autoBooking: { desc: 'Agendamento automatizado para renovações.' },
+            massData: { desc: 'Ferramentas de importação e exportação em massa.' }
+        },
+        conclusion: {
+            title: 'Conclusão',
+            text: 'O Gestor de RACS é o futuro da conformidade de segurança.'
+        },
+        thankYou: {
+            title: 'Obrigado',
+            contact: 'contacto@exemplo.com',
+            phone: '+258 84 123 4567'
         }
     },
-    alcohol: enTranslations.alcohol,
-    manuals: enTranslations.manuals
+    manuals: {
+        title: 'Manuais do Usuário',
+        subtitle: 'Guias para todas as funções.',
+        sysAdmin: {
+            title: 'Administrador do Sistema',
+            subtitle: 'Controle total do sistema.',
+            configTitle: 'Configuração',
+            configDesc: 'Gerenciar configurações do sistema.',
+            rooms: 'Gerenciar Salas',
+            trainers: 'Gerenciar Formadores',
+            racs: 'Gerenciar RACs',
+            dbTitle: 'Gestão de Base de Dados',
+            dbDesc: 'Manter registros de funcionários.',
+            restrictionWarning: 'Garanta as permissões corretas.',
+            csv: 'Suporta Importação CSV.',
+            active: 'Gestão de Status Ativo'
+        },
+        racAdmin: {
+            title: 'Administrador RAC',
+            subtitle: 'Gerenciar cronogramas de treinamento.',
+            schedTitle: 'Agendamento',
+            schedDesc: 'Criar e gerenciar sessões.',
+            create: 'Criar Sessão',
+            lang: 'Selecionar Idioma',
+            autoTitle: 'Auto-Agendamento',
+            autoDesc: 'Lidar com agendamentos automatizados.',
+            approve: 'Aprovar agendamentos pendentes.',
+            renewTitle: 'Renovações',
+            renewDesc: 'Processar renovações.'
+        },
+        racTrainer: {
+            title: 'Formador RAC',
+            subtitle: 'Avaliação e presença.',
+            inputTitle: 'Inserir Resultados',
+            inputDesc: 'Inserir notas e presença.',
+            grading: 'Processo de Avaliação',
+            rac02: 'Requisitos RAC 02',
+            save: 'Salvar Resultados'
+        },
+        deptAdmin: {
+            title: 'Admin de Dept.',
+            subtitle: 'Ver e solicitar cartões.',
+            reqTitle: 'Solicitar Cartões',
+            reqDesc: 'Solicitar cartões de segurança.',
+            search: 'Pesquisar Funcionários',
+            print: 'Imprimir Cartões',
+            repTitle: 'Relatórios',
+            repDesc: 'Ver relatórios de departamento.'
+        },
+        user: {
+            title: 'Usuário Geral',
+            subtitle: 'Ver status pessoal.',
+            statusTitle: 'Meu Status',
+            statusDesc: 'Verifique seu status de conformidade.',
+            filterAlert: 'Certifique-se de que os filtros estão limpos.',
+            green: 'Conforme',
+            red: 'Não Conforme',
+            qr: 'Código QR Digital'
+        }
+    }
   }
 };
