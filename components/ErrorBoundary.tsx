@@ -126,8 +126,13 @@ export class ErrorBoundary extends React.Component<Props, State> {
           timestamp: new Date().toLocaleString(),
           aiFix: diagnosis.fix 
       };
-      const existingLogs = JSON.parse(localStorage.getItem('sys_logs_backlog') || '[]');
-      localStorage.setItem('sys_logs_backlog', JSON.stringify([newLogEntry, ...existingLogs]));
+      
+      try {
+        const existingLogs = JSON.parse(localStorage.getItem('sys_logs_backlog') || '[]');
+        localStorage.setItem('sys_logs_backlog', JSON.stringify([newLogEntry, ...existingLogs]));
+      } catch (e) {
+        console.error("Failed to persist log", e);
+      }
 
       // 4. AUTO RELOAD
       setTimeout(() => {
@@ -211,7 +216,7 @@ export class ErrorBoundary extends React.Component<Props, State> {
 
             {/* --- TERMINAL OUTPUT --- */}
             <div className="mt-8 bg-black/80 rounded-lg border border-slate-800 p-4 font-mono text-xs h-32 overflow-hidden flex flex-col justify-end shadow-inner">
-                <div className="text-slate-500 mb-1">C:\CARS_MANAGER\SYS\ROOT> initiate_repair.exe</div>
+                <div className="text-slate-500 mb-1">C:\CARS_MANAGER\SYS\ROOT&gt; initiate_repair.exe</div>
                 <div className="text-slate-500 mb-1">Loading AI Modules... OK</div>
                 <div className="text-slate-400 mb-1">Analyzing stack trace...</div>
                 <div className="text-cyan-500 font-bold flex items-center gap-2">
