@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { Settings, Users, Box, Save, Plus, Trash2, Tag, Edit2, Check, X, AlertCircle, Sliders, MapPin, User as UserIcon, Hash, LayoutGrid, Building2, Map, ShieldCheck, Mail, Lock, Calendar, MessageSquare, Clock, GitMerge, RefreshCw, Terminal, CheckCircle, ChevronLeft, ChevronRight, Activity, Cpu, Zap, Power } from 'lucide-react';
+import { Settings, Users, Box, Save, Plus, Trash2, Tag, Edit2, Check, X, AlertCircle, Sliders, MapPin, User as UserIcon, Hash, LayoutGrid, Building2, Map, ShieldCheck, Mail, Lock, Calendar, MessageSquare, Clock, GitMerge, RefreshCw, Terminal, CheckCircle, ChevronLeft, ChevronRight, Activity, Cpu, Zap, Power, UploadCloud } from 'lucide-react';
 import { RacDef, Room, Trainer, Site, Company, UserRole, User, SystemNotification } from '../types';
 import { v4 as uuidv4 } from 'uuid';
 import { logger } from '../utils/logger';
@@ -121,7 +121,7 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
       }, 500);
   };
 
-  // --- ROBOTIC SELF-HEALING SIMULATION (UPDATED) ---
+  // --- ROBOTIC SELF-HEALING SIMULATION ---
   const runSelfHealing = () => {
       setIsHealing(true);
       setHealingProgress(0);
@@ -285,6 +285,171 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
                             <div className="mt-4 flex gap-2">
                                 <input className="border p-2 rounded" placeholder="New Room" value={newRoom.name} onChange={e => setNewRoom({...newRoom, name: e.target.value})} />
                                 <button onClick={handleAddRoom} className="bg-blue-600 text-white p-2 rounded"><Plus size={20}/></button>
+                            </div>
+                        </div>
+                    )}
+
+                    {activeTab === 'Trainers' && (
+                        <div className="max-w-4xl mx-auto animate-fade-in">
+                            <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-6">{t.settings.trainers.title}</h3>
+                            <div className="space-y-4">
+                                {trainers.map(trainer => (
+                                    <div key={trainer.id} className="p-4 bg-white dark:bg-slate-800 border dark:border-slate-700 rounded-xl flex justify-between items-center shadow-sm">
+                                        <div>
+                                            <div className="font-bold text-slate-800 dark:text-white">{trainer.name}</div>
+                                            <div className="flex gap-2 mt-1">
+                                                {trainer.racs.map(r => <span key={r} className="text-[10px] bg-slate-100 dark:bg-slate-700 px-2 py-0.5 rounded text-slate-500">{r}</span>)}
+                                            </div>
+                                        </div>
+                                        <button onClick={() => deleteTrainer(trainer.id)} className="p-2 text-slate-400 hover:text-red-500 transition-colors"><Trash2 size={16}/></button>
+                                    </div>
+                                ))}
+                            </div>
+                            <div className="mt-6 p-4 bg-slate-50 dark:bg-slate-900/50 rounded-xl border border-slate-100 dark:border-slate-700">
+                                <h4 className="text-sm font-bold mb-3">{t.settings.trainers.new}</h4>
+                                <input 
+                                    className="w-full p-3 rounded-lg border dark:border-slate-600 dark:bg-slate-700 mb-4" 
+                                    placeholder="Trainer Name" 
+                                    value={newTrainer.name} 
+                                    onChange={e => setNewTrainer({...newTrainer, name: e.target.value})} 
+                                />
+                                <div className="flex flex-wrap gap-2 mb-4">
+                                    {racDefinitions.map(rac => (
+                                        <button 
+                                            key={rac.code} 
+                                            onClick={() => toggleNewTrainerRac(rac.code)}
+                                            className={`text-xs px-3 py-1.5 rounded-full border transition-all ${newTrainer.racs.includes(rac.code) ? 'bg-blue-600 text-white border-blue-600' : 'bg-white dark:bg-slate-700 text-slate-500 border-slate-200 dark:border-slate-600'}`}
+                                        >
+                                            {rac.code}
+                                        </button>
+                                    ))}
+                                </div>
+                                <button onClick={handleAddTrainer} className="w-full py-3 bg-slate-800 text-white rounded-lg font-bold hover:bg-slate-700 transition-colors"><Plus size={16} className="inline mr-2"/> Add Trainer</button>
+                            </div>
+                        </div>
+                    )}
+
+                    {activeTab === 'RACs' && canEditGlobalDefinitions && (
+                        <div className="max-w-4xl mx-auto animate-fade-in">
+                            <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-6">{t.settings.racs.title}</h3>
+                            <div className="space-y-3">
+                                {racDefinitions.map(rac => (
+                                    <div key={rac.id} className="p-4 bg-white dark:bg-slate-800 border dark:border-slate-700 rounded-xl flex justify-between items-center group hover:border-blue-300 transition-colors">
+                                        <div className="flex gap-4 items-center">
+                                            <div className="bg-slate-100 dark:bg-slate-700 px-3 py-1 rounded text-sm font-black text-slate-600 dark:text-slate-300">{rac.code}</div>
+                                            <div>
+                                                <div className="font-bold text-sm text-slate-800 dark:text-white">{rac.name}</div>
+                                                <div className="text-xs text-slate-400 mt-0.5 flex gap-3">
+                                                    <span>{rac.validityMonths} Months Validity</span>
+                                                    {rac.requiresDriverLicense && <span className="text-red-400 flex items-center gap-1"><AlertCircle size={10}/> DL Required</span>}
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <button onClick={() => deleteRac(rac.id)} className="opacity-0 group-hover:opacity-100 p-2 text-slate-400 hover:text-red-500 transition-all"><Trash2 size={16}/></button>
+                                    </div>
+                                ))}
+                            </div>
+                            <div className="mt-6 p-4 bg-slate-50 dark:bg-slate-900/50 rounded-xl border border-slate-100 dark:border-slate-700 grid grid-cols-2 gap-4">
+                                <input className="p-3 rounded-lg border dark:border-slate-600 dark:bg-slate-700" placeholder="Code (e.g. RAC99)" value={newRac.code} onChange={e => setNewRac({...newRac, code: e.target.value})} />
+                                <input className="p-3 rounded-lg border dark:border-slate-600 dark:bg-slate-700" placeholder="Description" value={newRac.name} onChange={e => setNewRac({...newRac, name: e.target.value})} />
+                                <div className="col-span-2 flex items-center gap-4">
+                                    <label className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400"><input type="checkbox" checked={newRac.requiresDriverLicense} onChange={e => setNewRac({...newRac, requiresDriverLicense: e.target.checked})} /> Requires DL</label>
+                                    <label className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400"><input type="checkbox" checked={newRac.requiresPractical} onChange={e => setNewRac({...newRac, requiresPractical: e.target.checked})} /> Requires Practical</label>
+                                    <button onClick={handleAddRac} className="ml-auto px-6 py-2 bg-blue-600 text-white rounded-lg font-bold hover:bg-blue-500"><Plus size={16}/></button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {activeTab === 'Sites' && canEditGlobalDefinitions && (
+                        <div className="max-w-4xl mx-auto animate-fade-in">
+                            <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-6">Operational Sites</h3>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                                {sites.map(site => (
+                                    <div key={site.id} className="p-5 bg-white dark:bg-slate-800 border dark:border-slate-700 rounded-xl shadow-sm relative group">
+                                        <button onClick={() => deleteSite(site.id)} className="absolute top-3 right-3 text-slate-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-all"><X size={16}/></button>
+                                        <h4 className="font-bold text-lg text-slate-800 dark:text-white">{site.name}</h4>
+                                        <p className="text-sm text-slate-500 flex items-center gap-1 mt-1"><MapPin size={12}/> {site.location}</p>
+                                    </div>
+                                ))}
+                            </div>
+                            <div className="flex gap-2">
+                                <input className="flex-1 p-3 rounded-lg border dark:border-slate-600 dark:bg-slate-700" placeholder="Site Name" value={newSite.name} onChange={e => setNewSite({...newSite, name: e.target.value})} />
+                                <input className="flex-1 p-3 rounded-lg border dark:border-slate-600 dark:bg-slate-700" placeholder="Location" value={newSite.location} onChange={e => setNewSite({...newSite, location: e.target.value})} />
+                                <button onClick={handleAddSite} className="px-6 bg-green-600 text-white rounded-lg font-bold hover:bg-green-500"><Plus size={20}/></button>
+                            </div>
+                        </div>
+                    )}
+
+                    {activeTab === 'Companies' && isSystemAdmin && (
+                        <div className="max-w-4xl mx-auto animate-fade-in">
+                            <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-6">Tenant Companies</h3>
+                            {provisionSuccess && <div className="mb-4 p-3 bg-green-100 text-green-700 rounded-lg flex items-center gap-2"><CheckCircle size={16}/> {provisionSuccess}</div>}
+                            
+                            <div className="space-y-3 mb-8">
+                                {companies.map(comp => (
+                                    <div key={comp.id} className="flex justify-between items-center p-4 bg-white dark:bg-slate-800 border dark:border-slate-700 rounded-xl">
+                                        <div className="font-bold text-slate-800 dark:text-white flex items-center gap-3">
+                                            <Building2 size={20} className="text-slate-400"/> {comp.name}
+                                        </div>
+                                        <span className={`px-2 py-1 rounded text-xs font-bold ${comp.status === 'Active' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>{comp.status}</span>
+                                    </div>
+                                ))}
+                            </div>
+
+                            <div className="p-6 bg-slate-50 dark:bg-slate-900/50 rounded-xl border border-slate-100 dark:border-slate-700">
+                                <h4 className="text-sm font-bold mb-4 uppercase text-slate-500 tracking-wider">Provision New Tenant</h4>
+                                <div className="grid gap-4">
+                                    <input className="p-3 rounded-lg border dark:border-slate-600 dark:bg-slate-700" placeholder="Company Name" value={newCompany.name} onChange={e => setNewCompany({...newCompany, name: e.target.value})} />
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <input className="p-3 rounded-lg border dark:border-slate-600 dark:bg-slate-700" placeholder="Admin Name" value={newCompany.adminName} onChange={e => setNewCompany({...newCompany, adminName: e.target.value})} />
+                                        <input className="p-3 rounded-lg border dark:border-slate-600 dark:bg-slate-700" placeholder="Admin Email" value={newCompany.adminEmail} onChange={e => setNewCompany({...newCompany, adminEmail: e.target.value})} />
+                                    </div>
+                                    <button onClick={handleAddCompany} className="w-full py-3 bg-indigo-600 text-white rounded-lg font-bold hover:bg-indigo-500 shadow-lg shadow-indigo-500/20">Provision Tenant Environment</button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {activeTab === 'Integration' && isSystemAdmin && (
+                        <div className="max-w-4xl mx-auto animate-fade-in">
+                            <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-6">{t.settings.integrationPage.title}</h3>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                                <div className="p-6 bg-white dark:bg-slate-800 rounded-2xl border dark:border-slate-700 shadow-sm relative overflow-hidden">
+                                    <div className="absolute top-0 right-0 p-4 opacity-10"><Users size={64}/></div>
+                                    <h4 className="font-bold text-slate-500 uppercase tracking-wider text-xs mb-2">{t.settings.integrationPage.sourceA}</h4>
+                                    <div className="text-2xl font-black text-slate-800 dark:text-white mb-4">HR Database</div>
+                                    <div className="flex gap-2">
+                                        <span className="px-2 py-1 bg-green-100 text-green-700 rounded text-xs font-bold">Connected</span>
+                                        <span className="px-2 py-1 bg-slate-100 text-slate-600 rounded text-xs font-bold">{RAW_HR_SOURCE.length} Records</span>
+                                    </div>
+                                </div>
+                                <div className="p-6 bg-white dark:bg-slate-800 rounded-2xl border dark:border-slate-700 shadow-sm relative overflow-hidden">
+                                    <div className="absolute top-0 right-0 p-4 opacity-10"><ShieldCheck size={64}/></div>
+                                    <h4 className="font-bold text-slate-500 uppercase tracking-wider text-xs mb-2">{t.settings.integrationPage.sourceB}</h4>
+                                    <div className="text-2xl font-black text-slate-800 dark:text-white mb-4">Contractor DB</div>
+                                    <div className="flex gap-2">
+                                        <span className="px-2 py-1 bg-green-100 text-green-700 rounded text-xs font-bold">Connected</span>
+                                        <span className="px-2 py-1 bg-slate-100 text-slate-600 rounded text-xs font-bold">{RAW_CONTRACTOR_SOURCE.length} Records</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="bg-black rounded-xl p-6 font-mono text-xs text-green-400 h-64 overflow-y-auto border border-slate-800 shadow-inner">
+                                <div className="mb-2 text-slate-500">Middleware Console Output:</div>
+                                {syncLogs.length === 0 && <div className="text-slate-600 italic">{t.settings.integrationPage.waiting}</div>}
+                                {syncLogs.map((log, i) => <div key={i}>&gt; {log}</div>)}
+                                {isSyncing && <div className="animate-pulse">&gt; {t.settings.integrationPage.processing}</div>}
+                            </div>
+                            
+                            <div className="mt-4 flex justify-end">
+                                <button 
+                                    onClick={runIntegrationSync}
+                                    disabled={isSyncing}
+                                    className={`flex items-center gap-2 px-6 py-3 rounded-xl font-bold text-white shadow-lg transition-all ${isSyncing ? 'bg-slate-700 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-500'}`}
+                                >
+                                    <GitMerge size={18} /> {t.settings.integrationPage.syncNow}
+                                </button>
                             </div>
                         </div>
                     )}

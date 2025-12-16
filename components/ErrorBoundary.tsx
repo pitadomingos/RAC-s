@@ -15,7 +15,7 @@ interface State {
   isRepaired: boolean;
 }
 
-export class ErrorBoundary extends React.Component<Props, State> {
+export class ErrorBoundary extends Component<Props, State> {
   state: State = {
     hasError: false,
     error: null,
