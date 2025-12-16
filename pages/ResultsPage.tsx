@@ -187,25 +187,128 @@ const ResultsPage: React.FC<ResultsPageProps> = ({ bookings, updateBookingStatus
 
   const handleDownloadTemplate = () => {
     const baseHeaders = [
-      'Full Name', 'Record ID', 'Company', 'Department', 'Job Title', 
-      'RAC Code (e.g. RAC01)', 'Date (YYYY-MM-DD)', 'Trainer', 'Room', 
-      'Status (Passed/Failed)', 'Theory Score', 'Practical Score', 
-      'DL Number', 'DL Class', 'DL Expiry (YYYY-MM-DD)',
-      'ASO Expiry (YYYY-MM-DD)'
+      'Record ID', 'Full Name', 'RAC Code (e.g. RAC01)', 'Date (YYYY-MM-DD)', 'Score', 'Status (Passed/Failed)'
     ];
     const csvContent = "data:text/csv;charset=utf-8," + baseHeaders.join(",");
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement("a");
     link.setAttribute("href", encodedUri);
-    link.setAttribute("download", "training_results_template.csv");
+    link.setAttribute("download", "training_import_template.csv");
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
   };
 
-  // Note: File parsing would typically be here if we were implementing upload logic fully
-  // For this component, we rely on `importBookings` prop if we were to process file content.
-  // We'll skip complex file parsing here as DatabasePage handles the primary bulk import logic usually.
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = (evt) => {
+          const text = evt.target?.result as string;
+          if (!text) return;
+
+          try {
+              const lines = text.split('\n');
+              const separator = lines[0].includes(';') ? ';' : ',';
+              const headers = lines[0].split(separator).map(h => h.trim().toLowerCase().replace(/^"|"$/g, ''));
+              
+              const newBookings: Booking[] = [];
+              
+              // Helper to find index
+              const getIdx = (keys: string[]) => headers.findIndex(h => keys.some(k => h.includes(k)));
+              
+              const idxId = getIdx(['id', 'record', 'matricula']);
+              const idxName = getIdx(['name', 'nome']);
+              const idxRac = getIdx(['rac', 'code', 'training']);
+              const idxDate = getIdx(['date', 'data']);
+              const idxScore = getIdx(['score', 'nota']);
+              const idxStatus = getIdx(['status', 'resultado']);
+
+              if (idxId === -1 || idxRac === -1) {
+                  addNotification({
+                      id: uuidv4(),
+                      type: 'warning',
+                      title: 'Invalid Format',
+                      message: 'CSV must contain "Record ID" and "RAC Code" columns.',
+                      timestamp: new Date(),
+                      isRead: false
+                  });
+                  return;
+              }
+
+              let count = 0;
+              lines.slice(1).forEach(line => {
+                  if (!line.trim()) return;
+                  const cols = line.split(separator).map(c => c.trim().replace(/^"|"$/g, ''));
+                  
+                  const recordId = cols[idxId];
+                  const name = idxName !== -1 ? cols[idxName] : 'Imported Employee';
+                  const rac = cols[idxRac];
+                  const date = idxDate !== -1 ? cols[idxDate] : new Date().toISOString().split('T')[0];
+                  const score = idxScore !== -1 ? parseInt(cols[idxScore]) || 0 : 0;
+                  const statusRaw = idxStatus !== -1 ? cols[idxStatus].toLowerCase() : 'passed';
+                  
+                  const status = statusRaw.includes('fail') ? BookingStatus.FAILED : BookingStatus.PASSED;
+
+                  if (recordId && rac) {
+                      newBookings.push({
+                          id: uuidv4(),
+                          sessionId: rac, // Use RAC code as session for legacy import
+                          employee: {
+                              id: uuidv4(), // Generates new internal ID
+                              recordId: recordId,
+                              name: name,
+                              company: 'Imported',
+                              department: 'Imported',
+                              role: 'Imported',
+                              isActive: true
+                          },
+                          status: status,
+                          resultDate: date,
+                          expiryDate: status === BookingStatus.PASSED && date ? format(addMonths(new Date(date), 24), 'yyyy-MM-dd') : '',
+                          attendance: true,
+                          theoryScore: score
+                      });
+                      count++;
+                  }
+              });
+
+              if (importBookings && newBookings.length > 0) {
+                  importBookings(newBookings);
+                  addNotification({
+                      id: uuidv4(),
+                      type: 'success',
+                      title: 'Import Successful',
+                      message: `Imported ${count} training records.`,
+                      timestamp: new Date(),
+                      isRead: false
+                  });
+              } else {
+                   addNotification({
+                      id: uuidv4(),
+                      type: 'warning',
+                      title: 'Import Failed',
+                      message: 'No valid records found.',
+                      timestamp: new Date(),
+                      isRead: false
+                  });
+              }
+          } catch (error) {
+              console.error(error);
+              addNotification({
+                  id: uuidv4(),
+                  type: 'alert',
+                  title: 'Import Error',
+                  message: 'Failed to process file. Check format.',
+                  timestamp: new Date(),
+                  isRead: false
+              });
+          }
+      };
+      reader.readAsText(file);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+  };
 
   return (
     <div className="space-y-6 pb-24 animate-fade-in-up h-full flex flex-col">
@@ -284,6 +387,22 @@ const ResultsPage: React.FC<ResultsPageProps> = ({ bookings, updateBookingStatus
             </div>
 
             <div className="flex items-center gap-2">
+                <button 
+                    onClick={handleDownloadTemplate}
+                    className="flex items-center gap-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-600 dark:text-slate-300 px-4 py-2 rounded-lg text-xs font-bold transition-all shadow-sm"
+                    title={t.common.template}
+                >
+                    <FileSpreadsheet size={16} /> Template
+                </button>
+                <button 
+                    onClick={() => fileInputRef.current?.click()}
+                    className="flex items-center gap-2 bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-lg text-xs font-bold transition-all shadow-sm"
+                    title={t.common.import}
+                >
+                    <Upload size={16} /> {t.common.import}
+                </button>
+                <input type="file" ref={fileInputRef} className="hidden" accept=".csv" onChange={handleFileUpload} />
+                
                 <button 
                     onClick={handleExportData}
                     className="flex items-center gap-2 bg-green-600 hover:bg-green-500 text-white px-4 py-2 rounded-lg text-xs font-bold transition-all shadow-sm"
