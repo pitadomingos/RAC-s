@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { Settings, Users, Box, Save, Plus, Trash2, Tag, Edit2, Check, X, AlertCircle, Sliders, MapPin, User as UserIcon, Hash, LayoutGrid, Building2, Map, ShieldCheck, Mail, Lock, Calendar, MessageSquare, Clock, GitMerge, RefreshCw, Terminal, CheckCircle, ChevronLeft, ChevronRight } from 'lucide-react';
-import { RacDef, Room, Trainer, Site, Company, UserRole, User } from '../types';
+import { RacDef, Room, Trainer, Site, Company, UserRole, User, SystemNotification } from '../types';
 import { v4 as uuidv4 } from 'uuid';
 import { logger } from '../utils/logger';
 import { useLanguage } from '../contexts/LanguageContext';
@@ -25,6 +25,7 @@ interface SettingsPageProps {
     feedbackConfig?: { mode: string, expiry: string | null };
     onUpdateFeedbackConfig?: (mode: string) => void;
     onSyncDatabases?: () => { added: number, msg: string }; // New Prop for Sync
+    addNotification: (notif: SystemNotification) => void;
 }
 
 const SettingsPage: React.FC<SettingsPageProps> = ({ 
@@ -37,7 +38,8 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
     users = [], onUpdateUsers,
     feedbackConfig = { mode: 'always', expiry: null },
     onUpdateFeedbackConfig,
-    onSyncDatabases
+    onSyncDatabases,
+    addNotification
 }) => {
   const { t } = useLanguage();
   const [activeTab, setActiveTab] = useState<'General' | 'Trainers' | 'RACs' | 'Sites' | 'Companies' | 'Integration'>('General');
@@ -105,7 +107,14 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
   const handleAddCompany = () => {
       if (!newCompany.name || !onUpdateCompanies || !onUpdateSites || !onUpdateUsers) return;
       if (!newCompany.adminName || !newCompany.adminEmail) {
-          alert("Please provide Admin details.");
+          addNotification({
+              id: uuidv4(),
+              type: 'warning',
+              title: 'Validation Error',
+              message: 'Please provide Admin details.',
+              timestamp: new Date(),
+              isRead: false
+          });
           return;
       }
 
@@ -259,7 +268,14 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
       setIsSaving(true);
       setTimeout(() => {
           setIsSaving(false);
-          alert('Configuration saved.');
+          addNotification({
+              id: uuidv4(),
+              type: 'success',
+              title: 'Saved',
+              message: 'System configuration updated successfully.',
+              timestamp: new Date(),
+              isRead: false
+          });
       }, 800);
   };
 
@@ -293,6 +309,14 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
                   `Sync Result: ${result.msg}`,
                   `Database updated at ${new Date().toLocaleTimeString()}.`
               ]);
+              addNotification({
+                  id: uuidv4(),
+                  type: 'success',
+                  title: 'Sync Complete',
+                  message: result.msg,
+                  timestamp: new Date(),
+                  isRead: false
+              });
               setIsSyncing(false);
           }
       }, 800);

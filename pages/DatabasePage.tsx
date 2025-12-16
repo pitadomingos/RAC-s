@@ -1,7 +1,7 @@
 
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { Booking, BookingStatus, EmployeeRequirement, Employee, TrainingSession, RacDef } from '../types';
+import { Booking, BookingStatus, EmployeeRequirement, Employee, TrainingSession, RacDef, SystemNotification } from '../types';
 import { COMPANIES, OPS_KEYS, PERMISSION_KEYS, DEPARTMENTS } from '../constants';
 import { Search, CheckCircle, XCircle, Edit, ChevronLeft, ChevronRight, Download, X, Trash2, QrCode, Printer, Phone, AlertTriangle, Loader2, Archive, Filter, Smartphone, FileSpreadsheet, ArrowRight, Settings, Database as DbIcon, ShieldCheck } from 'lucide-react';
 import { useLanguage } from '../contexts/LanguageContext';
@@ -20,9 +20,10 @@ interface DatabasePageProps {
   racDefinitions: RacDef[];
   // New prop signature for import
   importBookings?: (newBookings: Booking[], sideEffects?: { employee: Employee, aso: string, ops: Record<string, boolean> }[]) => void;
+  addNotification: (notif: SystemNotification) => void;
 }
 
-const DatabasePage: React.FC<DatabasePageProps> = ({ bookings, requirements, updateRequirements, sessions, onUpdateEmployee, onDeleteEmployee, racDefinitions, importBookings }) => {
+const DatabasePage: React.FC<DatabasePageProps> = ({ bookings, requirements, updateRequirements, sessions, onUpdateEmployee, onDeleteEmployee, racDefinitions, importBookings, addNotification }) => {
   const { t } = useLanguage();
   
   // -- State --
@@ -137,7 +138,14 @@ const DatabasePage: React.FC<DatabasePageProps> = ({ bookings, requirements, upd
 
           const lines = text.split('\n').filter(l => l.trim().length > 0);
           if (lines.length < 2) {
-              alert("Invalid CSV: Not enough data rows.");
+              addNotification({
+                  id: uuidv4(),
+                  type: 'alert',
+                  title: 'Import Error',
+                  message: 'Invalid CSV: Not enough data rows.',
+                  timestamp: new Date(),
+                  isRead: false
+              });
               return;
           }
 
@@ -328,19 +336,35 @@ const DatabasePage: React.FC<DatabasePageProps> = ({ bookings, requirements, upd
 
             if (importBookings) {
                 importBookings(newBookings, sideEffects);
-                alert(`${t.database.importSuccess}\n- Processed ${updatedCount} employees.\n- Skipped ${skippedRows} invalid rows.\n- Created ${newBookings.length} training records.\n- Updated Matrix requirements.`);
+                addNotification({
+                    id: uuidv4(),
+                    type: 'success',
+                    title: t.database.importSuccess,
+                    message: `Processed ${updatedCount} employees. Skipped ${skippedRows} invalid rows. Created ${newBookings.length} records.`,
+                    timestamp: new Date(),
+                    isRead: false
+                });
                 setShowImportModal(false);
             }
 
           } catch (e) {
               console.error("Import Error", e);
-              alert("Error processing file. Please check format.");
+              addNotification({
+                  id: uuidv4(),
+                  type: 'alert',
+                  title: 'Import Failed',
+                  message: 'Error processing file. Please check format.',
+                  timestamp: new Date(),
+                  isRead: false
+              });
           }
       };
       reader.readAsText(importFile);
   };
 
   // -- Derived Data Logic (Unchanged) --
+  // ... (rest of the file content remains same, just updating alerts in handlers below)
+
   const uniqueEmployees = useMemo(() => {
     const map = new Map<string, Employee>();
     bookings.forEach(b => {
@@ -463,14 +487,28 @@ const DatabasePage: React.FC<DatabasePageProps> = ({ bookings, requirements, upd
           downloadLink.click();
           document.body.removeChild(downloadLink);
       } catch (e) {
-          alert("Error downloading QR Code. Please try printing instead.");
+          addNotification({
+              id: uuidv4(),
+              type: 'alert',
+              title: 'Download Error',
+              message: 'Error downloading QR Code. Please try printing instead.',
+              timestamp: new Date(),
+              isRead: false
+          });
       }
   };
 
   // --- MASS DOWNLOAD LOGIC ---
   const handleBulkQrDownload = async () => {
       if (processedData.length === 0) {
-          alert("No records to download.");
+          addNotification({
+              id: uuidv4(),
+              type: 'info',
+              title: 'Empty Set',
+              message: 'No records to download.',
+              timestamp: new Date(),
+              isRead: false
+          });
           return;
       }
       
@@ -486,7 +524,14 @@ const DatabasePage: React.FC<DatabasePageProps> = ({ bookings, requirements, upd
           const dataToProcess = processedData.slice(0, limit);
           
           if (processedData.length > limit) {
-              alert(`Note: Dataset too large. Downloading first ${limit} records to prevent browser timeout.`);
+              addNotification({
+                  id: uuidv4(),
+                  type: 'warning',
+                  title: 'Large Dataset',
+                  message: `Dataset too large. Downloading first ${limit} records to prevent browser timeout.`,
+                  timestamp: new Date(),
+                  isRead: false
+              });
           }
 
           for (const item of dataToProcess) {
@@ -515,7 +560,14 @@ const DatabasePage: React.FC<DatabasePageProps> = ({ bookings, requirements, upd
 
       } catch (err) {
           console.error("Zip Error", err);
-          alert("An error occurred while generating the bulk archive.");
+          addNotification({
+              id: uuidv4(),
+              type: 'alert',
+              title: 'Archive Error',
+              message: 'An error occurred while generating the bulk archive.',
+              timestamp: new Date(),
+              isRead: false
+          });
       } finally {
           setIsZipping(false);
       }
@@ -543,7 +595,7 @@ const DatabasePage: React.FC<DatabasePageProps> = ({ bookings, requirements, upd
       document.body.removeChild(link);
   };
 
-  // -- Processing & Filtering --
+  // ... (useMemo and rendering logic remains the same)
   const processedData = useMemo(() => {
     return uniqueEmployees.map(emp => {
       const req = getRequirement(emp.id);
@@ -584,7 +636,6 @@ const DatabasePage: React.FC<DatabasePageProps> = ({ bookings, requirements, upd
     });
   }, [uniqueEmployees, requirements, bookings, sessions, selectedCompany, selectedDepartment, accessStatusFilter, searchTerm, racDefinitions]);
 
-  // -- Pagination Logic --
   const totalPages = Math.ceil(processedData.length / itemsPerPage);
   const paginatedData = processedData.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
@@ -680,6 +731,7 @@ const DatabasePage: React.FC<DatabasePageProps> = ({ bookings, requirements, upd
              </div>
         </div>
 
+        {/* ... (Table and Modals rendering remain same) ... */}
         {/* High Density Table */}
         <div className="flex-1 overflow-auto">
              <table className="min-w-full divide-y divide-gray-200 dark:divide-slate-700">

@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { TrainingSession, Room, Trainer, RacDef } from '../types';
+import { TrainingSession, Room, Trainer, RacDef, SystemNotification } from '../types';
 import { Calendar, Plus, Settings, X, Save, Clock, MapPin, User, CalendarDays, ChevronLeft, ChevronRight, Globe, Trash2, Search, Filter } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { v4 as uuidv4 } from 'uuid';
@@ -13,9 +13,10 @@ interface ScheduleTrainingProps {
     rooms: Room[];
     trainers: Trainer[];
     racDefinitions: RacDef[];
+    addNotification: (notif: SystemNotification) => void;
 }
 
-const ScheduleTraining: React.FC<ScheduleTrainingProps> = ({ sessions, setSessions, rooms, trainers, racDefinitions }) => {
+const ScheduleTraining: React.FC<ScheduleTrainingProps> = ({ sessions, setSessions, rooms, trainers, racDefinitions, addNotification }) => {
   const navigate = useNavigate();
   const { t } = useLanguage();
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -53,7 +54,14 @@ const ScheduleTraining: React.FC<ScheduleTrainingProps> = ({ sessions, setSessio
 
   const handleAddSession = () => {
       if (!newSession.date || !newSession.racType || !newSession.location) {
-          alert("Please fill in Date, RAC Type and Location");
+          addNotification({
+              id: uuidv4(),
+              type: 'warning',
+              title: 'Validation Error',
+              message: 'Please fill in Date, RAC Type and Location',
+              timestamp: new Date(),
+              isRead: false
+          });
           return;
       }
 
@@ -70,6 +78,16 @@ const ScheduleTraining: React.FC<ScheduleTrainingProps> = ({ sessions, setSessio
 
       setSessions(prev => [...prev, sessionToAdd]);
       setIsModalOpen(false);
+      
+      addNotification({
+          id: uuidv4(),
+          type: 'success',
+          title: 'Session Created',
+          message: `${sessionToAdd.racType} scheduled for ${sessionToAdd.date}`,
+          timestamp: new Date(),
+          isRead: false
+      });
+
       // Reset form slightly but keep useful defaults
       setNewSession(prev => ({ ...prev, date: '', startTime: '08:00' }));
   };

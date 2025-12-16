@@ -1,5 +1,6 @@
+
 import React, { ErrorInfo, ReactNode } from 'react';
-import { AlertTriangle, RefreshCcw, ShieldCheck } from 'lucide-react';
+import { AlertTriangle, RefreshCcw, ShieldCheck, Cpu, Zap, Activity, Terminal, CheckCircle2 } from 'lucide-react';
 import { analyzeRuntimeError } from '../services/geminiService';
 
 interface Props {
@@ -10,117 +11,229 @@ interface State {
   hasError: boolean;
   error: Error | null;
   aiDiagnosis: { rootCause: string, fix: string } | null;
+  repairProgress: number;
+  repairStep: string;
+  isRepaired: boolean;
 }
 
 export class ErrorBoundary extends React.Component<Props, State> {
   public state: State = {
     hasError: false,
     error: null,
-    aiDiagnosis: null
+    aiDiagnosis: null,
+    repairProgress: 0,
+    repairStep: 'Initializing Diagnostics...',
+    isRepaired: false
   };
 
+  private simulationInterval: any = null;
+
   public static getDerivedStateFromError(error: Error): State {
-    return { hasError: true, error, aiDiagnosis: null };
+    return { 
+        hasError: true, 
+        error, 
+        aiDiagnosis: null, 
+        repairProgress: 0, 
+        repairStep: 'System Breach Detected...',
+        isRepaired: false 
+    };
   }
 
   public componentDidCatch(error: Error, errorInfo: ErrorInfo) {
-    // 1. Silent Log to Console
     console.error('CARS Manager Critical Error:', error, errorInfo);
 
-    // 2. Trigger Silent Gemini Analysis (Async)
+    // 1. Start the visual simulation immediately
+    this.startRepairSimulation();
+
+    // 2. Trigger Real Intelligence in background
     this.runSilentDiagnosis(error, errorInfo);
   }
+
+  componentWillUnmount() {
+      if (this.simulationInterval) clearInterval(this.simulationInterval);
+  }
+
+  private startRepairSimulation = () => {
+      const steps = [
+          "Scanning Neural Pathways...",
+          "Isolating Corrupt Segments...",
+          "Engaging RoboTech Healer Protocol...",
+          "Re-calibrating State Logic...",
+          "Optimizing Memory Shards...",
+          "Applying Hotfix Patches...",
+          "Verifying System Integrity..."
+      ];
+
+      let stepIndex = 0;
+
+      this.simulationInterval = setInterval(() => {
+          this.setState(prevState => {
+              // Cap progress at 90% until real API returns (or timeout)
+              if (prevState.repairProgress >= 90 && !this.state.aiDiagnosis) {
+                  return { ...prevState, repairStep: "Awaiting AI Consensus..." };
+              }
+
+              const nextProgress = prevState.repairProgress + (Math.random() * 5);
+              
+              // Change text log every 15% progress
+              if (Math.floor(nextProgress / 15) > stepIndex && stepIndex < steps.length - 1) {
+                  stepIndex++;
+              }
+
+              return {
+                  repairProgress: Math.min(nextProgress, 95),
+                  repairStep: steps[stepIndex]
+              };
+          });
+      }, 200);
+  };
 
   private runSilentDiagnosis = async (error: Error, errorInfo: ErrorInfo) => {
       try {
           const stack = errorInfo.componentStack || '';
           const diagnosis = await analyzeRuntimeError(error.message, stack);
           
-          this.setState({ aiDiagnosis: diagnosis });
-
-          // 3. Persist to "System Logs" (Simulated via localStorage for Admin view)
-          const newLogEntry = {
-              id: Date.now().toString(),
-              level: 'ERROR', // Flagged as error but resolved by AI
-              messageKey: `AUTO-RESOLVED: ${diagnosis.rootCause}`,
-              user: 'Gemini Watchdog',
-              timestamp: new Date().toLocaleString(),
-              aiFix: diagnosis.fix // Specific field for AI fix
-          };
-
-          const existingLogs = JSON.parse(localStorage.getItem('sys_logs_backlog') || '[]');
-          localStorage.setItem('sys_logs_backlog', JSON.stringify([newLogEntry, ...existingLogs]));
+          // Wait a minimum time for effect, then finish
+          setTimeout(() => {
+              this.completeRepair(diagnosis);
+          }, 2000); 
 
       } catch (e) {
           console.error("Silent diagnosis failed", e);
+          // Fallback fix
+          setTimeout(() => {
+              this.completeRepair({ rootCause: "Unknown Runtime Exception", fix: "General Reset" });
+          }, 3000);
       }
+  }
+
+  private completeRepair = (diagnosis: { rootCause: string, fix: string }) => {
+      if (this.simulationInterval) clearInterval(this.simulationInterval);
+
+      this.setState({ 
+          aiDiagnosis: diagnosis,
+          repairProgress: 100,
+          repairStep: "SYSTEM RESTORED",
+          isRepaired: true
+      });
+
+      // 3. Persist Log
+      const newLogEntry = {
+          id: Date.now().toString(),
+          level: 'ERROR', 
+          messageKey: `AUTO-RESOLVED: ${diagnosis.rootCause}`,
+          user: 'RoboTech AI',
+          timestamp: new Date().toLocaleString(),
+          aiFix: diagnosis.fix 
+      };
+      const existingLogs = JSON.parse(localStorage.getItem('sys_logs_backlog') || '[]');
+      localStorage.setItem('sys_logs_backlog', JSON.stringify([newLogEntry, ...existingLogs]));
+
+      // 4. AUTO RELOAD
+      setTimeout(() => {
+          window.location.reload();
+      }, 2500);
   }
 
   public render() {
     if (this.state.hasError) {
-      const errorMsg = this.state.error instanceof Error 
-        ? this.state.error.toString() 
-        : String(this.state.error);
-
       return (
-        <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center p-4 font-sans">
-          <div className="bg-white p-8 rounded-2xl shadow-2xl max-w-lg w-full text-center border border-gray-200 relative overflow-hidden">
-            
-            <div className="absolute top-0 left-0 w-full h-2 bg-red-500"></div>
+        <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center p-6 font-mono overflow-hidden relative">
+          
+          {/* Background Grid Effect */}
+          <div className="absolute inset-0 opacity-10" 
+               style={{ backgroundImage: 'radial-gradient(#22d3ee 1px, transparent 1px)', backgroundSize: '30px 30px' }}>
+          </div>
 
-            <div className="flex justify-center mb-6">
-              <div className="bg-red-50 p-4 rounded-full border border-red-100 shadow-inner">
-                <AlertTriangle size={48} className="text-red-600" />
-              </div>
+          <div className="relative z-10 max-w-2xl w-full">
+            
+            {/* --- CENTRAL VISUAL --- */}
+            <div className="flex justify-center mb-10 relative">
+                {/* Glowing Ring */}
+                <div className={`absolute inset-0 rounded-full blur-xl transition-all duration-1000 ${this.state.isRepaired ? 'bg-green-500/40' : 'bg-cyan-500/30 animate-pulse'}`}></div>
+                
+                <div className={`relative h-32 w-32 bg-slate-900 rounded-full border-4 flex items-center justify-center shadow-2xl transition-all duration-500 ${this.state.isRepaired ? 'border-green-500 shadow-green-500/50' : 'border-cyan-500 shadow-cyan-500/50'}`}>
+                    {this.state.isRepaired ? (
+                        <CheckCircle2 size={64} className="text-green-400 animate-bounce-in" />
+                    ) : (
+                        <Cpu size={64} className="text-cyan-400 animate-spin-slow" />
+                    )}
+                </div>
+
+                {/* Orbiting Particles */}
+                {!this.state.isRepaired && (
+                    <>
+                        <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-4">
+                            <Zap size={24} className="text-yellow-400 animate-bounce" />
+                        </div>
+                        <div className="absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-4">
+                            <Activity size={24} className="text-pink-500 animate-pulse" />
+                        </div>
+                    </>
+                )}
             </div>
-            
-            <h1 className="text-2xl font-black text-slate-900 mb-2">Application Paused</h1>
-            <p className="text-gray-600 mb-6 text-sm leading-relaxed">
-              The system encountered an unexpected issue.
-              <br />
-              <span className="font-bold text-slate-800">Gemini Intelligence</span> has been notified and is analyzing the code.
-            </p>
-            
-            {/* AI Diagnosis Section - Visually distinct */}
-            {this.state.aiDiagnosis ? (
-                <div className="bg-emerald-50 border border-emerald-100 rounded-xl p-4 mb-6 text-left animate-fade-in-up">
-                    <div className="flex items-center gap-2 mb-2">
-                        <ShieldCheck size={18} className="text-emerald-600" />
-                        <span className="text-xs font-black text-emerald-700 uppercase tracking-wider">Auto-Diagnosis Complete</span>
-                    </div>
-                    <p className="text-xs text-emerald-800 font-medium mb-1">Root Cause Identified:</p>
-                    <p className="text-xs text-slate-600 mb-3">{this.state.aiDiagnosis.rootCause}</p>
-                    
-                    <div className="bg-white rounded-lg p-3 border border-emerald-100/50">
-                        <p className="text-[10px] text-slate-400 uppercase font-bold mb-1">Recommended Fix</p>
-                        <code className="text-xs font-mono text-emerald-600 block whitespace-pre-wrap break-words">
-                            {this.state.aiDiagnosis.fix}
-                        </code>
+
+            {/* --- TEXT CONTENT --- */}
+            <div className="text-center mb-8 space-y-4">
+                <h1 className={`text-3xl font-black tracking-[0.2em] transition-colors duration-500 ${this.state.isRepaired ? 'text-green-400' : 'text-white'}`}>
+                    {this.state.isRepaired ? 'SYSTEM RESTORED' : 'SYSTEM CRITICAL'}
+                </h1>
+                
+                <div className="bg-slate-900/80 border border-slate-700 p-6 rounded-xl backdrop-blur-md shadow-lg">
+                    <p className="text-cyan-300 text-lg font-bold mb-2 animate-pulse">
+                        INTEGRATED ROBOTECH SYSTEM
+                    </p>
+                    <p className="text-slate-400 text-sm">
+                        {this.state.isRepaired 
+                            ? "Error corrected. Rebooting operational modules..."
+                            : "The Integrated RoboTech System on-board has detected a system error, please wait while repairing."
+                        }
+                    </p>
+                </div>
+            </div>
+
+            {/* --- PROGRESS VISUALIZATION --- */}
+            <div className="space-y-2">
+                <div className="flex justify-between text-xs uppercase font-bold tracking-wider">
+                    <span className="text-cyan-600">Repair Status</span>
+                    <span className="text-cyan-400">{Math.floor(this.state.repairProgress)}%</span>
+                </div>
+                <div className="h-3 w-full bg-slate-900 rounded-full border border-slate-800 overflow-hidden relative">
+                    <div 
+                        className={`h-full transition-all duration-300 ease-out relative overflow-hidden ${this.state.isRepaired ? 'bg-green-500' : 'bg-cyan-500'}`}
+                        style={{ width: `${this.state.repairProgress}%` }}
+                    >
+                        {/* Shimmer effect on bar */}
+                        <div className="absolute top-0 left-0 bottom-0 right-0 bg-gradient-to-r from-transparent via-white/30 to-transparent w-full -translate-x-full animate-[shimmer_1.5s_infinite]"></div>
                     </div>
                 </div>
-            ) : (
-                <div className="mb-6 flex items-center justify-center gap-2 text-xs text-slate-400 animate-pulse">
-                    <RefreshCcw size={12} className="animate-spin" />
-                    Running silent diagnostic scan...
+            </div>
+
+            {/* --- TERMINAL OUTPUT --- */}
+            <div className="mt-8 bg-black/80 rounded-lg border border-slate-800 p-4 font-mono text-xs h-32 overflow-hidden flex flex-col justify-end shadow-inner">
+                <div className="text-slate-500 mb-1">C:\CARS_MANAGER\SYS\ROOT> initiate_repair.exe</div>
+                <div className="text-slate-500 mb-1">Loading AI Modules... OK</div>
+                <div className="text-slate-400 mb-1">Analyzing stack trace...</div>
+                <div className="text-cyan-500 font-bold flex items-center gap-2">
+                    <Terminal size={12} />
+                    {this.state.repairStep}
+                    {!this.state.isRepaired && <span className="animate-pulse">_</span>}
+                </div>
+            </div>
+
+            {/* Manual Override (Hidden when repaired to force auto-reload feel) */}
+            {!this.state.isRepaired && (
+                <div className="mt-8 text-center">
+                    <button 
+                        onClick={() => window.location.reload()}
+                        className="text-slate-600 hover:text-slate-400 text-[10px] uppercase tracking-widest hover:underline transition-all"
+                    >
+                        [ Manual Override Reboot ]
+                    </button>
                 </div>
             )}
 
-            <div className="bg-slate-50 p-4 rounded-lg text-left mb-6 overflow-auto max-h-32 border border-slate-200">
-              <p className="text-[10px] font-bold text-slate-500 uppercase mb-1">Raw Error:</p>
-              <pre className="text-[10px] font-mono text-red-600 block break-words whitespace-pre-wrap">
-                {errorMsg}
-              </pre>
-            </div>
-
-            <button
-              onClick={() => window.location.reload()}
-              className="w-full flex items-center justify-center gap-2 bg-slate-900 text-white py-3.5 rounded-xl font-bold hover:bg-slate-800 transition-all shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
-            >
-              <RefreshCcw size={18} />
-              Reload Application
-            </button>
           </div>
-          <p className="mt-8 text-gray-400 text-xs font-mono">CARS Manager Systems • v2.5.0</p>
         </div>
       );
     }

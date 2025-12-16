@@ -14,7 +14,7 @@ interface BookingFormProps {
   sessions: TrainingSession[];
   userRole: UserRole;
   existingBookings?: Booking[];
-  addNotification?: (notification: SystemNotification) => void; 
+  addNotification: (notification: SystemNotification) => void; 
   currentEmployeeId?: string;
   requirements?: EmployeeRequirement[];
   racDefinitions: RacDef[];
@@ -187,7 +187,14 @@ const BookingForm: React.FC<BookingFormProps> = ({ addBookings, sessions, userRo
       setTargetRac(nextBatch.racType);
       setRenewalQueue(newQueue);
       setSelectedSession('');
-      alert(`Batch Saved! Loading renewals for: ${nextBatch.racType}`);
+      addNotification({
+          id: uuidv4(),
+          type: 'info',
+          title: 'Batch Loaded',
+          message: `Loading renewals for: ${nextBatch.racType}`,
+          timestamp: new Date(),
+          isRead: false
+      });
   };
 
   const getRacCodeFromSession = (session: TrainingSession): string => {
@@ -203,7 +210,14 @@ const BookingForm: React.FC<BookingFormProps> = ({ addBookings, sessions, userRo
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedSession || !sessionData) {
-      alert("Please select a training session.");
+      addNotification({
+          id: uuidv4(),
+          type: 'warning',
+          title: 'Validation Error',
+          message: 'Please select a training session.',
+          timestamp: new Date(),
+          isRead: false
+      });
       return;
     }
 
@@ -213,14 +227,28 @@ const BookingForm: React.FC<BookingFormProps> = ({ addBookings, sessions, userRo
     );
 
     if (hasPartialRows) {
-        alert("Found incomplete rows. Please ensure all employees have both an ID and a Name.");
+        addNotification({
+            id: uuidv4(),
+            type: 'warning',
+            title: 'Incomplete Data',
+            message: 'Found incomplete rows. Please ensure all employees have both an ID and a Name.',
+            timestamp: new Date(),
+            isRead: false
+        });
         return;
     }
 
     const validRows = rows.filter(r => r.name.trim() !== '' && r.recordId.trim() !== '');
 
     if (validRows.length === 0) {
-      alert("Please enter at least one employee.");
+      addNotification({
+          id: uuidv4(),
+          type: 'warning',
+          title: 'Empty Booking',
+          message: 'Please enter at least one employee.',
+          timestamp: new Date(),
+          isRead: false
+      });
       return;
     }
 
@@ -231,7 +259,14 @@ const BookingForm: React.FC<BookingFormProps> = ({ addBookings, sessions, userRo
         // A. Database Check
         const empRecord = employeeLookup.get(row.recordId.trim().toLowerCase());
         if (!empRecord) {
-            alert(`Booking Blocked: Employee "${row.name}" (${row.recordId}) is not registered in the system database.`);
+            addNotification({
+                id: uuidv4(),
+                type: 'alert',
+                title: 'Booking Blocked',
+                message: `Employee "${row.name}" (${row.recordId}) is not registered in the system database.`,
+                timestamp: new Date(),
+                isRead: false
+            });
             return;
         }
         
@@ -240,7 +275,14 @@ const BookingForm: React.FC<BookingFormProps> = ({ addBookings, sessions, userRo
         const reqKey = Object.keys(empReq?.requiredRacs || {}).find(k => k.replace(/\s/g, '').toUpperCase() === targetRacCode);
         
         if (!empReq || (reqKey && !empReq.requiredRacs[reqKey])) {
-            alert(`Booking Blocked: Employee "${row.name}" is NOT mapped for ${targetRacCode} in the database.`);
+            addNotification({
+                id: uuidv4(),
+                type: 'alert',
+                title: 'Requirement Error',
+                message: `Booking Blocked: Employee "${row.name}" is NOT mapped for ${targetRacCode} in the database.`,
+                timestamp: new Date(),
+                isRead: false
+            });
             return;
         }
 
@@ -266,7 +308,14 @@ const BookingForm: React.FC<BookingFormProps> = ({ addBookings, sessions, userRo
         });
 
         if (duplicate) {
-            alert(`Duplicate Denied: ${row.name} already has a ${duplicate.status} record for ${targetRacCode}.`);
+            addNotification({
+                id: uuidv4(),
+                type: 'alert',
+                title: 'Duplicate Denied',
+                message: `${row.name} already has a ${duplicate.status} record for ${targetRacCode}.`,
+                timestamp: new Date(),
+                isRead: false
+            });
             return;
         }
     }
@@ -274,7 +323,14 @@ const BookingForm: React.FC<BookingFormProps> = ({ addBookings, sessions, userRo
     if (isDlRequired) {
         const incompleteDl = validRows.find(r => !r.driverLicenseNumber || !r.driverLicenseClass || !r.driverLicenseExpiry);
         if (incompleteDl) {
-            alert(`Driver License details are mandatory for this module.\n\nPlease complete details for: ${incompleteDl.name}`);
+            addNotification({
+                id: uuidv4(),
+                type: 'alert',
+                title: 'Missing DL Info',
+                message: `Driver License details are mandatory for this module. Please complete details for: ${incompleteDl.name}`,
+                timestamp: new Date(),
+                isRead: false
+            });
             return;
         }
     }
@@ -364,20 +420,18 @@ const BookingForm: React.FC<BookingFormProps> = ({ addBookings, sessions, userRo
                     comments: 'Added to Waiting List (No available sessions)'
                 });
             });
-            if (addNotification) {
-                addNotification({
-                    id: uuidv4(),
-                    type: 'warning',
-                    title: 'Waitlist Created',
-                    message: `No available sessions found for ${remainingOverflow.length} employees. Added to Waitlist.`,
-                    timestamp: new Date(),
-                    isRead: false
-                });
-            }
+            addNotification({
+                id: uuidv4(),
+                type: 'warning',
+                title: 'Waitlist Created',
+                message: `No available sessions found for ${remainingOverflow.length} employees. Added to Waitlist.`,
+                timestamp: new Date(),
+                isRead: false
+            });
         }
 
         // Notify regarding the split
-        if (slottedCount > 0 && addNotification) {
+        if (slottedCount > 0) {
             addNotification({
                 id: uuidv4(),
                 type: 'info',
@@ -393,7 +447,7 @@ const BookingForm: React.FC<BookingFormProps> = ({ addBookings, sessions, userRo
         addBookings(finalBookings);
         logger.audit('Manual Booking Submitted', userRole, { count: finalBookings.length, session: selectedSession });
         setSubmitted(true);
-        if (addNotification && overflowEmployees.length === 0) {
+        if (overflowEmployees.length === 0) {
             addNotification({
                 id: uuidv4(),
                 type: 'success',

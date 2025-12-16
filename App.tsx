@@ -352,6 +352,8 @@ const App: React.FC = () => {
                           onUpdateEmployee={handleUpdateEmployee}
                           onDeleteEmployee={handleDeleteEmployee}
                           racDefinitions={racDefinitions}
+                          importBookings={handleImportBookings}
+                          addNotification={addNotification}
                         /> 
                       : <Navigate to="/" replace />
                   } />
@@ -392,11 +394,12 @@ const App: React.FC = () => {
                       sessions={sessions}
                       currentEmployeeId={currentEmployeeId}
                       racDefinitions={racDefinitions}
+                      addNotification={addNotification}
                   />} />
                   
-                  <Route path="/users" element={userRole === UserRole.SYSTEM_ADMIN ? <UserManagement users={users} setUsers={setUsers} /> : <Navigate to="/" replace />} />
+                  <Route path="/users" element={userRole === UserRole.SYSTEM_ADMIN ? <UserManagement users={users} setUsers={setUsers} addNotification={addNotification} /> : <Navigate to="/" replace />} />
                   
-                  <Route path="/schedule" element={[UserRole.SYSTEM_ADMIN, UserRole.SITE_ADMIN].includes(userRole) ? <ScheduleTraining sessions={sessions} setSessions={setSessions} rooms={rooms} trainers={trainers} racDefinitions={racDefinitions} /> : <Navigate to="/" replace />} />
+                  <Route path="/schedule" element={[UserRole.SYSTEM_ADMIN, UserRole.SITE_ADMIN].includes(userRole) ? <ScheduleTraining sessions={sessions} setSessions={setSessions} rooms={rooms} trainers={trainers} racDefinitions={racDefinitions} addNotification={addNotification} /> : <Navigate to="/" replace />} />
                   
                   <Route path="/settings" element={[UserRole.SYSTEM_ADMIN, UserRole.ENTERPRISE_ADMIN, UserRole.SITE_ADMIN].includes(userRole) ? 
                     <SettingsPage 
@@ -415,7 +418,8 @@ const App: React.FC = () => {
                       onUpdateUsers={setUsers}
                       feedbackConfig={feedbackConfig}
                       onUpdateFeedbackConfig={handleUpdateFeedbackConfig}
-                      onSyncDatabases={handleMiddlewareSync} // PASSING THE NEW FUNCTION
+                      onSyncDatabases={handleMiddlewareSync}
+                      addNotification={addNotification}
                     /> : <Navigate to="/" replace />} 
                   />
                   

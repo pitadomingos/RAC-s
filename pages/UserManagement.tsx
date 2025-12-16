@@ -1,17 +1,19 @@
 
 import React, { useState, useRef } from 'react';
-import { UserRole, User } from '../types';
+import { UserRole, User, SystemNotification } from '../types';
 import { Shield, MoreVertical, Plus, X, Trash2, Edit, Users, Lock, Key, ChevronLeft, ChevronRight, Mail, Briefcase, CheckCircle2, XCircle, Search, Upload, Download, Smartphone } from 'lucide-react';
 import { useLanguage } from '../contexts/LanguageContext';
 import { COMPANIES } from '../constants';
 import ConfirmModal from '../components/ConfirmModal';
+import { v4 as uuidv4 } from 'uuid';
 
 interface UserManagementProps {
     users: User[];
     setUsers: React.Dispatch<React.SetStateAction<User[]>>;
+    addNotification: (notif: SystemNotification) => void;
 }
 
-const UserManagement: React.FC<UserManagementProps> = ({ users, setUsers }) => {
+const UserManagement: React.FC<UserManagementProps> = ({ users, setUsers, addNotification }) => {
   const { t } = useLanguage();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -42,7 +44,14 @@ const UserManagement: React.FC<UserManagementProps> = ({ users, setUsers }) => {
 
   const handleAddUser = () => {
       if (!newUser.name || !newUser.email) {
-          alert("Name and Email required");
+          addNotification({
+              id: uuidv4(),
+              type: 'warning',
+              title: 'Validation Error',
+              message: 'Name and Email required',
+              timestamp: new Date(),
+              isRead: false
+          });
           return;
       }
       const userToAdd: User = {
@@ -58,6 +67,14 @@ const UserManagement: React.FC<UserManagementProps> = ({ users, setUsers }) => {
       setUsers([...users, userToAdd]);
       setIsModalOpen(false);
       setNewUser({ name: '', email: '', phoneNumber: '', role: UserRole.USER, status: 'Active', company: COMPANIES[0], jobTitle: '' });
+      addNotification({
+          id: uuidv4(),
+          type: 'success',
+          title: 'User Created',
+          message: `User ${userToAdd.name} added successfully.`,
+          timestamp: new Date(),
+          isRead: false
+      });
   };
 
   const handleDeleteUser = (id: number) => {
@@ -134,9 +151,23 @@ const UserManagement: React.FC<UserManagementProps> = ({ users, setUsers }) => {
 
           if (newUsers.length > 0) {
               setUsers(prev => [...prev, ...newUsers]);
-              alert(`${t.database.importSuccess}: ${newUsers.length}`);
+              addNotification({
+                  id: uuidv4(),
+                  type: 'success',
+                  title: 'Import Successful',
+                  message: `${t.database.importSuccess}: ${newUsers.length} users imported.`,
+                  timestamp: new Date(),
+                  isRead: false
+              });
           } else {
-              alert("No valid user records found.");
+              addNotification({
+                  id: uuidv4(),
+                  type: 'warning',
+                  title: 'Import Failed',
+                  message: 'No valid user records found.',
+                  timestamp: new Date(),
+                  isRead: false
+              });
           }
           if (fileInputRef.current) fileInputRef.current.value = '';
       };
