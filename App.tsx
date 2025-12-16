@@ -1,5 +1,5 @@
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { HashRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import Layout from './components/Layout';
 import Dashboard from './pages/Dashboard';
@@ -42,10 +42,46 @@ const App: React.FC = () => {
   const [simulatedDept, setSimulatedDept] = useState('HSE');
 
   const [notifications, setNotifications] = useState<SystemNotification[]>([]);
-  const [bookings, setBookings] = useState<Booking[]>(MOCK_BOOKINGS);
-  const [requirements, setRequirements] = useState<EmployeeRequirement[]>(MOCK_REQUIREMENTS);
-  const [sessions, setSessions] = useState<TrainingSession[]>(MOCK_SESSIONS);
-  const [racDefinitions, setRacDefinitions] = useState<RacDef[]>(INITIAL_RAC_DEFINITIONS);
+
+  // --- PERSISTENT STATE INITIALIZATION ---
+  const [bookings, setBookings] = useState<Booking[]>(() => {
+      const saved = localStorage.getItem('cars_bookings');
+      return saved ? JSON.parse(saved) : MOCK_BOOKINGS;
+  });
+  
+  const [requirements, setRequirements] = useState<EmployeeRequirement[]>(() => {
+      const saved = localStorage.getItem('cars_requirements');
+      return saved ? JSON.parse(saved) : MOCK_REQUIREMENTS;
+  });
+
+  const [sessions, setSessions] = useState<TrainingSession[]>(() => {
+      const saved = localStorage.getItem('cars_sessions');
+      return saved ? JSON.parse(saved) : MOCK_SESSIONS;
+  });
+
+  const [racDefinitions, setRacDefinitions] = useState<RacDef[]>(() => {
+      const saved = localStorage.getItem('cars_rac_defs');
+      return saved ? JSON.parse(saved) : INITIAL_RAC_DEFINITIONS;
+  });
+
+  // --- PERSISTENCE EFFECTS ---
+  useEffect(() => {
+      localStorage.setItem('cars_bookings', JSON.stringify(bookings));
+  }, [bookings]);
+
+  useEffect(() => {
+      localStorage.setItem('cars_requirements', JSON.stringify(requirements));
+  }, [requirements]);
+
+  useEffect(() => {
+      localStorage.setItem('cars_sessions', JSON.stringify(sessions));
+  }, [sessions]);
+
+  useEffect(() => {
+      localStorage.setItem('cars_rac_defs', JSON.stringify(racDefinitions));
+  }, [racDefinitions]);
+
+
   const [rooms, setRooms] = useState<Room[]>([{ id: 'r1', name: 'Room A', capacity: 20 }, { id: 'r2', name: 'Room B', capacity: 15 }]);
   const [trainers, setTrainers] = useState<Trainer[]>([{ id: 't1', name: 'John Doe', racs: ['RAC01', 'RAC02'] }]);
   const [sites, setSites] = useState<Site[]>([{ id: 's1', companyId: 'c1', name: 'Moatize Mine', location: 'Tete' }]);
@@ -154,7 +190,7 @@ const App: React.FC = () => {
       allNewEmployees.forEach(emp => {
           if (!existingIds.has(emp.recordId)) {
               // Add a "System Initialization" booking so they appear in the system
-              // In a real app, you'd have a separate 'users' table, but here we derive from bookings
+              // In a real app, we'd have a separate 'users' table, but here we derive from bookings
               newBookings.push({
                   id: uuidv4(),
                   sessionId: 'System Initialization',

@@ -58,9 +58,13 @@ const VerificationPage: React.FC<VerificationPageProps> = ({
     };
 
     const today = new Date().toISOString().split('T')[0];
-    const isAsoValid = !!(req.asoExpiryDate && req.asoExpiryDate > today);
+    
+    // ASO VALIDITY: Must be greater than OR EQUAL to today
+    const isAsoValid = !!(req.asoExpiryDate && req.asoExpiryDate >= today);
+    
     const dlExpiry = employee.driverLicenseExpiry || '';
-    const isDlExpired = !!(dlExpiry && dlExpiry <= today);
+    // DL VALIDITY: Must be greater than OR EQUAL to today
+    const isDlExpired = !!(dlExpiry && dlExpiry < today);
     const isActive = employee.isActive ?? true;
 
     // Check RACs (Dynamic)
@@ -93,7 +97,9 @@ const VerificationPage: React.FC<VerificationPageProps> = ({
             const latestBooking = passedBookings[0];
 
             const expiry = latestBooking?.expiryDate || '';
-            if (!expiry || expiry <= today) {
+            
+            // EXPIRY CHECK: Valid if expiry date is today or in the future
+            if (!expiry || expiry < today) {
                 allRacsMet = false;
             }
         }
@@ -139,11 +145,11 @@ const VerificationPage: React.FC<VerificationPageProps> = ({
              if (!latest) {
                  // Requirement exists, but no booking
                  details.push({ rac: key, expiry: 'Missing', status: 'Missing' });
-             } else if (latest.expiryDate && latest.expiryDate <= today) {
-                 // Requirement exists, booking exists, but expired
+             } else if (latest.expiryDate && latest.expiryDate < today) {
+                 // Requirement exists, booking exists, but expired (strictly less than today)
                  details.push({ rac: key, expiry: latest.expiryDate, status: 'Expired' });
              } else {
-                 // Valid
+                 // Valid (expiry date >= today)
                  details.push({ rac: key, expiry: latest.expiryDate || 'N/A', status: 'Valid' });
              }
          }
@@ -226,7 +232,7 @@ const VerificationPage: React.FC<VerificationPageProps> = ({
                              <Activity size={18} className="text-blue-500" />
                              <span className="font-bold text-sm">{t.verification.asoStatus}</span>
                         </div>
-                        <span className={`text-sm font-mono font-bold ${req?.asoExpiryDate && req.asoExpiryDate > new Date().toISOString().split('T')[0] ? 'text-green-600' : 'text-red-600'}`}>
+                        <span className={`text-sm font-mono font-bold ${req?.asoExpiryDate && req.asoExpiryDate >= new Date().toISOString().split('T')[0] ? 'text-green-600' : 'text-red-600'}`}>
                             {req?.asoExpiryDate || 'N/A'}
                         </span>
                     </div>
@@ -240,7 +246,7 @@ const VerificationPage: React.FC<VerificationPageProps> = ({
                              </div>
                              <div className="text-right">
                                  <div className="text-xs font-bold text-slate-800">{employee.driverLicenseClass}</div>
-                                 <div className={`text-xs font-mono ${employee.driverLicenseExpiry && employee.driverLicenseExpiry > new Date().toISOString().split('T')[0] ? 'text-green-600' : 'text-red-600'}`}>
+                                 <div className={`text-xs font-mono ${employee.driverLicenseExpiry && employee.driverLicenseExpiry >= new Date().toISOString().split('T')[0] ? 'text-green-600' : 'text-red-600'}`}>
                                      {employee.driverLicenseExpiry}
                                  </div>
                              </div>

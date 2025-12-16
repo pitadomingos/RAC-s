@@ -186,14 +186,21 @@ const ResultsPage: React.FC<ResultsPageProps> = ({ bookings, updateBookingStatus
   };
 
   const handleDownloadTemplate = () => {
-    const baseHeaders = [
-      'Record ID', 'Full Name', 'RAC Code (e.g. RAC01)', 'Date (YYYY-MM-DD)', 'Score', 'Status (Passed/Failed)'
+    // Specific headers requested by user
+    const headers = [
+      'Record ID', 'Full Name', 'Company', 'Department', 'Job Title', 
+      'RAC Code (e.g. RAC01)', 'Date (YYYY-MM-DD)', 'Trainer', 'Room', 
+      'Status (Passed/Failed)', 'Theory Score', 'Practical Score', 
+      'DL Number', 'DL Class', 'DL Expiry (YYYY-MM-DD)', 
+      'ASO Expiry (YYYY-MM-DD)', 
+      'PTS', 'ART', 'LIB_OPS', 'LIB_MOV', 
+      'EMI_PTS', 'APR_ART', 'EXEC', 'Dono_Area_PTS'
     ];
-    const csvContent = "data:text/csv;charset=utf-8," + baseHeaders.join(",");
+    const csvContent = "data:text/csv;charset=utf-8," + headers.join(",");
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement("a");
     link.setAttribute("href", encodedUri);
-    link.setAttribute("download", "training_import_template.csv");
+    link.setAttribute("download", "CARS_Comprehensive_Import_Template.csv");
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -214,16 +221,36 @@ const ResultsPage: React.FC<ResultsPageProps> = ({ bookings, updateBookingStatus
               const headers = lines[0].split(separator).map(h => h.trim().toLowerCase().replace(/^"|"$/g, ''));
               
               const newBookings: Booking[] = [];
+              const sideEffects: { employee: Employee, aso: string, ops: Record<string, boolean> }[] = [];
               
-              // Helper to find index
-              const getIdx = (keys: string[]) => headers.findIndex(h => keys.some(k => h.includes(k)));
+              // Helper to find index using multiple possible keywords
+              const getIdx = (keys: string[]) => headers.findIndex(h => keys.some(k => h === k.toLowerCase() || h.includes(k.toLowerCase())));
               
-              const idxId = getIdx(['id', 'record', 'matricula']);
-              const idxName = getIdx(['name', 'nome']);
-              const idxRac = getIdx(['rac', 'code', 'training']);
+              const idxId = getIdx(['record id', 'record_id', 'matricula']);
+              const idxName = getIdx(['full name', 'name', 'nome']);
+              const idxComp = getIdx(['company', 'empresa']);
+              const idxDept = getIdx(['department', 'departamento']);
+              const idxJob = getIdx(['job title', 'job', 'funcao']);
+              
+              const idxRac = getIdx(['rac code', 'code', 'training']);
               const idxDate = getIdx(['date', 'data']);
-              const idxScore = getIdx(['score', 'nota']);
+              const idxTrainer = getIdx(['trainer', 'formador']);
+              const idxRoom = getIdx(['room', 'sala']);
               const idxStatus = getIdx(['status', 'resultado']);
+              const idxTheory = getIdx(['theory score', 'theory']);
+              const idxPrac = getIdx(['practical score', 'practical']);
+              
+              const idxDlNum = getIdx(['dl number', 'dl_number', 'carta']);
+              const idxDlClass = getIdx(['dl class', 'dl_class', 'classe']);
+              const idxDlExp = getIdx(['dl expiry', 'dl_expiry', 'validade carta']);
+              const idxAsoExp = getIdx(['aso expiry', 'aso', 'medico']);
+
+              // Map OPS keys dynamically
+              const opsIndices: Record<string, number> = {};
+              OPS_KEYS.forEach(key => {
+                  // handle special case formatting if needed
+                  opsIndices[key] = getIdx([key.toLowerCase(), key.replace('_', ' ').toLowerCase(), key.replace('_', '').toLowerCase()]);
+              });
 
               if (idxId === -1 || idxRac === -1) {
                   addNotification({
@@ -243,44 +270,91 @@ const ResultsPage: React.FC<ResultsPageProps> = ({ bookings, updateBookingStatus
                   const cols = line.split(separator).map(c => c.trim().replace(/^"|"$/g, ''));
                   
                   const recordId = cols[idxId];
+                  if (!recordId) return;
+
                   const name = idxName !== -1 ? cols[idxName] : 'Imported Employee';
                   const rac = cols[idxRac];
                   const date = idxDate !== -1 ? cols[idxDate] : new Date().toISOString().split('T')[0];
-                  const score = idxScore !== -1 ? parseInt(cols[idxScore]) || 0 : 0;
-                  const statusRaw = idxStatus !== -1 ? cols[idxStatus].toLowerCase() : 'passed';
                   
+                  // Scores
+                  const scoreT = idxTheory !== -1 ? parseInt(cols[idxTheory]) || 0 : 0;
+                  const scoreP = idxPrac !== -1 ? parseInt(cols[idxPrac]) || 0 : 0;
+                  
+                  // Status
+                  const statusRaw = idxStatus !== -1 ? cols[idxStatus].toLowerCase() : 'passed';
                   const status = statusRaw.includes('fail') ? BookingStatus.FAILED : BookingStatus.PASSED;
 
-                  if (recordId && rac) {
+                  // Metadata for Session
+                  const trainer = idxTrainer !== -1 ? cols[idxTrainer] : 'TBD';
+                  const room = idxRoom !== -1 ? cols[idxRoom] : 'TBD';
+                  
+                  // DL Details
+                  const dlNum = idxDlNum !== -1 ? cols[idxDlNum] : '';
+                  const dlClass = idxDlClass !== -1 ? cols[idxDlClass] : '';
+                  const dlExp = idxDlExp !== -1 ? cols[idxDlExp] : '';
+
+                  // ASO - Optional
+                  const asoDate = idxAsoExp !== -1 ? cols[idxAsoExp] : '';
+
+                  // OPS Matrix - Extract Trues
+                  const ops: Record<string, boolean> = {};
+                  OPS_KEYS.forEach(key => {
+                      const idx = opsIndices[key];
+                      if (idx !== -1) {
+                          const val = cols[idx]?.toLowerCase() || '';
+                          if (['true', 'yes', '1', 'sim', 'ok', 'y'].includes(val)) {
+                              ops[key] = true;
+                          }
+                      }
+                  });
+
+                  if (rac) {
+                      // Construct ID specifically to allow session linking if needed
+                      const sessionId = `${rac}|${date}|${trainer}|${room}`;
+                      
+                      const employeeObj: Employee = {
+                          id: uuidv4(), // Generate new or match existing in backend logic
+                          recordId: recordId,
+                          name: name,
+                          company: idxComp !== -1 ? cols[idxComp] : 'Imported',
+                          department: idxDept !== -1 ? cols[idxDept] : 'Imported',
+                          role: idxJob !== -1 ? cols[idxJob] : 'Imported',
+                          isActive: true,
+                          driverLicenseNumber: dlNum,
+                          driverLicenseClass: dlClass,
+                          driverLicenseExpiry: dlExp
+                      };
+
                       newBookings.push({
                           id: uuidv4(),
-                          sessionId: rac, // Use RAC code as session for legacy import
-                          employee: {
-                              id: uuidv4(), // Generates new internal ID
-                              recordId: recordId,
-                              name: name,
-                              company: 'Imported',
-                              department: 'Imported',
-                              role: 'Imported',
-                              isActive: true
-                          },
+                          sessionId: sessionId, // Store metadata in ID string for imported records
+                          employee: employeeObj,
                           status: status,
                           resultDate: date,
                           expiryDate: status === BookingStatus.PASSED && date ? format(addMonths(new Date(date), 24), 'yyyy-MM-dd') : '',
                           attendance: true,
-                          theoryScore: score
+                          theoryScore: scoreT,
+                          practicalScore: scoreP
                       });
+
+                      // Collect side effects (DL updates, OPS updates)
+                      sideEffects.push({
+                          employee: employeeObj,
+                          aso: asoDate,
+                          ops: ops
+                      });
+
                       count++;
                   }
               });
 
               if (importBookings && newBookings.length > 0) {
-                  importBookings(newBookings);
+                  importBookings(newBookings, sideEffects);
                   addNotification({
                       id: uuidv4(),
                       type: 'success',
                       title: 'Import Successful',
-                      message: `Imported ${count} training records.`,
+                      message: `Imported ${count} training records and updated DB.`,
                       timestamp: new Date(),
                       isRead: false
                   });
@@ -390,7 +464,7 @@ const ResultsPage: React.FC<ResultsPageProps> = ({ bookings, updateBookingStatus
                 <button 
                     onClick={handleDownloadTemplate}
                     className="flex items-center gap-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-600 dark:text-slate-300 px-4 py-2 rounded-lg text-xs font-bold transition-all shadow-sm"
-                    title={t.common.template}
+                    title="Download Comprehensive CSV Template"
                 >
                     <FileSpreadsheet size={16} /> Template
                 </button>
