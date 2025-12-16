@@ -1,4 +1,4 @@
-import React, { ErrorInfo, ReactNode } from 'react';
+import React, { Component, ErrorInfo, ReactNode } from 'react';
 import { Cpu, Zap, Activity, Terminal, CheckCircle2, RefreshCw, Power } from 'lucide-react';
 import { analyzeRuntimeError } from '../services/geminiService';
 
@@ -147,7 +147,8 @@ export class ErrorBoundary extends React.Component<Props, State> {
           console.error("Failed to persist log", e);
       }
       
-      // NOTE: Removed auto-reload to prevent sandbox loops. User must click "Reboot".
+      // NOTE: We do NOT auto-reload here anymore to prevent loops.
+      // The user must click the button.
   }
 
   private forceReload = () => {

@@ -1,3 +1,4 @@
+
 export type Language = 'en' | 'pt';
 
 export const formatDate = (dateString: string | undefined): string => {
@@ -663,11 +664,11 @@ export const translations = {
       financials: {
         title: 'Financial Proposal',
         items: [
-          { name: 'Initial Development', type: 'One-time', cost: '$15,000' },
-          { name: 'Deployment & Setup', type: 'One-time', cost: '$2,000' },
-          { name: 'Cloud Infrastructure', type: 'Monthly', cost: '$200' },
-          { name: 'Training & Documentation', type: 'One-time', cost: '$1,500' },
-          { name: 'Maintenance & Support', type: 'Monthly', cost: '$500' }
+          { name: 'Initial Development', type: 'One-time', cost: '$15,000.00' },
+          { name: 'Development & Setup', type: 'One-time', cost: '$3,000.00' },
+          { name: 'Cloud Infrastructure', type: 'Monthly', cost: '$3,500.00' },
+          { name: 'Training & Documentation', type: 'One-time', cost: '$2,500.00' },
+          { name: 'Maintenance & Support', type: 'Monthly', cost: '$3,000.00' }
         ]
       },
       roadmap: {
@@ -1419,11 +1420,11 @@ export const translations = {
       financials: {
         title: 'Proposta Financeira',
         items: [
-          { name: 'Desenvolvimento Inicial', type: 'Pagamento Único', cost: '$15,000' },
-          { name: 'Implantação e Configuração', type: 'Pagamento Único', cost: '$2,000' },
-          { name: 'Infraestrutura em Nuvem', type: 'Mensal', cost: '$200' },
-          { name: 'Treinamento e Documentação', type: 'Pagamento Único', cost: '$1,500' },
-          { name: 'Manutenção e Suporte', type: 'Mensal', cost: '$500' }
+          { name: 'Desenvolvimento Inicial', type: 'Pagamento Único', cost: '$15,000.00' },
+          { name: 'Desenvolvimento e Configuração', type: 'Pagamento Único', cost: '$3,000.00' },
+          { name: 'Infraestrutura em Nuvem', type: 'Mensal', cost: '$3,500.00' },
+          { name: 'Treinamento e Documentação', type: 'Pagamento Único', cost: '$2,500.00' },
+          { name: 'Manutenção e Suporte', type: 'Mensal', cost: '$3,000.00' }
         ]
       },
       roadmap: {
