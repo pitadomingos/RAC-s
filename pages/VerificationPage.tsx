@@ -22,11 +22,12 @@ const VerificationPage: React.FC<VerificationPageProps> = ({
   const { recordId } = useParams<{ recordId: string }>();
   const { t } = useLanguage();
 
-  // Helper to normalize IDs (remove spaces, lowercase) for robust matching
+  // Helper to normalize IDs (remove spaces, special chars, lowercase) for robust matching
+  // This handles CSV import artifacts like BOM or extra spaces
   const normalizeId = (id: string | undefined) => {
       if (!id) return '';
-      // Remove all whitespace (spaces, tabs, etc) and convert to lowercase
-      return id.toLowerCase().replace(/\s+/g, '');
+      // Remove everything that is NOT a letter or number (alphanumeric only)
+      return id.toLowerCase().replace(/[^a-z0-9]/g, '');
   };
 
   // Robust Lookup using normalized IDs
@@ -165,7 +166,7 @@ const VerificationPage: React.FC<VerificationPageProps> = ({
                   <XCircle size={64} className="text-gray-400 mb-4" />
                   <h1 className="text-2xl font-black text-slate-800 mb-2">{t.verification.notFound}</h1>
                   <p className="text-gray-500 mb-6 font-mono">ID: {recordId}</p>
-                  <Link to="/" className="text-blue-600 font-bold text-sm">Return to Home</Link>
+                  {/* Return Link Removed per request */}
               </div>
           </div>
       );
