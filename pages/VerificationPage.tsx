@@ -166,7 +166,7 @@ const VerificationPage: React.FC<VerificationPageProps> = ({
                   <XCircle size={64} className="text-gray-400 mb-4" />
                   <h1 className="text-2xl font-black text-slate-800 mb-2">{t.verification.notFound}</h1>
                   <p className="text-gray-500 mb-6 font-mono">ID: {recordId}</p>
-                  {/* Return Link Removed per request */}
+                  {/* Clean State - No Return Link */}
               </div>
           </div>
       );

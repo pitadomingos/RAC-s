@@ -220,6 +220,16 @@ const ResultsPage: React.FC<ResultsPageProps> = ({ bookings, updateBookingStatus
               const separator = lines[0].includes(';') ? ';' : ',';
               const headers = lines[0].split(separator).map(h => h.trim().toLowerCase().replace(/^"|"$/g, ''));
               
+              // --- CRITICAL FIX: MAP EXISTING IDs ---
+              // Build a map of RecordID -> UUID to ensure we update existing profiles 
+              // instead of creating duplicates which causes the 'Not Found' / 'Old Data' bug.
+              const existingIdMap = new Map<string, string>();
+              bookings.forEach(b => {
+                  if (b.employee && b.employee.recordId) {
+                      existingIdMap.set(b.employee.recordId.trim().toLowerCase(), b.employee.id);
+                  }
+              });
+
               const newBookings: Booking[] = [];
               const sideEffects: { employee: Employee, aso: string, ops: Record<string, boolean> }[] = [];
               
@@ -272,6 +282,15 @@ const ResultsPage: React.FC<ResultsPageProps> = ({ bookings, updateBookingStatus
                   const recordId = cols[idxId];
                   if (!recordId) return;
 
+                  const normRecordId = recordId.trim().toLowerCase();
+                  
+                  // RESOLVE ID: Use existing UUID if available, else generate new
+                  let empUuid = existingIdMap.get(normRecordId);
+                  if (!empUuid) {
+                      empUuid = uuidv4();
+                      existingIdMap.set(normRecordId, empUuid); // Add to map for subsequent rows in this file
+                  }
+
                   const name = idxName !== -1 ? cols[idxName] : 'Imported Employee';
                   const rac = cols[idxRac];
                   const date = idxDate !== -1 ? cols[idxDate] : new Date().toISOString().split('T')[0];
@@ -313,7 +332,7 @@ const ResultsPage: React.FC<ResultsPageProps> = ({ bookings, updateBookingStatus
                       const sessionId = `${rac}|${date}|${trainer}|${room}`;
                       
                       const employeeObj: Employee = {
-                          id: uuidv4(), // Generate new or match existing in backend logic
+                          id: empUuid, // USE RESOLVED ID
                           recordId: recordId,
                           name: name,
                           company: idxComp !== -1 ? cols[idxComp] : 'Imported',
