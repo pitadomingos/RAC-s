@@ -188,10 +188,10 @@ const LogsPage: React.FC = () => {
                                         <td className="px-6 py-3 text-slate-800 dark:text-slate-300">
                                             {getTranslatedMessage(log)}
                                             {isAiFixed && (
-                                                <div className="mt-2 p-2 bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-100 dark:border-indigo-800 rounded-lg flex gap-3 items-start animate-pulse-slow">
-                                                    <div className="mt-0.5 text-indigo-500"><Zap size={14} /></div>
+                                                <div className="mt-2 p-2 bg-cyan-50 dark:bg-cyan-900/20 border border-cyan-200 dark:border-cyan-800 rounded-lg flex gap-3 items-start animate-pulse-slow">
+                                                    <div className="mt-0.5 text-cyan-600 dark:text-cyan-400"><Zap size={14} /></div>
                                                     <div>
-                                                        <p className="text-[10px] font-bold text-indigo-700 dark:text-indigo-300 uppercase mb-0.5">RoboTech Resolution:</p>
+                                                        <p className="text-[10px] font-black text-cyan-700 dark:text-cyan-300 uppercase mb-0.5 tracking-wider">RoboTech Resolution:</p>
                                                         <p className="text-slate-600 dark:text-slate-400">{log.aiFix}</p>
                                                     </div>
                                                 </div>

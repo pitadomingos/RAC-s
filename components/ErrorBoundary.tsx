@@ -1,4 +1,4 @@
-import React, { ErrorInfo, ReactNode } from 'react';
+import React, { Component, ErrorInfo, ReactNode } from 'react';
 import { Cpu, Zap, Activity, Terminal, CheckCircle2, RefreshCw, Power } from 'lucide-react';
 import { analyzeRuntimeError } from '../services/geminiService';
 
@@ -15,7 +15,7 @@ interface State {
   isRepaired: boolean;
 }
 
-export class ErrorBoundary extends React.Component<Props, State> {
+export class ErrorBoundary extends Component<Props, State> {
   state: State = {
     hasError: false,
     error: null,
