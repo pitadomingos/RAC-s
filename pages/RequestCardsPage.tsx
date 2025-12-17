@@ -13,9 +13,10 @@ interface RequestCardsPageProps {
   sessions: TrainingSession[];
   userRole: UserRole;
   currentEmployeeId?: string; // Passed from App.tsx
+  currentSiteId: string; // Added to enable Global Site Filter
 }
 
-const RequestCardsPage: React.FC<RequestCardsPageProps> = ({ bookings, requirements, racDefinitions, sessions, userRole, currentEmployeeId }) => {
+const RequestCardsPage: React.FC<RequestCardsPageProps> = ({ bookings, requirements, racDefinitions, sessions, userRole, currentEmployeeId, currentSiteId }) => {
   const navigate = useNavigate();
   const location = useLocation();
   const { t } = useLanguage();
@@ -99,12 +100,16 @@ const RequestCardsPage: React.FC<RequestCardsPageProps> = ({ bookings, requireme
   const allEligibleBookings = useMemo(() => {
      const uniqueMap = new Map<string, Booking>();
      safeBookings.forEach(b => {
+         // Global Site Filter Check
+         const eSiteId = b.employee.siteId || 's1';
+         if (currentSiteId !== 'all' && eSiteId !== currentSiteId) return;
+
          if (b && b.status === BookingStatus.PASSED && b.employee && !uniqueMap.has(b.employee.id)) {
              uniqueMap.set(b.employee.id, b);
          }
      });
      return Array.from(uniqueMap.values()).filter(b => isEmployeeCompliant(b.employee.id));
-  }, [safeBookings, requirements, racDefinitions, sessions]);
+  }, [safeBookings, requirements, racDefinitions, sessions, currentSiteId]);
 
   // SELF-SERVICE LOGIC: Override slots if user
   const slots = useMemo(() => {

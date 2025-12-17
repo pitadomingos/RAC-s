@@ -373,7 +373,7 @@ const AlcoholIntegration: React.FC<AlcoholIntegrationProps> = ({ addNotification
                           <TrendingUp size={20} className="text-indigo-500" /> 
                           {dateFilter === 'Today' ? t.alcohol.dashboard.hourlyTrend : t.alcohol.dashboard.dailyTrend}
                       </h3>
-                      <div className="h-64 w-full">
+                      <div className="h-64 w-full" style={{ minWidth: 0 }}>
                           <ResponsiveContainer width="100%" height="100%">
                               <AreaChart data={trendData}>
                                   <defs>
@@ -404,7 +404,7 @@ const AlcoholIntegration: React.FC<AlcoholIntegrationProps> = ({ addNotification
                           <h3 className="font-bold text-slate-800 dark:text-white mb-4 flex items-center gap-2">
                               <BarChart3 size={20} className="text-blue-500" /> {t.alcohol.dashboard.deviceLoad}
                           </h3>
-                          <div className="h-48 w-full">
+                          <div className="h-48 w-full" style={{ minWidth: 0 }}>
                               <ResponsiveContainer width="100%" height="100%">
                                   <BarChart data={deviceStats} layout="vertical">
                                       <XAxis type="number" hide />
@@ -421,7 +421,7 @@ const AlcoholIntegration: React.FC<AlcoholIntegrationProps> = ({ addNotification
                           <h3 className="font-bold text-slate-800 dark:text-white mb-2 flex items-center gap-2 self-start">
                               <PieIcon size={20} className="text-emerald-500" /> {t.alcohol.dashboard.complianceRatio}
                           </h3>
-                          <div className="h-48 w-full relative">
+                          <div className="h-48 w-full relative" style={{ minWidth: 0 }}>
                               <ResponsiveContainer width="100%" height="100%">
                                   <PieChart>
                                       <Pie

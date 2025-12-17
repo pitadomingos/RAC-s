@@ -14,9 +14,10 @@ interface ScheduleTrainingProps {
     trainers: Trainer[];
     racDefinitions: RacDef[];
     addNotification: (notif: SystemNotification) => void;
+    currentSiteId: string; // Added to enable Global Site Filter
 }
 
-const ScheduleTraining: React.FC<ScheduleTrainingProps> = ({ sessions, setSessions, rooms, trainers, racDefinitions, addNotification }) => {
+const ScheduleTraining: React.FC<ScheduleTrainingProps> = ({ sessions, setSessions, rooms, trainers, racDefinitions, addNotification, currentSiteId }) => {
   const navigate = useNavigate();
   const { t } = useLanguage();
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -30,7 +31,8 @@ const ScheduleTraining: React.FC<ScheduleTrainingProps> = ({ sessions, setSessio
       location: '',
       instructor: '',
       capacity: 0,
-      sessionLanguage: 'Portuguese'
+      sessionLanguage: 'Portuguese',
+      siteId: currentSiteId !== 'all' ? currentSiteId : 's1' // Pre-fill with current site or default
   });
 
   // Pagination State
@@ -73,7 +75,8 @@ const ScheduleTraining: React.FC<ScheduleTrainingProps> = ({ sessions, setSessio
           location: newSession.location || 'TBD',
           instructor: newSession.instructor || 'TBD',
           capacity: newSession.capacity || 20,
-          sessionLanguage: newSession.sessionLanguage || 'Portuguese'
+          sessionLanguage: newSession.sessionLanguage || 'Portuguese',
+          siteId: newSession.siteId || 's1'
       };
 
       setSessions(prev => [...prev, sessionToAdd]);
@@ -103,11 +106,16 @@ const ScheduleTraining: React.FC<ScheduleTrainingProps> = ({ sessions, setSessio
   };
 
   // Filter & Sort Logic
-  const filteredSessions = sessions.filter(s => 
-      s.racType.toLowerCase().includes(filterQuery.toLowerCase()) || 
-      s.instructor.toLowerCase().includes(filterQuery.toLowerCase()) ||
-      s.location.toLowerCase().includes(filterQuery.toLowerCase())
-  );
+  const filteredSessions = sessions.filter(s => {
+      // Global Site Filter
+      const sSiteId = s.siteId || 's1';
+      if (currentSiteId !== 'all' && sSiteId !== currentSiteId) return false;
+
+      const matchesQuery = s.racType.toLowerCase().includes(filterQuery.toLowerCase()) || 
+                           s.instructor.toLowerCase().includes(filterQuery.toLowerCase()) ||
+                           s.location.toLowerCase().includes(filterQuery.toLowerCase());
+      return matchesQuery;
+  });
 
   const sortedSessions = [...filteredSessions].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 

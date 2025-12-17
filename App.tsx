@@ -64,30 +64,40 @@ const App: React.FC = () => {
       return saved ? JSON.parse(saved) : INITIAL_RAC_DEFINITIONS;
   });
 
+  const [rooms, setRooms] = useState<Room[]>(() => {
+      const saved = localStorage.getItem('cars_rooms');
+      return saved ? JSON.parse(saved) : [{ id: 'r1', name: 'Room A', capacity: 20 }, { id: 'r2', name: 'Room B', capacity: 15 }];
+  });
+
+  const [trainers, setTrainers] = useState<Trainer[]>(() => {
+      const saved = localStorage.getItem('cars_trainers');
+      return saved ? JSON.parse(saved) : [{ id: 't1', name: 'John Doe', racs: ['RAC01', 'RAC02'] }];
+  });
+
+  const [sites, setSites] = useState<Site[]>(() => {
+      const saved = localStorage.getItem('cars_sites');
+      return saved ? JSON.parse(saved) : [{ id: 's1', companyId: 'c1', name: 'Moatize Mine', location: 'Tete' }];
+  });
+  
+  const [companies, setCompanies] = useState<Company[]>(() => {
+      const saved = localStorage.getItem('cars_companies');
+      // Default company "Vulcan Mining" includes Alcohol module by default for demo
+      return saved ? JSON.parse(saved) : [{ id: 'c1', name: 'Vulcan Mining', status: 'Active', defaultLanguage: 'pt', features: { alcohol: true } }];
+  });
+
   // --- PERSISTENCE EFFECTS ---
-  useEffect(() => {
-      localStorage.setItem('cars_bookings', JSON.stringify(bookings));
-  }, [bookings]);
+  useEffect(() => { localStorage.setItem('cars_bookings', JSON.stringify(bookings)); }, [bookings]);
+  useEffect(() => { localStorage.setItem('cars_requirements', JSON.stringify(requirements)); }, [requirements]);
+  useEffect(() => { localStorage.setItem('cars_sessions', JSON.stringify(sessions)); }, [sessions]);
+  useEffect(() => { localStorage.setItem('cars_rac_defs', JSON.stringify(racDefinitions)); }, [racDefinitions]);
+  useEffect(() => { localStorage.setItem('cars_rooms', JSON.stringify(rooms)); }, [rooms]);
+  useEffect(() => { localStorage.setItem('cars_trainers', JSON.stringify(trainers)); }, [trainers]);
+  useEffect(() => { localStorage.setItem('cars_sites', JSON.stringify(sites)); }, [sites]);
+  useEffect(() => { localStorage.setItem('cars_companies', JSON.stringify(companies)); }, [companies]);
 
-  useEffect(() => {
-      localStorage.setItem('cars_requirements', JSON.stringify(requirements));
-  }, [requirements]);
-
-  useEffect(() => {
-      localStorage.setItem('cars_sessions', JSON.stringify(sessions));
-  }, [sessions]);
-
-  useEffect(() => {
-      localStorage.setItem('cars_rac_defs', JSON.stringify(racDefinitions));
-  }, [racDefinitions]);
-
-
-  const [rooms, setRooms] = useState<Room[]>([{ id: 'r1', name: 'Room A', capacity: 20 }, { id: 'r2', name: 'Room B', capacity: 15 }]);
-  const [trainers, setTrainers] = useState<Trainer[]>([{ id: 't1', name: 'John Doe', racs: ['RAC01', 'RAC02'] }]);
-  const [sites, setSites] = useState<Site[]>([{ id: 's1', companyId: 'c1', name: 'Moatize Mine', location: 'Tete' }]);
-  const [companies, setCompanies] = useState<Company[]>([{ id: 'c1', name: 'Vulcan Mining', status: 'Active' }]);
+  
   const [users, setUsers] = useState<User[]>([
-      { id: 1, name: 'System Admin', email: 'admin@vulcan.com', role: UserRole.SYSTEM_ADMIN, status: 'Active', company: 'Vulcan Mining', jobTitle: 'IT Manager' }
+      { id: 1, name: 'System Admin', email: 'admin@vulcan.com', role: UserRole.SYSTEM_ADMIN, status: 'Active', company: 'Vulcan Mining', jobTitle: 'IT Manager', siteId: 's1' }
   ]);
   const [currentSiteId, setCurrentSiteId] = useState<string>('all');
 
@@ -95,33 +105,25 @@ const App: React.FC = () => {
   const [feedbackList, setFeedbackList] = useState<Feedback[]>(MOCK_FEEDBACK);
   const [isFeedbackModalOpen, setIsFeedbackModalOpen] = useState(false);
   
-  // Feedback Deployment Configuration
-  // Modes: 'disabled', 'always', '1_week', '1_month'
   const [feedbackConfig, setFeedbackConfig] = useState<{mode: string, expiry: string | null}>({
       mode: 'always', 
       expiry: null
   });
 
-  // Computed Property: Is Feedback Currently Active?
   const isFeedbackSystemActive = useMemo(() => {
       if (feedbackConfig.mode === 'disabled') return false;
       if (feedbackConfig.mode === 'always') return true;
-      
-      // Check expiry for timed modes
       if (feedbackConfig.expiry) {
           const now = new Date();
           const expiryDate = new Date(feedbackConfig.expiry);
           return now < expiryDate;
       }
-      
-      // Fallback if mode suggests active but no expiry (shouldn't happen with correct logic)
       return false;
   }, [feedbackConfig]);
 
   const handleUpdateFeedbackConfig = (mode: string) => {
       let expiry = null;
       const now = new Date();
-      
       if (mode === '1_week') {
           now.setDate(now.getDate() + 7);
           expiry = now.toISOString();
@@ -129,7 +131,6 @@ const App: React.FC = () => {
           now.setMonth(now.getMonth() + 1);
           expiry = now.toISOString();
       }
-      
       setFeedbackConfig({ mode, expiry });
   };
 
@@ -153,58 +154,25 @@ const App: React.FC = () => {
       });
   };
 
-  // --- MIDDLEWARE SIMULATION ENGINE ---
   const handleMiddlewareSync = () => {
-      // 1. Process Source A (HR) - Prefix 'VUL-'
+      // Simulation Logic ...
       const processedHR = RAW_HR_SOURCE.map(raw => ({
-          id: uuidv4(),
-          name: raw.name,
-          recordId: `VUL-${raw.id}`, // Middleware Prefix Logic
-          company: 'Vulcan Mining',
-          department: raw.dept,
-          role: raw.role,
-          isActive: true,
-          siteId: 's1'
+          id: uuidv4(), name: raw.name, recordId: `VUL-${raw.id}`, company: 'Vulcan Mining', department: raw.dept, role: raw.role, isActive: true, siteId: 's1'
       }));
-
-      // 2. Process Source B (Contractor) - Prefix 'CON-'
       const processedCont = RAW_CONTRACTOR_SOURCE.map(raw => ({
-          id: uuidv4(),
-          name: raw.name,
-          recordId: `CON-${raw.id}`, // Middleware Prefix Logic
-          company: raw.company,
-          department: raw.dept,
-          role: raw.role,
-          isActive: true,
-          siteId: 's1'
+          id: uuidv4(), name: raw.name, recordId: `CON-${raw.id}`, company: raw.company, department: raw.dept, role: raw.role, isActive: true, siteId: 's1'
       }));
-
       const allNewEmployees = [...processedHR, ...processedCont];
       const newBookings: Booking[] = [];
       const newReqs: EmployeeRequirement[] = [];
-
-      // 3. Merge into App State
-      // We check if recordId already exists to avoid duplicates
       const existingIds = new Set(bookings.map(b => b.employee.recordId));
 
       allNewEmployees.forEach(emp => {
           if (!existingIds.has(emp.recordId)) {
-              // Add a "System Initialization" booking so they appear in the system
-              // In a real app, we'd have a separate 'users' table, but here we derive from bookings
               newBookings.push({
-                  id: uuidv4(),
-                  sessionId: 'System Initialization',
-                  employee: emp as Employee,
-                  status: BookingStatus.PENDING,
-                  attendance: true
+                  id: uuidv4(), sessionId: 'System Initialization', employee: emp as Employee, status: BookingStatus.PENDING, attendance: true
               });
-
-              // Add empty requirement
-              newReqs.push({
-                  employeeId: emp.id,
-                  asoExpiryDate: '',
-                  requiredRacs: {}
-              });
+              newReqs.push({ employeeId: emp.id, asoExpiryDate: '', requiredRacs: {} });
           }
       });
 
@@ -219,28 +187,17 @@ const App: React.FC = () => {
 
   const handleApproveAutoBooking = (bookingId: string) => {
       setBookings(prev => prev.map(b => b.id === bookingId ? { ...b, isAutoBooked: false } : b));
-      addNotification({
-          id: uuidv4(),
-          type: 'success',
-          title: 'Auto-Booking Approved',
-          message: 'Booking confirmed for employee.',
-          timestamp: new Date(),
-          isRead: false
-      });
+      addNotification({ id: uuidv4(), type: 'success', title: 'Auto-Booking Approved', message: 'Booking confirmed for employee.', timestamp: new Date(), isRead: false });
   };
 
   const handleRejectAutoBooking = (bookingId: string) => {
       setBookings(prev => prev.filter(b => b.id !== bookingId));
   };
 
-  const handleUpdateRacDefinitions = (newDefs: RacDef[]) => {
-      setRacDefinitions(newDefs);
-  };
+  const handleUpdateRacDefinitions = (newDefs: RacDef[]) => setRacDefinitions(newDefs);
 
   const handleUpdateEmployee = (id: string, updates: Partial<Employee>) => {
-      setBookings(prev => prev.map(b => 
-          b.employee.id === id ? { ...b, employee: { ...b.employee, ...updates } } : b
-      ));
+      setBookings(prev => prev.map(b => b.employee.id === id ? { ...b, employee: { ...b.employee, ...updates } } : b));
   };
 
   const handleDeleteEmployee = (id: string) => {
@@ -250,7 +207,6 @@ const App: React.FC = () => {
 
   const handleImportBookings = (newBookings: Booking[], sideEffects?: { employee: Employee, aso: string, ops: Record<string, boolean> }[]) => {
       setBookings(prev => [...prev, ...newBookings]);
-
       if (sideEffects) {
           setRequirements(prev => {
               const newReqs = [...prev];
@@ -258,15 +214,9 @@ const App: React.FC = () => {
                   const idx = newReqs.findIndex(r => r.employeeId === effect.employee.id);
                   if (idx >= 0) {
                       if (effect.aso) newReqs[idx].asoExpiryDate = effect.aso;
-                      if (effect.ops) {
-                          newReqs[idx].requiredRacs = { ...newReqs[idx].requiredRacs, ...effect.ops };
-                      }
+                      if (effect.ops) newReqs[idx].requiredRacs = { ...newReqs[idx].requiredRacs, ...effect.ops };
                   } else {
-                      newReqs.push({
-                          employeeId: effect.employee.id,
-                          asoExpiryDate: effect.aso || '',
-                          requiredRacs: effect.ops || {}
-                      });
+                      newReqs.push({ employeeId: effect.employee.id, asoExpiryDate: effect.aso || '', requiredRacs: effect.ops || {} });
                   }
               });
               return newReqs;
@@ -282,27 +232,12 @@ const App: React.FC = () => {
       });
   };
 
-  // --- FEEDBACK HANDLERS ---
   const handleSubmitFeedback = (type: FeedbackType, message: string) => {
       const newFeedback: Feedback = {
-          id: uuidv4(),
-          userId: 'current-user',
-          userName: userRole === UserRole.USER ? 'Safe Worker 1' : 'Admin User', // Mock user name
-          type,
-          message,
-          status: 'New',
-          isActionable: type === 'Bug', // Auto-flag bugs as actionable initially
-          timestamp: new Date().toISOString()
+          id: uuidv4(), userId: 'current-user', userName: userRole === UserRole.USER ? 'Safe Worker 1' : 'Admin User', type, message, status: 'New', isActionable: type === 'Bug', timestamp: new Date().toISOString()
       };
       setFeedbackList(prev => [newFeedback, ...prev]);
-      addNotification({
-          id: uuidv4(),
-          type: 'success',
-          title: 'Feedback Sent',
-          message: 'Thank you! Your feedback has been logged.',
-          timestamp: new Date(),
-          isRead: false
-      });
+      addNotification({ id: uuidv4(), type: 'success', title: 'Feedback Sent', message: 'Thank you! Your feedback has been logged.', timestamp: new Date(), isRead: false });
   };
 
   const handleUpdateFeedback = (id: string, updates: Partial<Feedback>) => {
@@ -315,16 +250,23 @@ const App: React.FC = () => {
 
   const currentEmployeeId = bookings.length > 0 ? bookings[0].employee.id : 'user-123';
 
-  // GRANULAR ACCESS CHECK FUNCTION
-  const canViewAlcoholDashboard = () => {
-      // EXPLICIT BLOCK: General Users cannot access Alcohol Control
-      if (userRole === UserRole.USER) return false;
-      // EXPLICIT BLOCK: RAC Trainers cannot access Alcohol Control
-      if (userRole === UserRole.RAC_TRAINER) return false;
+  // DETERMINE CURRENT COMPANY CONTEXT
+  // For simulation: If System Admin, they see everything.
+  // Otherwise, assume they belong to the first active company or "Vulcan Mining"
+  // In a real app, this would come from the User profile.
+  const currentCompany = companies.find(c => c.name === 'Vulcan Mining') || companies[0];
 
+  // GRANULAR ACCESS CHECK
+  const canViewAlcoholDashboard = () => {
+      // 1. Tenant Check: Does the company have the feature?
+      if (!currentCompany.features?.alcohol) return false;
+
+      // 2. Role Check
+      if (userRole === UserRole.USER) return false;
+      if (userRole === UserRole.RAC_TRAINER) return false;
       if (userRole === UserRole.SYSTEM_ADMIN || userRole === UserRole.ENTERPRISE_ADMIN) return true;
+      
       const allowedTitles = ['Manager', 'Supervisor', 'Superintendent', 'Director', 'Head'];
-      // Ensure simulatedJobTitle is defined
       const jobTitle = simulatedJobTitle || '';
       return allowedTitles.some(t => jobTitle.includes(t));
   };
@@ -352,6 +294,7 @@ const App: React.FC = () => {
                 setSimulatedJobTitle={setSimulatedJobTitle}
                 simulatedDept={simulatedDept}
                 setSimulatedDept={setSimulatedDept}
+                companies={companies} // Pass companies to Layout
               >
                 <Routes>
                   <Route path="/" element={<Dashboard 
@@ -362,6 +305,7 @@ const App: React.FC = () => {
                       onApproveAutoBooking={handleApproveAutoBooking}
                       onRejectAutoBooking={handleRejectAutoBooking}
                       racDefinitions={racDefinitions}
+                      currentSiteId={currentSiteId} // Pass Global Site Filter
                   />} />
                   
                   <Route path="/enterprise-dashboard" element={
@@ -395,13 +339,13 @@ const App: React.FC = () => {
                           racDefinitions={racDefinitions}
                           importBookings={handleImportBookings}
                           addNotification={addNotification}
+                          currentSiteId={currentSiteId} // PASS SITE ID
                         /> 
                       : <Navigate to="/" replace />
                   } />
 
-                  <Route path="/reports" element={<ReportsPage bookings={bookings} sessions={sessions} />} />
+                  <Route path="/reports" element={<ReportsPage bookings={bookings} sessions={sessions} currentSiteId={currentSiteId} />} />
                   
-                  {/* BOOKING: Hidden for Site Admin, Enterprise Admin, RAC Trainer */}
                   <Route path="/booking" element={
                       userRole !== UserRole.RAC_TRAINER && userRole !== UserRole.ENTERPRISE_ADMIN && userRole !== UserRole.SITE_ADMIN
                       ? <BookingForm 
@@ -417,7 +361,6 @@ const App: React.FC = () => {
                       : <Navigate to="/" replace />
                   } />
                   
-                  {/* TRAINER INPUT: Hidden for Site Admin */}
                   <Route path="/trainer-input" element={
                       [UserRole.SYSTEM_ADMIN, UserRole.RAC_TRAINER].includes(userRole) 
                       ? <TrainerInputPage 
@@ -442,11 +385,24 @@ const App: React.FC = () => {
                       currentEmployeeId={currentEmployeeId}
                       racDefinitions={racDefinitions}
                       addNotification={addNotification}
+                      currentSiteId={currentSiteId} // PASS SITE ID
                   />} />
                   
-                  <Route path="/users" element={userRole === UserRole.SYSTEM_ADMIN ? <UserManagement users={users} setUsers={setUsers} addNotification={addNotification} /> : <Navigate to="/" replace />} />
+                  <Route path="/users" element={userRole === UserRole.SYSTEM_ADMIN ? <UserManagement users={users} setUsers={setUsers} addNotification={addNotification} sites={sites} currentSiteId={currentSiteId} /> : <Navigate to="/" replace />} />
                   
-                  <Route path="/schedule" element={[UserRole.SYSTEM_ADMIN, UserRole.SITE_ADMIN].includes(userRole) ? <ScheduleTraining sessions={sessions} setSessions={setSessions} rooms={rooms} trainers={trainers} racDefinitions={racDefinitions} addNotification={addNotification} /> : <Navigate to="/" replace />} />
+                  <Route path="/schedule" element={
+                      [UserRole.SYSTEM_ADMIN, UserRole.SITE_ADMIN].includes(userRole) 
+                      ? <ScheduleTraining 
+                          sessions={sessions} 
+                          setSessions={setSessions} 
+                          rooms={rooms} 
+                          trainers={trainers} 
+                          racDefinitions={racDefinitions} 
+                          addNotification={addNotification}
+                          currentSiteId={currentSiteId} // PASS SITE ID
+                        /> 
+                      : <Navigate to="/" replace />
+                  } />
                   
                   <Route path="/settings" element={[UserRole.SYSTEM_ADMIN, UserRole.ENTERPRISE_ADMIN, UserRole.SITE_ADMIN].includes(userRole) ? 
                     <SettingsPage 
@@ -470,7 +426,6 @@ const App: React.FC = () => {
                     /> : <Navigate to="/" replace />} 
                   />
                   
-                  {/* REQUEST CARDS: Hidden for RAC Trainer & Enterprise Admin */}
                   <Route path="/request-cards" element={
                       userRole !== UserRole.ENTERPRISE_ADMIN && userRole !== UserRole.RAC_TRAINER
                       ? <RequestCardsPage 
@@ -480,6 +435,7 @@ const App: React.FC = () => {
                           sessions={sessions} 
                           userRole={userRole}
                           currentEmployeeId={currentEmployeeId}
+                          currentSiteId={currentSiteId} // PASS SITE ID
                         />
                       : <Navigate to="/" replace />
                   } />
@@ -489,7 +445,6 @@ const App: React.FC = () => {
                   <Route path="/tech-docs" element={userRole === UserRole.SYSTEM_ADMIN ? <TechnicalDocs /> : <Navigate to="/" replace />} />
                   <Route path="/logs" element={[UserRole.SYSTEM_ADMIN, UserRole.ENTERPRISE_ADMIN].includes(userRole) ? <LogsPage /> : <Navigate to="/" replace />} />
                   
-                  {/* ADMIN FEEDBACK MANAGER ROUTE */}
                   <Route path="/feedback-admin" element={
                       [UserRole.SYSTEM_ADMIN, UserRole.ENTERPRISE_ADMIN].includes(userRole) 
                       ? <FeedbackAdminPage 
@@ -500,14 +455,12 @@ const App: React.FC = () => {
                       : <Navigate to="/" replace />
                   } />
 
-                  {/* MESSAGES LOG ROUTE - System Admin Only */}
                   <Route path="/messages" element={
                       userRole === UserRole.SYSTEM_ADMIN 
                       ? <MessageLogPage />
                       : <Navigate to="/" replace />
                   } />
 
-                  {/* PROTECTED ALCOHOL ROUTE - Uses dynamic granular check */}
                   <Route path="/alcohol-control" element={
                       canViewAlcoholDashboard() 
                       ? <AlcoholIntegration addNotification={addNotification} /> 
@@ -517,7 +470,6 @@ const App: React.FC = () => {
                 
                 <GeminiAdvisor />
 
-                {/* USER FEEDBACK FLOATING BUTTON (Conditional on Config) */}
                 {isFeedbackSystemActive && (
                     <>
                       <button

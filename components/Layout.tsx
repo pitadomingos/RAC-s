@@ -42,7 +42,7 @@ import {
   MessageSquare,
   Send
 } from 'lucide-react';
-import { UserRole, SystemNotification, Site } from '../types';
+import { UserRole, SystemNotification, Site, Company } from '../types';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useTheme } from '../contexts/ThemeContext';
 
@@ -60,32 +60,8 @@ interface LayoutProps {
   setSimulatedJobTitle?: (title: string) => void;
   simulatedDept?: string;
   setSimulatedDept?: (dept: string) => void;
+  companies?: Company[]; // Passed from App to check features
 }
-
-// --- ACCESS CONTROL UTILITY ---
-// This defines the granular logic: "Who can see the Alcohol Dashboard?"
-// Rule: System Admins OR (Managers/Supervisors/HSE in Operations/HSE depts)
-const canViewAlcoholDashboard = (role: UserRole, jobTitle: string, dept: string): boolean => {
-    // EXPLICIT BLOCK: General Users cannot access Alcohol Control
-    if (role === UserRole.USER) return false;
-    // EXPLICIT BLOCK: RAC Trainers cannot access Alcohol Control (as requested)
-    if (role === UserRole.RAC_TRAINER) return false;
-
-    if (role === UserRole.SYSTEM_ADMIN || role === UserRole.ENTERPRISE_ADMIN) return true;
-    
-    const allowedTitles = ['Manager', 'Supervisor', 'Superintendent', 'Director', 'Head'];
-    const allowedDepts = ['HSE', 'Operations', 'Security', 'Medical'];
-    
-    // Check if Title matches AND Dept matches
-    // Safeguard against undefined inputs
-    const safeTitle = jobTitle || '';
-    const safeDept = dept || '';
-
-    const hasTitle = allowedTitles.some(t => safeTitle.includes(t));
-    const hasDept = allowedDepts.some(d => safeDept.includes(d));
-    
-    return hasTitle && hasDept;
-};
 
 const Layout: React.FC<LayoutProps> = ({ 
   children, 
@@ -99,7 +75,8 @@ const Layout: React.FC<LayoutProps> = ({
   simulatedJobTitle = 'General User',
   setSimulatedJobTitle = (_t: string) => {},
   simulatedDept = 'Operations',
-  setSimulatedDept = (_d: string) => {}
+  setSimulatedDept = (_d: string) => {},
+  companies = []
 }) => {
   const [isSidebarOpen, setSidebarOpen] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(false);
@@ -112,8 +89,35 @@ const Layout: React.FC<LayoutProps> = ({
 
   const unreadCount = notifications.filter(n => !n.isRead).length;
 
+  // Determine Current Company Context (Simulated: Default to Vulcan Mining or first available)
+  const currentCompany = companies.find(c => c.name === 'Vulcan Mining') || companies[0];
+
   // Determine Alcohol Dashboard Access
-  const showAlcoholLink = canViewAlcoholDashboard(userRole, simulatedJobTitle, simulatedDept);
+  // 1. Tenant Check: Does this company have the alcohol feature enabled?
+  // 2. Role Check: Is the user role allowed?
+  const canViewAlcoholDashboard = (): boolean => {
+      // Feature Flag Check
+      if (!currentCompany?.features?.alcohol) return false;
+
+      // Role Check
+      if (userRole === UserRole.USER) return false;
+      if (userRole === UserRole.RAC_TRAINER) return false;
+
+      if (userRole === UserRole.SYSTEM_ADMIN || userRole === UserRole.ENTERPRISE_ADMIN) return true;
+      
+      const allowedTitles = ['Manager', 'Supervisor', 'Superintendent', 'Director', 'Head'];
+      const allowedDepts = ['HSE', 'Operations', 'Security', 'Medical'];
+      
+      const safeTitle = simulatedJobTitle || '';
+      const safeDept = simulatedDept || '';
+
+      const hasTitle = allowedTitles.some(t => safeTitle.includes(t));
+      const hasDept = allowedDepts.some(d => safeDept.includes(d));
+      
+      return hasTitle && hasDept;
+  };
+
+  const showAlcoholLink = canViewAlcoholDashboard();
 
   // Safety check for translations
   if (!t || !t.nav) {
@@ -215,7 +219,7 @@ const Layout: React.FC<LayoutProps> = ({
       icon: BarChart,
       visible: [UserRole.SYSTEM_ADMIN, UserRole.ENTERPRISE_ADMIN].includes(userRole)
     },
-    // 7. Alcohol (IoT) - RAC_TRAINER removed via showAlcoholLink check
+    // 7. Alcohol (IoT) - Checked against Tenant Features
     {
       path: '/alcohol-control',
       label: t.nav.alcohol,
@@ -264,12 +268,12 @@ const Layout: React.FC<LayoutProps> = ({
       icon: Users, 
       visible: userRole === UserRole.SYSTEM_ADMIN 
     },
-    // 14. Settings
+    // 14. Settings (Visible to SYSTEM, ENTERPRISE, and SITE Admin)
     { 
       path: '/settings', 
       label: t.nav.settings, 
       icon: Settings, 
-      visible: userRole === UserRole.SYSTEM_ADMIN
+      visible: [UserRole.SYSTEM_ADMIN, UserRole.ENTERPRISE_ADMIN, UserRole.SITE_ADMIN].includes(userRole)
     },
     // 15. Logs
     {

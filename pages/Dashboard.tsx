@@ -18,6 +18,7 @@ interface DashboardProps {
   onApproveAutoBooking?: (bookingId: string) => void;
   onRejectAutoBooking?: (bookingId: string) => void;
   racDefinitions?: RacDef[];
+  currentSiteId: string; // GLOBAL FILTER CONTEXT
 }
 
 const Dashboard: React.FC<DashboardProps> = ({ 
@@ -27,13 +28,14 @@ const Dashboard: React.FC<DashboardProps> = ({
   userRole, 
   onApproveAutoBooking,
   onRejectAutoBooking,
-  racDefinitions = []
+  racDefinitions = [],
+  currentSiteId
 }) => {
   const navigate = useNavigate();
   const { t } = useLanguage();
   const { addMessage } = useMessages();
   
-  // -- GLOBAL FILTERS --
+  // -- GLOBAL FILTERS (LOCAL TO PAGE) --
   const [selectedCompany, setSelectedCompany] = useState<string>('All');
   const [selectedDepartment, setSelectedDepartment] = useState<string>('All');
   const [selectedAccessStatus, setSelectedAccessStatus] = useState<'All' | 'Granted' | 'Blocked'>('All');
@@ -73,7 +75,7 @@ const Dashboard: React.FC<DashboardProps> = ({
       return t.racDefs?.[racCode] || racType;
   };
 
-  // --- CORE LOGIC: Access Status Calculation (Replicated from DatabasePage) ---
+  // --- CORE LOGIC: Access Status Calculation ---
   const employeesWithStatus = useMemo(() => {
       // 1. Get Unique Employees
       const empMap = new Map<string, any>();
@@ -85,7 +87,6 @@ const Dashboard: React.FC<DashboardProps> = ({
       // Also check requirements incase employee has no bookings yet
       requirements.forEach(r => {
           // If we can't find employee object, we skip (bookings usually populate employee data)
-          // In a real app, we'd have a separate 'users' table.
       });
 
       const uniqueEmployees = Array.from(empMap.values());
@@ -148,7 +149,8 @@ const Dashboard: React.FC<DashboardProps> = ({
           return {
               ...emp,
               accessStatus: status,
-              requirements: req // Attach requirement for Matrix counting
+              requirements: req, // Attach requirement for Matrix counting
+              siteId: emp.siteId || 's1' // Default site if missing
           };
       });
   }, [bookings, requirements, sessions, racDefinitions]);
@@ -156,12 +158,16 @@ const Dashboard: React.FC<DashboardProps> = ({
   // --- FILTERING ---
   const filteredEmployees = useMemo(() => {
       return employeesWithStatus.filter(e => {
+          // --- GLOBAL SITE FILTER ---
+          if (currentSiteId !== 'all' && e.siteId !== currentSiteId) return false;
+
+          // --- LOCAL DASHBOARD FILTERS ---
           if (selectedCompany !== 'All' && e.company !== selectedCompany) return false;
           if (selectedDepartment !== 'All' && e.department !== selectedDepartment) return false;
           if (selectedAccessStatus !== 'All' && e.accessStatus !== selectedAccessStatus) return false;
           return true;
       });
-  }, [employeesWithStatus, selectedCompany, selectedDepartment, selectedAccessStatus]);
+  }, [employeesWithStatus, selectedCompany, selectedDepartment, selectedAccessStatus, currentSiteId]);
 
   // Filtered Bookings & Requirements for Stats
   const filteredBookingsForStats = useMemo(() => {
@@ -194,9 +200,21 @@ const Dashboard: React.FC<DashboardProps> = ({
 
 
   // Sort sessions by date (closest first) for the "Upcoming" view
-  const upcomingSessions = [...sessions]
-    .sort((a, b) => new Date(`${a.date}T${a.startTime}`).getTime() - new Date(`${b.date}T${b.startTime}`).getTime())
-    .slice(0, 10); 
+  // AND FILTER BY GLOBAL SITE ID
+  const upcomingSessions = useMemo(() => {
+      let relevantSessions = sessions;
+      // Filter by Site
+      if (currentSiteId !== 'all') {
+          relevantSessions = sessions.filter(s => {
+              const sSiteId = s.siteId || 's1'; // Default if not present
+              return sSiteId === currentSiteId;
+          });
+      }
+
+      return [...relevantSessions]
+        .sort((a, b) => new Date(`${a.date}T${a.startTime}`).getTime() - new Date(`${b.date}T${b.startTime}`).getTime())
+        .slice(0, 10); 
+  }, [sessions, currentSiteId]);
 
   const getBookingCount = (sessionId: string) => {
     return bookings.filter(b => b.sessionId === sessionId).length;
@@ -244,10 +262,16 @@ const Dashboard: React.FC<DashboardProps> = ({
     });
   }, [filteredBookingsForStats]);
 
-  // Identify auto-bookings waiting for approval
+  // Identify auto-bookings waiting for approval (FILTERED BY SITE)
   const autoBookings = useMemo(() => {
-      return bookings.filter(b => b.isAutoBooked && b.status === BookingStatus.PENDING);
-  }, [bookings]);
+      return bookings.filter(b => {
+          // Site Filter Check
+          const empSite = b.employee.siteId || 's1';
+          if (currentSiteId !== 'all' && empSite !== currentSiteId) return false;
+
+          return b.isAutoBooked && b.status === BookingStatus.PENDING;
+      });
+  }, [bookings, currentSiteId]);
 
   const paginatedAutoBookings = useMemo(() => {
       const start = (abPage - 1) * AB_ROWS_PER_PAGE;

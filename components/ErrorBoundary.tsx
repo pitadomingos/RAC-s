@@ -1,4 +1,4 @@
-import React, { Component, ErrorInfo, ReactNode } from 'react';
+import React, { ErrorInfo, ReactNode } from 'react';
 import { Cpu, Zap, Activity, Terminal, CheckCircle2, RefreshCw, Power } from 'lucide-react';
 import { analyzeRuntimeError } from '../services/geminiService';
 
@@ -15,7 +15,7 @@ interface State {
   isRepaired: boolean;
 }
 
-export class ErrorBoundary extends Component<Props, State> {
+export class ErrorBoundary extends React.Component<Props, State> {
   state: State = {
     hasError: false,
     error: null,
@@ -74,12 +74,12 @@ export class ErrorBoundary extends Component<Props, State> {
       let stepIndex = 0;
 
       this.simulationInterval = setInterval(() => {
-          this.setState(prevState => {
+          this.setState((prevState) => {
               // Stop progressing if we are waiting for AI but hit 90%
               const canFinish = !!this.state.aiDiagnosis;
               
               if (prevState.repairProgress >= 90 && !canFinish) {
-                  return { repairStep: "Finalizing Analysis..." } as Pick<State, keyof State>;
+                  return { repairStep: "Finalizing Analysis..." };
               }
 
               const nextProgress = prevState.repairProgress + (Math.random() * 8); 
@@ -93,7 +93,7 @@ export class ErrorBoundary extends Component<Props, State> {
               return {
                   repairProgress: Math.min(nextProgress, 100),
                   repairStep: nextStep
-              } as Pick<State, keyof State>;
+              };
           });
       }, 200);
   };
@@ -136,7 +136,7 @@ export class ErrorBoundary extends Component<Props, State> {
           const newLogEntry = {
               id: Date.now().toString(),
               level: 'ERROR', 
-              messageKey: `AUTO-RESOLVED: ${diagnosis.rootCause}`,
+              messageKey: `AUTO-RESOLVED: ${diagnosis.rootCause}`, // Matches user request to state actual problem
               user: 'RoboTech AI',
               timestamp: new Date().toLocaleString(),
               aiFix: diagnosis.fix 

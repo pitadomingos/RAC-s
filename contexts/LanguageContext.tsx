@@ -42,7 +42,8 @@ const deepMerge = (target: any, source: any): any => {
 }
 
 export const LanguageProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const [language, setLanguage] = useState<Language>('en');
+  // Set default language to Portuguese ('pt')
+  const [language, setLanguage] = useState<Language>('pt');
 
   // Use useMemo to prevent unnecessary re-calculations
   const t = useMemo(() => {

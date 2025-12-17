@@ -23,9 +23,10 @@ interface ResultsPageProps {
   currentEmployeeId?: string;
   racDefinitions: RacDef[];
   addNotification: (notif: SystemNotification) => void;
+  currentSiteId: string; // Added to enable Global Site Filter
 }
 
-const ResultsPage: React.FC<ResultsPageProps> = ({ bookings, updateBookingStatus, importBookings, userRole, sessions, currentEmployeeId, racDefinitions, addNotification }) => {
+const ResultsPage: React.FC<ResultsPageProps> = ({ bookings, updateBookingStatus, importBookings, userRole, sessions, currentEmployeeId, racDefinitions, addNotification, currentSiteId }) => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const initialQuery = searchParams.get('q') || '';
@@ -105,6 +106,10 @@ const ResultsPage: React.FC<ResultsPageProps> = ({ bookings, updateBookingStatus
 
   const filteredBookings = useMemo(() => {
     return bookings.filter(b => {
+      // Global Site Filter
+      const siteId = b.employee.siteId || 's1';
+      if (currentSiteId !== 'all' && siteId !== currentSiteId) return false;
+
       if (userRole === UserRole.USER && currentEmployeeId) {
           if (b.employee.id !== currentEmployeeId) return false;
       }
@@ -129,7 +134,7 @@ const ResultsPage: React.FC<ResultsPageProps> = ({ bookings, updateBookingStatus
 
       return matchesSearch && matchesStatus && matchesTrainer && matchesDate && matchesRac;
     });
-  }, [bookings, filter, statusFilter, trainerFilter, dateFilter, racFilter, sessions, userRole, currentEmployeeId]);
+  }, [bookings, filter, statusFilter, trainerFilter, dateFilter, racFilter, sessions, userRole, currentEmployeeId, currentSiteId]);
 
   const totalPages = Math.ceil(filteredBookings.length / itemsPerPage);
   const paginatedBookings = filteredBookings.slice(
@@ -155,7 +160,7 @@ const ResultsPage: React.FC<ResultsPageProps> = ({ bookings, updateBookingStatus
   const handleExportData = () => {
       const headers = [
           'ID', 'Name', 'Company', 'Department', 'Role', 
-          'Training', 'Date', 'Trainer', 'Status', 'Score', 'Expiry'
+          'Training', 'Date', 'Trainer', 'Status', 'Theory Score', 'Practical Score', 'Expiry'
       ];
       const rows = filteredBookings.map(b => {
           const session = sessions.find(s => s.id === b.sessionId);
@@ -173,6 +178,7 @@ const ResultsPage: React.FC<ResultsPageProps> = ({ bookings, updateBookingStatus
               trainer,
               b.status,
               String(b.theoryScore || 0),
+              String(b.practicalScore || 0),
               b.expiryDate || ''
           ];
       });
@@ -342,7 +348,8 @@ const ResultsPage: React.FC<ResultsPageProps> = ({ bookings, updateBookingStatus
                           isActive: true,
                           driverLicenseNumber: dlNum,
                           driverLicenseClass: dlClass,
-                          driverLicenseExpiry: dlExp
+                          driverLicenseExpiry: dlExp,
+                          siteId: currentSiteId !== 'all' ? currentSiteId : 's1' // Tag with current site or default
                       };
 
                       newBookings.push({
@@ -412,6 +419,12 @@ const ResultsPage: React.FC<ResultsPageProps> = ({ bookings, updateBookingStatus
       }
       return null;
   }, [userRole, currentEmployeeId, bookings]);
+
+  // Helper to check if practical is required for a RAC code
+  const isPracticalRequired = (racCode: string) => {
+      const def = racDefinitions.find(r => r.code.replace(/\s/g, '') === racCode || r.name.includes(racCode));
+      return def ? !!def.requiresPractical : true; // Default to true if not found for safety
+  };
 
   return (
     <div className="space-y-6 pb-24 animate-fade-in-up h-full flex flex-col">
@@ -537,6 +550,7 @@ const ResultsPage: React.FC<ResultsPageProps> = ({ bookings, updateBookingStatus
                             <th className="px-4 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">{t.results.table.date}</th>
                             <th className="px-4 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">{t.results.table.trainer}</th>
                             <th className="px-4 py-3 text-center text-xs font-bold text-slate-500 uppercase tracking-wider">{t.results.table.theory}</th>
+                            <th className="px-4 py-3 text-center text-xs font-bold text-slate-500 uppercase tracking-wider">Practical</th>
                             <th className="px-4 py-3 text-center text-xs font-bold text-slate-500 uppercase tracking-wider">{t.results.table.status}</th>
                             <th className="px-4 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">{t.results.table.expiry}</th>
                         </tr>
@@ -544,9 +558,12 @@ const ResultsPage: React.FC<ResultsPageProps> = ({ bookings, updateBookingStatus
                     <tbody className="bg-white dark:bg-slate-800 divide-y divide-slate-100 dark:divide-slate-700">
                         {paginatedBookings.map((booking) => {
                             const session = sessions.find(s => s.id === booking.sessionId);
+                            const racCode = session ? session.racType.split(' - ')[0].replace(' ', '') : booking.sessionId.split('|')[0];
                             const racName = getTranslatedRacName(session ? session.racType : booking.sessionId);
                             const trainerName = session ? session.instructor : (booking.sessionId.includes('|') ? booking.sessionId.split('|')[2] : 'TBD');
                             
+                            const needsPractical = isPracticalRequired(racCode);
+
                             return (
                                 <tr key={booking.id} className="hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors">
                                     <td className="px-4 py-3 whitespace-nowrap">
@@ -567,6 +584,9 @@ const ResultsPage: React.FC<ResultsPageProps> = ({ bookings, updateBookingStatus
                                     <td className="px-4 py-3 whitespace-nowrap text-center text-sm font-bold text-slate-700 dark:text-slate-300">
                                         {booking.theoryScore || '-'}
                                     </td>
+                                    <td className="px-4 py-3 whitespace-nowrap text-center text-sm font-bold text-slate-700 dark:text-slate-300">
+                                        {needsPractical ? (booking.practicalScore || '-') : <span className="text-gray-400 text-xs italic">N/A</span>}
+                                    </td>
                                     <td className="px-4 py-3 whitespace-nowrap text-center">
                                         <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold uppercase tracking-wide border ${
                                             booking.status === BookingStatus.PASSED ? 'bg-green-50 text-green-700 border-green-200 dark:bg-green-900/30 dark:text-green-400' :
@@ -586,7 +606,7 @@ const ResultsPage: React.FC<ResultsPageProps> = ({ bookings, updateBookingStatus
                         
                         {filteredBookings.length === 0 && (
                             <tr>
-                                <td colSpan={7} className="px-6 py-12 text-center text-slate-400 text-sm">
+                                <td colSpan={8} className="px-6 py-12 text-center text-slate-400 text-sm">
                                     No records found matching filters.
                                 </td>
                             </tr>

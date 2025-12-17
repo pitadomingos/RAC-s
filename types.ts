@@ -25,6 +25,11 @@ export interface Company {
   id: string;
   name: string;
   status: 'Active' | 'Inactive';
+  defaultLanguage?: 'en' | 'pt';
+  features?: {
+      alcohol?: boolean;
+      // Add other modules here in future
+  };
 }
 
 export interface Site {
@@ -69,6 +74,7 @@ export interface User {
     company?: string;
     jobTitle?: string;
     department?: string; // Added for Access Control
+    siteId?: string; // New: Context for User Login to filter data
 }
 
 export interface Employee {

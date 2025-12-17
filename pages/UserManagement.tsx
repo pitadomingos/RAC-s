@@ -1,7 +1,7 @@
 
 import React, { useState, useRef } from 'react';
-import { UserRole, User, SystemNotification } from '../types';
-import { Shield, MoreVertical, Plus, X, Trash2, Edit, Users, Lock, Key, ChevronLeft, ChevronRight, Mail, Briefcase, CheckCircle2, XCircle, Search, Upload, Download, Smartphone } from 'lucide-react';
+import { UserRole, User, SystemNotification, Site } from '../types';
+import { Shield, MoreVertical, Plus, X, Trash2, Edit, Users, Lock, Key, ChevronLeft, ChevronRight, Mail, Briefcase, CheckCircle2, XCircle, Search, Upload, Download, Smartphone, MapPin } from 'lucide-react';
 import { useLanguage } from '../contexts/LanguageContext';
 import { COMPANIES } from '../constants';
 import ConfirmModal from '../components/ConfirmModal';
@@ -11,15 +11,17 @@ interface UserManagementProps {
     users: User[];
     setUsers: React.Dispatch<React.SetStateAction<User[]>>;
     addNotification: (notif: SystemNotification) => void;
+    sites: Site[];
+    currentSiteId: string;
 }
 
-const UserManagement: React.FC<UserManagementProps> = ({ users, setUsers, addNotification }) => {
+const UserManagement: React.FC<UserManagementProps> = ({ users, setUsers, addNotification, sites, currentSiteId }) => {
   const { t } = useLanguage();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [filterQuery, setFilterQuery] = useState('');
   const [newUser, setNewUser] = useState<Partial<User>>({
-      name: '', email: '', phoneNumber: '', role: UserRole.USER, status: 'Active', company: COMPANIES[0], jobTitle: ''
+      name: '', email: '', phoneNumber: '', role: UserRole.USER, status: 'Active', company: COMPANIES[0], jobTitle: '', siteId: sites[0]?.id || ''
   });
   const [openActionId, setOpenActionId] = useState<number | null>(null);
 
@@ -62,11 +64,12 @@ const UserManagement: React.FC<UserManagementProps> = ({ users, setUsers, addNot
           role: newUser.role || UserRole.USER,
           status: newUser.status || 'Active',
           company: newUser.company || 'Unknown',
-          jobTitle: newUser.jobTitle || 'N/A'
+          jobTitle: newUser.jobTitle || 'N/A',
+          siteId: newUser.siteId || (sites.length > 0 ? sites[0].id : '')
       };
       setUsers([...users, userToAdd]);
       setIsModalOpen(false);
-      setNewUser({ name: '', email: '', phoneNumber: '', role: UserRole.USER, status: 'Active', company: COMPANIES[0], jobTitle: '' });
+      setNewUser({ name: '', email: '', phoneNumber: '', role: UserRole.USER, status: 'Active', company: COMPANIES[0], jobTitle: '', siteId: sites[0]?.id || '' });
       addNotification({
           id: uuidv4(),
           type: 'success',
@@ -89,7 +92,7 @@ const UserManagement: React.FC<UserManagementProps> = ({ users, setUsers, addNot
   };
 
   const handleDownloadTemplate = () => {
-      const headers = ['Name', 'Email', 'Role (System Admin/RAC Admin/RAC Trainer/Departmental Admin/User)', 'Status (Active/Inactive)', 'Company', 'Job Title'];
+      const headers = ['Name', 'Email', 'Role (System Admin/RAC Admin/RAC Trainer/Departmental Admin/User)', 'Status (Active/Inactive)', 'Company', 'Job Title', 'Site ID'];
       const csvContent = "data:text/csv;charset=utf-8," + headers.join(",");
       const encodedUri = encodeURI(csvContent);
       const link = document.createElement("a");
@@ -144,7 +147,8 @@ const UserManagement: React.FC<UserManagementProps> = ({ users, setUsers, addNot
                       role,
                       status: cols[3]?.toLowerCase() === 'inactive' ? 'Inactive' : 'Active',
                       company: cols[4] || 'Unknown',
-                      jobTitle: cols[5] || 'N/A'
+                      jobTitle: cols[5] || 'N/A',
+                      siteId: cols[6] || (sites.length > 0 ? sites[0].id : '')
                   });
               }
           });
@@ -175,11 +179,16 @@ const UserManagement: React.FC<UserManagementProps> = ({ users, setUsers, addNot
   };
 
   // Filter Logic
-  const filteredUsers = users.filter(u => 
-      u.name.toLowerCase().includes(filterQuery.toLowerCase()) || 
-      u.email.toLowerCase().includes(filterQuery.toLowerCase()) ||
-      u.role.toLowerCase().includes(filterQuery.toLowerCase())
-  );
+  const filteredUsers = users.filter(u => {
+      // Global Site Filter
+      if (currentSiteId !== 'all' && u.siteId !== currentSiteId) return false;
+
+      return (
+        u.name.toLowerCase().includes(filterQuery.toLowerCase()) || 
+        u.email.toLowerCase().includes(filterQuery.toLowerCase()) ||
+        u.role.toLowerCase().includes(filterQuery.toLowerCase())
+      );
+  });
 
   // Pagination Logic
   const totalPages = Math.ceil(filteredUsers.length / itemsPerPage);
@@ -200,6 +209,12 @@ const UserManagement: React.FC<UserManagementProps> = ({ users, setUsers, addNot
           case UserRole.DEPT_ADMIN: return 'bg-orange-100 text-orange-700 border-orange-200 dark:bg-orange-900/30 dark:text-orange-300 dark:border-orange-800';
           default: return 'bg-slate-100 text-slate-700 border-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700';
       }
+  };
+
+  const getSiteName = (id?: string) => {
+      if (!id) return '-';
+      const s = sites.find(s => s.id === id);
+      return s ? s.name : id;
   };
 
   return (
@@ -312,6 +327,7 @@ const UserManagement: React.FC<UserManagementProps> = ({ users, setUsers, addNot
                 <th className="px-6 py-4 text-left text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">{t.users.table.user}</th>
                 <th className="px-6 py-4 text-left text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider hidden md:table-cell">{t.common.company}</th>
                 <th className="px-6 py-4 text-left text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider hidden md:table-cell">{t.common.jobTitle}</th>
+                <th className="px-6 py-4 text-left text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Site</th>
                 <th className="px-6 py-4 text-left text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">{t.users.table.role}</th>
                 <th className="px-6 py-4 text-center text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">{t.users.table.status}</th>
                 <th className="px-6 py-4 text-right text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">{t.users.table.actions}</th>
@@ -344,6 +360,12 @@ const UserManagement: React.FC<UserManagementProps> = ({ users, setUsers, addNot
                         <div className="flex items-center gap-1.5 text-sm text-slate-600 dark:text-slate-400">
                             <Briefcase size={14} className="text-slate-400" />
                             {String(user.jobTitle || '-')}
+                        </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="flex items-center gap-1.5 text-sm text-slate-600 dark:text-slate-400">
+                            <MapPin size={14} className="text-slate-400" />
+                            {getSiteName(user.siteId)}
                         </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
@@ -474,7 +496,7 @@ const UserManagement: React.FC<UserManagementProps> = ({ users, setUsers, addNot
                                    className="w-full bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-xl p-3 text-sm font-medium focus:ring-2 focus:ring-green-500 outline-none text-slate-900 dark:text-white appearance-none"
                                    value={String(newUser.company)}
                                    onChange={e => setNewUser({...newUser, company: e.target.value})}
-                               >
+                                >
                                    {COMPANIES.map(c => <option key={c} value={c}>{c}</option>)}
                                </select>
                            </div>
@@ -490,14 +512,26 @@ const UserManagement: React.FC<UserManagementProps> = ({ users, setUsers, addNot
                            </div>
                        </div>
                        
-                       <div>
-                           <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2 block ml-1">{t.common.jobTitle}</label>
-                           <input 
-                                className="w-full bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-xl p-3 text-sm font-semibold focus:ring-2 focus:ring-green-500 outline-none text-slate-900 dark:text-white transition-all"
-                                value={String(newUser.jobTitle)}
-                                onChange={e => setNewUser({...newUser, jobTitle: e.target.value})}
-                                placeholder="e.g. Safety Officer"
-                            />
+                       <div className="grid grid-cols-2 gap-5">
+                           <div>
+                               <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2 block ml-1">{t.common.jobTitle}</label>
+                               <input 
+                                    className="w-full bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-xl p-3 text-sm font-semibold focus:ring-2 focus:ring-green-500 outline-none text-slate-900 dark:text-white transition-all"
+                                    value={String(newUser.jobTitle)}
+                                    onChange={e => setNewUser({...newUser, jobTitle: e.target.value})}
+                                    placeholder="e.g. Safety Officer"
+                                />
+                           </div>
+                           <div>
+                               <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2 block ml-1">Site</label>
+                               <select 
+                                   className="w-full bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-xl p-3 text-sm font-medium focus:ring-2 focus:ring-green-500 outline-none text-slate-900 dark:text-white appearance-none"
+                                   value={String(newUser.siteId)}
+                                   onChange={e => setNewUser({...newUser, siteId: e.target.value})}
+                               >
+                                   {sites.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+                               </select>
+                           </div>
                        </div>
                    </div>
 

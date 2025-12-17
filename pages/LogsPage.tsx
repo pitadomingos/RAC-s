@@ -16,6 +16,14 @@ interface LogEntry {
 }
 
 const MOCK_LOGS_DATA: LogEntry[] = [
+    { 
+        id: '0', 
+        level: 'ERROR', 
+        messageKey: 'CRASH PREVENTED: Infinite Render Loop detected in UI Thread', 
+        user: 'RoboTech AI', 
+        timestamp: '2024-05-21 11:42:15',
+        aiFix: 'Interceptor engaged. Recursive dependency chain broken in component lifecycle. State rolled back to last stable snapshot.'
+    },
     { id: '1', level: 'AUDIT', messageKey: 'User System Admin updated System Configuration', user: 'System Admin', timestamp: '2024-05-20 09:30:15' },
     { id: '2', level: 'INFO', messageKey: 'Auto-booking service ran successfully', user: 'SYSTEM', timestamp: '2024-05-20 08:00:00' },
     { id: '3', level: 'WARN', messageKey: 'Expiry Notification sent', user: 'SYSTEM', timestamp: '2024-05-19 14:20:00' },
@@ -50,7 +58,11 @@ const LogsPage: React.FC = () => {
                 const parsed = JSON.parse(backlog);
                 // Merge and deduplicate simple logic
                 setAllLogs(prev => {
-                    const combined = [...parsed, ...prev];
+                    // Create a map of existing IDs to prevent duplicates
+                    const existingIds = new Set(prev.map(l => l.id));
+                    const newUnique = parsed.filter((l: LogEntry) => !existingIds.has(l.id));
+                    
+                    const combined = [...newUnique, ...prev];
                     // Simple sort by time descending (assuming string ISO or close enough for mock)
                     return combined.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
                 });
@@ -69,6 +81,7 @@ const LogsPage: React.FC = () => {
             if (log.messageKey.includes('manually added')) return 'Usuário adicionou manualmente 5 agendamentos';
             if (log.messageKey.includes('logged in')) return 'Usuário fez login';
             if (log.messageKey.includes('deleted User')) return 'Admin do Sistema excluiu Usuário ID 45';
+            if (log.messageKey.includes('CRASH PREVENTED')) return 'CRASH EVITADO: Loop de Renderização Infinito detectado';
         }
         return log.messageKey;
     };
@@ -186,16 +199,18 @@ const LogsPage: React.FC = () => {
                                             {log.user}
                                         </td>
                                         <td className="px-6 py-3 text-slate-800 dark:text-slate-300">
-                                            {getTranslatedMessage(log)}
-                                            {isAiFixed && (
-                                                <div className="mt-2 p-2 bg-cyan-50 dark:bg-cyan-900/20 border border-cyan-200 dark:border-cyan-800 rounded-lg flex gap-3 items-start animate-pulse-slow">
-                                                    <div className="mt-0.5 text-cyan-600 dark:text-cyan-400"><Zap size={14} /></div>
-                                                    <div>
-                                                        <p className="text-[10px] font-black text-cyan-700 dark:text-cyan-300 uppercase mb-0.5 tracking-wider">RoboTech Resolution:</p>
-                                                        <p className="text-slate-600 dark:text-slate-400">{log.aiFix}</p>
+                                            <div className="flex flex-col gap-1">
+                                                <span className="font-medium">{getTranslatedMessage(log)}</span>
+                                                {isAiFixed && (
+                                                    <div className="mt-2 p-3 bg-cyan-50 dark:bg-cyan-900/20 border border-cyan-200 dark:border-cyan-800 rounded-lg flex gap-3 items-start animate-pulse-slow">
+                                                        <div className="mt-0.5 text-cyan-600 dark:text-cyan-400"><Zap size={14} /></div>
+                                                        <div>
+                                                            <p className="text-[10px] font-black text-cyan-700 dark:text-cyan-300 uppercase mb-0.5 tracking-wider">RoboTech Resolution:</p>
+                                                            <p className="text-slate-600 dark:text-slate-400 text-xs leading-relaxed">{log.aiFix}</p>
+                                                        </div>
                                                     </div>
-                                                </div>
-                                            )}
+                                                )}
+                                            </div>
                                         </td>
                                     </tr>
                                 );

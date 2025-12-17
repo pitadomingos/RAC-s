@@ -21,9 +21,10 @@ interface DatabasePageProps {
   // New prop signature for import
   importBookings?: (newBookings: Booking[], sideEffects?: { employee: Employee, aso: string, ops: Record<string, boolean> }[]) => void;
   addNotification: (notif: SystemNotification) => void;
+  currentSiteId: string; // Added to enable Global Site Filter
 }
 
-const DatabasePage: React.FC<DatabasePageProps> = ({ bookings, requirements, updateRequirements, sessions, onUpdateEmployee, onDeleteEmployee, racDefinitions, importBookings, addNotification }) => {
+const DatabasePage: React.FC<DatabasePageProps> = ({ bookings, requirements, updateRequirements, sessions, onUpdateEmployee, onDeleteEmployee, racDefinitions, importBookings, addNotification, currentSiteId }) => {
   const { t } = useLanguage();
   
   // -- State --
@@ -250,7 +251,8 @@ const DatabasePage: React.FC<DatabasePageProps> = ({ bookings, requirements, upd
                     driverLicenseNumber: columnMapping.dlNumber ? (cols[getIdx(columnMapping.dlNumber)] || '') : '',
                     driverLicenseClass: columnMapping.dlClass ? (cols[getIdx(columnMapping.dlClass)] || '') : '',
                     driverLicenseExpiry: '',
-                    isActive: true
+                    isActive: true,
+                    siteId: currentSiteId !== 'all' ? currentSiteId : 's1' // Assign current selected site or default
                 };
 
                 // Parse Dates - Safely
@@ -625,6 +627,15 @@ const DatabasePage: React.FC<DatabasePageProps> = ({ bookings, requirements, upd
 
       return { emp, req, status, isAsoValid, isDlExpired, isActive, hasRac02Req };
     }).filter(item => {
+        // --- GLOBAL SITE FILTER ---
+        if (currentSiteId !== 'all' && item.emp.siteId !== currentSiteId) {
+            // Fallback for mock data missing siteId: assume 's1' if not present?
+            // Better to stick to strict check. Mock data in constants should have siteId.
+            // If data is missing siteId, default to 's1' for compatibility.
+            const sId = item.emp.siteId || 's1';
+            if (sId !== currentSiteId) return false;
+        }
+
         if (selectedCompany !== 'All' && item.emp.company !== selectedCompany) return false;
         if (selectedDepartment !== 'All' && item.emp.department !== selectedDepartment) return false;
         if (accessStatusFilter !== 'All' && item.status !== accessStatusFilter) return false;
@@ -634,7 +645,7 @@ const DatabasePage: React.FC<DatabasePageProps> = ({ bookings, requirements, upd
         }
         return true;
     });
-  }, [uniqueEmployees, requirements, bookings, sessions, selectedCompany, selectedDepartment, accessStatusFilter, searchTerm, racDefinitions]);
+  }, [uniqueEmployees, requirements, bookings, sessions, selectedCompany, selectedDepartment, accessStatusFilter, searchTerm, racDefinitions, currentSiteId]);
 
   const totalPages = Math.ceil(processedData.length / itemsPerPage);
   const paginatedData = processedData.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
@@ -876,6 +887,8 @@ const DatabasePage: React.FC<DatabasePageProps> = ({ bookings, requirements, upd
             cancelText={t.common.cancel}
         />
 
+        {/* ... (Existing Modals: Edit Modal, Import Modal, QR Modal) - Keeping them as is for brevity, they are unaffected by site filtering logic directly besides needing to handle siteId on creation if relevant, but we handled that in import logic) */}
+        
         {/* --- EDIT MODAL --- */}
         {editingEmployee && (
             <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4" onClick={() => setEditingEmployee(null)}>

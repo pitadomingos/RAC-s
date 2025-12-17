@@ -375,7 +375,7 @@ const EnterpriseDashboard: React.FC<EnterpriseDashboardProps> = ({ sites, bookin
                 <h3 className="text-lg font-bold text-slate-800 dark:text-white mb-6 flex items-center gap-2">
                     <MapIcon size={20} className="text-indigo-500"/> {t.enterprise.siteComparison}
                 </h3>
-                <div className="h-80 w-full">
+                <div className="h-80 w-full" style={{ minWidth: 0 }}>
                     {siteComparisonData.length > 0 ? (
                         <ResponsiveContainer width="100%" height="100%">
                             <BarChart data={siteComparisonData} layout="vertical" margin={{ left: 20 }}>

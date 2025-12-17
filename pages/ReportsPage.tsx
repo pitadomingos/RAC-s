@@ -17,11 +17,12 @@ import { useLanguage } from '../contexts/LanguageContext';
 interface ReportsPageProps {
   bookings: Booking[];
   sessions: TrainingSession[];
+  currentSiteId: string; // Added to enable Global Site Filter
 }
 
 type ReportPeriod = 'Weekly' | 'Monthly' | 'YTD' | 'Custom';
 
-const ReportsPage: React.FC<ReportsPageProps> = ({ bookings, sessions }) => {
+const ReportsPage: React.FC<ReportsPageProps> = ({ bookings, sessions, currentSiteId }) => {
   const { t, language } = useLanguage();
   const [period, setPeriod] = useState<ReportPeriod>('Monthly');
   const [startDate, setStartDate] = useState('');
@@ -29,8 +30,12 @@ const ReportsPage: React.FC<ReportsPageProps> = ({ bookings, sessions }) => {
   const [selectedDept, setSelectedDept] = useState('All');
   const [selectedRac, setSelectedRac] = useState('All');
   
-  // Site Filter (Derived from data availability for now)
-  const [selectedSite, setSelectedSite] = useState('All');
+  // Local Site Filter (Use only if Global is 'All')
+  const [localSelectedSite, setLocalSelectedSite] = useState('All');
+  
+  // Determine effective site filter
+  const effectiveSiteId = currentSiteId !== 'all' ? currentSiteId : localSelectedSite;
+
   const availableSites = useMemo(() => {
       const sites = new Set<string>();
       bookings.forEach(b => {
@@ -84,13 +89,14 @@ const ReportsPage: React.FC<ReportsPageProps> = ({ bookings, sessions }) => {
        if (end && bDate > end) return false;
        if (selectedDept !== 'All' && b.employee.department !== selectedDept) return false;
        if (selectedRac !== 'All' && getRacCode(b) !== selectedRac) return false;
-       // Site Filter
+       
+       // Site Filter Logic
        const bSite = b.employee.siteId || 's1'; // Default
-       if (selectedSite !== 'All' && bSite !== selectedSite) return false;
+       if (effectiveSiteId !== 'All' && bSite !== effectiveSiteId) return false;
 
        return true;
     });
-  }, [bookings, period, startDate, endDate, selectedDept, selectedRac, selectedSite, sessions]);
+  }, [bookings, period, startDate, endDate, selectedDept, selectedRac, effectiveSiteId, sessions]);
 
   // -- 2. Stats Calculation --
   const stats = useMemo(() => {
@@ -177,7 +183,7 @@ const ReportsPage: React.FC<ReportsPageProps> = ({ bookings, sessions }) => {
         startDate,
         endDate,
         department: selectedDept,
-        site: selectedSite,
+        site: effectiveSiteId,
         metrics: {
             totalBookings: stats.total,
             passRate: stats.passRate + '%',
@@ -227,14 +233,14 @@ const ReportsPage: React.FC<ReportsPageProps> = ({ bookings, sessions }) => {
                 </div>
              </div>
 
-             {/* Site Filter (Admin Only Feature) */}
-             {availableSites.length > 0 && (
+             {/* Site Filter - Only show local filter if Global is All */}
+             {currentSiteId === 'all' && availableSites.length > 0 && (
                  <div className="flex-1 min-w-[120px]">
                     <label className="text-[10px] font-bold text-slate-900 dark:text-slate-400 uppercase tracking-wider mb-1 block ml-1">Site</label>
                     <div className="relative">
                         <select 
-                            value={selectedSite} 
-                            onChange={(e) => setSelectedSite(e.target.value)} 
+                            value={localSelectedSite} 
+                            onChange={(e) => setLocalSelectedSite(e.target.value)} 
                             className="w-full bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 text-slate-900 dark:text-white rounded-xl px-4 py-2.5 text-sm font-bold focus:ring-2 focus:ring-blue-500 outline-none appearance-none cursor-pointer"
                         >
                             <option value="All">{t.common.all}</option>

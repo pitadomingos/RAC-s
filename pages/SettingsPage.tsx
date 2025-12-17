@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { Settings, Users, Box, Save, Plus, Trash2, Tag, Edit2, Check, X, AlertCircle, Sliders, MapPin, User as UserIcon, Hash, LayoutGrid, Building2, Map, ShieldCheck, Mail, Lock, Calendar, MessageSquare, Clock, GitMerge, RefreshCw, Terminal, CheckCircle, ChevronLeft, ChevronRight, Activity, Cpu, Zap, Power, UploadCloud } from 'lucide-react';
+import { Settings, Users, Box, Save, Plus, Trash2, Tag, Edit2, Check, X, AlertCircle, Sliders, MapPin, User as UserIcon, Hash, LayoutGrid, Building2, Map, ShieldCheck, Mail, Lock, Calendar, MessageSquare, Clock, GitMerge, RefreshCw, Terminal, CheckCircle, ChevronLeft, ChevronRight, Activity, Cpu, Zap, Power, UploadCloud, Globe, Wine, Edit } from 'lucide-react';
 import { RacDef, Room, Trainer, Site, Company, UserRole, User, SystemNotification } from '../types';
 import { v4 as uuidv4 } from 'uuid';
 import { logger } from '../utils/logger';
@@ -58,7 +58,13 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
   
   const isSystemAdmin = userRole === UserRole.SYSTEM_ADMIN;
   const isEnterpriseAdmin = userRole === UserRole.ENTERPRISE_ADMIN;
+  const isSiteAdmin = userRole === UserRole.SITE_ADMIN;
+
   const canEditGlobalDefinitions = isSystemAdmin || isEnterpriseAdmin;
+  // Specific permission for RACs tab: System, Enterprise, OR Site Admin
+  const canAccessRacs = isSystemAdmin || isEnterpriseAdmin || isSiteAdmin;
+  // Specific permission for Sites tab: System, Enterprise, OR Site Admin
+  const canAccessSites = isSystemAdmin || isEnterpriseAdmin || isSiteAdmin;
 
   const [confirmState, setConfirmState] = useState<{
     isOpen: boolean;
@@ -75,11 +81,21 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
   });
 
   const [newSite, setNewSite] = useState({ name: '', location: '' });
-  const [newCompany, setNewCompany] = useState({ name: '', adminName: '', adminEmail: '' });
+  
+  // COMPANY STATE
+  const [newCompany, setNewCompany] = useState<{name: string, adminName: string, adminEmail: string, defaultLanguage: 'en' | 'pt', alcoholFeature: boolean}>({ 
+      name: '', adminName: '', adminEmail: '', defaultLanguage: 'pt', alcoholFeature: false
+  });
   const [provisionSuccess, setProvisionSuccess] = useState<string | null>(null);
-  const [newRoom, setNewRoom] = useState({ name: '', capacity: 0 });
+  
+  // Edit Company State
+  const [editingCompany, setEditingCompany] = useState<Company | null>(null);
+  
+  // ROOM STATE (Fixed Capacity)
+  const [newRoom, setNewRoom] = useState<{ name: string; capacity: string }>({ name: '', capacity: '20' });
   const [editingRoomId, setEditingRoomId] = useState<string | null>(null);
   const [editRoomData, setEditRoomData] = useState<Partial<Room>>({});
+  
   const [newTrainer, setNewTrainer] = useState<{name: string, racs: string[]}>({ name: '', racs: [] });
   const [editingTrainerId, setEditingTrainerId] = useState<string | null>(null);
   const [editTrainerData, setEditTrainerData] = useState<{name: string, racs: string[]}>({ name: '', racs: [] });
@@ -89,11 +105,58 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
 
   const handleAddSite = () => { if (newSite.name && onUpdateSites) { onUpdateSites([...sites, { id: uuidv4(), companyId: 'c1', name: newSite.name, location: newSite.location || 'Unknown' }]); setNewSite({ name: '', location: '' }); } };
   const deleteSite = (id: string) => { if (onUpdateSites) setConfirmState({ isOpen: true, title: t.database.confirmDelete, message: t.database.confirmDeleteMsg, onConfirm: () => onUpdateSites(sites.filter(s => s.id !== id)), isDestructive: true }); };
-  const handleAddCompany = () => { if (newCompany.name && onUpdateCompanies) { onUpdateCompanies([...companies, { id: uuidv4(), name: newCompany.name, status: 'Active' }]); setNewCompany({ name: '', adminName: '', adminEmail: '' }); setProvisionSuccess(`Company ${newCompany.name} added.`); } };
-  const handleAddRoom = () => { if (newRoom.name) { onUpdateRooms([...rooms, { id: uuidv4(), name: newRoom.name, capacity: newRoom.capacity || 20 }]); setNewRoom({ name: '', capacity: 0 }); } };
+  
+  // --- COMPANY CRUD ---
+  const handleAddCompany = () => { 
+      if (newCompany.name && onUpdateCompanies) { 
+          onUpdateCompanies([...companies, { 
+              id: uuidv4(), 
+              name: newCompany.name, 
+              status: 'Active', 
+              defaultLanguage: newCompany.defaultLanguage,
+              features: { alcohol: newCompany.alcoholFeature } // Set feature flag
+          }]); 
+          setNewCompany({ name: '', adminName: '', adminEmail: '', defaultLanguage: 'pt', alcoholFeature: false }); 
+          setProvisionSuccess(`Company ${newCompany.name} added.`);
+          setTimeout(() => setProvisionSuccess(null), 3000);
+      } 
+  };
+
+  const handleUpdateCompany = () => {
+      if (editingCompany && onUpdateCompanies) {
+          onUpdateCompanies(companies.map(c => c.id === editingCompany.id ? editingCompany : c));
+          setEditingCompany(null);
+          addNotification({ id: uuidv4(), type: 'success', title: 'Updated', message: 'Tenant updated successfully', timestamp: new Date(), isRead: false });
+      }
+  };
+
+  const handleDeleteCompany = (id: string) => {
+      if (onUpdateCompanies) {
+          setConfirmState({ 
+              isOpen: true, 
+              title: t.database.confirmDelete, 
+              message: "This will permanently remove the tenant and all associated data.", 
+              onConfirm: () => onUpdateCompanies(companies.filter(c => c.id !== id)), 
+              isDestructive: true 
+          });
+      }
+  };
+  
+  // --- ROOM HANDLERS ---
+  const handleAddRoom = () => { 
+      if (newRoom.name) { 
+          const capacity = parseInt(newRoom.capacity) || 20;
+          onUpdateRooms([...rooms, { id: uuidv4(), name: newRoom.name, capacity }]); 
+          setNewRoom({ name: '', capacity: '20' }); 
+      } else {
+          addNotification({ id: uuidv4(), type: 'warning', title: 'Input Error', message: 'Room Name is required', timestamp: new Date(), isRead: false });
+      }
+  };
+  
   const startEditRoom = (room: Room) => { setEditingRoomId(room.id); setEditRoomData(room); };
   const saveRoom = () => { if (editingRoomId) { onUpdateRooms(rooms.map(r => r.id === editingRoomId ? { ...r, ...editRoomData } as Room : r)); setEditingRoomId(null); } };
   const deleteRoom = (id: string) => setConfirmState({ isOpen: true, title: t.database.confirmDelete, message: t.database.confirmDeleteMsg, onConfirm: () => onUpdateRooms(rooms.filter(r => r.id !== id)), isDestructive: true });
+  
   const handleAddTrainer = () => { if (newTrainer.name) { onUpdateTrainers([...trainers, { id: uuidv4(), name: newTrainer.name, racs: newTrainer.racs }]); setNewTrainer({ name: '', racs: [] }); } };
   const deleteTrainer = (id: string) => setConfirmState({ isOpen: true, title: t.database.confirmDelete, message: t.database.confirmDeleteMsg, onConfirm: () => onUpdateTrainers(trainers.filter(t => t.id !== id)), isDestructive: true });
   const startEditTrainer = (trainer: Trainer) => { setEditingTrainerId(trainer.id); setEditTrainerData({ name: trainer.name, racs: trainer.racs }); };
@@ -255,7 +318,7 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
             {/* Sidebar */}
             <div className="w-full lg:w-72 space-y-3 h-fit">
                 <nav className="bg-white dark:bg-slate-800 rounded-2xl shadow-xl border border-slate-100 dark:border-slate-700 p-3">
-                    {['General', 'Trainers', ...(canEditGlobalDefinitions ? ['RACs', 'Sites'] : []), ...(isSystemAdmin ? ['Companies', 'Integration', 'Diagnostics'] : [])].map((tab) => (
+                    {['General', 'Trainers', ...(canAccessRacs ? ['RACs'] : []), ...(canAccessSites ? ['Sites'] : []), ...(isSystemAdmin ? ['Companies', 'Integration', 'Diagnostics'] : [])].map((tab) => (
                         <button 
                             key={tab}
                             onClick={() => setActiveTab(tab as any)}
@@ -278,13 +341,32 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
                                 {rooms.map(room => (
                                     <div key={room.id} className="flex justify-between items-center p-4 bg-white dark:bg-slate-800 border rounded-xl">
                                         <div className="font-bold text-sm text-slate-800 dark:text-white">{room.name} (Cap: {room.capacity})</div>
-                                        <button onClick={() => deleteRoom(room.id)} className="text-red-500"><Trash2 size={16}/></button>
+                                        <button onClick={() => deleteRoom(room.id)} className="text-red-500 hover:bg-red-50 p-2 rounded-full transition-colors"><Trash2 size={16}/></button>
                                     </div>
                                 ))}
                             </div>
-                            <div className="mt-4 flex gap-2">
-                                <input className="border p-2 rounded" placeholder="New Room" value={newRoom.name} onChange={e => setNewRoom({...newRoom, name: e.target.value})} />
-                                <button onClick={handleAddRoom} className="bg-blue-600 text-white p-2 rounded"><Plus size={20}/></button>
+                            {/* FIXED ROOM INPUT */}
+                            <div className="mt-6 flex gap-2 items-center bg-slate-50 dark:bg-slate-900/30 p-3 rounded-xl border dark:border-slate-700">
+                                <input 
+                                    className="flex-1 border dark:border-slate-600 dark:bg-slate-700 p-2 rounded outline-none focus:ring-2 focus:ring-blue-500" 
+                                    placeholder={t.settings.rooms.name} 
+                                    value={newRoom.name} 
+                                    onChange={e => setNewRoom({...newRoom, name: e.target.value})} 
+                                />
+                                <input 
+                                    type="number"
+                                    className="w-24 border dark:border-slate-600 dark:bg-slate-700 p-2 rounded outline-none focus:ring-2 focus:ring-blue-500" 
+                                    placeholder={t.settings.rooms.capacity} 
+                                    value={newRoom.capacity} 
+                                    onChange={e => setNewRoom({...newRoom, capacity: e.target.value})} 
+                                />
+                                <button 
+                                    onClick={handleAddRoom} 
+                                    type="button" 
+                                    className="bg-blue-600 text-white p-2 rounded-lg hover:bg-blue-500 transition-colors w-10 flex items-center justify-center shadow-lg"
+                                >
+                                    <Plus size={20}/>
+                                </button>
                             </div>
                         </div>
                     )}
@@ -316,6 +398,7 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
                                 <div className="flex flex-wrap gap-2 mb-4">
                                     {racDefinitions.map(rac => (
                                         <button 
+                                            type="button"
                                             key={rac.code} 
                                             onClick={() => toggleNewTrainerRac(rac.code)}
                                             className={`text-xs px-3 py-1.5 rounded-full border transition-all ${newTrainer.racs.includes(rac.code) ? 'bg-blue-600 text-white border-blue-600' : 'bg-white dark:bg-slate-700 text-slate-500 border-slate-200 dark:border-slate-600'}`}
@@ -329,7 +412,7 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
                         </div>
                     )}
 
-                    {activeTab === 'RACs' && canEditGlobalDefinitions && (
+                    {activeTab === 'RACs' && canAccessRacs && (
                         <div className="max-w-4xl mx-auto animate-fade-in">
                             <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-6">{t.settings.racs.title}</h3>
                             <div className="space-y-3">
@@ -361,7 +444,7 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
                         </div>
                     )}
 
-                    {activeTab === 'Sites' && canEditGlobalDefinitions && (
+                    {activeTab === 'Sites' && canAccessSites && (
                         <div className="max-w-4xl mx-auto animate-fade-in">
                             <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-6">Operational Sites</h3>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
@@ -388,11 +471,36 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
                             
                             <div className="space-y-3 mb-8">
                                 {companies.map(comp => (
-                                    <div key={comp.id} className="flex justify-between items-center p-4 bg-white dark:bg-slate-800 border dark:border-slate-700 rounded-xl">
+                                    <div key={comp.id} className="flex justify-between items-center p-4 bg-white dark:bg-slate-800 border dark:border-slate-700 rounded-xl hover:border-indigo-300 transition-colors">
                                         <div className="font-bold text-slate-800 dark:text-white flex items-center gap-3">
-                                            <Building2 size={20} className="text-slate-400"/> {comp.name}
+                                            <Building2 size={20} className="text-slate-400"/> 
+                                            {comp.name}
+                                            <div className="flex gap-1">
+                                                <span className="text-[10px] text-slate-400 border border-slate-200 dark:border-slate-600 rounded px-1.5 py-0.5 ml-2">
+                                                    {comp.defaultLanguage === 'pt' ? '🇵🇹 PT' : '🇺🇸 EN'}
+                                                </span>
+                                                {comp.features?.alcohol && (
+                                                    <span className="text-[10px] text-purple-500 border border-purple-200 dark:border-purple-800 bg-purple-50 dark:bg-purple-900/20 rounded px-1.5 py-0.5 flex items-center gap-1">
+                                                        <Wine size={10} /> Alcohol
+                                                    </span>
+                                                )}
+                                            </div>
                                         </div>
-                                        <span className={`px-2 py-1 rounded text-xs font-bold ${comp.status === 'Active' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>{comp.status}</span>
+                                        <div className="flex items-center gap-2">
+                                            <span className={`px-2 py-1 rounded text-xs font-bold ${comp.status === 'Active' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>{comp.status}</span>
+                                            <button 
+                                                onClick={() => setEditingCompany(comp)}
+                                                className="p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-full text-slate-400 hover:text-indigo-600 transition-colors"
+                                            >
+                                                <Edit size={16} />
+                                            </button>
+                                            <button 
+                                                onClick={() => handleDeleteCompany(comp.id)}
+                                                className="p-2 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-full text-slate-400 hover:text-red-600 transition-colors"
+                                            >
+                                                <Trash2 size={16} />
+                                            </button>
+                                        </div>
                                     </div>
                                 ))}
                             </div>
@@ -400,12 +508,41 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
                             <div className="p-6 bg-slate-50 dark:bg-slate-900/50 rounded-xl border border-slate-100 dark:border-slate-700">
                                 <h4 className="text-sm font-bold mb-4 uppercase text-slate-500 tracking-wider">Provision New Tenant</h4>
                                 <div className="grid gap-4">
-                                    <input className="p-3 rounded-lg border dark:border-slate-600 dark:bg-slate-700" placeholder="Company Name" value={newCompany.name} onChange={e => setNewCompany({...newCompany, name: e.target.value})} />
                                     <div className="grid grid-cols-2 gap-4">
-                                        <input className="p-3 rounded-lg border dark:border-slate-600 dark:bg-slate-700" placeholder="Admin Name" value={newCompany.adminName} onChange={e => setNewCompany({...newCompany, adminName: e.target.value})} />
-                                        <input className="p-3 rounded-lg border dark:border-slate-600 dark:bg-slate-700" placeholder="Admin Email" value={newCompany.adminEmail} onChange={e => setNewCompany({...newCompany, adminEmail: e.target.value})} />
+                                        <input className="p-3 rounded-lg border dark:border-slate-600 dark:bg-slate-700 outline-none focus:ring-2 focus:ring-indigo-500" placeholder="Company Name" value={newCompany.name} onChange={e => setNewCompany({...newCompany, name: e.target.value})} />
+                                        <div className="relative">
+                                            <Globe size={16} className="absolute left-3 top-3.5 text-slate-400" />
+                                            <select 
+                                                className="w-full p-3 pl-9 rounded-lg border dark:border-slate-600 dark:bg-slate-700 text-slate-700 dark:text-white bg-white appearance-none cursor-pointer outline-none focus:ring-2 focus:ring-blue-500"
+                                                value={newCompany.defaultLanguage}
+                                                onChange={e => setNewCompany({...newCompany, defaultLanguage: e.target.value as 'en'|'pt'})}
+                                            >
+                                                <option value="pt">Portuguese (Default)</option>
+                                                <option value="en">English</option>
+                                            </select>
+                                        </div>
                                     </div>
-                                    <button onClick={handleAddCompany} className="w-full py-3 bg-indigo-600 text-white rounded-lg font-bold hover:bg-indigo-500 shadow-lg shadow-indigo-500/20">Provision Tenant Environment</button>
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <input className="p-3 rounded-lg border dark:border-slate-600 dark:bg-slate-700 outline-none focus:ring-2 focus:ring-indigo-500" placeholder="Admin Name" value={newCompany.adminName} onChange={e => setNewCompany({...newCompany, adminName: e.target.value})} />
+                                        <input className="p-3 rounded-lg border dark:border-slate-600 dark:bg-slate-700 outline-none focus:ring-2 focus:ring-indigo-500" placeholder="Admin Email" value={newCompany.adminEmail} onChange={e => setNewCompany({...newCompany, adminEmail: e.target.value})} />
+                                    </div>
+                                    
+                                    {/* ALCOHOL MODULE TOGGLE */}
+                                    <div className="flex items-center gap-3 p-3 bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-600">
+                                        <input 
+                                            type="checkbox" 
+                                            id="alcToggle"
+                                            className="w-5 h-5 text-purple-600 rounded border-gray-300 focus:ring-purple-500 cursor-pointer"
+                                            checked={newCompany.alcoholFeature}
+                                            onChange={e => setNewCompany({...newCompany, alcoholFeature: e.target.checked})}
+                                        />
+                                        <label htmlFor="alcToggle" className="text-sm font-medium text-slate-700 dark:text-slate-300 flex items-center gap-2 cursor-pointer select-none">
+                                            <Wine size={16} className="text-purple-500"/>
+                                            Enable Alcohol Control Module (IoT)
+                                        </label>
+                                    </div>
+
+                                    <button onClick={handleAddCompany} className="w-full py-3 bg-indigo-600 text-white rounded-lg font-bold hover:bg-indigo-500 shadow-lg shadow-indigo-500/20 transition-all">Provision Tenant Environment</button>
                                 </div>
                             </div>
                         </div>
@@ -502,6 +639,58 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
             </div>
         </div>
         <ConfirmModal isOpen={confirmState.isOpen} title={confirmState.title} message={confirmState.message} onConfirm={confirmState.onConfirm} onClose={() => setConfirmState(prev => ({...prev, isOpen: false}))} isDestructive={confirmState.isDestructive} confirmText={t.common.delete} cancelText={t.common.cancel} />
+        
+        {/* EDIT COMPANY MODAL */}
+        {editingCompany && (
+            <div className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in" onClick={() => setEditingCompany(null)}>
+                <div className="bg-white dark:bg-slate-800 rounded-3xl shadow-2xl w-full max-w-lg overflow-hidden transform transition-all scale-100" onClick={(e) => e.stopPropagation()}>
+                    <div className="p-6 bg-slate-50 dark:bg-slate-900/50 border-b border-slate-100 dark:border-slate-700 flex justify-between items-center">
+                        <h3 className="text-xl font-black text-slate-900 dark:text-white">Edit Tenant</h3>
+                        <button onClick={() => setEditingCompany(null)}><X className="text-slate-400 hover:text-slate-600"/></button>
+                    </div>
+                    <div className="p-8 space-y-6">
+                        <div>
+                            <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Company Name</label>
+                            <input 
+                                className="w-full p-3 rounded-lg border dark:border-slate-600 dark:bg-slate-700 text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-indigo-500"
+                                value={editingCompany.name}
+                                onChange={(e) => setEditingCompany({...editingCompany, name: e.target.value})}
+                            />
+                        </div>
+                        <div>
+                            <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Default Language</label>
+                            <select 
+                                className="w-full p-3 rounded-lg border dark:border-slate-600 dark:bg-slate-700 text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-indigo-500"
+                                value={editingCompany.defaultLanguage}
+                                onChange={(e) => setEditingCompany({...editingCompany, defaultLanguage: e.target.value as 'en'|'pt'})}
+                            >
+                                <option value="pt">Portuguese</option>
+                                <option value="en">English</option>
+                            </select>
+                        </div>
+                        <div className="flex items-center gap-3 p-4 bg-purple-50 dark:bg-purple-900/20 rounded-lg border border-purple-100 dark:border-purple-800">
+                            <input 
+                                type="checkbox" 
+                                id="editAlcToggle"
+                                className="w-5 h-5 text-purple-600 rounded border-gray-300 focus:ring-purple-500 cursor-pointer"
+                                checked={editingCompany.features?.alcohol || false}
+                                onChange={(e) => setEditingCompany({
+                                    ...editingCompany, 
+                                    features: { ...editingCompany.features, alcohol: e.target.checked }
+                                })}
+                            />
+                            <label htmlFor="editAlcToggle" className="text-sm font-bold text-purple-900 dark:text-purple-300 flex items-center gap-2 cursor-pointer select-none">
+                                <Wine size={18} /> Enable Alcohol Control Module
+                            </label>
+                        </div>
+                    </div>
+                    <div className="p-6 bg-slate-50 dark:bg-slate-900/50 border-t border-slate-100 dark:border-slate-700 flex justify-end gap-3">
+                        <button onClick={() => setEditingCompany(null)} className="px-6 py-2.5 rounded-xl font-bold text-slate-600 hover:bg-slate-200 dark:hover:bg-slate-700 dark:text-slate-400">Cancel</button>
+                        <button onClick={handleUpdateCompany} className="px-8 py-2.5 rounded-xl font-bold bg-indigo-600 text-white hover:bg-indigo-500 shadow-lg">Save Changes</button>
+                    </div>
+                </div>
+            </div>
+        )}
     </div>
   );
 };
