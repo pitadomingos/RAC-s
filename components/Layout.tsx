@@ -325,7 +325,12 @@ const Layout: React.FC<LayoutProps> = ({
         {/* Header */}
         <div className={`flex items-center h-16 border-b border-slate-700 dark:border-slate-800 ${isCollapsed ? 'justify-center p-0' : 'justify-between p-4'}`}>
           <div className="flex items-center space-x-2">
-            <ShieldCheck className={`${isCollapsed ? 'w-8 h-8' : 'w-8 h-8'} text-yellow-500`} />
+            <img 
+              src="/assets/golden-rule.png" 
+              alt="Logo" 
+              className={`${isCollapsed ? 'w-10 h-10' : 'w-10 h-10'} object-contain`} 
+              onError={(e) => { e.currentTarget.style.display = 'none'; }}
+            />
             {!isCollapsed && <span className="text-xl font-bold tracking-wider">{t.common.vulcan}</span>}
           </div>
           <button onClick={() => setSidebarOpen(false)} className="md:hidden text-gray-400 hover:text-white">

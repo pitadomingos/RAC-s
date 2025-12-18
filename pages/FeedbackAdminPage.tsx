@@ -86,7 +86,7 @@ const FeedbackAdminPage: React.FC<FeedbackAdminPageProps> = ({ feedbackList, onU
         <div className="flex h-[calc(100vh-100px)] gap-6 pb-6 animate-fade-in-up">
             
             {/* --- LEFT COLUMN: LIST & FILTERS --- */}
-            <div className={`flex flex-col gap-6 transition-all duration-500 ${selectedFeedbackId ? 'w-1/2 hidden xl:flex' : 'w-full'}`}>
+            <div className={`flex flex-col gap-6 transition-all duration-500 ${selectedFeedback ? 'w-1/2' : 'w-full'}`}>
                 
                 {/* Header Stats */}
                 <div className="bg-gradient-to-r from-slate-900 to-slate-800 rounded-2xl shadow-lg p-6 text-white border border-slate-700 shrink-0">

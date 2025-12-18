@@ -23,6 +23,8 @@ export const translations = {
       of: 'of',
       name: 'Name',
       id: 'ID',
+      // Added missing date property
+      date: 'Date',
       company: 'Company',
       department: 'Department',
       jobTitle: 'Job Title',
@@ -778,6 +780,8 @@ export const translations = {
       of: 'de',
       name: 'Nome',
       id: 'ID',
+      // Added missing date property
+      date: 'Data',
       company: 'Empresa',
       department: 'Departamento',
       jobTitle: 'Cargo',
@@ -1085,7 +1089,7 @@ export const translations = {
         sourceA: 'Fonte A',
         sourceB: 'Fonte B',
         middleware: 'Status do Middleware',
-        processing: 'Processando...',
+        processing: 'Processing...',
         syncNow: 'Sincronizar Agora',
         waiting: 'Aguardando comando de sincronização...'
       },
@@ -1198,7 +1202,7 @@ export const translations = {
       internalNotes: 'Notas Internas',
       visibleAdmin: 'Visível Apenas para Admins',
       deleteRecord: 'Excluir Registro',
-      markedActionable: 'Marcado como Acionável',
+      markedActionable: 'Marked Actionable',
       markActionable: 'Marcar como Acionável',
       workflow: 'Status do Fluxo de Trabalho',
       priority: 'Prioridade'
@@ -1372,7 +1376,7 @@ export const translations = {
         title: 'Sobre o Desenvolvedor',
         name: 'Pita Domingos',
         preferred: 'Pita',
-        cert: 'Desenvolvedor Full Stack',
+        cert: 'Full Stack Developer',
         role: 'Arquiteto Líder',
         bio: 'Desenvolvedor experiente especializado em sistemas de segurança empresarial e transformação digital.'
       },
