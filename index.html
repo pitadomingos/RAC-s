@@ -13,11 +13,11 @@
           extend: {
             colors: {
               vulcan: {
-                yellow: '#d97706', // Darker Amber for the bar
-                headerYellow: '#f59e0b', // Amber-500 for the top block
-                warning: '#eab308', // Yellow-500 for banner
+                yellow: '#d97706',
+                headerYellow: '#f59e0b',
+                warning: '#eab308',
                 dark: '#1f2937',
-                green: '#047857', // Emerald-700
+                green: '#047857',
               }
             },
             screens: {
@@ -59,7 +59,6 @@
         font-family: 'Roboto', sans-serif;
         background-color: #f3f4f6;
       }
-      /* Print specific overrides */
       @media print {
         body {
           background-color: white;
@@ -72,18 +71,14 @@
         .print-only {
           display: block !important;
         }
-        /* Ensure background colors print */
         * {
           -webkit-print-color-adjust: exact !important;
           print-color-adjust: exact !important;
         }
-        /* Force background for specific vulcan colors if browser settings override */
         .bg-vulcan-headerYellow { background-color: #f59e0b !important; }
         .bg-vulcan-warning { background-color: #eab308 !important; }
         .bg-vulcan-green { background-color: #047857 !important; }
       }
-      
-      /* Hide scrollbar for presentation mode */
       .scrollbar-hide::-webkit-scrollbar {
           display: none;
       }
@@ -111,7 +106,6 @@
 </head>
   <body>
     <div id="root"></div>
-    <!-- Point to your local entry file. Ensure this file exists in the root or src folder depending on your setup -->
     <script type="module" src="/index.tsx"></script>
   </body>
 </html>

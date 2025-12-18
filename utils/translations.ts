@@ -15,7 +15,7 @@ export const formatDate = (dateString: string | undefined): string => {
 export const translations = {
   en: {
     common: {
-      vulcan: 'VULCAN',
+      vulcan: 'CARS',
       all: 'All',
       search: 'Search...',
       rowsPerPage: 'Rows per page:',
@@ -569,7 +569,7 @@ export const translations = {
           a: { title: 'Data Ingestion', steps: ['Source A (SAP)', 'Source B (Contractor)', 'Middleware Sync'] },
           b: { title: 'Processing', steps: ['ID Normalization', 'Conflict Resolution', 'Status Calculation'] },
           c: { title: 'Analytics', steps: ['Compliance Rate', 'Trend Analysis', 'AI Reporting'] },
-          d: { title: 'Output', steps: ['Dashboard KPI', 'Access Control', 'Notifications'] }
+          d: { title: 'Saída', steps: ['KPI do Painel', 'Controle de Acesso', 'Notificações'] }
         },
         advanced: {
           gov: { title: 'Site Governance', desc: 'Define mandatory RACs per site.' },
@@ -770,7 +770,7 @@ export const translations = {
   },
   pt: {
     common: {
-      vulcan: 'VULCAN',
+      vulcan: 'RACS',
       all: 'Todos',
       search: 'Pesquisar...',
       rowsPerPage: 'Linhas por página:',
@@ -1383,7 +1383,7 @@ export const translations = {
       },
       objectives: {
         title: 'Objetivos do Projeto',
-        problemTitle: 'O Problema',
+        problemTitle: 'The Problem',
         problemText: 'Processos manuais, dados fragmentados e riscos de conformidade.',
         solutionTitle: 'A Solução',
         goals: ['Dados Centralizados', 'Conformidade Automatizada', 'Relatórios em Tempo Real']

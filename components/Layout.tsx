@@ -89,12 +89,10 @@ const Layout: React.FC<LayoutProps> = ({
 
   const unreadCount = notifications.filter(n => !n.isRead).length;
 
-  // Determine Current Company Context (Simulated: Default to Vulcan Mining or first available)
-  const currentCompany = companies.find(c => c.name === 'Vulcan Mining') || companies[0];
+  // Determine Current Company Context (Simulated: Default to CARS Solutions or first available)
+  const currentCompany = companies.find(c => c.name === 'CARS Solutions') || companies[0];
 
   // Determine Alcohol Dashboard Access
-  // 1. Tenant Check: Does this company have the alcohol feature enabled?
-  // 2. Role Check: Is the user role allowed?
   const canViewAlcoholDashboard = (): boolean => {
       // Feature Flag Check
       if (!currentCompany?.features?.alcohol) return false;
@@ -175,121 +173,104 @@ const Layout: React.FC<LayoutProps> = ({
       }
   };
 
-  // --- NAVIGATION CONFIGURATION (REORDERED) ---
+  // --- NAVIGATION CONFIGURATION ---
   const allNavItems = [
-    // 1. Dashboard
     { 
       path: '/', 
       label: t.nav.dashboard, 
       icon: LayoutDashboard, 
       visible: userRole !== UserRole.USER && userRole !== UserRole.ENTERPRISE_ADMIN
     },
-    // 2. Booking (Action) - Blocked for SITE_ADMIN, ENTERPRISE_ADMIN, RAC_TRAINER
     { 
       path: '/booking', 
       label: t.nav.booking, 
       icon: CalendarPlus, 
       visible: userRole !== UserRole.RAC_TRAINER && userRole !== UserRole.ENTERPRISE_ADMIN && userRole !== UserRole.SITE_ADMIN
     },
-    // 3. Results (Data)
     { 
       path: '/results', 
       label: t.nav.records, 
       icon: ClipboardList, 
       visible: userRole !== UserRole.RAC_TRAINER && userRole !== UserRole.ENTERPRISE_ADMIN
     },
-    // 4. Database (Master)
-    {
-      path: '/database',
-      label: t.nav.database,
-      icon: Database,
+    { 
+      path: '/database', 
+      label: t.nav.database, 
+      icon: Database, 
       visible: userRole !== UserRole.USER && userRole !== UserRole.RAC_TRAINER 
     },
-    // 5. Reports (Analytics)
     { 
       path: '/reports', 
       label: t.nav.reports, 
       icon: FileBarChart, 
       visible: [UserRole.SYSTEM_ADMIN, UserRole.ENTERPRISE_ADMIN, UserRole.SITE_ADMIN].includes(userRole) 
     },
-    // 6. Enterprise Dashboard (Admin)
     {
       path: '/enterprise-dashboard',
       label: t.nav.enterpriseDashboard,
       icon: BarChart,
       visible: [UserRole.SYSTEM_ADMIN, UserRole.ENTERPRISE_ADMIN].includes(userRole)
     },
-    // 7. Alcohol (IoT) - Checked against Tenant Features
     {
       path: '/alcohol-control',
       label: t.nav.alcohol,
       icon: Wine,
       visible: showAlcoholLink
     },
-    // 8. Request Cards (Output) - Blocked for RAC_TRAINER and ENTERPRISE_ADMIN
     { 
       path: '/request-cards', 
       label: t.nav.requestCards, 
       icon: Mail, 
       visible: userRole !== UserRole.ENTERPRISE_ADMIN && userRole !== UserRole.RAC_TRAINER
     },
-    // 9. Communications (NEW) - Blocked for ENTERPRISE_ADMIN and SITE_ADMIN
     {
       path: '/messages',
       label: t.nav.communications,
       icon: Send,
       visible: userRole === UserRole.SYSTEM_ADMIN 
     },
-    // 10. Schedule
     { 
       path: '/schedule', 
       label: t.nav.schedule, 
       icon: CalendarDays, 
       visible: [UserRole.SYSTEM_ADMIN, UserRole.SITE_ADMIN].includes(userRole) 
     },
-    // 11. Governance
     {
       path: '/site-governance',
       label: t.nav.siteGovernance,
       icon: GanttChart,
       visible: [UserRole.SYSTEM_ADMIN, UserRole.ENTERPRISE_ADMIN].includes(userRole)
     },
-    // 12. Trainer Input - Blocked for SITE_ADMIN
     { 
       path: '/trainer-input', 
       label: t.nav.trainerInput, 
       icon: PenTool, 
       visible: [UserRole.SYSTEM_ADMIN, UserRole.RAC_TRAINER].includes(userRole) 
     },
-    // 13. Users
     { 
       path: '/users', 
       label: t.nav.users, 
       icon: Users, 
       visible: userRole === UserRole.SYSTEM_ADMIN 
     },
-    // 14. Settings (Visible to SYSTEM, ENTERPRISE, and SITE Admin)
     { 
       path: '/settings', 
       label: t.nav.settings, 
       icon: Settings, 
       visible: [UserRole.SYSTEM_ADMIN, UserRole.ENTERPRISE_ADMIN, UserRole.SITE_ADMIN].includes(userRole)
     },
-    // 15. Logs
     {
       path: '/logs',
       label: t.nav.logs,
       icon: ScrollText,
       visible: [UserRole.SYSTEM_ADMIN, UserRole.ENTERPRISE_ADMIN].includes(userRole)
     },
-    // 16. Manuals
     {
       path: '/manuals',
       label: t.nav.manuals,
       icon: BookOpen,
       visible: true
     },
-    // Extra Admin Links
     {
       path: '/feedback-admin',
       label: t.nav.feedbackAdmin,
@@ -314,7 +295,6 @@ const Layout: React.FC<LayoutProps> = ({
         icon: Presentation,
         visible: userRole === UserRole.SYSTEM_ADMIN
     },
-    // Proposal (System Admin Access)
     {
       path: '/proposal',
       label: t.nav.proposal,
@@ -329,21 +309,11 @@ const Layout: React.FC<LayoutProps> = ({
   let pageTitle = String(t.common.vulcan);
   if (currentNavItem && currentNavItem.label) {
     pageTitle = String(currentNavItem.label);
-  } else if (location.pathname === '/proposal') {
-    pageTitle = String(t.nav.proposal);
-  } else if (location.pathname === '/presentation') {
-    pageTitle = String(t.nav.presentation);
-  } else if (location.pathname === '/tech-docs') {
-    pageTitle = 'Technical Documentation';
-  } else if (location.pathname === '/admin-manual') {
-    pageTitle = String(t.nav.adminGuide);
-  } else if (location.pathname === '/messages') {
-    pageTitle = String(t.communications.title);
   }
 
   return (
     <div className="flex h-screen bg-gray-100 dark:bg-gray-900 overflow-hidden transition-colors duration-200">
-      {/* Sidebar - Hidden on Print */}
+      {/* Sidebar */}
       <aside 
         className={`
           no-print fixed inset-y-0 left-0 z-50 bg-slate-900 dark:bg-slate-950 text-white transform transition-all duration-300 ease-in-out flex flex-col
@@ -361,12 +331,9 @@ const Layout: React.FC<LayoutProps> = ({
           <button onClick={() => setSidebarOpen(false)} className="md:hidden text-gray-400 hover:text-white">
             <X size={24} />
           </button>
-          
-          {/* Desktop Collapse Toggle */}
           <button 
              onClick={() => setIsCollapsed(!isCollapsed)}
              className="hidden md:flex bg-slate-800 dark:bg-slate-900 text-gray-400 hover:text-white rounded p-1"
-             title={isCollapsed ? "Expand Sidebar" : "Collapse Sidebar"}
           >
              {isCollapsed ? <ChevronRight size={16}/> : <ChevronLeft size={16}/>}
           </button>
@@ -377,9 +344,6 @@ const Layout: React.FC<LayoutProps> = ({
           {navItems.map((item) => {
             const Icon = item.icon;
             const isActive = location.pathname === item.path;
-            const isEnterprise = item.path === '/enterprise-dashboard' || item.path === '/site-governance';
-            const isProposal = item.path === '/proposal';
-            const isFeedback = item.path === '/feedback-admin';
             
             return (
               <Link
@@ -390,7 +354,7 @@ const Layout: React.FC<LayoutProps> = ({
                 className={`
                   flex items-center rounded-lg transition-colors
                   ${isActive 
-                    ? (isEnterprise || isProposal || isFeedback ? 'bg-indigo-600 text-white font-medium shadow-lg shadow-indigo-500/30' : 'bg-yellow-500 text-slate-900 font-medium') 
+                    ? 'bg-yellow-500 text-slate-900 font-medium' 
                     : 'text-gray-300 hover:bg-slate-800 hover:text-white'
                   }
                   ${isCollapsed ? 'justify-center p-3' : 'space-x-3 px-4 py-3'}
@@ -403,7 +367,7 @@ const Layout: React.FC<LayoutProps> = ({
           })}
         </nav>
 
-        {/* Role Simulator Footer */}
+        {/* Footer Role Simulator */}
         <div className="w-full p-4 border-t border-slate-700 dark:border-slate-800 bg-slate-900 dark:bg-slate-950">
           <div className="flex flex-col gap-2">
             {!isCollapsed && (
@@ -413,48 +377,18 @@ const Layout: React.FC<LayoutProps> = ({
               </div>
             )}
             
-            {isCollapsed ? (
-               <div className="flex justify-center" title={`${t.common.role}: ${userRole}`}>
-                   <UserCog size={20} className="text-gray-400" />
-               </div>
-            ) : (
-                <>
-                  <select 
-                    value={userRole}
-                    onChange={(e) => setUserRole(e.target.value as UserRole)}
-                    className="w-full bg-slate-800 dark:bg-slate-900 text-white text-xs p-2 rounded border border-slate-600 dark:border-slate-700 focus:border-yellow-500 outline-none mb-2"
-                  >
-                    <option value={UserRole.SYSTEM_ADMIN}>System Admin</option>
-                    <option value={UserRole.ENTERPRISE_ADMIN}>Enterprise Admin</option>
-                    <option value={UserRole.SITE_ADMIN}>Site Admin</option>
-                    <option value={UserRole.RAC_TRAINER}>RAC Trainer</option>
-                    <option value={UserRole.USER}>User</option>
-                  </select>
-
-                  {/* GRANULAR JOB TITLE SIMULATOR */}
-                  {!isCollapsed && userRole !== UserRole.SYSTEM_ADMIN && userRole !== UserRole.ENTERPRISE_ADMIN && (
-                      <div className="animate-fade-in">
-                          <div className="text-xs text-gray-400 flex items-center gap-2 mb-1">
-                             <Briefcase size={12} />
-                             <span>Simulate Job Title:</span>
-                          </div>
-                          <select 
-                            value={simulatedJobTitle}
-                            onChange={(e) => setSimulatedJobTitle && setSimulatedJobTitle(e.target.value)}
-                            className="w-full bg-slate-800 dark:bg-slate-900 text-white text-xs p-2 rounded border border-slate-600 dark:border-slate-700 focus:border-blue-500 outline-none"
-                          >
-                            <option value="General User">General User</option>
-                            <option value="Supervisor">Supervisor</option>
-                            <option value="HSE Manager">HSE Manager</option>
-                            <option value="Site Director">Site Director</option>
-                          </select>
-                      </div>
-                  )}
-
-                  <div className="text-[10px] text-gray-500 text-center mt-2">
-                    {userRole === UserRole.SYSTEM_ADMIN ? t.common.superuser : t.common.restricted}
-                  </div>
-                </>
+            {!isCollapsed && (
+                <select 
+                  value={userRole}
+                  onChange={(e) => setUserRole(e.target.value as UserRole)}
+                  className="w-full bg-slate-800 dark:bg-slate-900 text-white text-xs p-2 rounded border border-slate-600 dark:border-slate-700 focus:border-yellow-500 outline-none mb-2"
+                >
+                  <option value={UserRole.SYSTEM_ADMIN}>System Admin</option>
+                  <option value={UserRole.ENTERPRISE_ADMIN}>Enterprise Admin</option>
+                  <option value={UserRole.SITE_ADMIN}>Site Admin</option>
+                  <option value={UserRole.RAC_TRAINER}>RAC Trainer</option>
+                  <option value={UserRole.USER}>User</option>
+                </select>
             )}
           </div>
         </div>
@@ -462,89 +396,63 @@ const Layout: React.FC<LayoutProps> = ({
 
       {/* Main Content */}
       <div className="flex-1 flex flex-col h-full w-full overflow-hidden">
-        <header className="no-print h-16 bg-white dark:bg-slate-800 shadow-sm flex items-center justify-between px-4 md:px-6 z-10 relative border-b border-gray-200 dark:border-slate-700 transition-colors duration-200">
+        <header className="no-print h-16 bg-white dark:bg-slate-800 shadow-sm flex items-center justify-between px-4 md:px-6 z-10 border-b border-gray-200 dark:border-slate-700 transition-colors duration-200">
           <div className="flex items-center gap-4">
              <button onClick={() => setSidebarOpen(true)} className="md:hidden text-slate-600 dark:text-slate-300">
                 <Menu size={24} />
              </button>
              
-             {/* Navigation Controls */}
              <div className="hidden md:flex items-center gap-2 mr-4 border-r border-gray-200 dark:border-slate-700 pr-4">
-                 <button onClick={() => navigate(-1)} className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-slate-700 text-slate-500 dark:text-slate-400" title="Back">
+                 <button onClick={() => navigate(-1)} className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-slate-700 text-slate-500 dark:text-slate-400">
                      <ArrowLeft size={18} />
                  </button>
-                 <button onClick={() => navigate(1)} className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-slate-700 text-slate-500 dark:text-slate-400" title="Forward">
+                 <button onClick={() => navigate(1)} className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-slate-700 text-slate-500 dark:text-slate-400">
                      <ArrowRight size={18} />
                  </button>
              </div>
 
-             <h1 className="text-xl font-bold text-slate-800 dark:text-white truncate">{pageTitle}</h1>
+             <div className="flex items-center gap-2">
+                <h1 className="text-xl font-bold text-slate-800 dark:text-white truncate">{pageTitle}</h1>
+                <div className="hidden sm:flex items-center gap-1.5 px-2 py-0.5 bg-slate-100 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-tighter shadow-sm">
+                    <Building2 size={10} />
+                    {currentCompany?.name}
+                </div>
+             </div>
           </div>
 
           <div className="flex items-center space-x-2 md:space-x-4">
-            
-            {/* SITE SELECTOR & PROPOSAL BUTTON (MULTI-TENANCY) */}
             {setCurrentSiteId && (userRole === UserRole.SYSTEM_ADMIN || userRole === UserRole.ENTERPRISE_ADMIN) && (
-                <div className="flex items-center gap-2">
-                    {/* Proposal Link in Header */}
-                    {userRole === UserRole.SYSTEM_ADMIN && (
-                        <button 
-                            onClick={() => navigate('/proposal')}
-                            className="hidden md:flex items-center gap-2 bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-900/30 dark:hover:bg-indigo-900/50 text-indigo-700 dark:text-indigo-300 px-3 py-1.5 rounded-lg text-xs font-bold transition-colors border border-indigo-200 dark:border-indigo-800"
-                            title="View Proposal Document"
-                        >
-                            <FileText size={16} /> Proposal
-                        </button>
-                    )}
-
-                    <div className="hidden md:flex items-center gap-2 bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg px-2 py-1">
-                        {currentSiteId === 'all' ? <Building2 size={16} className="text-blue-500" /> : <Map size={16} className="text-green-500" />}
-                        <select 
-                            value={currentSiteId}
-                            onChange={(e) => setCurrentSiteId(e.target.value)}
-                            className="bg-transparent text-xs font-bold text-slate-700 dark:text-slate-200 outline-none cursor-pointer"
-                        >
-                            <option value="all">{t.common.enterpriseView}</option>
-                            {sites.map(s => (
-                                <option key={s.id} value={s.id}>{s.name}</option>
-                            ))}
-                        </select>
-                    </div>
+                <div className="hidden md:flex items-center gap-2 bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg px-2 py-1">
+                    {currentSiteId === 'all' ? <Building2 size={16} className="text-blue-500" /> : <Map size={16} className="text-green-500" />}
+                    <select 
+                        value={currentSiteId}
+                        onChange={(e) => setCurrentSiteId(e.target.value)}
+                        className="bg-transparent text-xs font-bold text-slate-700 dark:text-slate-200 outline-none cursor-pointer"
+                    >
+                        <option value="all">{t.common.enterpriseView}</option>
+                        {sites.map(s => (
+                            <option key={s.id} value={s.id}>{s.name}</option>
+                        ))}
+                    </select>
                 </div>
             )}
 
-            {/* Language Toggle */}
             <button 
                 onClick={() => toggleLanguage()}
-                className="p-2 rounded-full text-slate-500 dark:text-slate-400 hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors border border-transparent hover:border-gray-200 dark:hover:border-slate-600 flex items-center gap-1"
-                title="Switch Language"
+                className="p-2 rounded-full text-slate-500 dark:text-slate-400 hover:bg-gray-100 dark:hover:bg-slate-700 flex items-center gap-1"
             >
                 <Globe size={18} />
                 <span className="text-xs font-bold uppercase">{language}</span>
             </button>
 
-            {/* Theme Toggle */}
-            <button 
-                onClick={() => cycleTheme()}
-                className="p-2 rounded-full text-slate-500 dark:text-slate-400 hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors"
-                title={`Theme: ${theme}`}
-            >
+            <button onClick={() => cycleTheme()} className="p-2 rounded-full text-slate-500 dark:text-slate-400 hover:bg-gray-100 dark:hover:bg-slate-700">
                 {getThemeIcon()}
-            </button>
-
-            {/* Fullscreen Toggle */}
-            <button 
-                onClick={() => toggleFullScreen()}
-                className="hidden md:block p-2 rounded-full text-slate-500 dark:text-slate-400 hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors"
-                title={isFullscreen ? t.common.exitFullScreen : t.common.fullScreen}
-            >
-                {isFullscreen ? <Minimize size={18} /> : <Maximize size={18} />}
             </button>
 
             <div className="relative">
               <button 
                 onClick={() => setNotifOpen(!isNotifOpen)}
-                className="p-2 rounded-full text-slate-500 dark:text-slate-400 hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors relative"
+                className="p-2 rounded-full text-slate-500 dark:text-slate-400 hover:bg-gray-100 dark:hover:bg-slate-700 relative"
               >
                 <Bell size={20} />
                 {unreadCount > 0 && (
@@ -552,32 +460,22 @@ const Layout: React.FC<LayoutProps> = ({
                 )}
               </button>
               
-              {/* Notifications Dropdown */}
               {isNotifOpen && (
                 <div className="absolute right-0 mt-2 w-80 bg-white dark:bg-slate-800 rounded-xl shadow-xl border border-gray-200 dark:border-slate-700 z-50 overflow-hidden animate-fade-in-up">
-                   <div className="p-4 border-b border-gray-200 dark:border-slate-700 flex justify-between items-center bg-gray-50 dark:bg-slate-800/50">
+                   <div className="p-4 border-b border-gray-200 dark:border-slate-700 flex justify-between items-center">
                        <h3 className="font-bold text-sm text-slate-800 dark:text-white">{t.common.notifications}</h3>
-                       {unreadCount > 0 && (
-                           <button onClick={() => clearNotifications && clearNotifications()} className="text-xs text-blue-600 dark:text-blue-400 hover:underline">{t.common.clearAll}</button>
-                       )}
+                       <button onClick={() => clearNotifications && clearNotifications()} className="text-xs text-blue-600 dark:text-blue-400 hover:underline">{t.common.clearAll}</button>
                    </div>
                    <div className="max-h-64 overflow-y-auto">
                        {notifications.length === 0 ? (
-                           <div className="p-8 text-center text-gray-400 text-sm">
-                               {t.common.noNotifications}
-                           </div>
+                           <div className="p-8 text-center text-gray-400 text-sm">{t.common.noNotifications}</div>
                        ) : (
                            <div className="divide-y divide-gray-100 dark:divide-slate-700">
                                {notifications.map(n => (
-                                   <div key={n.id} className={`p-4 hover:bg-gray-50 dark:hover:bg-slate-700/50 transition-colors ${!n.isRead ? 'bg-blue-50/50 dark:bg-blue-900/10' : ''}`}>
-                                       <div className="flex gap-3">
-                                           <div className={`mt-1 w-2 h-2 rounded-full flex-shrink-0 ${n.type === 'alert' ? 'bg-red-500' : n.type === 'warning' ? 'bg-orange-500' : n.type === 'success' ? 'bg-green-500' : 'bg-blue-500'}`} />
-                                           <div>
-                                               <p className="text-xs font-bold text-slate-800 dark:text-slate-200">{n.title}</p>
-                                               <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 leading-relaxed">{n.message}</p>
-                                               <p className="text-[10px] text-gray-400 mt-2">{n.timestamp.toLocaleTimeString()}</p>
-                                           </div>
-                                       </div>
+                                   <div key={n.id} className="p-4 hover:bg-gray-50 dark:hover:bg-slate-700/50 transition-colors">
+                                       <p className="text-xs font-bold text-slate-800 dark:text-slate-200">{n.title}</p>
+                                       <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">{n.message}</p>
+                                       <p className="text-[10px] text-gray-400 mt-2">{n.timestamp.toLocaleTimeString()}</p>
                                    </div>
                                ))}
                            </div>
@@ -589,21 +487,17 @@ const Layout: React.FC<LayoutProps> = ({
             
             <div className="flex items-center space-x-2 border-l border-gray-200 dark:border-slate-700 pl-4">
                <div className="w-8 h-8 rounded-full bg-yellow-500 flex items-center justify-center text-white font-bold shadow-md">
-                  {userRole === UserRole.SYSTEM_ADMIN ? 'A' : userRole === UserRole.USER ? 'U' : 'S'}
+                  {userRole === UserRole.SYSTEM_ADMIN ? 'A' : 'U'}
                </div>
                <div className="hidden lg:block text-right">
-                  <div className="text-xs font-bold text-slate-800 dark:text-white">
-                      {userRole === UserRole.USER ? 'Safe Worker 1' : userRole}
-                  </div>
-                  <div className="text-[10px] text-gray-500 dark:text-gray-400">
-                      {simulatedJobTitle}
-                  </div>
+                  <div className="text-xs font-bold text-slate-800 dark:text-white">{userRole}</div>
+                  <div className="text-[10px] text-gray-500 dark:text-gray-400">{simulatedJobTitle}</div>
                </div>
             </div>
           </div>
         </header>
 
-        <main className="flex-1 overflow-y-auto p-4 md:p-6 bg-gray-100 dark:bg-gray-900 relative scroll-smooth">
+        <main className="flex-1 overflow-y-auto p-4 md:p-6 bg-gray-100 dark:bg-gray-900 relative">
            {children}
         </main>
       </div>

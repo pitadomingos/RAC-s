@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useMessages } from '../contexts/MessageContext';
 import { Mail, Smartphone, Search, Trash2, Clock, CheckCircle2, User, Send } from 'lucide-react';
@@ -6,7 +7,7 @@ import { useLanguage } from '../contexts/LanguageContext';
 
 const MessageLogPage: React.FC = () => {
   const { messages, clearMessages } = useMessages();
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const [selectedId, setSelectedId] = useState<string | null>(messages.length > 0 ? messages[0].id : null);
   const [filter, setFilter] = useState('');
 
@@ -99,7 +100,7 @@ const MessageLogPage: React.FC = () => {
                         <div className="w-10 h-10 bg-slate-300 rounded-full flex items-center justify-center mb-1 text-slate-500">
                             <User size={20} />
                         </div>
-                        <span className="text-xs font-medium text-slate-900">VULCAN SAFETY</span>
+                        <span className="text-xs font-medium text-slate-900 uppercase font-black">{language === 'pt' ? 'RACS' : 'CARS'} SAFETY</span>
                         <span className="text-[10px] text-slate-400">{t.communications.sms} • Today {format(selectedMessage.timestamp, 'HH:mm')}</span>
                     </div>
                     {/* Message Body */}
@@ -122,10 +123,10 @@ const MessageLogPage: React.FC = () => {
                         <h3 className="text-xl font-bold text-slate-800 dark:text-white mb-4">{selectedMessage.subject}</h3>
                         <div className="flex gap-3 text-sm">
                             <div className="w-10 h-10 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center text-blue-600 dark:text-blue-400 font-bold">
-                                VS
+                                {language === 'pt' ? 'RA' : 'CA'}
                             </div>
                             <div>
-                                <div className="font-bold text-slate-900 dark:text-white">Vulcan Safety System <span className="text-slate-400 font-normal">&lt;no-reply@vulcan.com&gt;</span></div>
+                                <div className="font-bold text-slate-900 dark:text-white">{language === 'pt' ? 'RACS' : 'CARS'} Safety System <span className="text-slate-400 font-normal">&lt;no-reply@cars-system.com&gt;</span></div>
                                 <div className="text-slate-500 dark:text-slate-400">{t.communications.to}: {selectedMessage.recipientName} &lt;{selectedMessage.recipient}&gt;</div>
                             </div>
                             <div className="ml-auto text-xs text-slate-400">

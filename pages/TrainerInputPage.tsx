@@ -26,7 +26,7 @@ const TrainerInputPage: React.FC<TrainerInputPageProps> = ({
   currentUserName = '',
   racDefinitions
 }) => {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   
   // -- SELECTION STATE --
   const [selectedSessionId, setSelectedSessionId] = useState('');
@@ -55,11 +55,10 @@ const TrainerInputPage: React.FC<TrainerInputPageProps> = ({
       }
       return relevantSessions.filter(session => {
           const count = bookings.filter(b => b.sessionId === session.id && b.status === BookingStatus.PENDING).length;
-          return count > 0; // Only show sessions with pending students
+          return count > 0;
       });
   }, [sessions, bookings, userRole, currentUserName]);
 
-  // --- LOGIC: Requirements Check ---
   const getRacRequirements = (sessionId: string) => {
       const session = sessions.find(s => s.id === sessionId);
       if (!session) return { needsDl: false, needsPractical: true }; 
@@ -89,8 +88,6 @@ const TrainerInputPage: React.FC<TrainerInputPageProps> = ({
     return BookingStatus.PASSED;
   };
 
-  // --- HANDLERS ---
-
   const handleSessionChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const sId = e.target.value;
     setSelectedSessionId(sId);
@@ -117,22 +114,17 @@ const TrainerInputPage: React.FC<TrainerInputPageProps> = ({
   const handleInputChange = (id: string, field: keyof Booking, value: any) => {
     setSessionBookings(prev => prev.map(b => {
       if (b.id !== id) return b;
-      
       const updatedBooking = { ...b, [field]: value };
-      
-      // Auto-fail practical if theory fails (optional logic)
       if (reqs.needsPractical && field === 'theoryScore') {
         const score = parseInt(value) || 0;
         if (score < 70) updatedBooking.practicalScore = 0;
       }
-      
       updatedBooking.status = calculateStatus(updatedBooking);
       return updatedBooking;
     }));
     setHasUnsavedChanges(true);
   };
 
-  // --- BULK ACTIONS ---
   const handleBulkAttendance = () => {
       setSessionBookings(prev => prev.map(b => {
           const updated = { ...b, attendance: true };
@@ -147,15 +139,10 @@ const TrainerInputPage: React.FC<TrainerInputPageProps> = ({
       const pScore = parseInt(bulkPractical);
 
       setSessionBookings(prev => prev.map(b => {
-          // Only update filtered/visible students? No, usually applies to session context.
-          // Let's apply to ALL in session for consistency, or strictly filtered.
-          // Applying to filtered view is safer UX.
           if (!processedBookings.find(pb => pb.id === b.id)) return b;
-
           const updated = { ...b };
           if (!isNaN(tScore)) updated.theoryScore = tScore;
           if (reqs.needsPractical && !isNaN(pScore)) updated.practicalScore = pScore;
-          
           updated.status = calculateStatus(updated);
           return updated;
       }));
@@ -163,12 +150,10 @@ const TrainerInputPage: React.FC<TrainerInputPageProps> = ({
       setShowBulkTools(false);
   };
 
-  // --- SAVE ---
   const handleSave = () => {
     const selectedSession = sessions.find(s => s.id === selectedSessionId);
     const sessionDateStr = selectedSession?.date || new Date().toISOString().split('T')[0];
     
-    // Determine Validity
     let racValidity = 24; 
     if (selectedSession) {
         const racCode = selectedSession.racType.split(' - ')[0].replace(/\s/g, '');
@@ -186,31 +171,26 @@ const TrainerInputPage: React.FC<TrainerInputPageProps> = ({
                 return { ...b, resultDate: sessionDateStr, expiryDate: sessionDateStr };
             }
         }
-        return b; // Failed bookings get updated status but no expiry
+        return b;
     });
 
     updateBookings(bookingsToSave);
     setSuccessMsg('Results saved successfully!');
     setHasUnsavedChanges(false);
     
-    // Auto-print after state update ensures the "Unsaved" badge is gone and "Success" is visible
     setTimeout(() => {
         window.print();
     }, 100);
     
     setTimeout(() => {
         setSuccessMsg('');
-        // Reset selection to force refresh of lists.
         setSelectedSessionId('');
         setSessionBookings([]);
     }, 1500);
   };
 
-  // --- PROCESSING PIPELINE (Filter & Sort) ---
   const processedBookings = useMemo(() => {
       let data = [...sessionBookings];
-
-      // 1. Search
       if (searchQuery) {
           const q = searchQuery.toLowerCase();
           data = data.filter(b => 
@@ -218,35 +198,27 @@ const TrainerInputPage: React.FC<TrainerInputPageProps> = ({
               b.employee.recordId.toLowerCase().includes(q)
           );
       }
-
-      // 2. Filter Status
       if (statusFilter !== 'All') {
           data = data.filter(b => 
               statusFilter === 'Passed' ? b.status === BookingStatus.PASSED : b.status === BookingStatus.FAILED
           );
       }
-
-      // 3. Sort
       data.sort((a, b) => {
           let valA: any = '';
           let valB: any = '';
-
           switch(sortBy) {
               case 'Name': valA = a.employee.name; valB = b.employee.name; break;
               case 'ID': valA = a.employee.recordId; valB = b.employee.recordId; break;
               case 'Company': valA = a.employee.company; valB = b.employee.company; break;
               case 'Score': valA = a.theoryScore || 0; valB = b.theoryScore || 0; break;
           }
-
           if (valA < valB) return sortDir === 'asc' ? -1 : 1;
           if (valA > valB) return sortDir === 'asc' ? 1 : -1;
           return 0;
       });
-
       return data;
   }, [sessionBookings, searchQuery, statusFilter, sortBy, sortDir]);
 
-  // --- HEADER SORT HANDLER ---
   const handleHeaderClick = (field: typeof sortBy) => {
       if (sortBy === field) {
           setSortDir(prev => prev === 'asc' ? 'desc' : 'asc');
@@ -262,7 +234,6 @@ const TrainerInputPage: React.FC<TrainerInputPageProps> = ({
 
   return (
     <div className="space-y-6 pb-24 animate-fade-in-up">
-      {/* Hero Header - NO PRINT */}
       <div className="no-print bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 rounded-2xl shadow-xl p-8 text-white relative overflow-hidden border border-slate-700">
          <div className="absolute top-0 right-0 opacity-10 pointer-events-none"><GraduationCap size={200} /></div>
          <div className="relative z-10 flex flex-col md:flex-row justify-between items-start gap-6">
@@ -292,7 +263,6 @@ const TrainerInputPage: React.FC<TrainerInputPageProps> = ({
 
       <div className="bg-white dark:bg-slate-800 rounded-xl shadow-lg border border-slate-100 dark:border-slate-700 overflow-hidden flex flex-col min-h-[600px] print:shadow-none print:border-none print:min-h-0">
           
-          {/* --- SESSION SELECTOR (No Print) --- */}
           <div className="no-print p-6 border-b border-slate-100 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50">
             {availableSessions.length === 0 ? (
                 <div className="bg-orange-50 text-orange-800 p-4 rounded-xl text-sm border border-orange-200 flex items-center justify-center gap-2">
@@ -323,11 +293,12 @@ const TrainerInputPage: React.FC<TrainerInputPageProps> = ({
 
           {selectedSessionId && sessionBookings.length > 0 ? (
             <>
-                {/* --- PRINT HEADER --- */}
                 <div className="hidden print:block p-8 border-b-2 border-black mb-4">
                     <div className="flex justify-between items-start">
                         <div className="flex items-center gap-4">
-                            <img src="assets/vulcan.png" alt="Vulcan" className="h-16 w-auto" />
+                            <div className="h-16 w-16 bg-slate-900 text-white rounded flex items-center justify-center font-black text-xs text-center p-1 leading-tight">
+                                {language === 'pt' ? 'RACS' : 'CARS'} SAFETY
+                            </div>
                             <div>
                                 <h1 className="text-2xl font-black uppercase tracking-tight text-black">Training Result Register</h1>
                                 <p className="text-sm font-medium text-gray-600 uppercase tracking-wider">Critical Activity Requirements (RAC)</p>
@@ -358,9 +329,7 @@ const TrainerInputPage: React.FC<TrainerInputPageProps> = ({
                     </div>
                 </div>
 
-                {/* --- TOOLBAR --- */}
                 <div className="p-4 border-b border-slate-100 dark:border-slate-700 flex flex-col xl:flex-row gap-4 justify-between items-center bg-white dark:bg-slate-800 sticky top-0 z-20 shadow-sm no-print">
-                    {/* Left: Filters */}
                     <div className="flex flex-wrap items-center gap-2 w-full xl:w-auto">
                         <div className="relative flex-1 min-w-[200px]">
                             <Search className="absolute left-3 top-2.5 text-slate-400" size={16} />
@@ -385,7 +354,6 @@ const TrainerInputPage: React.FC<TrainerInputPageProps> = ({
                         </div>
                     </div>
 
-                    {/* Right: Actions */}
                     <div className="flex items-center gap-2 w-full xl:w-auto justify-end">
                         <button 
                             onClick={handlePrint}
@@ -402,7 +370,6 @@ const TrainerInputPage: React.FC<TrainerInputPageProps> = ({
                     </div>
                 </div>
 
-                {/* --- BATCH TOOLS PANEL --- */}
                 {showBulkTools && (
                     <div className="bg-indigo-50/50 dark:bg-indigo-900/10 border-b border-indigo-100 dark:border-indigo-800 p-4 animate-fade-in-down flex flex-wrap items-center gap-4 no-print">
                         <button onClick={handleBulkAttendance} className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-lg text-xs font-bold text-slate-700 dark:text-slate-300 hover:text-blue-600 shadow-sm">
@@ -438,7 +405,6 @@ const TrainerInputPage: React.FC<TrainerInputPageProps> = ({
                     </div>
                 )}
 
-                {/* --- DATA TABLE --- */}
                 <div className="flex-1 overflow-x-auto">
                     <table className="min-w-full divide-y divide-slate-200 dark:divide-slate-700 border-collapse">
                         <thead className="bg-slate-50 dark:bg-slate-800 print:bg-gray-100">
@@ -465,7 +431,6 @@ const TrainerInputPage: React.FC<TrainerInputPageProps> = ({
                             {processedBookings.map((booking) => {
                                 const isDisqualified = reqs.needsDl && !booking.driverLicenseVerified;
                                 const isPassed = booking.status === BookingStatus.PASSED;
-                                
                                 return (
                                 <tr key={booking.id} className={`transition-colors ${isPassed ? 'bg-green-50/30 dark:bg-green-900/5 hover:bg-green-50/50 print:bg-transparent' : 'hover:bg-slate-50 dark:hover:bg-slate-700/50 print:bg-transparent'} print:break-inside-avoid`}>
                                     <td className="px-4 py-3 print:py-2 print:border-b print:border-gray-200">
@@ -474,7 +439,6 @@ const TrainerInputPage: React.FC<TrainerInputPageProps> = ({
                                     </td>
                                     <td className="px-4 py-3 hidden md:table-cell text-sm font-mono text-slate-600 dark:text-slate-300 print:table-cell print:text-black print:py-2 print:border-b print:border-gray-200">{booking.employee.recordId}</td>
                                     <td className="px-4 py-3 hidden lg:table-cell text-xs text-slate-500 print:table-cell print:text-black print:py-2 print:border-b print:border-gray-200">{booking.employee.company}</td>
-                                    
                                     <td className="px-4 py-3 text-center print:py-2 print:border-b print:border-gray-200">
                                         <input 
                                             type="checkbox" 
@@ -483,7 +447,6 @@ const TrainerInputPage: React.FC<TrainerInputPageProps> = ({
                                             onChange={(e) => handleInputChange(booking.id, 'attendance', e.target.checked)}
                                         />
                                     </td>
-
                                     {reqs.needsDl && (
                                         <td className="px-4 py-3 text-center bg-red-50/30 dark:bg-red-900/10 print:bg-transparent print:py-2 print:border-b print:border-gray-200">
                                             <input 
@@ -494,7 +457,6 @@ const TrainerInputPage: React.FC<TrainerInputPageProps> = ({
                                             />
                                         </td>
                                     )}
-
                                     <td className="px-4 py-3 print:py-2 print:border-b print:border-gray-200">
                                         <input 
                                             type="number" min="0" max="100"
@@ -508,7 +470,6 @@ const TrainerInputPage: React.FC<TrainerInputPageProps> = ({
                                             onChange={(e) => handleInputChange(booking.id, 'theoryScore', parseInt(e.target.value) || 0)}
                                         />
                                     </td>
-
                                     {reqs.needsPractical && (
                                         <td className="px-4 py-3 relative print:py-2 print:border-b print:border-gray-200">
                                             {isDisqualified || (booking.theoryScore || 0) < 70 ? (
@@ -528,7 +489,6 @@ const TrainerInputPage: React.FC<TrainerInputPageProps> = ({
                                             )}
                                         </td>
                                     )}
-
                                     <td className="px-4 py-3 print:py-2 print:border-b print:border-gray-200">
                                         <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-black uppercase tracking-wider border shadow-sm print:border-none print:shadow-none print:px-0 print:text-black print:bg-transparent ${
                                             isPassed 
@@ -539,7 +499,6 @@ const TrainerInputPage: React.FC<TrainerInputPageProps> = ({
                                             {booking.status}
                                         </span>
                                     </td>
-
                                     <td className="px-4 py-3 no-print">
                                         <div className="relative">
                                             <input 
@@ -552,9 +511,7 @@ const TrainerInputPage: React.FC<TrainerInputPageProps> = ({
                                             <MessageSquare size={10} className="absolute right-0 top-1.5 text-slate-300 pointer-events-none" />
                                         </div>
                                     </td>
-
-                                    {/* Signature Column - Print Only */}
-                                    <td className="hidden print:table-cell px-4 py-3 border-b border-gray-200"></td>
+                                    <th className="hidden print:table-cell px-4 py-3 border-b border-black"></th>
                                 </tr>
                                 );
                             })}
@@ -562,7 +519,6 @@ const TrainerInputPage: React.FC<TrainerInputPageProps> = ({
                     </table>
                 </div>
 
-                {/* --- PRINT FOOTER --- */}
                 <div className="hidden print:flex mt-12 pt-8 border-t-2 border-black justify-between gap-20 page-break-inside-avoid">
                     <div className="flex-1">
                         <div className="border-t border-black w-full pt-2">
@@ -578,7 +534,6 @@ const TrainerInputPage: React.FC<TrainerInputPageProps> = ({
                     </div>
                 </div>
 
-                {/* --- STICKY FOOTER ACTION BAR (No Print) --- */}
                 <div className="sticky bottom-0 z-30 p-4 bg-white dark:bg-slate-800 border-t border-slate-200 dark:border-slate-700 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)] flex justify-between items-center no-print">
                     <div className="text-xs text-slate-500 font-medium">
                         {hasUnsavedChanges ? <span className="text-amber-600 font-bold flex items-center gap-1"><AlertCircle size={14}/> Unsaved changes pending...</span> : <span className="text-green-600 flex items-center gap-1">{successMsg && <CheckCircle size={14}/>} {successMsg}</span>}

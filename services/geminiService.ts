@@ -2,43 +2,18 @@ import { GoogleGenAI } from "@google/genai";
 import { logger } from '../utils/logger';
 import { translations, Language } from '../utils/translations';
 
-// Safely access API key (Prevents "process is not defined" White Screen of Death)
-const getApiKey = () => {
-    try {
-        if (typeof process !== 'undefined' && process.env) {
-            return process.env.API_KEY || '';
-        }
-    } catch (e) {
-        // Ignore environment access errors
-    }
-    return '';
-};
-
-const apiKey = getApiKey();
-
-// Singleton instance logic
-let ai: GoogleGenAI | null = null;
-
-if (apiKey) {
-    try {
-        ai = new GoogleGenAI({ apiKey });
-    } catch (e) {
-        logger.error("Failed to initialize Google GenAI client", e);
-    }
-} else {
-    logger.warn("Google GenAI API Key is missing. AI features will be disabled.");
-}
+// Initialize Google GenAI client directly with process.env.API_KEY as per guidelines
+const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
 export const getSafetyAdvice = async (rac: string, query: string, language: Language = 'en'): Promise<string> => {
-  if (!ai) return "AI Service Unavailable (Missing API Key).";
-  
   try {
     const t = translations[language] as any;
     if (!t?.ai?.systemPromptAdvice) {
         return "AI Configuration Error: Missing translations.";
     }
 
-    const model = 'gemini-2.5-flash';
+    // Using gemini-3-flash-preview for Basic Text Tasks
+    const model = 'gemini-3-flash-preview';
     const langName = language === 'en' ? 'English' : 'Portuguese';
     
     // Replace placeholders in system prompt
@@ -64,15 +39,14 @@ export const getSafetyAdvice = async (rac: string, query: string, language: Lang
 };
 
 export const generateSafetyReport = async (stats: any, period: string, language: Language = 'en'): Promise<string> => {
-  if (!ai) return "AI Service Unavailable (Missing API Key).";
-
   try {
     const t = translations[language] as any;
     if (!t?.ai?.systemPromptReport) {
         return "AI Configuration Error: Missing translations.";
     }
 
-    const model = 'gemini-2.5-flash';
+    // Using gemini-3-flash-preview for Basic Text Tasks
+    const model = 'gemini-3-flash-preview';
     const langName = language === 'en' ? 'English' : 'Portuguese';
     
     const systemPrompt = t.ai.systemPromptReport.replace('{language}', langName);
@@ -108,7 +82,7 @@ export const generateSafetyReport = async (stats: any, period: string, language:
 /**
  * Silently analyzes runtime errors.
  * USAGE: Automated background system process.
- * MODEL: gemini-2.5-flash (Standard model for reliability)
+ * MODEL: gemini-3-pro-preview (Complex task)
  */
 export const analyzeRuntimeError = async (errorMsg: string, stackTrace: string): Promise<{ rootCause: string, fix: string }> => {
     const safeErrorMsg = (errorMsg || '').toUpperCase();
@@ -123,11 +97,9 @@ export const analyzeRuntimeError = async (errorMsg: string, stackTrace: string):
         };
     }
 
-    if (!ai) return { rootCause: "AI Service Unavailable", fix: "Check API Key configuration." };
-
     try {
-        // Use standard flash model
-        const model = 'gemini-2.5-flash'; 
+        // Using gemini-3-pro-preview for Complex Text Tasks like code analysis
+        const model = 'gemini-3-pro-preview'; 
         const systemPrompt = `You are a Senior React/TypeScript Site Reliability Engineer. 
         Analyze the provided error and stack trace. 
         Return a JSON object with two keys: 'rootCause' (concise explanation) and 'fix' (specific code fix or mitigation strategy). 
@@ -146,7 +118,6 @@ export const analyzeRuntimeError = async (errorMsg: string, stackTrace: string):
         return JSON.parse(text);
     } catch (e) {
         // Log locally but return a safe UI message to allow self-healing animation to complete
-        // We use warn here to prevent cluttering logs if it's just a 404 on preview models
         logger.warn("Gemini Error Analysis API call failed, using fallback.", e);
         return { 
             rootCause: "Automated analysis unavailable (Network/API Error)", 

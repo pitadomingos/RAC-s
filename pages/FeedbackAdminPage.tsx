@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo } from 'react';
 import { Feedback, FeedbackStatus } from '../types';
 import { useLanguage } from '../contexts/LanguageContext';
@@ -329,16 +330,7 @@ const FeedbackAdminPage: React.FC<FeedbackAdminPageProps> = ({ feedbackList, onU
                     </div>
 
                 </div>
-            ) : (
-                /* --- EMPTY STATE FOR INSPECTOR --- */
-                <div className="hidden xl:flex flex-1 bg-slate-50 dark:bg-slate-800/50 rounded-2xl border-2 border-dashed border-slate-200 dark:border-slate-700 items-center justify-center flex-col text-slate-400">
-                    <div className="p-6 bg-white dark:bg-slate-800 rounded-full shadow-sm mb-4">
-                        <MessageSquare size={48} className="text-slate-300" />
-                    </div>
-                    <h3 className="text-lg font-bold text-slate-500">{t.feedback.noSelection}</h3>
-                    <p className="text-sm">{t.feedback.selectPrompt}</p>
-                </div>
-            )}
+            ) : null}
 
         </div>
     );

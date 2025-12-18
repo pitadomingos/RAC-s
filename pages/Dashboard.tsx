@@ -32,7 +32,7 @@ const Dashboard: React.FC<DashboardProps> = ({
   currentSiteId
 }) => {
   const navigate = useNavigate();
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const { addMessage } = useMessages();
   
   // -- GLOBAL FILTERS (LOCAL TO PAGE) --
@@ -84,11 +84,6 @@ const Dashboard: React.FC<DashboardProps> = ({
               empMap.set(b.employee.id, b.employee);
           }
       });
-      // Also check requirements incase employee has no bookings yet
-      requirements.forEach(r => {
-          // If we can't find employee object, we skip (bookings usually populate employee data)
-      });
-
       const uniqueEmployees = Array.from(empMap.values());
 
       return uniqueEmployees.map(emp => {
@@ -102,7 +97,6 @@ const Dashboard: React.FC<DashboardProps> = ({
           let allRacsMet = true;
           let hasRac02Req = false;
 
-          // Use racDefinitions if available, else fallback to constants
           const definitions = racDefinitions.length > 0 ? racDefinitions : RAC_KEYS.map(k => ({ code: k }));
 
           definitions.forEach((def: any) => {
@@ -110,13 +104,11 @@ const Dashboard: React.FC<DashboardProps> = ({
               if (req.requiredRacs[key]) {
                   if (key === 'RAC02') hasRac02Req = true;
                   
-                  // Check for valid booking
                   const validBooking = bookings.find(b => {
                       if (b.employee.id !== emp.id) return false;
                       if (b.status !== BookingStatus.PASSED) return false;
                       if (!b.expiryDate || b.expiryDate <= today) return false;
                       
-                      // Match RAC Key - Consistent with DatabasePage Logic
                       let bRacKey = '';
                       const session = sessions.find(s => s.id === b.sessionId);
                       if (session) {
@@ -125,7 +117,6 @@ const Dashboard: React.FC<DashboardProps> = ({
                           bRacKey = b.sessionId;
                       }
                       
-                      // Normalize
                       if (bRacKey.includes('|')) bRacKey = bRacKey.split('|')[0];
                       bRacKey = bRacKey.replace('(Imp)', '');
                       if (bRacKey.includes('-')) bRacKey = bRacKey.split('-')[0];
@@ -149,19 +140,15 @@ const Dashboard: React.FC<DashboardProps> = ({
           return {
               ...emp,
               accessStatus: status,
-              requirements: req, // Attach requirement for Matrix counting
-              siteId: emp.siteId || 's1' // Default site if missing
+              requirements: req,
+              siteId: emp.siteId || 's1'
           };
       });
   }, [bookings, requirements, sessions, racDefinitions]);
 
-  // --- FILTERING ---
   const filteredEmployees = useMemo(() => {
       return employeesWithStatus.filter(e => {
-          // --- GLOBAL SITE FILTER ---
           if (currentSiteId !== 'all' && e.siteId !== currentSiteId) return false;
-
-          // --- LOCAL DASHBOARD FILTERS ---
           if (selectedCompany !== 'All' && e.company !== selectedCompany) return false;
           if (selectedDepartment !== 'All' && e.department !== selectedDepartment) return false;
           if (selectedAccessStatus !== 'All' && e.accessStatus !== selectedAccessStatus) return false;
@@ -169,7 +156,6 @@ const Dashboard: React.FC<DashboardProps> = ({
       });
   }, [employeesWithStatus, selectedCompany, selectedDepartment, selectedAccessStatus, currentSiteId]);
 
-  // Filtered Bookings & Requirements for Stats
   const filteredBookingsForStats = useMemo(() => {
       const allowedIds = new Set(filteredEmployees.map(e => e.id));
       return bookings.filter(b => allowedIds.has(b.employee.id));
@@ -180,7 +166,6 @@ const Dashboard: React.FC<DashboardProps> = ({
       return requirements.filter(r => allowedIds.has(r.employeeId));
   }, [requirements, filteredEmployees]);
 
-  // --- OPERATIONAL MATRIX COUNTS ---
   const matrixCounts = useMemo(() => {
       const counts: Record<string, number> = {};
       OPS_KEYS.forEach(k => counts[k] = 0);
@@ -198,15 +183,11 @@ const Dashboard: React.FC<DashboardProps> = ({
       return counts;
   }, [filteredEmployees]);
 
-
-  // Sort sessions by date (closest first) for the "Upcoming" view
-  // AND FILTER BY GLOBAL SITE ID
   const upcomingSessions = useMemo(() => {
       let relevantSessions = sessions;
-      // Filter by Site
       if (currentSiteId !== 'all') {
           relevantSessions = sessions.filter(s => {
-              const sSiteId = s.siteId || 's1'; // Default if not present
+              const sSiteId = s.siteId || 's1';
               return sSiteId === currentSiteId;
           });
       }
@@ -236,8 +217,6 @@ const Dashboard: React.FC<DashboardProps> = ({
         const days = Math.floor(diff / (1000 * 60 * 60 * 24));
         const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
         
-        if (isNaN(days)) return null;
-
         return (
         <span className="inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-bold bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 border border-blue-200 dark:border-blue-800 whitespace-nowrap">
             <Timer size={12} /> {String(days)}d : {String(hours)}h {t.common.timeLeft}
@@ -246,15 +225,11 @@ const Dashboard: React.FC<DashboardProps> = ({
     } catch (e) { return null; }
   };
 
-  // Identify expiring bookings for the auto-fill feature (Use filtered set?)
-  // Usually expiring alerts should show ALL, but maybe filter by company context.
-  // For safety, we'll check ALL bookings for expiry, but button will only prefill filtered if we wanted (kept simple for now).
   const expiringBookings = useMemo(() => {
     const today = new Date();
     const thirtyDaysFromNow = new Date();
     thirtyDaysFromNow.setDate(today.getDate() + 30);
     
-    // Filtered by dashboard context
     return filteredBookingsForStats.filter(b => {
       if (!b.expiryDate) return false;
       const expDate = new Date(b.expiryDate);
@@ -262,13 +237,10 @@ const Dashboard: React.FC<DashboardProps> = ({
     });
   }, [filteredBookingsForStats]);
 
-  // Identify auto-bookings waiting for approval (FILTERED BY SITE)
   const autoBookings = useMemo(() => {
       return bookings.filter(b => {
-          // Site Filter Check
           const empSite = b.employee.siteId || 's1';
           if (currentSiteId !== 'all' && empSite !== currentSiteId) return false;
-
           return b.isAutoBooked && b.status === BookingStatus.PENDING;
       });
   }, [bookings, currentSiteId]);
@@ -298,7 +270,7 @@ const Dashboard: React.FC<DashboardProps> = ({
               company: b.employee.company,
               department: b.employee.department,
               role: b.employee.role,
-              phoneNumber: b.employee.phoneNumber, // Include phone
+              phoneNumber: b.employee.phoneNumber,
               driverLicenseNumber: b.employee.driverLicenseNumber || '',
               driverLicenseClass: b.employee.driverLicenseClass || '',
               driverLicenseExpiry: b.employee.driverLicenseExpiry || ''
@@ -315,16 +287,16 @@ const Dashboard: React.FC<DashboardProps> = ({
       if (expiringBookings.length === 0 && autoBookings.length === 0) return;
       setIsSendingSms(true);
 
+      const brand = language === 'pt' ? 'RACS' : 'CARS';
+
       let sentCount = 0;
       const uniqueExpiring = new Set<string>();
       
-      // 1. Send for Expiring (< 30 Days)
       for (const b of expiringBookings) {
           if (b.employee.phoneNumber && !uniqueExpiring.has(b.employee.id)) {
-              const msg = `VULCAN SAFETY: Hi ${b.employee.name}, your training is expiring soon. Please contact HSE.`;
+              const msg = `${brand} SAFETY: Hi ${b.employee.name}, your training is expiring soon. Please contact HSE.`;
               await sendSms(b.employee.phoneNumber, msg);
               
-              // Add to Message Log
               addMessage({
                   type: 'SMS',
                   recipient: b.employee.phoneNumber,
@@ -337,16 +309,13 @@ const Dashboard: React.FC<DashboardProps> = ({
           }
       }
 
-      // 2. Send for Critical Auto-Bookings (< 7 Days)
       const uniqueCritical = new Set<string>();
       for (const b of autoBookings) {
           if (b.employee.phoneNumber && !uniqueCritical.has(b.employee.id)) {
-              // Ensure we don't double message if they are in both lists (unlikely but possible logic overlap)
               if (!uniqueExpiring.has(b.employee.id)) {
-                  const msg = `VULCAN CRITICAL: ${b.employee.name}, you have been auto-booked to prevent lockout. Check schedule immediately.`;
+                  const msg = `${brand} CRITICAL: ${b.employee.name}, you have been auto-booked to prevent lockout. Check schedule immediately.`;
                   await sendSms(b.employee.phoneNumber, msg);
                   
-                  // Add to Message Log
                   addMessage({
                       type: 'SMS',
                       recipient: b.employee.phoneNumber,
@@ -360,11 +329,10 @@ const Dashboard: React.FC<DashboardProps> = ({
           }
       }
 
-      // 3. Send Email to Manager (Simulated)
       if (sentCount > 0) {
           addMessage({
               type: 'EMAIL',
-              recipient: 'manager@vulcan.com',
+              recipient: 'manager@cars-system.com',
               recipientName: 'Site Manager',
               subject: 'Daily Expiry Notification Report',
               content: `System Report:\n\nSent ${sentCount} SMS reminders to employees expiring within 30 days.\n\nPlease check the dashboard for details.`
@@ -372,11 +340,10 @@ const Dashboard: React.FC<DashboardProps> = ({
       }
 
       setIsSendingSms(false);
-      alert(`SMS Blast Complete. Sent notifications to ${sentCount} employees with valid phone numbers.`);
+      alert(`SMS Blast Complete. Sent notifications to ${sentCount} employees.`);
   };
 
   const employeeBookingsList = useMemo(() => {
-    // Only show bookings for filtered employees
     return filteredBookingsForStats.map(b => {
       const session = sessions.find(s => s.id === b.sessionId);
       let racName = session ? session.racType : b.sessionId;
@@ -393,7 +360,6 @@ const Dashboard: React.FC<DashboardProps> = ({
     });
   }, [filteredBookingsForStats, sessions]);
 
-  // Local table filters on top of global filters
   const finalFilteredBookings = employeeBookingsList.filter(item => {
     if (empFilterCompany !== 'All' && item.employee.company !== empFilterCompany) return false;
     if (empFilterRac !== 'All' && item.racCode !== empFilterRac) return false;
@@ -406,7 +372,6 @@ const Dashboard: React.FC<DashboardProps> = ({
   return (
     <div className="space-y-6 pb-20">
       
-      {/* Print-specific Styles */}
       <style>{`
         @media print {
           @page { size: landscape; margin: 10mm; }
@@ -415,7 +380,6 @@ const Dashboard: React.FC<DashboardProps> = ({
           .overflow-hidden { overflow: visible !important; }
           .overflow-auto { overflow: visible !important; height: auto !important; }
           .h-\[500px\] { height: auto !important; }
-          /* Charts often don't print well, maybe hide or adjust */
           .recharts-responsive-container { width: 100% !important; min-height: 300px !important; }
         }
       `}</style>
@@ -427,7 +391,6 @@ const Dashboard: React.FC<DashboardProps> = ({
           <p className="text-sm text-slate-700 dark:text-gray-400">{t.dashboard.subtitle}</p>
         </div>
         
-        {/* GLOBAL FILTER GROUP */}
         <div className="flex flex-wrap gap-3 items-center w-full xl:w-auto">
             <div className="flex items-center gap-2 bg-slate-50 dark:bg-slate-700 p-1.5 rounded-lg border border-slate-200 dark:border-slate-600 flex-1 min-w-[200px]">
                 <Filter size={16} className="text-slate-400 ml-2" />
@@ -484,7 +447,6 @@ const Dashboard: React.FC<DashboardProps> = ({
         />
       </div>
 
-      {/* --- OPERATIONAL MATRIX BREAKDOWN --- */}
       <div className="bg-slate-100 dark:bg-slate-800/50 p-4 rounded-xl border border-slate-200 dark:border-slate-700">
           <h3 className="text-sm font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-3 flex items-center gap-2">
               <Layers size={14} /> {t.common.operationalMatrix}
@@ -506,7 +468,6 @@ const Dashboard: React.FC<DashboardProps> = ({
           </div>
       </div>
 
-       {/* Auto-Booking Approval Table (Paginated) */}
        {canManageAutoBookings && autoBookings.length > 0 && onApproveAutoBooking && onRejectAutoBooking && (
           <div className="bg-white dark:bg-slate-800 rounded-xl shadow-lg border-2 border-orange-300 dark:border-orange-700 overflow-hidden ring-4 ring-orange-100 dark:ring-orange-900/20 animate-pulse-slow no-print">
              <div className="p-4 bg-gradient-to-r from-orange-50 to-amber-50 dark:from-orange-900/40 dark:to-amber-900/40 border-b border-orange-200 dark:border-orange-800 flex justify-between items-center">
@@ -523,7 +484,6 @@ const Dashboard: React.FC<DashboardProps> = ({
                      </p>
                  </div>
                  
-                 {/* Pagination Controls */}
                  {totalAbPages > 1 && (
                      <div className="flex items-center gap-2">
                          <button 
@@ -607,7 +567,6 @@ const Dashboard: React.FC<DashboardProps> = ({
           </div>
        )}
 
-      {/* Expiring Notification - Below Charts */}
       {expiringBookings.length > 0 && (
         <div className="bg-yellow-50 dark:bg-yellow-900/20 border-l-4 border-yellow-500 p-4 rounded-r-lg flex flex-col md:flex-row justify-between items-start md:items-center animate-fade-in-down">
           <div className="mb-4 md:mb-0">
@@ -639,10 +598,8 @@ const Dashboard: React.FC<DashboardProps> = ({
         </div>
       )}
 
-      {/* Main Content Grid: Upcoming Sessions (Left) vs Employee Bookings (Right) */}
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 print:grid-cols-1">
         
-        {/* Left Column: Upcoming Sessions (Session Centric) */}
         <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden flex flex-col transition-colors h-[500px]">
           <div className="px-6 py-4 border-b border-slate-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-800/50 flex justify-between items-center shrink-0">
              <div className="flex items-center gap-2">
@@ -695,7 +652,6 @@ const Dashboard: React.FC<DashboardProps> = ({
           </div>
         </div>
 
-        {/* Right Column: Employees Booked (Person Centric) */}
         <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden flex flex-col h-[500px] transition-colors">
            <div className="px-6 py-4 border-b border-slate-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-800/50 shrink-0">
              <div className="flex items-center justify-between mb-3">
@@ -708,7 +664,6 @@ const Dashboard: React.FC<DashboardProps> = ({
                 </div>
              </div>
              
-             {/* Filters for Employee Table */}
              <div className="flex flex-wrap gap-2 no-print">
                 <select 
                    value={empFilterCompany}

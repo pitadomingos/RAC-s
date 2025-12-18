@@ -37,13 +37,11 @@ import { useLanguage } from './contexts/LanguageContext';
 
 const App: React.FC = () => {
   const [userRole, setUserRole] = useState<UserRole>(UserRole.SYSTEM_ADMIN);
-  // NEW: State for Granular Access Simulation
   const [simulatedJobTitle, setSimulatedJobTitle] = useState('HSE Manager');
   const [simulatedDept, setSimulatedDept] = useState('HSE');
 
   const [notifications, setNotifications] = useState<SystemNotification[]>([]);
 
-  // --- PERSISTENT STATE INITIALIZATION ---
   const [bookings, setBookings] = useState<Booking[]>(() => {
       const saved = localStorage.getItem('cars_bookings');
       return saved ? JSON.parse(saved) : MOCK_BOOKINGS;
@@ -81,11 +79,9 @@ const App: React.FC = () => {
   
   const [companies, setCompanies] = useState<Company[]>(() => {
       const saved = localStorage.getItem('cars_companies');
-      // Default company "Vulcan Mining" includes Alcohol module by default for demo
-      return saved ? JSON.parse(saved) : [{ id: 'c1', name: 'Vulcan Mining', status: 'Active', defaultLanguage: 'pt', features: { alcohol: true } }];
+      return saved ? JSON.parse(saved) : [{ id: 'c1', name: 'CARS Solutions', status: 'Active', defaultLanguage: 'pt', features: { alcohol: true } }];
   });
 
-  // --- PERSISTENCE EFFECTS ---
   useEffect(() => { localStorage.setItem('cars_bookings', JSON.stringify(bookings)); }, [bookings]);
   useEffect(() => { localStorage.setItem('cars_requirements', JSON.stringify(requirements)); }, [requirements]);
   useEffect(() => { localStorage.setItem('cars_sessions', JSON.stringify(sessions)); }, [sessions]);
@@ -95,13 +91,11 @@ const App: React.FC = () => {
   useEffect(() => { localStorage.setItem('cars_sites', JSON.stringify(sites)); }, [sites]);
   useEffect(() => { localStorage.setItem('cars_companies', JSON.stringify(companies)); }, [companies]);
 
-  
   const [users, setUsers] = useState<User[]>([
-      { id: 1, name: 'System Admin', email: 'admin@vulcan.com', role: UserRole.SYSTEM_ADMIN, status: 'Active', company: 'Vulcan Mining', jobTitle: 'IT Manager', siteId: 's1' }
+      { id: 1, name: 'System Admin', email: 'admin@cars-system.com', role: UserRole.SYSTEM_ADMIN, status: 'Active', company: 'CARS Solutions', jobTitle: 'IT Manager', siteId: 's1' }
   ]);
   const [currentSiteId, setCurrentSiteId] = useState<string>('all');
 
-  // --- FEEDBACK SYSTEM STATE ---
   const [feedbackList, setFeedbackList] = useState<Feedback[]>(MOCK_FEEDBACK);
   const [isFeedbackModalOpen, setIsFeedbackModalOpen] = useState(false);
   
@@ -155,9 +149,8 @@ const App: React.FC = () => {
   };
 
   const handleMiddlewareSync = () => {
-      // Simulation Logic ...
       const processedHR = RAW_HR_SOURCE.map(raw => ({
-          id: uuidv4(), name: raw.name, recordId: `VUL-${raw.id}`, company: 'Vulcan Mining', department: raw.dept, role: raw.role, isActive: true, siteId: 's1'
+          id: uuidv4(), name: raw.name, recordId: `CARS-${raw.id}`, company: 'CARS Solutions', department: raw.dept, role: raw.role, isActive: true, siteId: 's1'
       }));
       const processedCont = RAW_CONTRACTOR_SOURCE.map(raw => ({
           id: uuidv4(), name: raw.name, recordId: `CON-${raw.id}`, company: raw.company, department: raw.dept, role: raw.role, isActive: true, siteId: 's1'
@@ -249,23 +242,13 @@ const App: React.FC = () => {
   };
 
   const currentEmployeeId = bookings.length > 0 ? bookings[0].employee.id : 'user-123';
+  const currentCompany = companies.find(c => c.name === 'CARS Solutions') || companies[0];
 
-  // DETERMINE CURRENT COMPANY CONTEXT
-  // For simulation: If System Admin, they see everything.
-  // Otherwise, assume they belong to the first active company or "Vulcan Mining"
-  // In a real app, this would come from the User profile.
-  const currentCompany = companies.find(c => c.name === 'Vulcan Mining') || companies[0];
-
-  // GRANULAR ACCESS CHECK
   const canViewAlcoholDashboard = () => {
-      // 1. Tenant Check: Does the company have the feature?
       if (!currentCompany.features?.alcohol) return false;
-
-      // 2. Role Check
       if (userRole === UserRole.USER) return false;
       if (userRole === UserRole.RAC_TRAINER) return false;
       if (userRole === UserRole.SYSTEM_ADMIN || userRole === UserRole.ENTERPRISE_ADMIN) return true;
-      
       const allowedTitles = ['Manager', 'Supervisor', 'Superintendent', 'Director', 'Head'];
       const jobTitle = simulatedJobTitle || '';
       return allowedTitles.some(t => jobTitle.includes(t));
@@ -294,7 +277,7 @@ const App: React.FC = () => {
                 setSimulatedJobTitle={setSimulatedJobTitle}
                 simulatedDept={simulatedDept}
                 setSimulatedDept={setSimulatedDept}
-                companies={companies} // Pass companies to Layout
+                companies={companies}
               >
                 <Routes>
                   <Route path="/" element={<Dashboard 
@@ -305,7 +288,7 @@ const App: React.FC = () => {
                       onApproveAutoBooking={handleApproveAutoBooking}
                       onRejectAutoBooking={handleRejectAutoBooking}
                       racDefinitions={racDefinitions}
-                      currentSiteId={currentSiteId} // Pass Global Site Filter
+                      currentSiteId={currentSiteId}
                   />} />
                   
                   <Route path="/enterprise-dashboard" element={
@@ -339,7 +322,7 @@ const App: React.FC = () => {
                           racDefinitions={racDefinitions}
                           importBookings={handleImportBookings}
                           addNotification={addNotification}
-                          currentSiteId={currentSiteId} // PASS SITE ID
+                          currentSiteId={currentSiteId}
                         /> 
                       : <Navigate to="/" replace />
                   } />
@@ -385,7 +368,7 @@ const App: React.FC = () => {
                       currentEmployeeId={currentEmployeeId}
                       racDefinitions={racDefinitions}
                       addNotification={addNotification}
-                      currentSiteId={currentSiteId} // PASS SITE ID
+                      currentSiteId={currentSiteId}
                   />} />
                   
                   <Route path="/users" element={userRole === UserRole.SYSTEM_ADMIN ? <UserManagement users={users} setUsers={setUsers} addNotification={addNotification} sites={sites} currentSiteId={currentSiteId} /> : <Navigate to="/" replace />} />
@@ -399,7 +382,7 @@ const App: React.FC = () => {
                           trainers={trainers} 
                           racDefinitions={racDefinitions} 
                           addNotification={addNotification}
-                          currentSiteId={currentSiteId} // PASS SITE ID
+                          currentSiteId={currentSiteId}
                         /> 
                       : <Navigate to="/" replace />
                   } />
@@ -435,7 +418,7 @@ const App: React.FC = () => {
                           sessions={sessions} 
                           userRole={userRole}
                           currentEmployeeId={currentEmployeeId}
-                          currentSiteId={currentSiteId} // PASS SITE ID
+                          currentSiteId={currentSiteId}
                         />
                       : <Navigate to="/" replace />
                   } />

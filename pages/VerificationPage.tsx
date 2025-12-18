@@ -20,17 +20,13 @@ const VerificationPage: React.FC<VerificationPageProps> = ({
     sessions
 }) => {
   const { recordId } = useParams<{ recordId: string }>();
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
 
-  // Helper to normalize IDs (remove spaces, special chars, lowercase) for robust matching
-  // This handles CSV import artifacts like BOM or extra spaces
   const normalizeId = (id: string | undefined) => {
       if (!id) return '';
-      // Remove everything that is NOT a letter or number (alphanumeric only)
       return id.toLowerCase().replace(/[^a-z0-9]/g, '');
   };
 
-  // Robust Lookup using normalized IDs
   const foundBooking = bookings.find(b => 
       normalizeId(b.employee.recordId) === normalizeId(recordId)
   );
@@ -38,16 +34,11 @@ const VerificationPage: React.FC<VerificationPageProps> = ({
   const employee: Employee | undefined = foundBooking?.employee;
   const employeeId = employee?.id;
   
-  // Helper to extract RAC key from booking
   const getRacKeyFromBooking = (booking: Booking): string => {
-      // 1. Try to find via Session Object (Most Reliable)
       const session = sessions.find(s => s.id === booking.sessionId);
       if (session) {
-          // "RAC 01 - Working at Height" -> "RAC01"
           return session.racType.split(' - ')[0].replace(/\s+/g, '');
       }
-      // 2. Fallback to direct string parsing if legacy or direct code
-      // "RAC 01 - ..." -> "RAC01"
       return booking.sessionId.split(' - ')[0].replace(/\s+/g, '');
   };
 
@@ -59,47 +50,31 @@ const VerificationPage: React.FC<VerificationPageProps> = ({
     };
 
     const today = new Date().toISOString().split('T')[0];
-    
-    // ASO VALIDITY: Must be greater than OR EQUAL to today
     const isAsoValid = !!(req.asoExpiryDate && req.asoExpiryDate >= today);
-    
     const dlExpiry = employee.driverLicenseExpiry || '';
-    // DL VALIDITY: Must be greater than OR EQUAL to today
     const isDlExpired = !!(dlExpiry && dlExpiry < today);
     const isActive = employee.isActive ?? true;
 
-    // Check RACs (Dynamic)
     let allRacsMet = true;
     let hasRac02Req = false;
 
     racDefinitions.forEach(def => {
-        const key = def.code; // e.g. "RAC01"
+        const key = def.code;
         if (req.requiredRacs[key]) {
             if (key === 'RAC02') hasRac02Req = true;
-            
-            // --- STRICT LATEST RECORD LOGIC ---
-            // 1. Find all PASSED bookings for this RAC
             const passedBookings = bookings.filter(b => {
                  if (b.employee.id !== employeeId) return false;
                  if (b.status !== BookingStatus.PASSED) return false;
-                 
                  const code = getRacKeyFromBooking(b);
                  return code === key;
             });
-
-            // 2. Sort by Expiry Date Descending (Newest Expiry First)
             passedBookings.sort((a, b) => {
                 const dateA = new Date(a.expiryDate || '1970-01-01').getTime();
                 const dateB = new Date(b.expiryDate || '1970-01-01').getTime();
                 return dateB - dateA; 
             });
-
-            // 3. Pick the latest record
             const latestBooking = passedBookings[0];
-
             const expiry = latestBooking?.expiryDate || '';
-            
-            // EXPIRY CHECK: Valid if expiry date is today or in the future
             if (!expiry || expiry < today) {
                 allRacsMet = false;
             }
@@ -109,14 +84,10 @@ const VerificationPage: React.FC<VerificationPageProps> = ({
     if (!isActive) return 'Inactive';
     if (!isAsoValid || !allRacsMet) return 'NonCompliant';
     if (hasRac02Req && isDlExpired) return 'NonCompliant';
-    
     return 'Compliant';
-
   }, [employee, employeeId, requirements, bookings, racDefinitions, sessions]);
 
   const req = requirements.find(r => r.employeeId === employeeId);
-  
-  // LOGIC UPDATE: Get ALL required certifications, not just active ones
   const complianceDetails = useMemo(() => {
       if (!employeeId) return [];
       const details: { rac: string, expiry: string, status: 'Valid' | 'Expired' | 'Missing' }[] = [];
@@ -124,33 +95,24 @@ const VerificationPage: React.FC<VerificationPageProps> = ({
 
       racDefinitions.forEach(def => {
          const key = def.code;
-         
-         // Only care if it is REQUIRED for this employee
          if (req?.requiredRacs[key]) {
-             // Find bookings
              const passedBookings = bookings.filter(b => {
                  if (b.employee.id !== employeeId) return false;
                  if (b.status !== BookingStatus.PASSED) return false;
                  const code = getRacKeyFromBooking(b);
                  return code === key;
              });
-
              passedBookings.sort((a, b) => {
                 const dateA = new Date(a.expiryDate || '1970-01-01').getTime();
                 const dateB = new Date(b.expiryDate || '1970-01-01').getTime();
                 return dateB - dateA; 
              });
-
              const latest = passedBookings[0];
-
              if (!latest) {
-                 // Requirement exists, but no booking
                  details.push({ rac: key, expiry: 'Missing', status: 'Missing' });
              } else if (latest.expiryDate && latest.expiryDate < today) {
-                 // Requirement exists, booking exists, but expired (strictly less than today)
                  details.push({ rac: key, expiry: latest.expiryDate, status: 'Expired' });
              } else {
-                 // Valid (expiry date >= today)
                  details.push({ rac: key, expiry: latest.expiryDate || 'N/A', status: 'Valid' });
              }
          }
@@ -166,7 +128,6 @@ const VerificationPage: React.FC<VerificationPageProps> = ({
                   <XCircle size={64} className="text-gray-400 mb-4" />
                   <h1 className="text-2xl font-black text-slate-800 mb-2">{t.verification.notFound}</h1>
                   <p className="text-gray-500 mb-6 font-mono">ID: {recordId}</p>
-                  {/* Clean State - No Return Link */}
               </div>
           </div>
       );
@@ -176,22 +137,17 @@ const VerificationPage: React.FC<VerificationPageProps> = ({
 
   return (
     <div className={`min-h-screen flex flex-col items-center p-4 md:p-8 font-sans ${isCompliant ? 'bg-green-50' : 'bg-red-50'}`}>
-        
-        {/* Header */}
         <div className="w-full max-w-md flex justify-between items-center mb-6">
              <Link to="/" className="p-2 bg-white/50 rounded-full hover:bg-white transition">
                  <ArrowLeft size={20} className="text-slate-700" />
              </Link>
              <div className="flex flex-col items-end">
-                 <span className="text-[10px] font-bold uppercase tracking-widest text-slate-500">{t.common.vulcan}</span>
+                 <span className="text-[10px] font-bold uppercase tracking-widest text-slate-500">{language === 'pt' ? 'RACS' : 'CARS'}</span>
                  <span className="text-sm font-black text-slate-800">{t.verification.title}</span>
              </div>
         </div>
 
-        {/* Main Card */}
         <div className="bg-white w-full max-w-md rounded-3xl shadow-2xl overflow-hidden border border-gray-100">
-            
-            {/* Status Banner */}
             <div className={`py-8 flex flex-col items-center justify-center ${isCompliant ? 'bg-green-500' : 'bg-red-500'}`}>
                 {isCompliant ? (
                     <div className="bg-white p-4 rounded-full shadow-lg mb-3 animate-bounce">
@@ -210,7 +166,6 @@ const VerificationPage: React.FC<VerificationPageProps> = ({
                 </p>
             </div>
 
-            {/* Employee Info */}
             <div className="p-6">
                 <div className="flex items-start gap-4 mb-6">
                     <div className="w-20 h-20 bg-gray-200 rounded-xl flex items-center justify-center text-gray-400 shadow-inner">
@@ -227,7 +182,6 @@ const VerificationPage: React.FC<VerificationPageProps> = ({
                 </div>
 
                 <div className="border-t border-gray-100 pt-6 space-y-4">
-                    {/* ASO Status */}
                     <div className="flex justify-between items-center">
                         <div className="flex items-center gap-2 text-slate-700">
                              <Activity size={18} className="text-blue-500" />
@@ -238,7 +192,6 @@ const VerificationPage: React.FC<VerificationPageProps> = ({
                         </span>
                     </div>
 
-                    {/* DL Status (If applicable) */}
                     {employee.driverLicenseNumber && (
                         <div className="flex justify-between items-center">
                              <div className="flex items-center gap-2 text-slate-700">
@@ -255,7 +208,6 @@ const VerificationPage: React.FC<VerificationPageProps> = ({
                     )}
                 </div>
 
-                {/* Compliance Details List */}
                 <div className="mt-6">
                      <h3 className="text-xs font-black text-gray-400 uppercase tracking-widest mb-3 flex items-center gap-2">
                         <ShieldCheck size={14} /> Training Status
@@ -270,12 +222,10 @@ const VerificationPage: React.FC<VerificationPageProps> = ({
                              {complianceDetails.map((detail, idx) => {
                                  const isValid = detail.status === 'Valid';
                                  const isExpired = detail.status === 'Expired';
-                                 
                                  let bgClass = '';
                                  let borderClass = '';
                                  let textClass = '';
                                  let icon = null;
-
                                  if (isValid) {
                                      bgClass = 'bg-green-50';
                                      borderClass = 'border-green-100';
@@ -287,13 +237,11 @@ const VerificationPage: React.FC<VerificationPageProps> = ({
                                      textClass = 'text-red-700';
                                      icon = <AlertTriangle size={10} className="text-red-500" />;
                                  } else {
-                                     // Missing
                                      bgClass = 'bg-red-50';
                                      borderClass = 'border-red-200 border-dashed';
                                      textClass = 'text-red-700';
                                      icon = <XCircle size={10} className="text-red-500" />;
                                  }
-
                                  return (
                                      <div key={`${detail.rac}-${idx}`} className={`${bgClass} border ${borderClass} p-2 rounded-lg flex flex-col items-center text-center relative overflow-hidden`}>
                                          <div className="flex items-center gap-1 mb-1">
@@ -313,7 +261,6 @@ const VerificationPage: React.FC<VerificationPageProps> = ({
                 </div>
             </div>
 
-            {/* Footer */}
             <div className="bg-slate-50 p-4 text-center border-t border-gray-100">
                  <p className="text-[10px] text-gray-400">
                      System Verification ID: {Math.random().toString(36).substring(7).toUpperCase()}

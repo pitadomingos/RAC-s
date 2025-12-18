@@ -3,7 +3,7 @@ import { RAC, RacDef, TrainingSession, Employee, EmployeeRequirement, Booking, B
 import { v4 as uuidv4 } from 'uuid';
 
 export const COMPANIES = [
-    'Vulcan Mining', 
+    'CARS Solutions', 
     'Global Logistics', 
     'Safety First Contractors', 
     'Jachris', 
@@ -16,45 +16,35 @@ export const DEPARTMENTS = ['Mine Operations', 'Plant Maintenance', 'HSE', 'Logi
 export const ROLES = ['Operator', 'Technician', 'Engineer', 'Supervisor', 'General Helper', 'Driver', 'Mechanic', 'Electrician'];
 
 // --- INTEGRATION SIMULATION DATA ---
-// Total: 12 Employees (3 Vulcan + 9 Contractors)
 
-// Source A: Internal HR System (SAP) - 3 Employees
+// Source A: Internal HR System (SAP)
 export const RAW_HR_SOURCE = [
-    { id: '8901', name: 'Jessica Bata', dept: 'HSE', role: 'Safety Officer', email: 'jessica@vulcan.com' },
-    { id: '8902', name: 'Kelven Ubisse', dept: 'Mine Operations', role: 'Mining Engineer', email: 'kelven@vulcan.com' },
-    { id: '8903', name: 'Latifa Uetela', dept: 'Administration', role: 'HR Specialist', email: 'latifa@vulcan.com' }
+    { id: '8901', name: 'Jessica Bata', dept: 'HSE', role: 'Safety Officer', email: 'jessica@cars-solutions.com' },
+    { id: '8902', name: 'Kelven Ubisse', dept: 'Mine Operations', role: 'Mining Engineer', email: 'kelven@cars-solutions.com' },
+    { id: '8903', name: 'Latifa Uetela', dept: 'Administration', role: 'HR Specialist', email: 'latifa@cars-solutions.com' }
 ];
 
-// Source B: Contractor System (Célula) - 9 Employees
+// Source B: Contractor System (Célula)
 export const RAW_CONTRACTOR_SOURCE = [
-    // Jachris (2)
     { id: '9001', name: 'Manuel Xadreque', company: 'Jachris', dept: 'Administration', role: 'Catering Supervisor' },
     { id: '9002', name: 'Nuno Zaqueu', company: 'Jachris', dept: 'Logistics', role: 'General Helper' },
-    
-    // Mota-Engil (2)
     { id: '9003', name: 'Orlando Yacub', company: 'Mota-Engil', dept: 'Mine Operations', role: 'Excavator Operator' },
     { id: '9004', name: 'Paulo Vombe', company: 'Mota-Engil', dept: 'Mine Operations', role: 'Civil Technician' },
-
-    // Belabel (3) - All Drivers
     { id: '9005', name: 'Quim Wate', company: 'Belabel', dept: 'Logistics', role: 'Driver' },
     { id: '9006', name: 'Rui Vilanculos', company: 'Belabel', dept: 'Logistics', role: 'Driver' },
     { id: '9007', name: 'Sara Tamele', company: 'Belabel', dept: 'Logistics', role: 'Driver' },
-
-    // Escopil (2) - Plant Maintenance
     { id: '9008', name: 'Telma Sambo', company: 'Escopil', dept: 'Plant Maintenance', role: 'Mechanic' },
     { id: '9009', name: 'Ursio Raposo', company: 'Escopil', dept: 'Plant Maintenance', role: 'Electrician' }
 ];
 
 export const RAC_LIST = Object.values(RAC);
 
-// Helper to iterate RAC keys programmatically
 export const RAC_KEYS = [
   'RAC01', 'RAC02', 'RAC03', 'RAC04', 'RAC05', 
   'RAC06', 'RAC07', 'RAC08', 'RAC09', 'RAC10', 'RAC11',
   'PTS', 'ART', 'LIB_OPS', 'LIB_MOV'
 ];
 
-// Operational Keys for Appointed Roles (Boolean/Permission based)
 export const OPS_KEYS = [
     'EMI_PTS',          
     'APR_ART',          
@@ -62,10 +52,8 @@ export const OPS_KEYS = [
     'EXEC'             
 ];
 
-// Keys that are boolean permissions (Manager Designated) -> Display "-SIM-"
 export const PERMISSION_KEYS = ['EMI_PTS', 'APR_ART', 'DONO_AREA_PTS', 'EXEC'];
 
-// Explicitly define RACs with specific requirements
 export const INITIAL_RAC_DEFINITIONS: RacDef[] = [
     { id: '0', code: 'RAC01', name: 'RAC 01 - Working at Height', validityMonths: 24, requiresPractical: true, requiresDriverLicense: false },
     { id: '1', code: 'RAC02', name: 'RAC 02 - Vehicles and Mobile Equipment', validityMonths: 24, requiresDriverLicense: true, requiresPractical: true },
@@ -84,7 +72,6 @@ export const INITIAL_RAC_DEFINITIONS: RacDef[] = [
     { id: '14', code: 'LIB_MOV', name: 'LIB-MOV - Liberação de Movimentação', validityMonths: 12, requiresPractical: false, requiresDriverLicense: false }
 ];
 
-// Calculate generic future dates for demo purposes
 const getFutureDate = (daysToAdd: number) => {
   const date = new Date();
   date.setDate(date.getDate() + daysToAdd);
@@ -97,21 +84,15 @@ const getPastDate = (daysToSubtract: number) => {
   return date.toISOString().split('T')[0];
 };
 
-// Mock Initial Data
 export const MOCK_SESSIONS: TrainingSession[] = [
-  // Past sessions
   { id: 'S001', racType: 'RAC01 - Working at Height', date: '2023-11-15', startTime: '08:00', location: 'Room A', instructor: 'John Doe', capacity: 20, sessionLanguage: 'English' },
   { id: 'S002', racType: 'RAC02 - Vehicles and Mobile Equipment', date: '2023-11-20', startTime: '09:00', location: 'Field B', instructor: 'Jane Smith', capacity: 15, sessionLanguage: 'Portuguese' },
   { id: 'S003', racType: 'RAC05 - Confined Space', date: '2023-12-01', startTime: '13:00', location: 'Room C', instructor: 'Mike Brown', capacity: 10, sessionLanguage: 'Portuguese' },
-  
-  // Future sessions
   { id: 'S004', racType: 'RAC08 - Electricity', date: getFutureDate(2), startTime: '08:30', location: 'Lab 2', instructor: 'Sarah Connor', capacity: 12, sessionLanguage: 'English' },
   { id: 'S005', racType: 'RAC02 - Vehicles and Mobile Equipment', date: getFutureDate(5), startTime: '08:00', location: 'Field A', instructor: 'Jane Smith', capacity: 15, sessionLanguage: 'Portuguese' },
   { id: 'S006', racType: 'RAC01 - Working at Height', date: getFutureDate(10), startTime: '10:00', location: 'Room B', instructor: 'John Doe', capacity: 20, sessionLanguage: 'Portuguese' },
   { id: 'S007', racType: 'RAC10 - Liquid Metal', date: getFutureDate(12), startTime: '14:00', location: 'Room A', instructor: 'Mike Brown', capacity: 25, sessionLanguage: 'English' },
   { id: 'S013', racType: 'RAC11 - Mine Traffic', date: getFutureDate(14), startTime: '09:00', location: 'Simulator Room', instructor: 'Jane Smith', capacity: 10, sessionLanguage: 'Portuguese' },
-
-  // Extra sessions for logic tests
   { id: 'S008', racType: 'RAC01 - Working at Height', date: getFutureDate(3), startTime: '08:00', location: 'Room A', instructor: 'John Doe', capacity: 20, sessionLanguage: 'Portuguese' },
   { id: 'S009', racType: 'RAC05 - Confined Space', date: getFutureDate(4), startTime: '09:00', location: 'Room C', instructor: 'Mike Brown', capacity: 15, sessionLanguage: 'English' },
   { id: 'S010', racType: 'RAC02 - Vehicles and Mobile Equipment', date: getFutureDate(6), startTime: '08:00', location: 'Field B', instructor: 'Jane Smith', capacity: 15, sessionLanguage: 'Portuguese' },
@@ -120,20 +101,19 @@ export const MOCK_SESSIONS: TrainingSession[] = [
 ];
 
 export const MOCK_EMPLOYEES: Employee[] = [
-  { id: 'emp1', name: 'Paulo Manjate', recordId: 'VUL-1001', company: 'Vulcan Mining', department: 'Mine Operations', role: 'Operator', isActive: true, driverLicenseNumber: 'DL-12345', driverLicenseClass: 'Heavy', driverLicenseExpiry: '2025-12-31', siteId: 's1' },
-  { id: 'emp2', name: 'Maria Silva', recordId: 'VUL-1002', company: 'Vulcan Mining', department: 'HSE', role: 'Safety Officer', isActive: true, siteId: 's1' },
+  { id: 'emp1', name: 'Paulo Manjate', recordId: 'CARS-1001', company: 'CARS Solutions', department: 'Mine Operations', role: 'Operator', isActive: true, driverLicenseNumber: 'DL-12345', driverLicenseClass: 'Heavy', driverLicenseExpiry: '2025-12-31', siteId: 's1' },
+  { id: 'emp2', name: 'Maria Silva', recordId: 'CARS-1002', company: 'CARS Solutions', department: 'HSE', role: 'Safety Officer', isActive: true, siteId: 's1' },
   { id: 'emp3', name: 'John Doe', recordId: 'CON-5001', company: 'Safety First Contractors', department: 'Plant Maintenance', role: 'Technician', isActive: true, siteId: 's1' },
-  { id: 'emp4', name: 'Jose Cossa', recordId: 'VUL-1003', company: 'Vulcan Mining', department: 'Logistics', role: 'Driver', isActive: true, driverLicenseNumber: 'DL-98765', driverLicenseClass: 'Light', driverLicenseExpiry: '2023-01-01', siteId: 's1' },
-  { id: 'emp5', name: 'Sarah Connor', recordId: 'VUL-1004', company: 'Vulcan Mining', department: 'Administration', role: 'Manager', isActive: true, siteId: 's1' },
-  { id: 'emp6', name: 'Antonio Sitoe', recordId: 'VUL-1005', company: 'Vulcan Mining', department: 'Mine Operations', role: 'General Helper', isActive: true, siteId: 's1' },
+  { id: 'emp4', name: 'Jose Cossa', recordId: 'CARS-1003', company: 'CARS Solutions', department: 'Logistics', role: 'Driver', isActive: true, driverLicenseNumber: 'DL-98765', driverLicenseClass: 'Light', driverLicenseExpiry: '2023-01-01', siteId: 's1' },
+  { id: 'emp5', name: 'Sarah Connor', recordId: 'CARS-1004', company: 'CARS Solutions', department: 'Administration', role: 'Manager', isActive: true, siteId: 's1' },
+  { id: 'emp6', name: 'Antonio Sitoe', recordId: 'CARS-1005', company: 'CARS Solutions', department: 'Mine Operations', role: 'General Helper', isActive: true, siteId: 's1' },
   { id: 'emp7', name: 'Luis Tete', recordId: 'CON-5002', company: 'Global Logistics', department: 'Logistics', role: 'Driver', isActive: true, driverLicenseNumber: 'DL-55555', driverLicenseClass: 'Heavy', driverLicenseExpiry: '2026-06-30', siteId: 's1' },
-  { id: 'emp8', name: 'Ana Monjane', recordId: 'VUL-1006', company: 'Vulcan Mining', department: 'HSE', role: 'HSE Manager', isActive: true, siteId: 's1' },
-  { id: 'emp9', name: 'Carlos Macuacua', recordId: 'VUL-1007', company: 'Vulcan Mining', department: 'Plant Maintenance', role: 'Engineer', isActive: false, siteId: 's1' },
+  { id: 'emp8', name: 'Ana Monjane', recordId: 'CARS-1006', company: 'CARS Solutions', department: 'HSE', role: 'HSE Manager', isActive: true, siteId: 's1' },
+  { id: 'emp9', name: 'Carlos Macuacua', recordId: 'CARS-1007', company: 'CARS Solutions', department: 'Plant Maintenance', role: 'Engineer', isActive: false, siteId: 's1' },
   { id: 'emp10', name: 'Berta Langa', recordId: 'CON-5003', company: 'Safety First Contractors', department: 'Mine Operations', role: 'Technician', isActive: true, siteId: 's1' },
-  // Added to match bookings count
-  { id: 'emp11', name: 'Joao Mutemba', recordId: 'VUL-1008', company: 'Vulcan Mining', department: 'Mine Operations', role: 'Operator', isActive: true, siteId: 's1' },
+  { id: 'emp11', name: 'Joao Mutemba', recordId: 'CARS-1008', company: 'CARS Solutions', department: 'Mine Operations', role: 'Operator', isActive: true, siteId: 's1' },
   { id: 'emp12', name: 'Fernando Junior', recordId: 'CON-5004', company: 'Global Logistics', department: 'Logistics', role: 'Driver', isActive: true, driverLicenseNumber: 'DL-44332', driverLicenseClass: 'Light', driverLicenseExpiry: '2026-01-01', siteId: 's1' },
-  { id: 'emp13', name: 'Sofia Muianga', recordId: 'VUL-1009', company: 'Vulcan Mining', department: 'Administration', role: 'Clerk', isActive: true, siteId: 's1' }
+  { id: 'emp13', name: 'Sofia Muianga', recordId: 'CARS-1009', company: 'CARS Solutions', department: 'Administration', role: 'Clerk', isActive: true, siteId: 's1' }
 ];
 
 export const MOCK_REQUIREMENTS: EmployeeRequirement[] = [
@@ -147,44 +127,25 @@ export const MOCK_REQUIREMENTS: EmployeeRequirement[] = [
   { employeeId: 'emp8', asoExpiryDate: getFutureDate(400), requiredRacs: { 'RAC01': true, 'RAC05': true, 'EMI_PTS': true } },
   { employeeId: 'emp9', asoExpiryDate: getFutureDate(100), requiredRacs: { 'RAC01': true } },
   { employeeId: 'emp10', asoExpiryDate: getFutureDate(5), requiredRacs: { 'RAC01': true, 'RAC03': true } },
-  // Added requirements for new employees
   { employeeId: 'emp11', asoExpiryDate: getFutureDate(200), requiredRacs: { 'RAC01': true, 'RAC02': true } },
   { employeeId: 'emp12', asoExpiryDate: getFutureDate(180), requiredRacs: { 'RAC02': true, 'RAC11': true } },
-  { employeeId: 'emp13', asoExpiryDate: getFutureDate(300), requiredRacs: { 'RAC01': false } } // No critical RACs required
+  { employeeId: 'emp13', asoExpiryDate: getFutureDate(300), requiredRacs: { 'RAC01': false } } 
 ];
 
 export const MOCK_BOOKINGS: Booking[] = [
-  // Emp 1 - Compliant
   { id: 'b1', sessionId: 'S001', employee: MOCK_EMPLOYEES[0], status: BookingStatus.PASSED, resultDate: '2023-11-15', expiryDate: getFutureDate(600), attendance: true, theoryScore: 85, practicalScore: 90 },
   { id: 'b2', sessionId: 'S002', employee: MOCK_EMPLOYEES[0], status: BookingStatus.PASSED, resultDate: '2023-11-20', expiryDate: getFutureDate(605), attendance: true, theoryScore: 88, practicalScore: 92, driverLicenseVerified: true },
   { id: 'b10', sessionId: 'S013', employee: MOCK_EMPLOYEES[0], status: BookingStatus.PASSED, resultDate: '2023-11-21', expiryDate: getFutureDate(606), attendance: true, theoryScore: 90 },
-
-  // Emp 2 - Compliant
   { id: 'b3', sessionId: 'S001', employee: MOCK_EMPLOYEES[1], status: BookingStatus.PASSED, resultDate: '2023-11-15', expiryDate: getFutureDate(600), attendance: true, theoryScore: 95 },
   { id: 'b11', sessionId: 'S003', employee: MOCK_EMPLOYEES[1], status: BookingStatus.PASSED, resultDate: '2023-12-01', expiryDate: getFutureDate(630), attendance: true, theoryScore: 92 },
-
-  // Emp 3 - Pending Session
   { id: 'b4', sessionId: 'S004', employee: MOCK_EMPLOYEES[2], status: BookingStatus.PENDING, attendance: false }, 
   { id: 'b12', sessionId: 'S001', employee: MOCK_EMPLOYEES[2], status: BookingStatus.PASSED, resultDate: '2023-11-15', expiryDate: getFutureDate(600), attendance: true, theoryScore: 80 },
-
-  // Emp 4 - Blocked (Expired DL but Valid Training)
   { id: 'b5', sessionId: 'S002', employee: MOCK_EMPLOYEES[3], status: BookingStatus.PASSED, resultDate: '2023-05-01', expiryDate: getFutureDate(200), attendance: true, theoryScore: 75, driverLicenseVerified: true },
-  
-  // Emp 5 - Blocked (Expired ASO) but has Training
   { id: 'b6', sessionId: 'S001', employee: MOCK_EMPLOYEES[4], status: BookingStatus.PASSED, resultDate: '2023-11-15', expiryDate: getFutureDate(600), attendance: true, theoryScore: 88 },
-
-  // Emp 6 - Expiring Training (<30 days)
   { id: 'b7', sessionId: 'S001', employee: MOCK_EMPLOYEES[5], status: BookingStatus.PASSED, resultDate: '2022-01-01', expiryDate: getFutureDate(25), attendance: true, theoryScore: 78 },
-
-  // Emp 7 - Auto-Booked (Simulated)
   { id: 'b8', sessionId: 'S005', employee: MOCK_EMPLOYEES[6], status: BookingStatus.PENDING, attendance: false, isAutoBooked: true },
-  // Previous expired booking for Emp 7
   { id: 'b9', sessionId: 'S002', employee: MOCK_EMPLOYEES[6], status: BookingStatus.PASSED, resultDate: '2021-01-01', expiryDate: getPastDate(5), attendance: true, theoryScore: 82, driverLicenseVerified: true },
-  
-  // Emp 10 - Expiring ASO but Valid Training
   { id: 'b13', sessionId: 'S001', employee: MOCK_EMPLOYEES[9], status: BookingStatus.PASSED, resultDate: '2023-11-15', expiryDate: getFutureDate(600), attendance: true, theoryScore: 85 },
-
-  // Extra Bookings for Emp 11 & 12 to match the count of 13+ bookings
   { id: 'b14', sessionId: 'S002', employee: MOCK_EMPLOYEES[10], status: BookingStatus.PASSED, resultDate: '2023-11-20', expiryDate: getFutureDate(500), attendance: true, theoryScore: 90, practicalScore: 85, driverLicenseVerified: true },
   { id: 'b15', sessionId: 'S013', employee: MOCK_EMPLOYEES[11], status: BookingStatus.PASSED, resultDate: '2023-11-21', expiryDate: getFutureDate(600), attendance: true, theoryScore: 88 }
 ];

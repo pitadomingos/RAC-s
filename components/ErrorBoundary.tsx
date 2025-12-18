@@ -1,4 +1,5 @@
-import React, { ErrorInfo, ReactNode } from 'react';
+
+import React, { Component, ErrorInfo, ReactNode } from 'react';
 import { Cpu, Zap, Activity, Terminal, CheckCircle2, RefreshCw, Power } from 'lucide-react';
 import { analyzeRuntimeError } from '../services/geminiService';
 
@@ -15,7 +16,8 @@ interface State {
   isRepaired: boolean;
 }
 
-export class ErrorBoundary extends React.Component<Props, State> {
+// Fixed: Inherit from the named Component import directly to ensure setState, props, and other React.Component members are correctly recognized by TypeScript.
+export class ErrorBoundary extends Component<Props, State> {
   state: State = {
     hasError: false,
     error: null,
@@ -74,12 +76,13 @@ export class ErrorBoundary extends React.Component<Props, State> {
       let stepIndex = 0;
 
       this.simulationInterval = setInterval(() => {
+          // Fixed: Access setState on the component instance correctly via arrow function binding.
           this.setState((prevState) => {
               // Stop progressing if we are waiting for AI but hit 90%
               const canFinish = !!this.state.aiDiagnosis;
               
               if (prevState.repairProgress >= 90 && !canFinish) {
-                  return { repairStep: "Finalizing Analysis..." };
+                  return { repairStep: "Finalizing Analysis..." } as any;
               }
 
               const nextProgress = prevState.repairProgress + (Math.random() * 8); 
@@ -93,7 +96,7 @@ export class ErrorBoundary extends React.Component<Props, State> {
               return {
                   repairProgress: Math.min(nextProgress, 100),
                   repairStep: nextStep
-              };
+              } as any;
           });
       }, 200);
   };
@@ -124,6 +127,7 @@ export class ErrorBoundary extends React.Component<Props, State> {
           sessionStorage.clear();
       } catch(e) { /* ignore */ }
 
+      // Fixed: Ensure setState is recognized as a member of the class component instance.
       this.setState({ 
           aiDiagnosis: diagnosis,
           repairProgress: 100,
@@ -136,7 +140,7 @@ export class ErrorBoundary extends React.Component<Props, State> {
           const newLogEntry = {
               id: Date.now().toString(),
               level: 'ERROR', 
-              messageKey: `AUTO-RESOLVED: ${diagnosis.rootCause}`, // Matches user request to state actual problem
+              messageKey: `AUTO-RESOLVED: ${diagnosis.rootCause}`, 
               user: 'RoboTech AI',
               timestamp: new Date().toLocaleString(),
               aiFix: diagnosis.fix 
@@ -146,9 +150,6 @@ export class ErrorBoundary extends React.Component<Props, State> {
       } catch (e) {
           console.error("Failed to persist log", e);
       }
-      
-      // NOTE: We do NOT auto-reload here anymore to prevent loops.
-      // The user must click the button.
   }
 
   private forceReload = () => {
@@ -237,7 +238,7 @@ export class ErrorBoundary extends React.Component<Props, State> {
                 </div>
             </div>
 
-            {/* MANUAL REBOOT BUTTON (Crucial for stopping the "Crushing/Hanging" feel) */}
+            {/* MANUAL REBOOT BUTTON */}
             {this.state.isRepaired && (
                 <div className="mt-10 text-center animate-fade-in-up">
                     <button 
@@ -255,6 +256,7 @@ export class ErrorBoundary extends React.Component<Props, State> {
       );
     }
 
+    // Fixed: Standard props access from class component through this.props.
     return this.props.children;
   }
 }
