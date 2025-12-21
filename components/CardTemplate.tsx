@@ -13,7 +13,7 @@ interface CardTemplateProps {
   racDefinitions?: RacDef[]; 
   sessions?: TrainingSession[];
   printedBy?: string;
-  companies?: Company[]; // Added to allow dynamic branding lookup
+  companies?: Company[]; // Passed to allow dynamic branding lookup
 }
 
 const CardTemplate: React.FC<CardTemplateProps> = memo(({ 
@@ -30,13 +30,14 @@ const CardTemplate: React.FC<CardTemplateProps> = memo(({
 
   const { employee } = booking;
   
-  // Find tenant details from the live companies list
-  const tenantDetails = companies.find(c => c.name === employee.company || c.id === employee.company);
+  // CRITICAL: Find tenant details from the live companies list for "Vulcan" branding persistence
+  const tenantDetails = companies.find(c => c.name === employee.company || c.id === employee.company || c.id === 'c1');
   
   const safeName = String(employee.name || '').toUpperCase();
   const safeRecordId = String(employee.recordId || '');
   const safeRole = String(employee.role || '').toUpperCase();
   const safeDept = String(employee.department || '').toUpperCase();
+  // Fallback to employee.company if lookup fails, but Vulcan is priority
   const safeCompany = tenantDetails ? tenantDetails.name.toUpperCase() : String(employee.company || '').toUpperCase();
   
   const dlNum = String(employee.driverLicenseNumber || '');
@@ -50,8 +51,7 @@ const CardTemplate: React.FC<CardTemplateProps> = memo(({
   const qrUrl = `${appOrigin}${window.location.pathname}#/verify/${safeRecordId}`;
 
   // BRANDING LOGIC
-  const isTenant = !!tenantDetails;
-  const headerBg = isTenant ? '#001a35' : '#f97316'; // Tenant vs Subcontractor
+  const headerBg = tenantDetails ? '#001a35' : '#f97316'; // Vulcan Navy vs Subcontractor Orange
   const headerTextColor = 'white';
   
   const today = new Date().toISOString().split('T')[0];

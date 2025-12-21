@@ -1,9 +1,9 @@
-import React from 'react';
+import React, { Component, ErrorInfo, ReactNode } from 'react';
 import { Cpu, Zap, Activity, Terminal, CheckCircle2, RefreshCw, Power } from 'lucide-react';
 import { analyzeRuntimeError } from '../services/geminiService';
 
 interface Props {
-  children?: React.ReactNode;
+  children?: ReactNode;
 }
 
 interface State {
@@ -19,10 +19,10 @@ interface State {
  * Catches runtime errors and triggers autonomous repair visuals.
  * Inherits from React.Component to provide error boundary lifecycle methods.
  */
-// Fix: Use React.Component explicitly to resolve issues with setState and props recognition in some TypeScript environments.
-export class ErrorBoundary extends React.Component<Props, State> {
+// Fix: Use Component directly from react import to ensure setState and props are recognized by the TypeScript compiler.
+export class ErrorBoundary extends Component<Props, State> {
   // Initialize state to satisfy the React Component lifecycle.
-  state: State = {
+  public state: State = {
     hasError: false,
     error: null,
     aiDiagnosis: null,
@@ -33,8 +33,8 @@ export class ErrorBoundary extends React.Component<Props, State> {
 
   private simulationInterval: any = null;
 
-  // Fix: Correct return type to align with static getDerivedStateFromError signature.
-  public static getDerivedStateFromError(error: Error): Partial<State> {
+  // Fix: Correct return type and signature for static getDerivedStateFromError.
+  public static getDerivedStateFromError(error: Error): State {
     return { 
         hasError: true, 
         error, 
@@ -45,8 +45,8 @@ export class ErrorBoundary extends React.Component<Props, State> {
     };
   }
 
-  // Fix: Use React.ErrorInfo instead of named import for type consistency.
-  public componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
+  // Fix: Use ErrorInfo type directly from imports.
+  public componentDidCatch(error: Error, errorInfo: ErrorInfo) {
     const errorString = error.toString();
     const errorMessage = error.message || errorString;
     const isManualCrash = errorMessage.includes("MANUAL SYSTEM CRASH");
@@ -68,7 +68,7 @@ export class ErrorBoundary extends React.Component<Props, State> {
       if (this.simulationInterval) clearInterval(this.simulationInterval);
   }
 
-  // Fix: Arrow function property ensures 'this' correctly refers to the class instance inheriting from React.Component.
+  // Fix: Arrow function property ensures 'this' correctly refers to the class instance.
   private startRepairSimulation = () => {
       const steps = [
           "Scanning Neural Pathways...",
@@ -83,13 +83,13 @@ export class ErrorBoundary extends React.Component<Props, State> {
       let stepIndex = 0;
 
       this.simulationInterval = setInterval(() => {
-          // Fix: setState is a standard method available on class components extending React.Component.
+          // Fix: setState is now correctly recognized via direct Component inheritance.
           this.setState((prevState) => {
               // Stop progressing if we are waiting for AI but hit 90%
               const canFinish = !!prevState.aiDiagnosis;
               
               if (prevState.repairProgress >= 90 && !canFinish) {
-                  return { repairStep: "Finalizing Analysis..." };
+                  return { repairStep: "Finalizing Analysis..." } as State;
               }
 
               const nextProgress = prevState.repairProgress + (Math.random() * 8); 
@@ -103,13 +103,13 @@ export class ErrorBoundary extends React.Component<Props, State> {
               return {
                   repairProgress: Math.min(nextProgress, 100),
                   repairStep: nextStep
-              };
+              } as State;
           });
       }, 200);
   };
 
-  // Fix: Explicitly use React.ErrorInfo to ensure types are correctly resolved.
-  private runSilentDiagnosis = async (errorMessage: string, errorInfo: React.ErrorInfo) => {
+  // Fix: Use ErrorInfo type directly from imports.
+  private runSilentDiagnosis = async (errorMessage: string, errorInfo: ErrorInfo) => {
       try {
           // Real World: Attempt to get AI analysis
           const stack = errorInfo.componentStack || '';
@@ -264,7 +264,7 @@ export class ErrorBoundary extends React.Component<Props, State> {
       );
     }
 
-    // Fix: Using 'this.props' from React.Component to render children when no error occurred.
+    // Fix: Ensure props.children is accessible by using the inherited properties from Component.
     return this.props.children;
   }
 }

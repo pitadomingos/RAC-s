@@ -85,29 +85,28 @@ const Dashboard: React.FC<DashboardProps> = ({
           const isDlExpired = !!(dlExpiry && dlExpiry <= today) || !dlExpiry;
           const isActive = emp.isActive ?? true;
 
+          // SPECIAL RAC 02 LOGIC
           let allRacsMet = true;
-          const mappedRacs = Object.entries(req.requiredRacs).filter(([_, val]) => val === true);
-          const rac02IsRequired = !!req.requiredRacs['RAC02'];
-          const otherRequiredRacs = mappedRacs.filter(([key]) => key !== 'RAC02');
-          const hasOtherRequiredRacs = otherRequiredRacs.length > 0;
+          const requiredRacKeys = Object.entries(req.requiredRacs)
+              .filter(([_, val]) => val === true)
+              .map(([key]) => key);
+          
+          const rac02IsRequired = requiredRacKeys.includes('RAC02');
+          const otherRequiredRacsCount = requiredRacKeys.filter(k => k !== 'RAC02').length;
+          const hasOtherRequiredRacs = otherRequiredRacsCount > 0;
 
-          const definitions = racDefinitions.length > 0 ? racDefinitions : RAC_KEYS.map(k => ({ code: k }));
-
-          definitions.forEach((def: any) => {
-              const key = def.code;
-              
-              if (!req.requiredRacs[key]) return;
-
-              // RAC02 Special Logic
+          requiredRacKeys.forEach((key) => {
+              // Logic for RAC 02
               if (key === 'RAC02') {
                   if (isDlExpired) {
-                      // Condition 1: Only RAC02 -> Fails if DL is invalid
+                      // Scenario 1: Only RAC 02 -> Fails because they can only drive.
                       if (!hasOtherRequiredRacs) {
                           allRacsMet = false;
                       }
-                      // Condition 2: RAC02 + Others -> We logically skip RAC02 check
+                      // Scenario 2: Multiskilled -> We skip training check for RAC 02
+                      // effectively "de-mapping" it for this status calculation.
                   } else {
-                      // DL is valid, now check if they passed training
+                      // Normal RAC 02 check (Both DL and Training must be valid)
                       const validBooking = bookings.find(b => {
                           if (b.employee.id !== emp.id) return false;
                           if (b.status !== BookingStatus.PASSED) return false;
@@ -118,7 +117,7 @@ const Dashboard: React.FC<DashboardProps> = ({
                       if (!validBooking) allRacsMet = false;
                   }
               } 
-              // Standard RAC Logic
+              // Logic for all other RACs
               else {
                   const validBooking = bookings.find(b => {
                       if (b.employee.id !== emp.id) return false;

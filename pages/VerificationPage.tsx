@@ -55,25 +55,25 @@ const VerificationPage: React.FC<VerificationPageProps> = ({
     const isDlExpired = !!(dlExpiry && dlExpiry < today) || !dlExpiry;
     const isActive = employee.isActive ?? true;
 
+    // ALIGNED RAC 02 BYPASS LOGIC
     let allRacsMet = true;
-    const mappedRacs = Object.entries(req.requiredRacs).filter(([_, val]) => val === true);
-    const rac02IsRequired = !!req.requiredRacs['RAC02'];
-    const otherRequiredRacs = mappedRacs.filter(([key]) => key !== 'RAC02');
-    const hasOtherRequiredRacs = otherRequiredRacs.length > 0;
+    const requiredRacKeys = Object.entries(req.requiredRacs)
+        .filter(([_, val]) => val === true)
+        .map(([key]) => key);
 
-    racDefinitions.forEach(def => {
-        const key = def.code;
-        if (!req.requiredRacs[key]) return;
+    const rac02IsRequired = requiredRacKeys.includes('RAC02');
+    const otherRequiredRacsCount = requiredRacKeys.filter(k => k !== 'RAC02').length;
+    const hasOtherRequiredRacs = otherRequiredRacsCount > 0;
 
-        // RAC02 Special Logic
+    requiredRacKeys.forEach(key => {
         if (key === 'RAC02') {
             if (isDlExpired) {
-                // Only RAC02 -> Fails immediately
+                // Exclusive Driver -> Fail
                 if (!hasOtherRequiredRacs) {
                     allRacsMet = false;
                 }
             } else {
-                // DL is OK, check training
+                // Check Training
                 const passedBookings = bookings.filter(b => {
                     if (b.employee.id !== employeeId) return false;
                     if (b.status !== BookingStatus.PASSED) return false;
@@ -84,6 +84,7 @@ const VerificationPage: React.FC<VerificationPageProps> = ({
                 if (!passedBookings[0]?.expiryDate || passedBookings[0].expiryDate < today) allRacsMet = false;
             }
         } else {
+            // Standard Checks
             const passedBookings = bookings.filter(b => {
                  if (b.employee.id !== employeeId) return false;
                  if (b.status !== BookingStatus.PASSED) return false;

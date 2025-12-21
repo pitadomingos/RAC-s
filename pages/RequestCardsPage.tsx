@@ -38,22 +38,22 @@ const RequestCardsPage: React.FC<RequestCardsPageProps> = ({ bookings, requireme
       if (!req.asoExpiryDate || req.asoExpiryDate <= today) return false;
 
       let allRacsMet = true;
-      const mappedRacs = Object.entries(req.requiredRacs).filter(([_, val]) => val === true);
-      const rac02IsRequired = !!req.requiredRacs['RAC02'];
-      const otherRequiredRacs = mappedRacs.filter(([key]) => key !== 'RAC02');
-      const hasOtherRequiredRacs = otherRequiredRacs.length > 0;
+      const requiredRacKeys = Object.entries(req.requiredRacs)
+          .filter(([_, val]) => val === true)
+          .map(([key]) => key);
+      
+      const rac02IsRequired = requiredRacKeys.includes('RAC02');
+      const otherRequiredRacsCount = requiredRacKeys.filter(k => k !== 'RAC02').length;
+      const hasOtherRequiredRacs = otherRequiredRacsCount > 0;
 
       const empObj = safeBookings.find(b => b.employee.id === empId)?.employee;
       const dlExpiry = empObj?.driverLicenseExpiry || '';
       const isDlExpired = !!(dlExpiry && dlExpiry <= today) || !dlExpiry;
 
-      racDefinitions.forEach(def => {
-         const key = def.code;
-         if (!req.requiredRacs[key]) return;
-
+      requiredRacKeys.forEach(key => {
          if (key === 'RAC02') {
              if (isDlExpired) {
-                 // ONLY RAC02 -> Fails compliance
+                 // ONLY RAC02 -> Fails immediately
                  if (!hasOtherRequiredRacs) {
                      allRacsMet = false;
                  }

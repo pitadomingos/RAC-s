@@ -79,7 +79,7 @@ const App: React.FC = () => {
   
   const [companies, setCompanies] = useState<Company[]>(() => {
       const saved = localStorage.getItem('cars_companies');
-      // Set Initial Tenant to Vulcan
+      // CRITICAL: Default mock tenant is set to Vulcan
       return saved ? JSON.parse(saved) : [{ id: 'c1', name: 'Vulcan', status: 'Active', defaultLanguage: 'pt', features: { alcohol: true } }];
   });
 

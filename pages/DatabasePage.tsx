@@ -487,28 +487,31 @@ const DatabasePage: React.FC<DatabasePageProps> = ({ bookings, requirements, upd
       const isDlExpired = !!(dlExpiry && dlExpiry <= today) || !dlExpiry;
       const isActive = emp.isActive ?? true;
 
+      // COMPLEX RAC 02 LOGIC
       let allRacsMet = true;
-      const mappedRacs = Object.entries(req.requiredRacs).filter(([_, val]) => val === true);
-      const rac02IsRequired = !!req.requiredRacs['RAC02'];
-      const otherRequiredRacs = mappedRacs.filter(([key]) => key !== 'RAC02');
-      const hasOtherRequiredRacs = otherRequiredRacs.length > 0;
+      const requiredRacKeys = Object.entries(req.requiredRacs)
+          .filter(([_, val]) => val === true)
+          .map(([key]) => key);
 
-      racDefinitions.forEach(def => {
-          const key = def.code;
-          if (!req.requiredRacs[key]) return;
+      const rac02IsRequired = requiredRacKeys.includes('RAC02');
+      const otherRequiredRacsCount = requiredRacKeys.filter(k => k !== 'RAC02').length;
+      const hasOtherRequiredRacs = otherRequiredRacsCount > 0;
 
-          // RAC02 Special Logic
+      requiredRacKeys.forEach(key => {
           if (key === 'RAC02') {
               if (isDlExpired) {
-                  // Block exclusive drivers, but skip logic for multiskilled
+                  // Scenario 1: Only Driver -> Block
                   if (!hasOtherRequiredRacs) {
                       allRacsMet = false;
                   }
+                  // Scenario 2: Multiskilled -> We skip checking training for RAC 02
               } else {
+                  // DL is OK, check standard training expiry
                   const trainingExpiry = getTrainingStatus(emp.id, key);
                   if (!trainingExpiry || trainingExpiry <= today) allRacsMet = false;
               }
           } else {
+              // Standard RAC checking
               const trainingExpiry = getTrainingStatus(emp.id, key);
               if (!trainingExpiry || trainingExpiry <= today) allRacsMet = false;
           }
