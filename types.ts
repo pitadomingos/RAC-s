@@ -24,6 +24,7 @@ export interface RacDef {
 export interface Company {
   id: string;
   name: string;
+  logoUrl?: string; // Support for tenant-specific logos
   status: 'Active' | 'Inactive';
   defaultLanguage?: 'en' | 'pt';
   features?: {

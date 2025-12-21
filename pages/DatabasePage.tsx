@@ -1,8 +1,8 @@
+
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Booking, BookingStatus, EmployeeRequirement, Employee, TrainingSession, RacDef, SystemNotification } from '../types';
 import { COMPANIES, OPS_KEYS, PERMISSION_KEYS, DEPARTMENTS } from '../constants';
-// Add CreditCard to the lucide-react imports
 import { Search, CheckCircle, XCircle, Edit, ChevronLeft, ChevronRight, Download, X, Trash2, QrCode, Printer, Phone, AlertTriangle, Loader2, Archive, Filter, Smartphone, FileSpreadsheet, ArrowRight, Settings, Database as DbIcon, ShieldCheck, CreditCard } from 'lucide-react';
 import { useLanguage } from '../contexts/LanguageContext';
 import JSZip from 'jszip';
@@ -620,6 +620,9 @@ const DatabasePage: React.FC<DatabasePageProps> = ({ bookings, requirements, upd
                         <th className="px-4 py-3 text-left text-[10px] font-bold text-gray-500 uppercase tracking-wider">Status</th>
                         <th className="px-4 py-3 text-left text-[10px] font-bold text-gray-500 uppercase tracking-wider">Employee</th>
                         <th className="px-4 py-3 text-left text-[10px] font-bold text-gray-500 uppercase tracking-wider">ASO Expiry</th>
+                        <th className="px-4 py-3 text-left text-[10px] font-bold text-red-500 uppercase tracking-wider">DL Number</th>
+                        <th className="px-2 py-3 text-center text-[10px] font-bold text-red-500 uppercase tracking-wider">Class</th>
+                        <th className="px-4 py-3 text-left text-[10px] font-bold text-red-500 uppercase tracking-wider">DL Expiry</th>
                         {racDefinitions.map(rac => (
                             <th key={rac.id} className="px-2 py-3 text-center text-[10px] font-bold text-gray-500 uppercase tracking-wider">{rac.code}</th>
                         ))}
@@ -654,6 +657,17 @@ const DatabasePage: React.FC<DatabasePageProps> = ({ bookings, requirements, upd
                                     onChange={(e) => handleAsoChange(emp.id, e.target.value)}
                                     className={`text-xs border rounded p-1 outline-none ${isAsoValid ? 'border-gray-200 dark:border-slate-600' : 'border-red-500 bg-red-50 dark:bg-red-900/20'}`}
                                 />
+                            </td>
+                            <td className="px-4 py-3 whitespace-nowrap text-xs font-mono text-slate-600 dark:text-slate-400">
+                                {emp.driverLicenseNumber || '-'}
+                            </td>
+                            <td className="px-2 py-3 text-center whitespace-nowrap text-xs font-bold text-slate-600 dark:text-slate-400">
+                                {emp.driverLicenseClass || '-'}
+                            </td>
+                            <td className="px-4 py-3 whitespace-nowrap text-xs font-mono">
+                                <span className={isDlExpired ? 'text-red-500 font-bold' : 'text-slate-600 dark:text-slate-400'}>
+                                    {emp.driverLicenseExpiry || '-'}
+                                </span>
                             </td>
                             {racDefinitions.map(rac => {
                                 const expiry = getTrainingStatus(emp.id, rac.code);
@@ -704,9 +718,9 @@ const DatabasePage: React.FC<DatabasePageProps> = ({ bookings, requirements, upd
             <div className="flex items-center gap-2">
                 <span className="text-xs text-gray-500">{t.common.rowsPerPage}</span>
                 <select value={itemsPerPage} onChange={handlePageSizeChange} className="text-xs border border-gray-300 dark:border-slate-600 rounded bg-white dark:bg-slate-700 text-black dark:text-white px-2 py-1">
-                    <option value={10}>10</option>
-                    <option value={20}>20</option>
-                    <option value={50}>50</option>
+                    <option value="10">10</option>
+                    <option value="20">20</option>
+                    <option value="50">50</option>
                 </select>
             </div>
             <div className="flex items-center gap-4">

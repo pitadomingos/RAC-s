@@ -8,7 +8,6 @@ import {
   Mail, 
   Menu, 
   X, 
-  ShieldCheck,
   UserCog,
   PenTool,
   Users,
@@ -322,16 +321,22 @@ const Layout: React.FC<LayoutProps> = ({
           border-r border-slate-700 dark:border-slate-800
         `}
       >
-        {/* Header */}
+        {/* Header - RACS Logo Section */}
         <div className={`flex items-center h-16 border-b border-slate-700 dark:border-slate-800 ${isCollapsed ? 'justify-center p-0' : 'justify-between p-4'}`}>
-          <div className="flex items-center space-x-2">
-            <img 
-              src="/assets/golden-rule.png" 
-              alt="Logo" 
-              className={`${isCollapsed ? 'w-10 h-10' : 'w-10 h-10'} object-contain`} 
-              onError={(e) => { e.currentTarget.style.display = 'none'; }}
-            />
-            {!isCollapsed && <span className="text-xl font-bold tracking-wider">{t.common.vulcan}</span>}
+          <div className="flex items-center space-x-3 overflow-hidden">
+            <div className="flex-shrink-0 w-10 h-10 flex items-center justify-center rounded-lg bg-white/5 border border-white/10 shadow-inner">
+              <img 
+                src="/assets/Golden_Rules.png" 
+                alt="Golden Rule Logo" 
+                className="w-8 h-8 object-contain transition-transform duration-500 hover:scale-110" 
+                onError={(e) => { e.currentTarget.style.display = 'none'; }}
+              />
+            </div>
+            {!isCollapsed && (
+              <span className="text-xl font-black tracking-tighter bg-clip-text text-transparent bg-gradient-to-r from-white to-slate-400">
+                {t.common.vulcan}
+              </span>
+            )}
           </div>
           <button onClick={() => setSidebarOpen(false)} className="md:hidden text-gray-400 hover:text-white">
             <X size={24} />

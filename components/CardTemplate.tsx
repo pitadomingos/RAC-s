@@ -44,9 +44,15 @@ const CardTemplate: React.FC<CardTemplateProps> = memo(({
   const appOrigin = typeof window !== 'undefined' ? window.location.origin : '';
   const qrUrl = `${appOrigin}${window.location.pathname}#/verify/${safeRecordId}`;
 
-  const headerBg = '#1e3a8a';
+  // BRANDING LOGIC
+  // Tenant is CARS Solutions. Others are subcontractors.
+  const isTenant = employee.company === 'CARS Solutions';
+  const headerBg = isTenant ? '#001a35' : '#f97316'; // Very dark blue vs Orange
   const headerTextColor = 'white';
-  const headerText = language === 'pt' ? 'RACS' : 'CARS';
+  
+  // Left side shows Tenant Name/Logo. Right side is standard RACS indicator.
+  const leftHeaderText = safeCompany;
+  const rightHeaderText = 'RACS';
 
   const today = new Date().toISOString().split('T')[0];
   let maxValidDate = requirement?.asoExpiryDate || '';
@@ -161,27 +167,24 @@ const CardTemplate: React.FC<CardTemplateProps> = memo(({
         className="bg-white text-slate-900 relative flex flex-col overflow-hidden box-border h-full w-full" 
         style={{ border: '1px solid black', fontSize: '8px', lineHeight: '1.1' }}
         >
-        <div className="flex h-[10mm] border-b-[1px] border-black relative justify-between items-center px-1 overflow-hidden">
-            <div className="flex items-center justify-start h-full w-[24mm] relative">
-                <div className="h-[8mm] px-2 bg-slate-900 text-white rounded flex items-center justify-center font-black text-[10px] leading-tight">
-                    {language === 'pt' ? 'RACS' : 'CARS'}
+        <div className="flex h-[10mm] border-b-[1px] border-black relative justify-between items-center px-1 overflow-hidden" style={{ backgroundColor: headerBg }}>
+            <div className="flex items-center justify-start h-full w-[35mm] relative">
+                {/* Header Left: Tenant Name (Company) */}
+                <div className="px-2 text-white font-black text-[9px] leading-tight truncate uppercase">
+                    {leftHeaderText}
                 </div>
             </div>
             
-            <div className="absolute inset-x-0 top-0 flex justify-center pointer-events-none">
-                <div className="flex flex-col items-center justify-start w-full">
-                    <span className="text-[5px] font-bold text-gray-500 absolute top-[1px] right-[2px] z-20">PAD_v8</span>
-                    <div 
-                        className="w-[24mm] min-h-[6mm] flex items-center justify-center text-[12px] font-bold uppercase overflow-hidden shadow-sm border-b-[0.5px] border-x-[0.5px] border-black leading-[0.9]"
-                        style={{ backgroundColor: headerBg, color: headerTextColor }}
-                    >
-                        <span className="px-1 text-center whitespace-normal break-words w-full">
-                            {headerText}
-                        </span>
-                    </div>
+            <div className="flex items-center justify-end h-full flex-1">
+                <span className="text-[5px] font-bold text-white/50 absolute top-[1px] right-[2px] z-20">PAD_v8</span>
+                {/* Header Right: RACS standard label */}
+                <div 
+                    className="h-[8mm] px-3 flex items-center justify-center text-[12px] font-bold uppercase border-l border-black/20"
+                    style={{ color: headerTextColor }}
+                >
+                    {rightHeaderText}
                 </div>
             </div>
-            <div className="w-1"></div>
         </div>
 
         <div className="flex items-center justify-between px-1 h-[3mm] border-b-[1px] border-black bg-gray-50">

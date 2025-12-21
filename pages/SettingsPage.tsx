@@ -83,8 +83,8 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
   const [newSite, setNewSite] = useState({ name: '', location: '' });
   
   // COMPANY STATE
-  const [newCompany, setNewCompany] = useState<{name: string, adminName: string, adminEmail: string, defaultLanguage: 'en' | 'pt', alcoholFeature: boolean}>({ 
-      name: '', adminName: '', adminEmail: '', defaultLanguage: 'pt', alcoholFeature: false
+  const [newCompany, setNewCompany] = useState<{name: string, logoUrl: string, adminName: string, adminEmail: string, defaultLanguage: 'en' | 'pt', alcoholFeature: boolean}>({ 
+      name: '', logoUrl: '', adminName: '', adminEmail: '', defaultLanguage: 'pt', alcoholFeature: false
   });
   const [provisionSuccess, setProvisionSuccess] = useState<string | null>(null);
   
@@ -112,11 +112,12 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
           onUpdateCompanies([...companies, { 
               id: uuidv4(), 
               name: newCompany.name, 
+              logoUrl: newCompany.logoUrl,
               status: 'Active', 
               defaultLanguage: newCompany.defaultLanguage,
-              features: { alcohol: newCompany.alcoholFeature } // Set feature flag
+              features: { alcohol: newCompany.alcoholFeature } 
           }]); 
-          setNewCompany({ name: '', adminName: '', adminEmail: '', defaultLanguage: 'pt', alcoholFeature: false }); 
+          setNewCompany({ name: '', logoUrl: '', adminName: '', adminEmail: '', defaultLanguage: 'pt', alcoholFeature: false }); 
           setProvisionSuccess(`Company ${newCompany.name} added.`);
           setTimeout(() => setProvisionSuccess(null), 3000);
       } 
@@ -184,7 +185,6 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
       }, 500);
   };
 
-  // --- ROBOTIC SELF-HEALING SIMULATION ---
   const runSelfHealing = () => {
       setIsHealing(true);
       setHealingProgress(0);
@@ -194,7 +194,7 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
           "Scanning Neural Pathways...",
           "Optimizing Memory Shards...",
           "Defragmenting User State...",
-          "Flushing Session Cache...", // REAL WORLD STEP
+          "Flushing Session Cache...",
           "Re-calibrating Operational Matrix...",
           "Verifying System Integrity...",
           "Applying Security Patch #994..."
@@ -212,8 +212,6 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
 
               if (next >= 100) {
                   clearInterval(interval);
-                  
-                  // REAL WORLD LOGIC: Clear session storage to force a clean slate reload
                   try {
                       sessionStorage.clear();
                   } catch (e) { console.error(e); }
@@ -324,7 +322,7 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
                             onClick={() => setActiveTab(tab as any)}
                             className={`w-full text-left px-4 py-4 rounded-xl text-sm font-bold transition-all flex items-center gap-4 group mb-1 ${activeTab === tab ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-lg' : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700/50'}`}
                         >
-                            {tab === 'Diagnostics' ? <Activity size={20} /> : <Box size={20} />}
+                            {tab === 'Diagnostics' ? <Activity size={20} /> : tab === 'Companies' ? <Building2 size={20} /> : <Box size={20} />}
                             <span>{tab}</span>
                         </button>
                     ))}
@@ -345,7 +343,6 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
                                     </div>
                                 ))}
                             </div>
-                            {/* FIXED ROOM INPUT */}
                             <div className="mt-6 flex gap-2 items-center bg-slate-50 dark:bg-slate-900/30 p-3 rounded-xl border dark:border-slate-700">
                                 <input 
                                     className="flex-1 border dark:border-slate-600 dark:bg-slate-700 p-2 rounded outline-none focus:ring-2 focus:ring-blue-500" 
@@ -473,7 +470,11 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
                                 {companies.map(comp => (
                                     <div key={comp.id} className="flex justify-between items-center p-4 bg-white dark:bg-slate-800 border dark:border-slate-700 rounded-xl hover:border-indigo-300 transition-colors">
                                         <div className="font-bold text-slate-800 dark:text-white flex items-center gap-3">
-                                            <Building2 size={20} className="text-slate-400"/> 
+                                            {comp.logoUrl ? (
+                                                <img src={comp.logoUrl} className="w-8 h-8 object-contain rounded border border-slate-200" alt="Logo" />
+                                            ) : (
+                                                <Building2 size={20} className="text-slate-400"/> 
+                                            )}
                                             {comp.name}
                                             <div className="flex gap-1">
                                                 <span className="text-[10px] text-slate-400 border border-slate-200 dark:border-slate-600 rounded px-1.5 py-0.5 ml-2">
@@ -522,12 +523,12 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
                                             </select>
                                         </div>
                                     </div>
+                                    <input className="p-3 rounded-lg border dark:border-slate-600 dark:bg-slate-700 outline-none focus:ring-2 focus:ring-indigo-500" placeholder="Logo URL (optional)" value={newCompany.logoUrl} onChange={e => setNewCompany({...newCompany, logoUrl: e.target.value})} />
                                     <div className="grid grid-cols-2 gap-4">
                                         <input className="p-3 rounded-lg border dark:border-slate-600 dark:bg-slate-700 outline-none focus:ring-2 focus:ring-indigo-500" placeholder="Admin Name" value={newCompany.adminName} onChange={e => setNewCompany({...newCompany, adminName: e.target.value})} />
                                         <input className="p-3 rounded-lg border dark:border-slate-600 dark:bg-slate-700 outline-none focus:ring-2 focus:ring-indigo-500" placeholder="Admin Email" value={newCompany.adminEmail} onChange={e => setNewCompany({...newCompany, adminEmail: e.target.value})} />
                                     </div>
                                     
-                                    {/* ALCOHOL MODULE TOGGLE */}
                                     <div className="flex items-center gap-3 p-3 bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-600">
                                         <input 
                                             type="checkbox" 
@@ -655,6 +656,15 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
                                 className="w-full p-3 rounded-lg border dark:border-slate-600 dark:bg-slate-700 text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-indigo-500"
                                 value={editingCompany.name}
                                 onChange={(e) => setEditingCompany({...editingCompany, name: e.target.value})}
+                            />
+                        </div>
+                        <div>
+                            <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Logo URL</label>
+                            <input 
+                                className="w-full p-3 rounded-lg border dark:border-slate-600 dark:bg-slate-700 text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-indigo-500"
+                                value={editingCompany.logoUrl || ''}
+                                onChange={(e) => setEditingCompany({...editingCompany, logoUrl: e.target.value})}
+                                placeholder="https://..."
                             />
                         </div>
                         <div>

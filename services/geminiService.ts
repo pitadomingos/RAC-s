@@ -1,4 +1,5 @@
-import { GoogleGenAI } from "@google/genai";
+
+import { GoogleGenAI, Type } from "@google/genai";
 import { logger } from '../utils/logger';
 import { translations, Language } from '../utils/translations';
 
@@ -102,15 +103,29 @@ export const analyzeRuntimeError = async (errorMsg: string, stackTrace: string):
         const model = 'gemini-3-pro-preview'; 
         const systemPrompt = `You are a Senior React/TypeScript Site Reliability Engineer. 
         Analyze the provided error and stack trace. 
-        Return a JSON object with two keys: 'rootCause' (concise explanation) and 'fix' (specific code fix or mitigation strategy). 
-        Do not include markdown formatting in the JSON.`;
+        Return a JSON object with two keys: 'rootCause' (concise explanation) and 'fix' (specific code fix or mitigation strategy).`;
 
+        // Fix: Added responseSchema to strictly enforce the JSON structure required for runtime error analysis.
         const response = await ai.models.generateContent({
             model: model,
             contents: `Error: ${errorMsg}\nStack: ${stackTrace}`,
             config: {
                 systemInstruction: systemPrompt,
-                responseMimeType: "application/json"
+                responseMimeType: "application/json",
+                responseSchema: {
+                    type: Type.OBJECT,
+                    properties: {
+                        rootCause: {
+                            type: Type.STRING,
+                            description: 'Concise explanation of the error root cause.',
+                        },
+                        fix: {
+                            type: Type.STRING,
+                            description: 'Specific code fix or mitigation strategy.',
+                        },
+                    },
+                    required: ['rootCause', 'fix'],
+                }
             }
         });
 
