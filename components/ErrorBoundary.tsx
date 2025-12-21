@@ -17,9 +17,9 @@ interface State {
 
 /**
  * Catches runtime errors and triggers autonomous repair visuals.
- * Inherits from React.Component to provide error boundary lifecycle methods.
+ * Inherits from Component to provide error boundary lifecycle methods.
  */
-// Fix: Use Component directly from react import to ensure setState and props are recognized by the TypeScript compiler.
+/* Fix: Explicitly import and extend Component from 'react' to resolve missing setState and props errors. */
 export class ErrorBoundary extends Component<Props, State> {
   // Initialize state to satisfy the React Component lifecycle.
   public state: State = {
@@ -33,8 +33,8 @@ export class ErrorBoundary extends Component<Props, State> {
 
   private simulationInterval: any = null;
 
-  // Fix: Correct return type and signature for static getDerivedStateFromError.
-  public static getDerivedStateFromError(error: Error): State {
+  /* Fix: Specified static getDerivedStateFromError with correct return type. */
+  public static getDerivedStateFromError(error: Error): Partial<State> {
     return { 
         hasError: true, 
         error, 
@@ -45,7 +45,7 @@ export class ErrorBoundary extends Component<Props, State> {
     };
   }
 
-  // Fix: Use ErrorInfo type directly from imports.
+  /* Fix: Correct implementation of componentDidCatch lifecycle method. */
   public componentDidCatch(error: Error, errorInfo: ErrorInfo) {
     const errorString = error.toString();
     const errorMessage = error.message || errorString;
@@ -68,7 +68,7 @@ export class ErrorBoundary extends Component<Props, State> {
       if (this.simulationInterval) clearInterval(this.simulationInterval);
   }
 
-  // Fix: Arrow function property ensures 'this' correctly refers to the class instance.
+  /* Fix: Use instance reference for setState within arrow function assigned to property. */
   private startRepairSimulation = () => {
       const steps = [
           "Scanning Neural Pathways...",
@@ -83,13 +83,12 @@ export class ErrorBoundary extends Component<Props, State> {
       let stepIndex = 0;
 
       this.simulationInterval = setInterval(() => {
-          // Fix: setState is now correctly recognized via direct Component inheritance.
           this.setState((prevState) => {
               // Stop progressing if we are waiting for AI but hit 90%
               const canFinish = !!prevState.aiDiagnosis;
               
               if (prevState.repairProgress >= 90 && !canFinish) {
-                  return { repairStep: "Finalizing Analysis..." } as State;
+                  return { ...prevState, repairStep: "Finalizing Analysis..." };
               }
 
               const nextProgress = prevState.repairProgress + (Math.random() * 8); 
@@ -101,14 +100,15 @@ export class ErrorBoundary extends Component<Props, State> {
               }
 
               return {
+                  ...prevState,
                   repairProgress: Math.min(nextProgress, 100),
                   repairStep: nextStep
-              } as State;
+              };
           });
       }, 200);
   };
 
-  // Fix: Use ErrorInfo type directly from imports.
+  /* Fix: Async diagnosis method to update state once AI analysis is complete. */
   private runSilentDiagnosis = async (errorMessage: string, errorInfo: ErrorInfo) => {
       try {
           // Real World: Attempt to get AI analysis
@@ -127,7 +127,7 @@ export class ErrorBoundary extends Component<Props, State> {
       }
   }
 
-  // Fix: Use this.setState to finalize repair state once AI analysis is complete.
+  /* Fix: helper method to finalize the repair state using setState. */
   private completeRepair = (diagnosis: { rootCause: string, fix: string }) => {
       if (this.simulationInterval) clearInterval(this.simulationInterval);
 
@@ -168,6 +168,7 @@ export class ErrorBoundary extends Component<Props, State> {
       }
   };
 
+  /* Fix: Access props.children via class instance property inherited from Component. */
   public render() {
     if (this.state.hasError) {
       return (
@@ -264,7 +265,7 @@ export class ErrorBoundary extends Component<Props, State> {
       );
     }
 
-    // Fix: Ensure props.children is accessible by using the inherited properties from Component.
+    /* Fix: Return children from props, which is accessible from the extended Component. */
     return this.props.children;
   }
 }

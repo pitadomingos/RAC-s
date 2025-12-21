@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { 
   LayoutDashboard, 
@@ -39,7 +39,8 @@ import {
   FileText,
   Briefcase,
   MessageSquare,
-  Send
+  Send,
+  ShieldCheck
 } from 'lucide-react';
 import { UserRole, SystemNotification, Site, Company } from '../types';
 import { useLanguage } from '../contexts/LanguageContext';
@@ -88,8 +89,12 @@ const Layout: React.FC<LayoutProps> = ({
 
   const unreadCount = notifications.filter(n => !n.isRead).length;
 
-  // Determine Current Company Context (Simulated: Default to CARS Solutions or first available)
-  const currentCompany = companies.find(c => c.name === 'CARS Solutions') || companies[0];
+  // Resolve Branding based on current context (simulated: default to Vulcan 'c1')
+  const currentCompany = useMemo(() => {
+    return companies.find(c => c.id === 'c1') || companies[0];
+  }, [companies]);
+
+  const dynamicAppName = currentCompany?.appName || t.common.vulcan;
 
   // Determine Alcohol Dashboard Access
   const canViewAlcoholDashboard = (): boolean => {
@@ -305,7 +310,7 @@ const Layout: React.FC<LayoutProps> = ({
   const navItems = allNavItems.filter(item => item.visible);
 
   const currentNavItem = navItems.find(i => i.path === location.pathname);
-  let pageTitle = String(t.common.vulcan);
+  let pageTitle = String(dynamicAppName);
   if (currentNavItem && currentNavItem.label) {
     pageTitle = String(currentNavItem.label);
   }
@@ -321,20 +326,23 @@ const Layout: React.FC<LayoutProps> = ({
           border-r border-slate-700 dark:border-slate-800
         `}
       >
-        {/* Header - RACS Logo Section */}
+        {/* Header - Branding Section */}
         <div className={`flex items-center h-16 border-b border-slate-700 dark:border-slate-800 ${isCollapsed ? 'justify-center p-0' : 'justify-between p-4'}`}>
           <div className="flex items-center space-x-3 overflow-hidden">
-            <div className="flex-shrink-0 w-10 h-10 flex items-center justify-center rounded-lg bg-white/5 border border-white/10 shadow-inner">
-              <img 
-                src="/assets/Golden_Rules.png" 
-                alt="Golden Rule Logo" 
-                className="w-8 h-8 object-contain transition-transform duration-500 hover:scale-110" 
-                onError={(e) => { e.currentTarget.style.display = 'none'; }}
-              />
+            <div className="flex-shrink-0 w-10 h-10 flex items-center justify-center rounded-lg bg-white/5 border border-white/10 shadow-inner overflow-hidden">
+              {currentCompany?.safetyLogoUrl ? (
+                  <img 
+                    src={currentCompany.safetyLogoUrl} 
+                    alt="Safety Logo" 
+                    className="w-8 h-8 object-contain transition-transform duration-500 hover:scale-110" 
+                  />
+              ) : (
+                  <ShieldCheck size={24} className="text-yellow-500" />
+              )}
             </div>
             {!isCollapsed && (
               <span className="text-xl font-black tracking-tighter bg-clip-text text-transparent bg-gradient-to-r from-white to-slate-400">
-                {t.common.vulcan}
+                {dynamicAppName}
               </span>
             )}
           </div>

@@ -87,37 +87,39 @@ const Dashboard: React.FC<DashboardProps> = ({
 
           // SPECIAL RAC 02 LOGIC
           let allRacsMet = true;
-          const requiredRacKeys = Object.entries(req.requiredRacs)
+          const mappedRacs = Object.entries(req.requiredRacs)
               .filter(([_, val]) => val === true)
               .map(([key]) => key);
           
-          const rac02IsRequired = requiredRacKeys.includes('RAC02');
-          const otherRequiredRacsCount = requiredRacKeys.filter(k => k !== 'RAC02').length;
-          const hasOtherRequiredRacs = otherRequiredRacsCount > 0;
+          // Definitions for driving-related modules
+          const drivingRacs = ['RAC02', 'RAC11', 'LIB_MOV'];
+          
+          // Multiskilled check: Does this person have other requirements that ARE NOT driving?
+          const nonDrivingRacs = mappedRacs.filter(k => !drivingRacs.includes(k) && !OPS_KEYS.includes(k));
+          const isMultiskilled = nonDrivingRacs.length > 0;
 
-          requiredRacKeys.forEach((key) => {
-              // Logic for RAC 02
-              if (key === 'RAC02') {
+          mappedRacs.forEach((key) => {
+              // If it's a driving RAC and the DL is expired
+              if (drivingRacs.includes(key)) {
                   if (isDlExpired) {
-                      // Scenario 1: Only RAC 02 -> Fails because they can only drive.
-                      if (!hasOtherRequiredRacs) {
+                      // If NOT multiskilled, this failure blocks them entirely
+                      if (!isMultiskilled) {
                           allRacsMet = false;
                       }
-                      // Scenario 2: Multiskilled -> We skip training check for RAC 02
-                      // effectively "de-mapping" it for this status calculation.
+                      // If they ARE multiskilled, we logically ignore the driving blockage for the OVERALL site access status
                   } else {
-                      // Normal RAC 02 check (Both DL and Training must be valid)
+                      // Normal check for valid training
                       const validBooking = bookings.find(b => {
                           if (b.employee.id !== emp.id) return false;
                           if (b.status !== BookingStatus.PASSED) return false;
                           if (!b.expiryDate || b.expiryDate <= today) return false;
                           let bRacKey = (sessions.find(s => s.id === b.sessionId)?.racType || b.sessionId).split('-')[0].replace(/\s+/g, '').trim().toUpperCase();
-                          return bRacKey === 'RAC02';
+                          return bRacKey === key;
                       });
                       if (!validBooking) allRacsMet = false;
                   }
               } 
-              // Logic for all other RACs
+              // Normal RAC check
               else {
                   const validBooking = bookings.find(b => {
                       if (b.employee.id !== emp.id) return false;

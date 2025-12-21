@@ -79,8 +79,15 @@ const App: React.FC = () => {
   
   const [companies, setCompanies] = useState<Company[]>(() => {
       const saved = localStorage.getItem('cars_companies');
-      // CRITICAL: Default mock tenant is set to Vulcan
-      return saved ? JSON.parse(saved) : [{ id: 'c1', name: 'Vulcan', status: 'Active', defaultLanguage: 'pt', features: { alcohol: true } }];
+      // CRITICAL: Initialize with default app branding for Vulcan
+      return saved ? JSON.parse(saved) : [{ 
+          id: 'c1', 
+          name: 'Vulcan', 
+          appName: 'RACS Safety',
+          status: 'Active', 
+          defaultLanguage: 'pt', 
+          features: { alcohol: true } 
+      }];
   });
 
   useEffect(() => { localStorage.setItem('cars_bookings', JSON.stringify(bookings)); }, [bookings]);

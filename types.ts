@@ -24,7 +24,9 @@ export interface RacDef {
 export interface Company {
   id: string;
   name: string;
-  logoUrl?: string; // Support for tenant-specific logos
+  appName?: string; // Overrides system name (e.g. "Vulcan Safety")
+  logoUrl?: string; // Corporate Brand Logo
+  safetyLogoUrl?: string; // Specific Safety Logo
   status: 'Active' | 'Inactive';
   defaultLanguage?: 'en' | 'pt';
   features?: {

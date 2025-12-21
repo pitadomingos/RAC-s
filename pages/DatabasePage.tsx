@@ -487,26 +487,27 @@ const DatabasePage: React.FC<DatabasePageProps> = ({ bookings, requirements, upd
       const isDlExpired = !!(dlExpiry && dlExpiry <= today) || !dlExpiry;
       const isActive = emp.isActive ?? true;
 
-      // COMPLEX RAC 02 LOGIC
+      // COMPLEX RAC 02 / DRIVING LOGIC
       let allRacsMet = true;
-      const requiredRacKeys = Object.entries(req.requiredRacs)
-          .filter(([_, val]) => val === true)
-          .map(([key]) => key);
+      const mappedRacs = Object.entries(req.requiredRacs).filter(([_, val]) => val === true).map(([k]) => k);
+      
+      const drivingRacs = ['RAC02', 'RAC11', 'LIB_MOV'];
+      // Multiskilled workers have non-driving RACs mapped.
+      const isMultiskilled = mappedRacs.some(k => !drivingRacs.includes(k) && !OPS_KEYS.includes(k));
 
-      const rac02IsRequired = requiredRacKeys.includes('RAC02');
-      const otherRequiredRacsCount = requiredRacKeys.filter(k => k !== 'RAC02').length;
-      const hasOtherRequiredRacs = otherRequiredRacsCount > 0;
+      racDefinitions.forEach(def => {
+          const key = def.code;
+          if (!req.requiredRacs[key]) return;
 
-      requiredRacKeys.forEach(key => {
-          if (key === 'RAC02') {
+          // If it's a driving requirement
+          if (drivingRacs.includes(key)) {
               if (isDlExpired) {
-                  // Scenario 1: Only Driver -> Block
-                  if (!hasOtherRequiredRacs) {
+                  // Only block if they aren't multiskilled (i.e. they are exclusively a driver)
+                  if (!isMultiskilled) {
                       allRacsMet = false;
                   }
-                  // Scenario 2: Multiskilled -> We skip checking training for RAC 02
               } else {
-                  // DL is OK, check standard training expiry
+                  // Check training standard
                   const trainingExpiry = getTrainingStatus(emp.id, key);
                   if (!trainingExpiry || trainingExpiry <= today) allRacsMet = false;
               }
@@ -521,7 +522,7 @@ const DatabasePage: React.FC<DatabasePageProps> = ({ bookings, requirements, upd
       if (!isActive) status = 'Blocked';
       else if (!isAsoValid || !allRacsMet) status = 'Blocked';
 
-      return { emp, req, status, isAsoValid, isDlExpired, isActive, hasOtherRequiredRacs };
+      return { emp, req, status, isAsoValid, isDlExpired, isActive };
     }).filter(item => {
         if (currentSiteId !== 'all' && item.emp.siteId !== currentSiteId) {
             const sId = item.emp.siteId || 's1';

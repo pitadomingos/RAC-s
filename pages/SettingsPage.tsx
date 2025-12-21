@@ -1,6 +1,5 @@
-
-import React, { useState, useRef } from 'react';
-import { Settings, Users, Box, Save, Plus, Trash2, Tag, Edit2, Check, X, AlertCircle, Sliders, MapPin, User as UserIcon, Hash, LayoutGrid, Building2, Map, ShieldCheck, Mail, Lock, Calendar, MessageSquare, Clock, GitMerge, RefreshCw, Terminal, CheckCircle, ChevronLeft, ChevronRight, Activity, Cpu, Zap, Power, UploadCloud, Globe, Wine, Edit, Upload, Image as ImageIcon } from 'lucide-react';
+import React, { useState, useRef, useMemo } from 'react';
+import { Settings, Users, Box, Save, Plus, Trash2, Tag, Edit2, Check, X, AlertCircle, Sliders, MapPin, User as UserIcon, Hash, LayoutGrid, Building2, Map, ShieldCheck, Mail, Lock, Calendar, MessageSquare, Clock, GitMerge, RefreshCw, Terminal, CheckCircle, ChevronLeft, ChevronRight, Activity, Cpu, Zap, Power, UploadCloud, Globe, Wine, Edit, Upload, Image as ImageIcon, Sparkles } from 'lucide-react';
 import { RacDef, Room, Trainer, Site, Company, UserRole, User, SystemNotification } from '../types';
 import { v4 as uuidv4 } from 'uuid';
 import { logger } from '../utils/logger';
@@ -42,7 +41,7 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
     addNotification
 }) => {
   const { t } = useLanguage();
-  const [activeTab, setActiveTab] = useState<'General' | 'Trainers' | 'RACs' | 'Sites' | 'Companies' | 'Integration' | 'Diagnostics'>('General');
+  const [activeTab, setActiveTab] = useState<'General' | 'Trainers' | 'RACs' | 'Sites' | 'Companies' | 'Branding' | 'Integration' | 'Diagnostics'>('General');
   const [isSaving, setIsSaving] = useState(false);
   
   // Integration State
@@ -63,9 +62,11 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
   const canEditGlobalDefinitions = isSystemAdmin || isEnterpriseAdmin;
   const canAccessRacs = isSystemAdmin || isEnterpriseAdmin || isSiteAdmin;
   const canAccessSites = isSystemAdmin || isEnterpriseAdmin || isSiteAdmin;
+  const canAccessBranding = isSystemAdmin || isEnterpriseAdmin;
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const editFileInputRef = useRef<HTMLInputElement>(null);
+  const safetyLogoRef = useRef<HTMLInputElement>(null);
 
   const [confirmState, setConfirmState] = useState<{
     isOpen: boolean;
@@ -92,6 +93,13 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
   // Edit Company State
   const [editingCompany, setEditingCompany] = useState<Company | null>(null);
   
+  // Local Tenant Branding State (for Enterprise Admins)
+  const myCompany = useMemo(() => {
+    return companies.find(c => c.id === 'c1') || companies[0];
+  }, [companies]);
+
+  const [brandDraft, setBrandDraft] = useState<Partial<Company>>(myCompany);
+  
   // ROOM STATE (Fixed Capacity)
   const [newRoom, setNewRoom] = useState<{ name: string; capacity: string }>({ name: '', capacity: '20' });
   const [editingRoomId, setEditingRoomId] = useState<string | null>(null);
@@ -107,20 +115,51 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
   const handleAddSite = () => { if (newSite.name && onUpdateSites) { onUpdateSites([...sites, { id: uuidv4(), companyId: 'c1', name: newSite.name, location: newSite.location || 'Unknown' }]); setNewSite({ name: '', location: '' }); } };
   const deleteSite = (id: string) => { if (onUpdateSites) setConfirmState({ isOpen: true, title: t.database.confirmDelete, message: t.database.confirmDeleteMsg, onConfirm: () => onUpdateSites(sites.filter(s => s.id !== id)), isDestructive: true }); };
   
-  // --- COMPANY CRUD ---
-  const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>, isEdit: boolean) => {
+  // --- COMPANY LOGO HANDLERS ---
+  const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>, type: 'corporate' | 'safety' | 'provision') => {
       const file = e.target.files?.[0];
       if (file) {
           const reader = new FileReader();
           reader.onloadend = () => {
               const base64String = reader.result as string;
-              if (isEdit && editingCompany) {
-                  setEditingCompany({ ...editingCompany, logoUrl: base64String });
-              } else {
+              if (type === 'provision') {
                   setNewCompany({ ...newCompany, logoUrl: base64String });
+              } else if (type === 'corporate') {
+                  setBrandDraft(prev => ({ ...prev, logoUrl: base64String }));
+              } else if (type === 'safety') {
+                  setBrandDraft(prev => ({ ...prev, safetyLogoUrl: base64String }));
               }
           };
           reader.readAsDataURL(file);
+      }
+  };
+
+  // Fix: Added handleDeleteCompany to handle tenant removal with confirmation.
+  const handleDeleteCompany = (id: string) => {
+      if (onUpdateCompanies) {
+          setConfirmState({
+              isOpen: true,
+              title: 'Delete Company',
+              message: 'Are you sure you want to delete this company? This will remove all associated data.',
+              onConfirm: () => onUpdateCompanies(companies.filter(c => c.id !== id)),
+              isDestructive: true
+          });
+      }
+  };
+
+  // Fix: Added handleUpdateCompany to save changes to an existing tenant profile.
+  const handleUpdateCompany = () => {
+      if (editingCompany && onUpdateCompanies) {
+          onUpdateCompanies(companies.map(c => c.id === editingCompany.id ? editingCompany : c));
+          setEditingCompany(null);
+          addNotification({
+              id: uuidv4(),
+              type: 'success',
+              title: 'Company Updated',
+              message: `Settings for ${editingCompany.name} have been saved.`,
+              timestamp: new Date(),
+              isRead: false
+          });
       }
   };
 
@@ -140,23 +179,14 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
       } 
   };
 
-  const handleUpdateCompany = () => {
-      if (editingCompany && onUpdateCompanies) {
-          onUpdateCompanies(companies.map(c => c.id === editingCompany.id ? editingCompany : c));
-          setEditingCompany(null);
-          addNotification({ id: uuidv4(), type: 'success', title: 'Updated', message: 'Tenant updated successfully', timestamp: new Date(), isRead: false });
-      }
-  };
-
-  const handleDeleteCompany = (id: string) => {
-      if (onUpdateCompanies) {
-          setConfirmState({ 
-              isOpen: true, 
-              title: t.database.confirmDelete, 
-              message: "This will permanently remove the tenant and all associated data.", 
-              onConfirm: () => onUpdateCompanies(companies.filter(c => c.id !== id)), 
-              isDestructive: true 
-          });
+  const handleSaveBranding = () => {
+      if (onUpdateCompanies && brandDraft.id) {
+          setIsSaving(true);
+          onUpdateCompanies(companies.map(c => c.id === brandDraft.id ? { ...c, ...brandDraft } as Company : c));
+          setTimeout(() => {
+              setIsSaving(false);
+              addNotification({ id: uuidv4(), type: 'success', title: 'Branding Updated', message: 'Application theme and logos updated.', timestamp: new Date(), isRead: false });
+          }, 800);
       }
   };
   
@@ -252,49 +282,6 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
 
   return (
     <div className="space-y-6 pb-24 animate-fade-in-up relative h-full">
-        {/* FULL SCREEN HEALING OVERLAY */}
-        {isHealing && (
-            <div className="fixed inset-0 z-[9999] bg-slate-950 flex flex-col items-center justify-center p-6 font-mono overflow-hidden text-white">
-                <div className="absolute inset-0 opacity-10" style={{ backgroundImage: 'radial-gradient(#22d3ee 1px, transparent 1px)', backgroundSize: '30px 30px' }}></div>
-                <div className="relative z-10 max-w-2xl w-full">
-                    <div className="flex justify-center mb-10 relative">
-                        <div className={`absolute inset-0 rounded-full blur-xl transition-all duration-1000 ${isHealed ? 'bg-green-500/40' : 'bg-cyan-500/30 animate-pulse'}`}></div>
-                        <div className={`relative h-32 w-32 bg-slate-900 rounded-full border-4 flex items-center justify-center shadow-2xl ${isHealed ? 'border-green-500 shadow-green-500/50' : 'border-cyan-500 shadow-cyan-500/50'}`}>
-                            {isHealed ? <CheckCircle size={64} className="text-green-400 animate-bounce-in" /> : <Cpu size={64} className="text-cyan-400 animate-spin-slow" />}
-                        </div>
-                    </div>
-                    <div className="text-center mb-8 space-y-4">
-                        <h1 className="text-3xl font-black tracking-[0.2em] text-white">{isHealed ? 'SYSTEM OPTIMIZED' : 'ROBOTECH PROTOCOL'}</h1>
-                        <p className={`text-sm ${isHealed ? 'text-green-400' : 'text-cyan-400 animate-pulse'}`}>{isHealed ? 'Maintenance Complete. Reboot Required.' : 'DIAGNOSTIC IN PROGRESS'}</p>
-                    </div>
-                    <div className="space-y-2">
-                        <div className="flex justify-between text-xs uppercase font-bold tracking-wider">
-                            <span className={isHealed ? 'text-green-600' : 'text-cyan-600'}>Repair Status</span>
-                            <span className="text-cyan-400">{Math.floor(healingProgress)}%</span>
-                        </div>
-                        <div className="h-3 w-full bg-slate-900 rounded-full border border-slate-800 overflow-hidden relative">
-                            <div className={`h-full transition-all duration-100 ease-out relative overflow-hidden ${isHealed ? 'bg-green-500' : 'bg-cyan-500'}`} style={{ width: `${healingProgress}%` }}></div>
-                        </div>
-                    </div>
-                    <div className="mt-8 bg-black/80 rounded-lg border border-slate-800 p-4 font-mono text-xs h-32 overflow-hidden flex flex-col justify-end shadow-inner">
-                        <div className="text-cyan-500 font-bold flex items-center gap-2"><Terminal size={12} /> {healingStep} <span className="animate-pulse">_</span></div>
-                    </div>
-                    
-                    {/* MANUAL REBOOT BUTTON */}
-                    {isHealed && (
-                        <div className="mt-10 text-center animate-fade-in-up">
-                            <button 
-                                onClick={handleManualReboot}
-                                className="bg-green-600 hover:bg-green-500 text-white px-8 py-4 rounded-xl font-black text-lg shadow-lg shadow-green-500/30 flex items-center gap-3 mx-auto transition-all hover:scale-105"
-                            >
-                                <Power size={24} /> REBOOT SYSTEM
-                            </button>
-                        </div>
-                    )}
-                </div>
-            </div>
-        )}
-
         {/* Header */}
         <div className="bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 rounded-3xl shadow-2xl p-8 text-white relative overflow-hidden border border-slate-700/50">
             <div className="absolute top-0 right-0 opacity-[0.03] pointer-events-none">
@@ -333,13 +320,20 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
             {/* Sidebar */}
             <div className="w-full lg:w-72 space-y-3 h-fit">
                 <nav className="bg-white dark:bg-slate-800 rounded-2xl shadow-xl border border-slate-100 dark:border-slate-700 p-3">
-                    {['General', 'Trainers', ...(canAccessRacs ? ['RACs'] : []), ...(canAccessSites ? ['Sites'] : []), ...(isSystemAdmin ? ['Companies', 'Integration', 'Diagnostics'] : [])].map((tab) => (
+                    {[
+                        'General', 
+                        'Trainers', 
+                        ...(canAccessRacs ? ['RACs'] : []), 
+                        ...(canAccessSites ? ['Sites'] : []), 
+                        ...(canAccessBranding ? ['Branding'] : []),
+                        ...(isSystemAdmin ? ['Companies', 'Integration', 'Diagnostics'] : [])
+                    ].map((tab) => (
                         <button 
                             key={tab}
                             onClick={() => setActiveTab(tab as any)}
                             className={`w-full text-left px-4 py-4 rounded-xl text-sm font-bold transition-all flex items-center gap-4 group mb-1 ${activeTab === tab ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-lg' : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700/50'}`}
                         >
-                            {tab === 'Diagnostics' ? <Activity size={20} /> : tab === 'Companies' ? <Building2 size={20} /> : <Box size={20} />}
+                            {tab === 'Diagnostics' ? <Activity size={20} /> : tab === 'Companies' ? <Building2 size={20} /> : tab === 'Branding' ? <Sparkles size={20} /> : <Box size={20} />}
                             <span>{tab}</span>
                         </button>
                     ))}
@@ -381,6 +375,85 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
                                 >
                                     <Plus size={20}/>
                                 </button>
+                            </div>
+                        </div>
+                    )}
+
+                    {activeTab === 'Branding' && canAccessBranding && (
+                        <div className="max-w-4xl mx-auto animate-fade-in">
+                            <div className="flex justify-between items-center mb-8 border-b border-slate-200 dark:border-slate-700 pb-6">
+                                <div>
+                                    <h3 className="text-2xl font-black text-slate-900 dark:text-white">Tenant Branding</h3>
+                                    <p className="text-sm text-slate-500 mt-1">Update your application identity and safety logos.</p>
+                                </div>
+                                <button 
+                                    onClick={handleSaveBranding}
+                                    className="px-6 py-2 bg-indigo-600 text-white rounded-xl font-bold hover:bg-indigo-500 shadow-lg transition-all"
+                                >
+                                    Save Branding
+                                </button>
+                            </div>
+
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                <div className="space-y-6">
+                                    <div>
+                                        <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-2 ml-1">Brand Name</label>
+                                        <input 
+                                            className="w-full p-4 rounded-xl border-2 dark:border-slate-600 dark:bg-slate-700 font-bold text-lg"
+                                            value={brandDraft.name}
+                                            onChange={e => setBrandDraft({...brandDraft, name: e.target.value})}
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-2 ml-1">Application Name</label>
+                                        <input 
+                                            className="w-full p-4 rounded-xl border-2 dark:border-slate-600 dark:bg-slate-700 font-bold text-lg text-indigo-600 dark:text-indigo-400"
+                                            value={brandDraft.appName}
+                                            placeholder="e.g. Vulcan Safety"
+                                            onChange={e => setBrandDraft({...brandDraft, appName: e.target.value})}
+                                        />
+                                        <p className="text-[10px] text-slate-400 mt-2">This name appears in the sidebar and main header.</p>
+                                    </div>
+                                </div>
+
+                                <div className="space-y-6">
+                                    <div>
+                                        <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-3 ml-1">Corporate Logo</label>
+                                        <div 
+                                            onClick={() => editFileInputRef.current?.click()}
+                                            className="h-32 border-2 border-dashed border-slate-300 dark:border-slate-600 rounded-2xl flex flex-col items-center justify-center cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-900 transition-all overflow-hidden"
+                                        >
+                                            {brandDraft.logoUrl ? (
+                                                <img src={brandDraft.logoUrl} className="h-full w-full object-contain p-4" alt="Brand Logo" />
+                                            ) : (
+                                                <div className="text-center">
+                                                    <Upload className="mx-auto text-slate-400 mb-2" size={24} />
+                                                    <span className="text-xs font-bold text-slate-500">Upload Brand Logo</span>
+                                                </div>
+                                            )}
+                                        </div>
+                                        <input type="file" ref={editFileInputRef} className="hidden" accept="image/*" onChange={(e) => handleLogoUpload(e, 'corporate')} />
+                                    </div>
+
+                                    <div>
+                                        <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-3 ml-1">Safety First Logo</label>
+                                        <div 
+                                            onClick={() => safetyLogoRef.current?.click()}
+                                            className="h-32 border-2 border-dashed border-slate-300 dark:border-slate-600 rounded-2xl flex flex-col items-center justify-center cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-900 transition-all overflow-hidden"
+                                        >
+                                            {brandDraft.safetyLogoUrl ? (
+                                                <img src={brandDraft.safetyLogoUrl} className="h-full w-full object-contain p-4" alt="Safety Logo" />
+                                            ) : (
+                                                <div className="text-center">
+                                                    <ShieldCheck className="mx-auto text-yellow-500 mb-2" size={24} />
+                                                    <span className="text-xs font-bold text-slate-500">Upload Safety Logo</span>
+                                                </div>
+                                            )}
+                                        </div>
+                                        <input type="file" ref={safetyLogoRef} className="hidden" accept="image/*" onChange={(e) => handleLogoUpload(e, 'safety')} />
+                                        <p className="text-[10px] text-slate-400 mt-2 italic">Typically a "Safety First" or RAC-specific badge.</p>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     )}
@@ -562,7 +635,7 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
                                             ref={fileInputRef} 
                                             className="hidden" 
                                             accept="image/*" 
-                                            onChange={(e) => handleLogoUpload(e, false)} 
+                                            onChange={(e) => handleLogoUpload(e, 'provision')} 
                                         />
                                         {newCompany.logoUrl && (
                                             <button 
@@ -729,7 +802,7 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
                                     ref={editFileInputRef} 
                                     className="hidden" 
                                     accept="image/*" 
-                                    onChange={(e) => handleLogoUpload(e, true)} 
+                                    onChange={(e) => handleLogoUpload(e, 'corporate')} 
                                 />
                                 {editingCompany.logoUrl && (
                                     <button 

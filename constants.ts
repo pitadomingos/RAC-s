@@ -3,7 +3,7 @@ import { RAC, RacDef, TrainingSession, Employee, EmployeeRequirement, Booking, B
 import { v4 as uuidv4 } from 'uuid';
 
 export const COMPANIES = [
-    'CARS Solutions', 
+    'Vulcan', 
     'Global Logistics', 
     'Safety First Contractors', 
     'Jachris', 
@@ -19,9 +19,9 @@ export const ROLES = ['Operator', 'Technician', 'Engineer', 'Supervisor', 'Gener
 
 // Source A: Internal HR System (SAP)
 export const RAW_HR_SOURCE = [
-    { id: '8901', name: 'Jessica Bata', dept: 'HSE', role: 'Safety Officer', email: 'jessica@cars-solutions.com' },
-    { id: '8902', name: 'Kelven Ubisse', dept: 'Mine Operations', role: 'Mining Engineer', email: 'kelven@cars-solutions.com' },
-    { id: '8903', name: 'Latifa Uetela', dept: 'Administration', role: 'HR Specialist', email: 'latifa@cars-solutions.com' }
+    { id: '8901', name: 'Jessica Bata', dept: 'HSE', role: 'Safety Officer', email: 'jessica@vulcan.com' },
+    { id: '8902', name: 'Kelven Ubisse', dept: 'Mine Operations', role: 'Mining Engineer', email: 'kelven@vulcan.com' },
+    { id: '8903', name: 'Latifa Uetela', dept: 'Administration', role: 'HR Specialist', email: 'latifa@vulcan.com' }
 ];
 
 // Source B: Contractor System (Célula)
@@ -69,7 +69,7 @@ export const INITIAL_RAC_DEFINITIONS: RacDef[] = [
     { id: '11', code: 'PTS', name: 'PTS - Permissão de Trabalho Seguro', validityMonths: 12, requiresPractical: false, requiresDriverLicense: false },
     { id: '12', code: 'ART', name: 'ART - Análise de Risco da Tarefa', validityMonths: 12, requiresPractical: false, requiresDriverLicense: false },
     { id: '13', code: 'LIB_OPS', name: 'LIB-OPS - Liberação Operacional', validityMonths: 12, requiresPractical: false, requiresDriverLicense: false },
-    { id: '14', code: 'LIB_MOV', name: 'LIB-MOV - Liberação de Movimentação', validityMonths: 12, requiresPractical: false, requiresDriverLicense: false }
+    { id: '14', code: 'LIB_MOV', name: 'LIB-MOV - Liberação de Movimentação', validityMonths: 12, requiresPractical: false, requiresDriverLicense: true }
 ];
 
 const getFutureDate = (daysToAdd: number) => {
@@ -101,19 +101,19 @@ export const MOCK_SESSIONS: TrainingSession[] = [
 ];
 
 export const MOCK_EMPLOYEES: Employee[] = [
-  { id: 'emp1', name: 'Paulo Manjate', recordId: 'CARS-1001', company: 'CARS Solutions', department: 'Mine Operations', role: 'Operator', isActive: true, driverLicenseNumber: 'DL-12345', driverLicenseClass: 'Heavy', driverLicenseExpiry: '2025-12-31', siteId: 's1' },
-  { id: 'emp2', name: 'Maria Silva', recordId: 'CARS-1002', company: 'CARS Solutions', department: 'HSE', role: 'Safety Officer', isActive: true, siteId: 's1' },
+  { id: 'emp1', name: 'Paulo Manjate', recordId: 'VUL-1001', company: 'Vulcan', department: 'Mine Operations', role: 'Operator', isActive: true, driverLicenseNumber: 'DL-12345', driverLicenseClass: 'Heavy', driverLicenseExpiry: '2025-12-31', siteId: 's1' },
+  { id: 'emp2', name: 'Maria Silva', recordId: 'VUL-1002', company: 'Vulcan', department: 'HSE', role: 'Safety Officer', isActive: true, siteId: 's1' },
   { id: 'emp3', name: 'John Doe', recordId: 'CON-5001', company: 'Safety First Contractors', department: 'Plant Maintenance', role: 'Technician', isActive: true, siteId: 's1' },
-  { id: 'emp4', name: 'Jose Cossa', recordId: 'CARS-1003', company: 'CARS Solutions', department: 'Logistics', role: 'Driver', isActive: true, driverLicenseNumber: 'DL-98765', driverLicenseClass: 'Light', driverLicenseExpiry: '2023-01-01', siteId: 's1' },
-  { id: 'emp5', name: 'Sarah Connor', recordId: 'CARS-1004', company: 'CARS Solutions', department: 'Administration', role: 'Manager', isActive: true, siteId: 's1' },
-  { id: 'emp6', name: 'Antonio Sitoe', recordId: 'CARS-1005', company: 'CARS Solutions', department: 'Mine Operations', role: 'General Helper', isActive: true, siteId: 's1' },
+  { id: 'emp4', name: 'Jose Cossa', recordId: 'VUL-1003', company: 'Vulcan', department: 'Logistics', role: 'Driver', isActive: true, driverLicenseNumber: 'DL-98765', driverLicenseClass: 'Light', driverLicenseExpiry: '2023-01-01', siteId: 's1' },
+  { id: 'emp5', name: 'Sarah Connor', recordId: 'VUL-1004', company: 'Vulcan', department: 'Administration', role: 'Manager', isActive: true, siteId: 's1' },
+  { id: 'emp6', name: 'Antonio Sitoe', recordId: 'VUL-1005', company: 'Vulcan', department: 'Mine Operations', role: 'General Helper', isActive: true, siteId: 's1' },
   { id: 'emp7', name: 'Luis Tete', recordId: 'CON-5002', company: 'Global Logistics', department: 'Logistics', role: 'Driver', isActive: true, driverLicenseNumber: 'DL-55555', driverLicenseClass: 'Heavy', driverLicenseExpiry: '2026-06-30', siteId: 's1' },
-  { id: 'emp8', name: 'Ana Monjane', recordId: 'CARS-1006', company: 'CARS Solutions', department: 'HSE', role: 'HSE Manager', isActive: true, siteId: 's1' },
-  { id: 'emp9', name: 'Carlos Macuacua', recordId: 'CARS-1007', company: 'CARS Solutions', department: 'Plant Maintenance', role: 'Engineer', isActive: false, siteId: 's1' },
+  { id: 'emp8', name: 'Ana Monjane', recordId: 'VUL-1006', company: 'Vulcan', department: 'HSE', role: 'HSE Manager', isActive: true, siteId: 's1' },
+  { id: 'emp9', name: 'Carlos Macuacua', recordId: 'VUL-1007', company: 'Vulcan', department: 'Plant Maintenance', role: 'Engineer', isActive: false, siteId: 's1' },
   { id: 'emp10', name: 'Berta Langa', recordId: 'CON-5003', company: 'Safety First Contractors', department: 'Mine Operations', role: 'Technician', isActive: true, siteId: 's1' },
-  { id: 'emp11', name: 'Joao Mutemba', recordId: 'CARS-1008', company: 'CARS Solutions', department: 'Mine Operations', role: 'Operator', isActive: true, siteId: 's1' },
+  { id: 'emp11', name: 'Joao Mutemba', recordId: 'VUL-1008', company: 'Vulcan', department: 'Mine Operations', role: 'Operator', isActive: true, siteId: 's1' },
   { id: 'emp12', name: 'Fernando Junior', recordId: 'CON-5004', company: 'Global Logistics', department: 'Logistics', role: 'Driver', isActive: true, driverLicenseNumber: 'DL-44332', driverLicenseClass: 'Light', driverLicenseExpiry: '2026-01-01', siteId: 's1' },
-  { id: 'emp13', name: 'Sofia Muianga', recordId: 'CARS-1009', company: 'CARS Solutions', department: 'Administration', role: 'Clerk', isActive: true, siteId: 's1' }
+  { id: 'emp13', name: 'Sofia Muianga', recordId: 'VUL-1009', company: 'Vulcan', department: 'Administration', role: 'Clerk', isActive: true, siteId: 's1' }
 ];
 
 export const MOCK_REQUIREMENTS: EmployeeRequirement[] = [

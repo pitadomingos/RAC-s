@@ -5,6 +5,7 @@ import CardTemplate from '../components/CardTemplate';
 import { Mail, AlertCircle, CheckCircle2, Printer, Search, X, ZoomIn, Filter, Trash2, User, Sparkles, CreditCard, Layers } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useLanguage } from '../contexts/LanguageContext';
+import { OPS_KEYS } from '../constants';
 
 interface RequestCardsPageProps {
   bookings: Booking[];
@@ -38,23 +39,20 @@ const RequestCardsPage: React.FC<RequestCardsPageProps> = ({ bookings, requireme
       if (!req.asoExpiryDate || req.asoExpiryDate <= today) return false;
 
       let allRacsMet = true;
-      const requiredRacKeys = Object.entries(req.requiredRacs)
-          .filter(([_, val]) => val === true)
-          .map(([key]) => key);
+      const mappedRacs = Object.entries(req.requiredRacs).filter(([_, val]) => val === true).map(([k]) => k);
       
-      const rac02IsRequired = requiredRacKeys.includes('RAC02');
-      const otherRequiredRacsCount = requiredRacKeys.filter(k => k !== 'RAC02').length;
-      const hasOtherRequiredRacs = otherRequiredRacsCount > 0;
+      const drivingRacs = ['RAC02', 'RAC11', 'LIB_MOV'];
+      const isMultiskilled = mappedRacs.some(k => !drivingRacs.includes(k) && !OPS_KEYS.includes(k));
 
       const empObj = safeBookings.find(b => b.employee.id === empId)?.employee;
       const dlExpiry = empObj?.driverLicenseExpiry || '';
       const isDlExpired = !!(dlExpiry && dlExpiry <= today) || !dlExpiry;
 
-      requiredRacKeys.forEach(key => {
-         if (key === 'RAC02') {
+      mappedRacs.forEach(key => {
+         if (drivingRacs.includes(key)) {
              if (isDlExpired) {
-                 // ONLY RAC02 -> Fails immediately
-                 if (!hasOtherRequiredRacs) {
+                 // ONLY block the whole record if they have no other roles
+                 if (!isMultiskilled) {
                      allRacsMet = false;
                  }
              } else {
@@ -255,6 +253,7 @@ const RequestCardsPage: React.FC<RequestCardsPageProps> = ({ bookings, requireme
                                       className="w-full bg-transparent text-sm font-bold outline-none text-slate-800 dark:text-slate-200 placeholder-slate-400/70"
                                       placeholder="Search ID..."
                                       value={input}
+                                      /* Fix: Changed 'index' to 'idx' to correctly reference the map iterator index */
                                       onChange={(e) => handleSlotChange(idx, e.target.value)}
                                   />
                                   <div className="pr-2">
