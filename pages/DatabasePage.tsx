@@ -2,7 +2,7 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Booking, BookingStatus, EmployeeRequirement, Employee, TrainingSession, RacDef, SystemNotification } from '../types';
-import { COMPANIES, OPS_KEYS, PERMISSION_KEYS, DEPARTMENTS } from '../constants';
+import { COMPANIES, OPS_KEYS, PERMISSION_KEYS, DEPARTMENTS, RAC_KEYS } from '../constants';
 import { Search, CheckCircle, XCircle, Edit, ChevronLeft, ChevronRight, Download, X, Trash2, QrCode, Printer, Phone, AlertTriangle, Loader2, Archive, Filter, Smartphone, FileSpreadsheet, ArrowRight, Settings, Database as DbIcon, ShieldCheck, CreditCard } from 'lucide-react';
 import { useLanguage } from '../contexts/LanguageContext';
 import JSZip from 'jszip';
@@ -484,18 +484,31 @@ const DatabasePage: React.FC<DatabasePageProps> = ({ bookings, requirements, upd
       const today = new Date().toISOString().split('T')[0];
       const isAsoValid = !!(req.asoExpiryDate && req.asoExpiryDate > today);
       const dlExpiry = emp.driverLicenseExpiry || '';
-      const isDlExpired = !!(dlExpiry && dlExpiry <= today);
+      const isDlExpired = !!(dlExpiry && dlExpiry <= today) || !dlExpiry;
       const isActive = emp.isActive ?? true;
+
       let allRacsMet = true;
-      let hasRac02Req = false;
+      let rac02IsRequired = !!req.requiredRacs['RAC02'];
+      
+      const otherRequiredRacs = Object.entries(req.requiredRacs).filter(([key, val]) => val === true && key !== 'RAC02');
+      const hasOtherRequiredRacs = otherRequiredRacs.length > 0;
 
       racDefinitions.forEach(def => {
           const key = def.code;
           if (req.requiredRacs[key]) {
-              if (key === 'RAC02') hasRac02Req = true;
-              const trainingExpiry = getTrainingStatus(emp.id, key);
-              if (!trainingExpiry || trainingExpiry <= today) {
-                  allRacsMet = false;
+              if (key === 'RAC02') {
+                  if (isDlExpired) {
+                      // Block exclusive drivers, but de-map logically for others
+                      if (!hasOtherRequiredRacs) {
+                          allRacsMet = false;
+                      }
+                  } else {
+                      const trainingExpiry = getTrainingStatus(emp.id, key);
+                      if (!trainingExpiry || trainingExpiry <= today) allRacsMet = false;
+                  }
+              } else {
+                  const trainingExpiry = getTrainingStatus(emp.id, key);
+                  if (!trainingExpiry || trainingExpiry <= today) allRacsMet = false;
               }
           }
       });
@@ -503,9 +516,9 @@ const DatabasePage: React.FC<DatabasePageProps> = ({ bookings, requirements, upd
       let status: 'Granted' | 'Blocked' = 'Granted';
       if (!isActive) status = 'Blocked';
       else if (!isAsoValid || !allRacsMet) status = 'Blocked';
-      else if (hasRac02Req && isDlExpired) status = 'Blocked';
+      else if (rac02IsRequired && !hasOtherRequiredRacs && isDlExpired) status = 'Blocked';
 
-      return { emp, req, status, isAsoValid, isDlExpired, isActive, hasRac02Req };
+      return { emp, req, status, isAsoValid, isDlExpired, isActive, hasOtherRequiredRacs };
     }).filter(item => {
         if (currentSiteId !== 'all' && item.emp.siteId !== currentSiteId) {
             const sId = item.emp.siteId || 's1';
@@ -886,7 +899,7 @@ const DatabasePage: React.FC<DatabasePageProps> = ({ bookings, requirements, upd
                     </div>
                     <div className="p-6 bg-gray-50 border-t flex justify-end gap-3">
                         <button onClick={() => setShowImportModal(false)} className="px-6 py-2 text-sm font-bold text-gray-500 hover:bg-gray-200 rounded">{t.common.cancel}</button>
-                        <button onClick={processImport} className="px-8 py-2 bg-indigo-600 text-white rounded text-sm font-black shadow-lg hover:bg-indigo-500 flex items-center gap-2">
+                        <button onClick={processImport} className="px-8 py-2 bg-indigo-600 text-white rounded text-sm font-black shadow-lg hover:bg-indigo-50 flex items-center gap-2">
                              <CheckCircle size={18}/> {t.database.processImport}
                         </button>
                     </div>

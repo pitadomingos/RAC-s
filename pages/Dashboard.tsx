@@ -35,19 +35,14 @@ const Dashboard: React.FC<DashboardProps> = ({
   const { t, language } = useLanguage();
   const { addMessage } = useMessages();
   
-  // -- GLOBAL FILTERS (LOCAL TO PAGE) --
   const [selectedCompany, setSelectedCompany] = useState<string>('All');
   const [selectedDepartment, setSelectedDepartment] = useState<string>('All');
   const [selectedAccessStatus, setSelectedAccessStatus] = useState<'All' | 'Granted' | 'Blocked'>('All');
 
-  // Trigger re-render every minute to update countdowns
   const [, setTick] = useState(0);
-
-  // Pagination state for Auto-Booking Table
   const [abPage, setAbPage] = useState(1);
   const AB_ROWS_PER_PAGE = 5; 
 
-  // Filters for Employee Bookings Table
   const [empFilterCompany, setEmpFilterCompany] = useState<string>('All');
   const [empFilterRac, setEmpFilterRac] = useState<string>('All');
   const [empFilterDate, setEmpFilterDate] = useState<string>('');
@@ -59,7 +54,6 @@ const Dashboard: React.FC<DashboardProps> = ({
     return () => clearInterval(timer);
   }, []);
 
-  // Safety check for translations
   if (!t || !t.dashboard || !t.dashboard.upcoming || !t.dashboard.booked) {
       return (
           <div className="flex items-center justify-center h-full p-20 text-slate-500">
@@ -68,16 +62,13 @@ const Dashboard: React.FC<DashboardProps> = ({
       );
   }
 
-  // --- HELPER: Translate RACs ---
   const getTranslatedRacName = (racType: string) => {
       const racCode = racType.split(' - ')[0].replace(/\s+/g, '');
       // @ts-ignore
       return t.racDefs?.[racCode] || racType;
   };
 
-  // --- CORE LOGIC: Access Status Calculation ---
   const employeesWithStatus = useMemo(() => {
-      // 1. Get Unique Employees
       const empMap = new Map<string, any>();
       bookings.forEach(b => {
           if (!empMap.has(b.employee.id)) {
@@ -91,19 +82,45 @@ const Dashboard: React.FC<DashboardProps> = ({
           const today = new Date().toISOString().split('T')[0];
           const isAsoValid = !!(req.asoExpiryDate && req.asoExpiryDate > today);
           const dlExpiry = emp.driverLicenseExpiry || '';
-          const isDlExpired = !!(dlExpiry && dlExpiry <= today);
+          const isDlExpired = !!(dlExpiry && dlExpiry <= today) || !dlExpiry;
           const isActive = emp.isActive ?? true;
 
           let allRacsMet = true;
-          let hasRac02Req = false;
+          let rac02IsRequired = !!req.requiredRacs['RAC02'];
+          
+          // Count other required RACs
+          const otherRequiredRacs = Object.entries(req.requiredRacs).filter(([key, val]) => val === true && key !== 'RAC02');
+          const hasOtherRequiredRacs = otherRequiredRacs.length > 0;
 
           const definitions = racDefinitions.length > 0 ? racDefinitions : RAC_KEYS.map(k => ({ code: k }));
 
           definitions.forEach((def: any) => {
               const key = def.code;
-              if (req.requiredRacs[key]) {
-                  if (key === 'RAC02') hasRac02Req = true;
-                  
+              
+              // RAC02 Special Logic
+              if (key === 'RAC02' && req.requiredRacs[key]) {
+                  if (isDlExpired) {
+                      // If RAC02 is the ONLY RAC, it fails the met condition
+                      if (!hasOtherRequiredRacs) {
+                          allRacsMet = false;
+                      } else {
+                          // Logically de-mapped: We ignore RAC02 for multiskilled workers
+                          // but they still must pass others.
+                      }
+                  } else {
+                      // Normal RAC02 validation (Needs both DL and Training)
+                      const validBooking = bookings.find(b => {
+                          if (b.employee.id !== emp.id) return false;
+                          if (b.status !== BookingStatus.PASSED) return false;
+                          if (!b.expiryDate || b.expiryDate <= today) return false;
+                          let bRacKey = (sessions.find(s => s.id === b.sessionId)?.racType || b.sessionId).split('-')[0].replace(/\s+/g, '').trim().toUpperCase();
+                          return bRacKey === 'RAC02';
+                      });
+                      if (!validBooking) allRacsMet = false;
+                  }
+              } 
+              // Standard RAC Logic
+              else if (req.requiredRacs[key]) {
                   const validBooking = bookings.find(b => {
                       if (b.employee.id !== emp.id) return false;
                       if (b.status !== BookingStatus.PASSED) return false;
@@ -135,7 +152,8 @@ const Dashboard: React.FC<DashboardProps> = ({
           let status: 'Granted' | 'Blocked' = 'Granted';
           if (!isActive) status = 'Blocked';
           else if (!isAsoValid || !allRacsMet) status = 'Blocked';
-          else if (hasRac02Req && isDlExpired) status = 'Blocked';
+          // Case 1: Driver Only + Expired DL -> Blocked
+          else if (rac02IsRequired && !hasOtherRequiredRacs && isDlExpired) status = 'Blocked';
 
           return {
               ...emp,

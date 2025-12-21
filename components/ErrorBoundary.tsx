@@ -19,8 +19,8 @@ interface State {
  * Catches runtime errors and triggers autonomous repair visuals.
  * Inherits from React.Component to provide error boundary lifecycle methods.
  */
-/* Fix: Explicitly extending React.Component with defined Props and State interfaces ensures that 'setState' and 'props' are correctly inherited and recognized by the TypeScript compiler. */
-export class ErrorBoundary extends React.Component<Props, State> {
+/* Fix: Explicitly extending Component with defined Props and State interfaces ensures that 'setState' and 'props' are correctly inherited and recognized by the TypeScript compiler. */
+export class ErrorBoundary extends Component<Props, State> {
   // Initialize state to satisfy the React Component lifecycle.
   state: State = {
     hasError: false,
@@ -33,7 +33,8 @@ export class ErrorBoundary extends React.Component<Props, State> {
 
   private simulationInterval: any = null;
 
-  public static getDerivedStateFromError(error: Error): State {
+  /* Fix: Changed return type to Partial<State> to correctly align with React's static getDerivedStateFromError lifecycle method. */
+  public static getDerivedStateFromError(error: Error): Partial<State> {
     return { 
         hasError: true, 
         error, 
@@ -66,6 +67,7 @@ export class ErrorBoundary extends React.Component<Props, State> {
       if (this.simulationInterval) clearInterval(this.simulationInterval);
   }
 
+  /* Fix: 'setState' is inherited from Component. Using the arrow function property ensures 'this' context is the class instance. */
   private startRepairSimulation = () => {
       const steps = [
           "Scanning Neural Pathways...",
@@ -80,13 +82,13 @@ export class ErrorBoundary extends React.Component<Props, State> {
       let stepIndex = 0;
 
       this.simulationInterval = setInterval(() => {
-          /* Fix: 'setState' is inherited from React.Component. Using the updater function pattern to safely update the progress state. */
-          this.setState((prevState: State) => {
+          /* Fix: Properly handle state update with partial state returns in the updater function. */
+          this.setState((prevState) => {
               // Stop progressing if we are waiting for AI but hit 90%
               const canFinish = !!prevState.aiDiagnosis;
               
               if (prevState.repairProgress >= 90 && !canFinish) {
-                  return { repairStep: "Finalizing Analysis..." } as any;
+                  return { repairStep: "Finalizing Analysis..." };
               }
 
               const nextProgress = prevState.repairProgress + (Math.random() * 8); 
@@ -123,6 +125,7 @@ export class ErrorBoundary extends React.Component<Props, State> {
       }
   }
 
+  /* Fix: Use 'this.setState' correctly on the class instance to finalize the repair state once diagnosis is complete. */
   private completeRepair = (diagnosis: { rootCause: string, fix: string }) => {
       if (this.simulationInterval) clearInterval(this.simulationInterval);
 
@@ -131,7 +134,6 @@ export class ErrorBoundary extends React.Component<Props, State> {
           sessionStorage.clear();
       } catch(e) { /* ignore */ }
 
-      /* Fix: 'setState' is called on the class instance to finalize the repair state once diagnosis is complete. */
       this.setState({ 
           aiDiagnosis: diagnosis,
           repairProgress: 100,
@@ -260,7 +262,7 @@ export class ErrorBoundary extends React.Component<Props, State> {
       );
     }
 
-    /* Fix: 'props' is inherited from React.Component and is accessible here to render the children when no error has occurred. */
+    /* Fix: 'props' is inherited from Component and is correctly accessed here to render children when no error has occurred. */
     return this.props.children;
   }
 }

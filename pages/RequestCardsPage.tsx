@@ -38,44 +38,71 @@ const RequestCardsPage: React.FC<RequestCardsPageProps> = ({ bookings, requireme
       if (!req.asoExpiryDate || req.asoExpiryDate <= today) return false;
 
       let allRacsMet = true;
-      let hasRac02Req = false;
+      let rac02IsRequired = !!req.requiredRacs['RAC02'];
+      
+      const otherRequiredRacs = Object.entries(req.requiredRacs).filter(([key, val]) => val === true && key !== 'RAC02');
+      const hasOtherRequiredRacs = otherRequiredRacs.length > 0;
+
+      const empObj = safeBookings.find(b => b.employee.id === empId)?.employee;
+      const dlExpiry = empObj?.driverLicenseExpiry || '';
+      const isDlExpired = !!(dlExpiry && dlExpiry <= today) || !dlExpiry;
 
       racDefinitions.forEach(def => {
          const key = def.code;
          if (req.requiredRacs[key]) {
-             if (key === 'RAC02') hasRac02Req = true;
-             const passedBooking = safeBookings.find(b => {
-                 if (b.employee.id !== empId) return false;
-                 if (b.status !== BookingStatus.PASSED) return false;
-                 let racCode = '';
-                 const session = sessions.find(s => s.id === b.sessionId);
-                 if (session) {
-                     racCode = session.racType.split(' - ')[0].replace(' ', '');
+             if (key === 'RAC02') {
+                 if (isDlExpired) {
+                     if (!hasOtherRequiredRacs) {
+                         allRacsMet = false;
+                     }
                  } else {
-                     if (b.sessionId.includes('RAC')) {
-                         racCode = b.sessionId.split(' - ')[0].replace(' ', '');
-                     } else if (b.sessionId.includes(key)) {
-                         racCode = key;
+                     const passedBooking = safeBookings.find(b => {
+                         if (b.employee.id !== empId) return false;
+                         if (b.status !== BookingStatus.PASSED) return false;
+                         let racCode = '';
+                         const session = sessions.find(s => s.id === b.sessionId);
+                         if (session) {
+                             racCode = session.racType.split(' - ')[0].replace(' ', '');
+                         } else {
+                             if (b.sessionId.includes('RAC')) {
+                                 racCode = b.sessionId.split(' - ')[0].replace(' ', '');
+                             } else if (b.sessionId.includes(key)) {
+                                 racCode = key;
+                             }
+                         }
+                         return racCode === key;
+                     });
+                     if (!passedBooking || !passedBooking.expiryDate || passedBooking.expiryDate <= today) {
+                         allRacsMet = false;
                      }
                  }
-                 return racCode === key;
-             });
-             if (!passedBooking || !passedBooking.expiryDate || passedBooking.expiryDate <= today) {
-                 allRacsMet = false;
+             } else {
+                 const passedBooking = safeBookings.find(b => {
+                     if (b.employee.id !== empId) return false;
+                     if (b.status !== BookingStatus.PASSED) return false;
+                     let racCode = '';
+                     const session = sessions.find(s => s.id === b.sessionId);
+                     if (session) {
+                         racCode = session.racType.split(' - ')[0].replace(' ', '');
+                     } else {
+                         if (b.sessionId.includes('RAC')) {
+                             racCode = b.sessionId.split(' - ')[0].replace(' ', '');
+                         } else if (b.sessionId.includes(key)) {
+                             racCode = key;
+                         }
+                     }
+                     return racCode === key;
+                 });
+                 if (!passedBooking || !passedBooking.expiryDate || passedBooking.expiryDate <= today) {
+                     allRacsMet = false;
+                 }
              }
          }
       });
 
       if (!allRacsMet) return false;
-      if (hasRac02Req) {
-          const empBooking = safeBookings.find(b => b.employee.id === empId);
-          if (empBooking) {
-              const dlExpiry = empBooking.employee.driverLicenseExpiry;
-              if (!dlExpiry || dlExpiry <= today) return false;
-          } else {
-              return false;
-          }
-      }
+      if (rac02IsRequired && !hasOtherRequiredRacs && isDlExpired) return false;
+      
       return true;
   };
 
