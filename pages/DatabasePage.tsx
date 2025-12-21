@@ -488,35 +488,35 @@ const DatabasePage: React.FC<DatabasePageProps> = ({ bookings, requirements, upd
       const isActive = emp.isActive ?? true;
 
       let allRacsMet = true;
-      let rac02IsRequired = !!req.requiredRacs['RAC02'];
-      
-      const otherRequiredRacs = Object.entries(req.requiredRacs).filter(([key, val]) => val === true && key !== 'RAC02');
+      const mappedRacs = Object.entries(req.requiredRacs).filter(([_, val]) => val === true);
+      const rac02IsRequired = !!req.requiredRacs['RAC02'];
+      const otherRequiredRacs = mappedRacs.filter(([key]) => key !== 'RAC02');
       const hasOtherRequiredRacs = otherRequiredRacs.length > 0;
 
       racDefinitions.forEach(def => {
           const key = def.code;
-          if (req.requiredRacs[key]) {
-              if (key === 'RAC02') {
-                  if (isDlExpired) {
-                      // Block exclusive drivers, but de-map logically for others
-                      if (!hasOtherRequiredRacs) {
-                          allRacsMet = false;
-                      }
-                  } else {
-                      const trainingExpiry = getTrainingStatus(emp.id, key);
-                      if (!trainingExpiry || trainingExpiry <= today) allRacsMet = false;
+          if (!req.requiredRacs[key]) return;
+
+          // RAC02 Special Logic
+          if (key === 'RAC02') {
+              if (isDlExpired) {
+                  // Block exclusive drivers, but skip logic for multiskilled
+                  if (!hasOtherRequiredRacs) {
+                      allRacsMet = false;
                   }
               } else {
                   const trainingExpiry = getTrainingStatus(emp.id, key);
                   if (!trainingExpiry || trainingExpiry <= today) allRacsMet = false;
               }
+          } else {
+              const trainingExpiry = getTrainingStatus(emp.id, key);
+              if (!trainingExpiry || trainingExpiry <= today) allRacsMet = false;
           }
       });
 
       let status: 'Granted' | 'Blocked' = 'Granted';
       if (!isActive) status = 'Blocked';
       else if (!isAsoValid || !allRacsMet) status = 'Blocked';
-      else if (rac02IsRequired && !hasOtherRequiredRacs && isDlExpired) status = 'Blocked';
 
       return { emp, req, status, isAsoValid, isDlExpired, isActive, hasOtherRequiredRacs };
     }).filter(item => {
@@ -808,7 +808,7 @@ const DatabasePage: React.FC<DatabasePageProps> = ({ bookings, requirements, upd
                 <div className="bg-white rounded-3xl p-8 max-w-sm w-full flex flex-col items-center shadow-2xl" onClick={e => e.stopPropagation()}>
                     <div className="w-full flex justify-between items-center mb-6">
                         <div className="flex items-center gap-2 text-indigo-600 font-black tracking-tighter">
-                            <ShieldCheck size={20} /> CARS SAFETY
+                            <ShieldCheck size={20} /> RACS SAFETY
                         </div>
                         <button onClick={() => setQrEmployee(null)} className="p-1 hover:bg-slate-100 rounded-full transition-colors"><X size={20}/></button>
                     </div>

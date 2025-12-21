@@ -1,9 +1,9 @@
-import React, { Component, ErrorInfo, ReactNode } from 'react';
+import React from 'react';
 import { Cpu, Zap, Activity, Terminal, CheckCircle2, RefreshCw, Power } from 'lucide-react';
 import { analyzeRuntimeError } from '../services/geminiService';
 
 interface Props {
-  children?: ReactNode;
+  children?: React.ReactNode;
 }
 
 interface State {
@@ -19,8 +19,8 @@ interface State {
  * Catches runtime errors and triggers autonomous repair visuals.
  * Inherits from React.Component to provide error boundary lifecycle methods.
  */
-/* Fix: Explicitly extending Component with defined Props and State interfaces ensures that 'setState' and 'props' are correctly inherited and recognized by the TypeScript compiler. */
-export class ErrorBoundary extends Component<Props, State> {
+// Fix: Use React.Component explicitly to resolve issues with setState and props recognition in some TypeScript environments.
+export class ErrorBoundary extends React.Component<Props, State> {
   // Initialize state to satisfy the React Component lifecycle.
   state: State = {
     hasError: false,
@@ -33,7 +33,7 @@ export class ErrorBoundary extends Component<Props, State> {
 
   private simulationInterval: any = null;
 
-  /* Fix: Changed return type to Partial<State> to correctly align with React's static getDerivedStateFromError lifecycle method. */
+  // Fix: Correct return type to align with static getDerivedStateFromError signature.
   public static getDerivedStateFromError(error: Error): Partial<State> {
     return { 
         hasError: true, 
@@ -45,7 +45,8 @@ export class ErrorBoundary extends Component<Props, State> {
     };
   }
 
-  public componentDidCatch(error: Error, errorInfo: ErrorInfo) {
+  // Fix: Use React.ErrorInfo instead of named import for type consistency.
+  public componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
     const errorString = error.toString();
     const errorMessage = error.message || errorString;
     const isManualCrash = errorMessage.includes("MANUAL SYSTEM CRASH");
@@ -67,7 +68,7 @@ export class ErrorBoundary extends Component<Props, State> {
       if (this.simulationInterval) clearInterval(this.simulationInterval);
   }
 
-  /* Fix: 'setState' is inherited from Component. Using the arrow function property ensures 'this' context is the class instance. */
+  // Fix: Arrow function property ensures 'this' correctly refers to the class instance inheriting from React.Component.
   private startRepairSimulation = () => {
       const steps = [
           "Scanning Neural Pathways...",
@@ -82,7 +83,7 @@ export class ErrorBoundary extends Component<Props, State> {
       let stepIndex = 0;
 
       this.simulationInterval = setInterval(() => {
-          /* Fix: Properly handle state update with partial state returns in the updater function. */
+          // Fix: setState is a standard method available on class components extending React.Component.
           this.setState((prevState) => {
               // Stop progressing if we are waiting for AI but hit 90%
               const canFinish = !!prevState.aiDiagnosis;
@@ -107,7 +108,8 @@ export class ErrorBoundary extends Component<Props, State> {
       }, 200);
   };
 
-  private runSilentDiagnosis = async (errorMessage: string, errorInfo: ErrorInfo) => {
+  // Fix: Explicitly use React.ErrorInfo to ensure types are correctly resolved.
+  private runSilentDiagnosis = async (errorMessage: string, errorInfo: React.ErrorInfo) => {
       try {
           // Real World: Attempt to get AI analysis
           const stack = errorInfo.componentStack || '';
@@ -125,7 +127,7 @@ export class ErrorBoundary extends Component<Props, State> {
       }
   }
 
-  /* Fix: Use 'this.setState' correctly on the class instance to finalize the repair state once diagnosis is complete. */
+  // Fix: Use this.setState to finalize repair state once AI analysis is complete.
   private completeRepair = (diagnosis: { rootCause: string, fix: string }) => {
       if (this.simulationInterval) clearInterval(this.simulationInterval);
 
@@ -262,7 +264,7 @@ export class ErrorBoundary extends Component<Props, State> {
       );
     }
 
-    /* Fix: 'props' is inherited from Component and is correctly accessed here to render children when no error has occurred. */
+    // Fix: Using 'this.props' from React.Component to render children when no error occurred.
     return this.props.children;
   }
 }

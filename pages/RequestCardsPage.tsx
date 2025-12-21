@@ -38,9 +38,9 @@ const RequestCardsPage: React.FC<RequestCardsPageProps> = ({ bookings, requireme
       if (!req.asoExpiryDate || req.asoExpiryDate <= today) return false;
 
       let allRacsMet = true;
-      let rac02IsRequired = !!req.requiredRacs['RAC02'];
-      
-      const otherRequiredRacs = Object.entries(req.requiredRacs).filter(([key, val]) => val === true && key !== 'RAC02');
+      const mappedRacs = Object.entries(req.requiredRacs).filter(([_, val]) => val === true);
+      const rac02IsRequired = !!req.requiredRacs['RAC02'];
+      const otherRequiredRacs = mappedRacs.filter(([key]) => key !== 'RAC02');
       const hasOtherRequiredRacs = otherRequiredRacs.length > 0;
 
       const empObj = safeBookings.find(b => b.employee.id === empId)?.employee;
@@ -49,32 +49,13 @@ const RequestCardsPage: React.FC<RequestCardsPageProps> = ({ bookings, requireme
 
       racDefinitions.forEach(def => {
          const key = def.code;
-         if (req.requiredRacs[key]) {
-             if (key === 'RAC02') {
-                 if (isDlExpired) {
-                     if (!hasOtherRequiredRacs) {
-                         allRacsMet = false;
-                     }
-                 } else {
-                     const passedBooking = safeBookings.find(b => {
-                         if (b.employee.id !== empId) return false;
-                         if (b.status !== BookingStatus.PASSED) return false;
-                         let racCode = '';
-                         const session = sessions.find(s => s.id === b.sessionId);
-                         if (session) {
-                             racCode = session.racType.split(' - ')[0].replace(' ', '');
-                         } else {
-                             if (b.sessionId.includes('RAC')) {
-                                 racCode = b.sessionId.split(' - ')[0].replace(' ', '');
-                             } else if (b.sessionId.includes(key)) {
-                                 racCode = key;
-                             }
-                         }
-                         return racCode === key;
-                     });
-                     if (!passedBooking || !passedBooking.expiryDate || passedBooking.expiryDate <= today) {
-                         allRacsMet = false;
-                     }
+         if (!req.requiredRacs[key]) return;
+
+         if (key === 'RAC02') {
+             if (isDlExpired) {
+                 // ONLY RAC02 -> Fails compliance
+                 if (!hasOtherRequiredRacs) {
+                     allRacsMet = false;
                  }
              } else {
                  const passedBooking = safeBookings.find(b => {
@@ -97,13 +78,30 @@ const RequestCardsPage: React.FC<RequestCardsPageProps> = ({ bookings, requireme
                      allRacsMet = false;
                  }
              }
+         } else {
+             const passedBooking = safeBookings.find(b => {
+                 if (b.employee.id !== empId) return false;
+                 if (b.status !== BookingStatus.PASSED) return false;
+                 let racCode = '';
+                 const session = sessions.find(s => s.id === b.sessionId);
+                 if (session) {
+                     racCode = session.racType.split(' - ')[0].replace(' ', '');
+                 } else {
+                     if (b.sessionId.includes('RAC')) {
+                         racCode = b.sessionId.split(' - ')[0].replace(' ', '');
+                     } else if (b.sessionId.includes(key)) {
+                         racCode = key;
+                     }
+                 }
+                 return racCode === key;
+             });
+             if (!passedBooking || !passedBooking.expiryDate || passedBooking.expiryDate <= today) {
+                 allRacsMet = false;
+             }
          }
       });
 
-      if (!allRacsMet) return false;
-      if (rac02IsRequired && !hasOtherRequiredRacs && isDlExpired) return false;
-      
-      return true;
+      return allRacsMet;
   };
 
   const allEligibleBookings = useMemo(() => {

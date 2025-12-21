@@ -79,7 +79,8 @@ const App: React.FC = () => {
   
   const [companies, setCompanies] = useState<Company[]>(() => {
       const saved = localStorage.getItem('cars_companies');
-      return saved ? JSON.parse(saved) : [{ id: 'c1', name: 'CARS Solutions', status: 'Active', defaultLanguage: 'pt', features: { alcohol: true } }];
+      // Set Initial Tenant to Vulcan
+      return saved ? JSON.parse(saved) : [{ id: 'c1', name: 'Vulcan', status: 'Active', defaultLanguage: 'pt', features: { alcohol: true } }];
   });
 
   useEffect(() => { localStorage.setItem('cars_bookings', JSON.stringify(bookings)); }, [bookings]);
@@ -92,7 +93,7 @@ const App: React.FC = () => {
   useEffect(() => { localStorage.setItem('cars_companies', JSON.stringify(companies)); }, [companies]);
 
   const [users, setUsers] = useState<User[]>([
-      { id: 1, name: 'System Admin', email: 'admin@cars-system.com', role: UserRole.SYSTEM_ADMIN, status: 'Active', company: 'CARS Solutions', jobTitle: 'IT Manager', siteId: 's1' }
+      { id: 1, name: 'System Admin', email: 'admin@vulcan.com', role: UserRole.SYSTEM_ADMIN, status: 'Active', company: 'Vulcan', jobTitle: 'IT Manager', siteId: 's1' }
   ]);
   const [currentSiteId, setCurrentSiteId] = useState<string>('all');
 
@@ -150,7 +151,7 @@ const App: React.FC = () => {
 
   const handleMiddlewareSync = () => {
       const processedHR = RAW_HR_SOURCE.map(raw => ({
-          id: uuidv4(), name: raw.name, recordId: `CARS-${raw.id}`, company: 'CARS Solutions', department: raw.dept, role: raw.role, isActive: true, siteId: 's1'
+          id: uuidv4(), name: raw.name, recordId: `VUL-${raw.id}`, company: 'Vulcan', department: raw.dept, role: raw.role, isActive: true, siteId: 's1'
       }));
       const processedCont = RAW_CONTRACTOR_SOURCE.map(raw => ({
           id: uuidv4(), name: raw.name, recordId: `CON-${raw.id}`, company: raw.company, department: raw.dept, role: raw.role, isActive: true, siteId: 's1'

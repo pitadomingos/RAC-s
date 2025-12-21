@@ -86,10 +86,9 @@ const Dashboard: React.FC<DashboardProps> = ({
           const isActive = emp.isActive ?? true;
 
           let allRacsMet = true;
-          let rac02IsRequired = !!req.requiredRacs['RAC02'];
-          
-          // Count other required RACs
-          const otherRequiredRacs = Object.entries(req.requiredRacs).filter(([key, val]) => val === true && key !== 'RAC02');
+          const mappedRacs = Object.entries(req.requiredRacs).filter(([_, val]) => val === true);
+          const rac02IsRequired = !!req.requiredRacs['RAC02'];
+          const otherRequiredRacs = mappedRacs.filter(([key]) => key !== 'RAC02');
           const hasOtherRequiredRacs = otherRequiredRacs.length > 0;
 
           const definitions = racDefinitions.length > 0 ? racDefinitions : RAC_KEYS.map(k => ({ code: k }));
@@ -97,18 +96,18 @@ const Dashboard: React.FC<DashboardProps> = ({
           definitions.forEach((def: any) => {
               const key = def.code;
               
+              if (!req.requiredRacs[key]) return;
+
               // RAC02 Special Logic
-              if (key === 'RAC02' && req.requiredRacs[key]) {
+              if (key === 'RAC02') {
                   if (isDlExpired) {
-                      // If RAC02 is the ONLY RAC, it fails the met condition
+                      // Condition 1: Only RAC02 -> Fails if DL is invalid
                       if (!hasOtherRequiredRacs) {
                           allRacsMet = false;
-                      } else {
-                          // Logically de-mapped: We ignore RAC02 for multiskilled workers
-                          // but they still must pass others.
                       }
+                      // Condition 2: RAC02 + Others -> We logically skip RAC02 check
                   } else {
-                      // Normal RAC02 validation (Needs both DL and Training)
+                      // DL is valid, now check if they passed training
                       const validBooking = bookings.find(b => {
                           if (b.employee.id !== emp.id) return false;
                           if (b.status !== BookingStatus.PASSED) return false;
@@ -120,7 +119,7 @@ const Dashboard: React.FC<DashboardProps> = ({
                   }
               } 
               // Standard RAC Logic
-              else if (req.requiredRacs[key]) {
+              else {
                   const validBooking = bookings.find(b => {
                       if (b.employee.id !== emp.id) return false;
                       if (b.status !== BookingStatus.PASSED) return false;
@@ -135,7 +134,7 @@ const Dashboard: React.FC<DashboardProps> = ({
                       }
                       
                       if (bRacKey.includes('|')) bRacKey = bRacKey.split('|')[0];
-                      bRacKey = bRacKey.replace('(Imp)', '');
+                      bRacKey = bRacKey.replace('(Imp)', '').replace('(IMP)', '');
                       if (bRacKey.includes('-')) bRacKey = bRacKey.split('-')[0];
                       bRacKey = bRacKey.replace(/\s+/g, '').trim().toUpperCase();
                       
@@ -152,8 +151,6 @@ const Dashboard: React.FC<DashboardProps> = ({
           let status: 'Granted' | 'Blocked' = 'Granted';
           if (!isActive) status = 'Blocked';
           else if (!isAsoValid || !allRacsMet) status = 'Blocked';
-          // Case 1: Driver Only + Expired DL -> Blocked
-          else if (rac02IsRequired && !hasOtherRequiredRacs && isDlExpired) status = 'Blocked';
 
           return {
               ...emp,
@@ -350,7 +347,7 @@ const Dashboard: React.FC<DashboardProps> = ({
       if (sentCount > 0) {
           addMessage({
               type: 'EMAIL',
-              recipient: 'manager@cars-system.com',
+              recipient: 'manager@vulcan.com',
               recipientName: 'Site Manager',
               subject: 'Daily Expiry Notification Report',
               content: `System Report:\n\nSent ${sentCount} SMS reminders to employees expiring within 30 days.\n\nPlease check the dashboard for details.`

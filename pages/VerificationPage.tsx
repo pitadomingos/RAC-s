@@ -56,53 +56,55 @@ const VerificationPage: React.FC<VerificationPageProps> = ({
     const isActive = employee.isActive ?? true;
 
     let allRacsMet = true;
-    let rac02IsRequired = !!req.requiredRacs['RAC02'];
-    
-    const otherRequiredRacs = Object.entries(req.requiredRacs).filter(([key, val]) => val === true && key !== 'RAC02');
+    const mappedRacs = Object.entries(req.requiredRacs).filter(([_, val]) => val === true);
+    const rac02IsRequired = !!req.requiredRacs['RAC02'];
+    const otherRequiredRacs = mappedRacs.filter(([key]) => key !== 'RAC02');
     const hasOtherRequiredRacs = otherRequiredRacs.length > 0;
 
     racDefinitions.forEach(def => {
         const key = def.code;
-        if (req.requiredRacs[key]) {
-            if (key === 'RAC02') {
-                if (isDlExpired) {
-                    if (!hasOtherRequiredRacs) {
-                        allRacsMet = false;
-                    }
-                } else {
-                    const passedBookings = bookings.filter(b => {
-                        if (b.employee.id !== employeeId) return false;
-                        if (b.status !== BookingStatus.PASSED) return false;
-                        const code = getRacKeyFromBooking(b);
-                        return code === key;
-                    });
-                    passedBookings.sort((a, b) => new Date(b.expiryDate || '1970-01-01').getTime() - new Date(a.expiryDate || '1970-01-01').getTime());
-                    if (!passedBookings[0]?.expiryDate || passedBookings[0].expiryDate < today) allRacsMet = false;
-                }
-            } else {
-                const passedBookings = bookings.filter(b => {
-                     if (b.employee.id !== employeeId) return false;
-                     if (b.status !== BookingStatus.PASSED) return false;
-                     const code = getRacKeyFromBooking(b);
-                     return code === key;
-                });
-                passedBookings.sort((a, b) => {
-                    const dateA = new Date(a.expiryDate || '1970-01-01').getTime();
-                    const dateB = new Date(b.expiryDate || '1970-01-01').getTime();
-                    return dateB - dateA; 
-                });
-                const latestBooking = passedBookings[0];
-                const expiry = latestBooking?.expiryDate || '';
-                if (!expiry || expiry < today) {
+        if (!req.requiredRacs[key]) return;
+
+        // RAC02 Special Logic
+        if (key === 'RAC02') {
+            if (isDlExpired) {
+                // Only RAC02 -> Fails immediately
+                if (!hasOtherRequiredRacs) {
                     allRacsMet = false;
                 }
+            } else {
+                // DL is OK, check training
+                const passedBookings = bookings.filter(b => {
+                    if (b.employee.id !== employeeId) return false;
+                    if (b.status !== BookingStatus.PASSED) return false;
+                    const code = getRacKeyFromBooking(b);
+                    return code === key;
+                });
+                passedBookings.sort((a, b) => new Date(b.expiryDate || '1970-01-01').getTime() - new Date(a.expiryDate || '1970-01-01').getTime());
+                if (!passedBookings[0]?.expiryDate || passedBookings[0].expiryDate < today) allRacsMet = false;
+            }
+        } else {
+            const passedBookings = bookings.filter(b => {
+                 if (b.employee.id !== employeeId) return false;
+                 if (b.status !== BookingStatus.PASSED) return false;
+                 const code = getRacKeyFromBooking(b);
+                 return code === key;
+            });
+            passedBookings.sort((a, b) => {
+                const dateA = new Date(a.expiryDate || '1970-01-01').getTime();
+                const dateB = new Date(b.expiryDate || '1970-01-01').getTime();
+                return dateB - dateA; 
+            });
+            const latestBooking = passedBookings[0];
+            const expiry = latestBooking?.expiryDate || '';
+            if (!expiry || expiry < today) {
+                allRacsMet = false;
             }
         }
     });
 
     if (!isActive) return 'Inactive';
     if (!isAsoValid || !allRacsMet) return 'NonCompliant';
-    if (rac02IsRequired && !hasOtherRequiredRacs && isDlExpired) return 'NonCompliant';
     return 'Compliant';
   }, [employee, employeeId, requirements, bookings, racDefinitions, sessions]);
 
