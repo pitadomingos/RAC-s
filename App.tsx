@@ -242,17 +242,6 @@ const App: React.FC = () => {
   };
 
   const currentEmployeeId = bookings.length > 0 ? bookings[0].employee.id : 'user-123';
-  const currentCompany = companies.find(c => c.name === 'CARS Solutions') || companies[0];
-
-  const canViewAlcoholDashboard = () => {
-      if (!currentCompany.features?.alcohol) return false;
-      if (userRole === UserRole.USER) return false;
-      if (userRole === UserRole.RAC_TRAINER) return false;
-      if (userRole === UserRole.SYSTEM_ADMIN || userRole === UserRole.ENTERPRISE_ADMIN) return true;
-      const allowedTitles = ['Manager', 'Supervisor', 'Superintendent', 'Director', 'Head'];
-      const jobTitle = simulatedJobTitle || '';
-      return allowedTitles.some(t => jobTitle.includes(t));
-  };
 
   return (
     <AdvisorProvider>
@@ -262,7 +251,7 @@ const App: React.FC = () => {
             <Route path="/presentation" element={<PresentationPage />} />
             <Route path="/proposal" element={<ProjectProposal />} />
             <Route path="/verify/:recordId" element={<VerificationPage bookings={bookings} requirements={requirements} racDefinitions={racDefinitions} sessions={sessions} />} />
-            <Route path="/print-cards" element={<CardsPage bookings={bookings} requirements={requirements} racDefinitions={racDefinitions} sessions={sessions} userRole={userRole} />} />
+            <Route path="/print-cards" element={<CardsPage bookings={bookings} requirements={requirements} racDefinitions={racDefinitions} sessions={sessions} userRole={userRole} companies={companies} />} />
 
             <Route path="*" element={
               <Layout 
@@ -419,6 +408,7 @@ const App: React.FC = () => {
                           userRole={userRole}
                           currentEmployeeId={currentEmployeeId}
                           currentSiteId={currentSiteId}
+                          companies={companies}
                         />
                       : <Navigate to="/" replace />
                   } />
@@ -445,7 +435,7 @@ const App: React.FC = () => {
                   } />
 
                   <Route path="/alcohol-control" element={
-                      canViewAlcoholDashboard() 
+                      [UserRole.SYSTEM_ADMIN, UserRole.ENTERPRISE_ADMIN, UserRole.SITE_ADMIN].includes(userRole) 
                       ? <AlcoholIntegration addNotification={addNotification} /> 
                       : <Navigate to="/" replace />
                   } />

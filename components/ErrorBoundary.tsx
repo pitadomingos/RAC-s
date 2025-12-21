@@ -1,4 +1,3 @@
-
 import React, { Component, ErrorInfo, ReactNode } from 'react';
 import { Cpu, Zap, Activity, Terminal, CheckCircle2, RefreshCw, Power } from 'lucide-react';
 import { analyzeRuntimeError } from '../services/geminiService';
@@ -20,8 +19,9 @@ interface State {
  * Catches runtime errors and triggers autonomous repair visuals.
  * Inherits from React.Component to provide error boundary lifecycle methods.
  */
-// Fix: Explicitly import and extend Component from 'react' to ensure setState and props are correctly inherited by the class.
-export class ErrorBoundary extends Component<Props, State> {
+/* Fix: Explicitly extending React.Component with defined Props and State interfaces ensures that 'setState' and 'props' are correctly inherited and recognized by the TypeScript compiler. */
+export class ErrorBoundary extends React.Component<Props, State> {
+  // Initialize state to satisfy the React Component lifecycle.
   state: State = {
     hasError: false,
     error: null,
@@ -80,8 +80,8 @@ export class ErrorBoundary extends Component<Props, State> {
       let stepIndex = 0;
 
       this.simulationInterval = setInterval(() => {
-          // Fix: setState is available on the Component instance after correcting the class extension.
-          this.setState((prevState) => {
+          /* Fix: 'setState' is inherited from React.Component. Using the updater function pattern to safely update the progress state. */
+          this.setState((prevState: State) => {
               // Stop progressing if we are waiting for AI but hit 90%
               const canFinish = !!prevState.aiDiagnosis;
               
@@ -100,7 +100,7 @@ export class ErrorBoundary extends Component<Props, State> {
               return {
                   repairProgress: Math.min(nextProgress, 100),
                   repairStep: nextStep
-              } as any;
+              };
           });
       }, 200);
   };
@@ -131,7 +131,7 @@ export class ErrorBoundary extends Component<Props, State> {
           sessionStorage.clear();
       } catch(e) { /* ignore */ }
 
-      // Fix: Update state with AI diagnosis using inherited setState method.
+      /* Fix: 'setState' is called on the class instance to finalize the repair state once diagnosis is complete. */
       this.setState({ 
           aiDiagnosis: diagnosis,
           repairProgress: 100,
@@ -229,7 +229,7 @@ export class ErrorBoundary extends Component<Props, State> {
 
             {/* --- TERMINAL OUTPUT --- */}
             <div className="mt-8 bg-black/80 rounded-lg border border-slate-800 p-4 font-mono text-xs h-32 overflow-hidden flex flex-col justify-end shadow-inner">
-                <div className="text-slate-500 mb-1">C:\CARS_MANAGER\SYS\ROOT&gt; initiate_healing.exe --force</div>
+                <div className="text-slate-500 mb-1">C:\CARS_MANAGER\SYS\ROOT> initiate_healing.exe --force</div>
                 <div className="text-slate-500 mb-1">Catching Exception... OK</div>
                 <div className="text-slate-400 mb-1">Analyzing stack trace...</div>
                 {this.state.aiDiagnosis && (
@@ -260,7 +260,7 @@ export class ErrorBoundary extends Component<Props, State> {
       );
     }
 
-    // Fix: Access props correctly from class component after resolving inheritance issues.
+    /* Fix: 'props' is inherited from React.Component and is accessible here to render the children when no error has occurred. */
     return this.props.children;
   }
 }

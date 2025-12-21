@@ -1,6 +1,6 @@
 
-import React, { useState } from 'react';
-import { Settings, Users, Box, Save, Plus, Trash2, Tag, Edit2, Check, X, AlertCircle, Sliders, MapPin, User as UserIcon, Hash, LayoutGrid, Building2, Map, ShieldCheck, Mail, Lock, Calendar, MessageSquare, Clock, GitMerge, RefreshCw, Terminal, CheckCircle, ChevronLeft, ChevronRight, Activity, Cpu, Zap, Power, UploadCloud, Globe, Wine, Edit } from 'lucide-react';
+import React, { useState, useRef } from 'react';
+import { Settings, Users, Box, Save, Plus, Trash2, Tag, Edit2, Check, X, AlertCircle, Sliders, MapPin, User as UserIcon, Hash, LayoutGrid, Building2, Map, ShieldCheck, Mail, Lock, Calendar, MessageSquare, Clock, GitMerge, RefreshCw, Terminal, CheckCircle, ChevronLeft, ChevronRight, Activity, Cpu, Zap, Power, UploadCloud, Globe, Wine, Edit, Upload, Image as ImageIcon } from 'lucide-react';
 import { RacDef, Room, Trainer, Site, Company, UserRole, User, SystemNotification } from '../types';
 import { v4 as uuidv4 } from 'uuid';
 import { logger } from '../utils/logger';
@@ -61,10 +61,11 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
   const isSiteAdmin = userRole === UserRole.SITE_ADMIN;
 
   const canEditGlobalDefinitions = isSystemAdmin || isEnterpriseAdmin;
-  // Specific permission for RACs tab: System, Enterprise, OR Site Admin
   const canAccessRacs = isSystemAdmin || isEnterpriseAdmin || isSiteAdmin;
-  // Specific permission for Sites tab: System, Enterprise, OR Site Admin
   const canAccessSites = isSystemAdmin || isEnterpriseAdmin || isSiteAdmin;
+
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const editFileInputRef = useRef<HTMLInputElement>(null);
 
   const [confirmState, setConfirmState] = useState<{
     isOpen: boolean;
@@ -107,6 +108,22 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
   const deleteSite = (id: string) => { if (onUpdateSites) setConfirmState({ isOpen: true, title: t.database.confirmDelete, message: t.database.confirmDeleteMsg, onConfirm: () => onUpdateSites(sites.filter(s => s.id !== id)), isDestructive: true }); };
   
   // --- COMPANY CRUD ---
+  const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>, isEdit: boolean) => {
+      const file = e.target.files?.[0];
+      if (file) {
+          const reader = new FileReader();
+          reader.onloadend = () => {
+              const base64String = reader.result as string;
+              if (isEdit && editingCompany) {
+                  setEditingCompany({ ...editingCompany, logoUrl: base64String });
+              } else {
+                  setNewCompany({ ...newCompany, logoUrl: base64String });
+              }
+          };
+          reader.readAsDataURL(file);
+      }
+  };
+
   const handleAddCompany = () => { 
       if (newCompany.name && onUpdateCompanies) { 
           onUpdateCompanies([...companies, { 
@@ -471,20 +488,22 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
                                     <div key={comp.id} className="flex justify-between items-center p-4 bg-white dark:bg-slate-800 border dark:border-slate-700 rounded-xl hover:border-indigo-300 transition-colors">
                                         <div className="font-bold text-slate-800 dark:text-white flex items-center gap-3">
                                             {comp.logoUrl ? (
-                                                <img src={comp.logoUrl} className="w-8 h-8 object-contain rounded border border-slate-200" alt="Logo" />
+                                                <img src={comp.logoUrl} className="w-10 h-10 object-contain rounded border border-slate-200 bg-white" alt="Logo" />
                                             ) : (
-                                                <Building2 size={20} className="text-slate-400"/> 
+                                                <Building2 size={24} className="text-slate-400"/> 
                                             )}
-                                            {comp.name}
-                                            <div className="flex gap-1">
-                                                <span className="text-[10px] text-slate-400 border border-slate-200 dark:border-slate-600 rounded px-1.5 py-0.5 ml-2">
-                                                    {comp.defaultLanguage === 'pt' ? '🇵🇹 PT' : '🇺🇸 EN'}
-                                                </span>
-                                                {comp.features?.alcohol && (
-                                                    <span className="text-[10px] text-purple-500 border border-purple-200 dark:border-purple-800 bg-purple-50 dark:bg-purple-900/20 rounded px-1.5 py-0.5 flex items-center gap-1">
-                                                        <Wine size={10} /> Alcohol
+                                            <div className="flex flex-col">
+                                                <span>{comp.name}</span>
+                                                <div className="flex gap-1 mt-1">
+                                                    <span className="text-[10px] text-slate-400 border border-slate-200 dark:border-slate-600 rounded px-1.5 py-0.5">
+                                                        {comp.defaultLanguage === 'pt' ? '🇵🇹 PT' : '🇺🇸 EN'}
                                                     </span>
-                                                )}
+                                                    {comp.features?.alcohol && (
+                                                        <span className="text-[10px] text-purple-500 border border-purple-200 dark:border-purple-800 bg-purple-50 dark:bg-purple-900/20 rounded px-1.5 py-0.5 flex items-center gap-1">
+                                                            <Wine size={10} /> Alcohol
+                                                        </span>
+                                                    )}
+                                                </div>
                                             </div>
                                         </div>
                                         <div className="flex items-center gap-2">
@@ -523,7 +542,38 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
                                             </select>
                                         </div>
                                     </div>
-                                    <input className="p-3 rounded-lg border dark:border-slate-600 dark:bg-slate-700 outline-none focus:ring-2 focus:ring-indigo-500" placeholder="Logo URL (optional)" value={newCompany.logoUrl} onChange={e => setNewCompany({...newCompany, logoUrl: e.target.value})} />
+                                    
+                                    <div className="flex items-center gap-4">
+                                        <div 
+                                            onClick={() => fileInputRef.current?.click()}
+                                            className="flex-1 h-14 border-2 border-dashed border-slate-300 dark:border-slate-600 rounded-xl flex items-center justify-center gap-3 cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 transition-all overflow-hidden"
+                                        >
+                                            {newCompany.logoUrl ? (
+                                                <img src={newCompany.logoUrl} className="h-full w-full object-contain" alt="Logo Preview" />
+                                            ) : (
+                                                <>
+                                                    <Upload size={18} className="text-slate-400" />
+                                                    <span className="text-xs font-bold text-slate-500">Upload Tenant Logo (Local Machine)</span>
+                                                </>
+                                            )}
+                                        </div>
+                                        <input 
+                                            type="file" 
+                                            ref={fileInputRef} 
+                                            className="hidden" 
+                                            accept="image/*" 
+                                            onChange={(e) => handleLogoUpload(e, false)} 
+                                        />
+                                        {newCompany.logoUrl && (
+                                            <button 
+                                                onClick={() => setNewCompany({...newCompany, logoUrl: ''})}
+                                                className="p-3 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-xl transition-colors"
+                                            >
+                                                <Trash2 size={20} />
+                                            </button>
+                                        )}
+                                    </div>
+
                                     <div className="grid grid-cols-2 gap-4">
                                         <input className="p-3 rounded-lg border dark:border-slate-600 dark:bg-slate-700 outline-none focus:ring-2 focus:ring-indigo-500" placeholder="Admin Name" value={newCompany.adminName} onChange={e => setNewCompany({...newCompany, adminName: e.target.value})} />
                                         <input className="p-3 rounded-lg border dark:border-slate-600 dark:bg-slate-700 outline-none focus:ring-2 focus:ring-indigo-500" placeholder="Admin Email" value={newCompany.adminEmail} onChange={e => setNewCompany({...newCompany, adminEmail: e.target.value})} />
@@ -653,19 +703,43 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
                         <div>
                             <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Company Name</label>
                             <input 
-                                className="w-full p-3 rounded-lg border dark:border-slate-600 dark:bg-slate-700 text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-indigo-500"
+                                className="w-full p-3 rounded-lg border dark:border-slate-600 dark:bg-slate-700 text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-indigo-500 font-bold"
                                 value={editingCompany.name}
                                 onChange={(e) => setEditingCompany({...editingCompany, name: e.target.value})}
                             />
                         </div>
                         <div>
-                            <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Logo URL</label>
-                            <input 
-                                className="w-full p-3 rounded-lg border dark:border-slate-600 dark:bg-slate-700 text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-indigo-500"
-                                value={editingCompany.logoUrl || ''}
-                                onChange={(e) => setEditingCompany({...editingCompany, logoUrl: e.target.value})}
-                                placeholder="https://..."
-                            />
+                            <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Logo</label>
+                            <div className="flex gap-4 items-center">
+                                <div 
+                                    onClick={() => editFileInputRef.current?.click()}
+                                    className="flex-1 h-20 border-2 border-dashed border-slate-300 dark:border-slate-600 rounded-xl flex items-center justify-center cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-900 overflow-hidden"
+                                >
+                                    {editingCompany.logoUrl ? (
+                                        <img src={editingCompany.logoUrl} className="h-full w-full object-contain p-2" alt="Logo" />
+                                    ) : (
+                                        <div className="text-center">
+                                            <Upload className="mx-auto text-slate-400" size={20} />
+                                            <span className="text-[10px] text-slate-400 font-bold">Replace Logo</span>
+                                        </div>
+                                    )}
+                                </div>
+                                <input 
+                                    type="file" 
+                                    ref={editFileInputRef} 
+                                    className="hidden" 
+                                    accept="image/*" 
+                                    onChange={(e) => handleLogoUpload(e, true)} 
+                                />
+                                {editingCompany.logoUrl && (
+                                    <button 
+                                        onClick={() => setEditingCompany({...editingCompany, logoUrl: ''})}
+                                        className="p-3 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-xl transition-colors"
+                                    >
+                                        <Trash2 size={20} />
+                                    </button>
+                                )}
+                            </div>
                         </div>
                         <div>
                             <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Default Language</label>

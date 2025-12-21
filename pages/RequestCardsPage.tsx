@@ -1,6 +1,6 @@
 
 import React, { useState, useMemo } from 'react';
-import { Booking, BookingStatus, EmployeeRequirement, RacDef, TrainingSession, UserRole } from '../types';
+import { Booking, BookingStatus, EmployeeRequirement, RacDef, TrainingSession, UserRole, Company } from '../types';
 import CardTemplate from '../components/CardTemplate';
 import { Mail, AlertCircle, CheckCircle2, Printer, Search, X, ZoomIn, Filter, Trash2, User, Sparkles, CreditCard, Layers } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
@@ -12,39 +12,31 @@ interface RequestCardsPageProps {
   racDefinitions: RacDef[];
   sessions: TrainingSession[];
   userRole: UserRole;
-  currentEmployeeId?: string; // Passed from App.tsx
-  currentSiteId: string; // Added to enable Global Site Filter
+  currentEmployeeId?: string;
+  currentSiteId: string;
+  companies?: Company[]; // Passed from App.tsx
 }
 
-const RequestCardsPage: React.FC<RequestCardsPageProps> = ({ bookings, requirements, racDefinitions, sessions, userRole, currentEmployeeId, currentSiteId }) => {
+const RequestCardsPage: React.FC<RequestCardsPageProps> = ({ bookings, requirements, racDefinitions, sessions, userRole, currentEmployeeId, currentSiteId, companies = [] }) => {
   const navigate = useNavigate();
   const location = useLocation();
   const { t } = useLanguage();
   const [requestSent, setRequestSent] = useState(false);
   
-  // -- BATCH BUILDER STATE --
-  // Initialize from location state if returning from print page
   const [slotInputs, setSlotInputs] = useState<string[]>(() => {
       return location.state?.savedInputs || Array(8).fill('');
   });
   
   const [zoomedBookingId, setZoomedBookingId] = useState<string | null>(null);
-
   const safeBookings = Array.isArray(bookings) ? bookings : [];
-  
   const isSelfService = userRole === UserRole.USER;
 
-  // Function to check strict compliance using DYNAMIC RAC definitions AND Sessions lookup
   const isEmployeeCompliant = (empId: string): boolean => {
       const req = requirements.find(r => r.employeeId === empId);
       if (!req) return false;
-
       const today = new Date().toISOString().split('T')[0];
-      
-      // 1. ASO Valid
       if (!req.asoExpiryDate || req.asoExpiryDate <= today) return false;
 
-      // 2. RACs Valid (Iterate over ALL defined RACs)
       let allRacsMet = true;
       let hasRac02Req = false;
 
@@ -52,29 +44,22 @@ const RequestCardsPage: React.FC<RequestCardsPageProps> = ({ bookings, requireme
          const key = def.code;
          if (req.requiredRacs[key]) {
              if (key === 'RAC02') hasRac02Req = true;
-             
-             // Check if they have a passed booking for this RAC
              const passedBooking = safeBookings.find(b => {
                  if (b.employee.id !== empId) return false;
                  if (b.status !== BookingStatus.PASSED) return false;
-                 
                  let racCode = '';
-                 // Try to resolve from Session Object first (Reliable)
                  const session = sessions.find(s => s.id === b.sessionId);
                  if (session) {
                      racCode = session.racType.split(' - ')[0].replace(' ', '');
                  } else {
-                     // Fallback to string parsing
                      if (b.sessionId.includes('RAC')) {
                          racCode = b.sessionId.split(' - ')[0].replace(' ', '');
-                     } else {
-                         // Direct Key match (e.g. "PTS")
-                         if (b.sessionId.includes(key)) racCode = key;
+                     } else if (b.sessionId.includes(key)) {
+                         racCode = key;
                      }
                  }
                  return racCode === key;
              });
-
              if (!passedBooking || !passedBooking.expiryDate || passedBooking.expiryDate <= today) {
                  allRacsMet = false;
              }
@@ -82,8 +67,6 @@ const RequestCardsPage: React.FC<RequestCardsPageProps> = ({ bookings, requireme
       });
 
       if (!allRacsMet) return false;
-
-      // 3. DL Valid if RAC 02 required
       if (hasRac02Req) {
           const empBooking = safeBookings.find(b => b.employee.id === empId);
           if (empBooking) {
@@ -93,17 +76,14 @@ const RequestCardsPage: React.FC<RequestCardsPageProps> = ({ bookings, requireme
               return false;
           }
       }
-
       return true;
   };
 
   const allEligibleBookings = useMemo(() => {
      const uniqueMap = new Map<string, Booking>();
      safeBookings.forEach(b => {
-         // Global Site Filter Check
          const eSiteId = b.employee.siteId || 's1';
          if (currentSiteId !== 'all' && eSiteId !== currentSiteId) return;
-
          if (b && b.status === BookingStatus.PASSED && b.employee && !uniqueMap.has(b.employee.id)) {
              uniqueMap.set(b.employee.id, b);
          }
@@ -111,18 +91,14 @@ const RequestCardsPage: React.FC<RequestCardsPageProps> = ({ bookings, requireme
      return Array.from(uniqueMap.values()).filter(b => isEmployeeCompliant(b.employee.id));
   }, [safeBookings, requirements, racDefinitions, sessions, currentSiteId]);
 
-  // SELF-SERVICE LOGIC: Override slots if user
   const slots = useMemo(() => {
       if (isSelfService && currentEmployeeId) {
-          // Find if current user is eligible
           const myBooking = allEligibleBookings.find(b => b.employee.id === currentEmployeeId);
           return myBooking ? [myBooking] : [];
       }
-
       return slotInputs.map(input => {
           if (!input.trim()) return null;
           const lower = input.toLowerCase();
-          // Flexible Search: ID or Name
           return allEligibleBookings.find(b => 
               b.employee.recordId.toLowerCase() === lower ||
               b.employee.name.toLowerCase() === lower || 
@@ -156,10 +132,8 @@ const RequestCardsPage: React.FC<RequestCardsPageProps> = ({ bookings, requireme
   };
 
   const handleGoToPrint = () => {
-      // ONLY send selected slots
       const selectedBookings = slots.filter(b => b !== null) as Booking[];
       if (selectedBookings.length > 0) {
-          // Pass the current state of inputs to preserve them
           navigate('/print-cards', { 
               state: { 
                   selectedBookings, 
@@ -181,11 +155,9 @@ const RequestCardsPage: React.FC<RequestCardsPageProps> = ({ bookings, requireme
   return (
     <div className="flex flex-col h-full space-y-6 relative pb-24">
       
-      {/* --- ELEGANT HEADER / BATCH COMPOSER --- */}
       <div className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl p-6 rounded-3xl shadow-xl border border-white/20 dark:border-slate-700/50 sticky top-0 z-30 transition-all">
         <div className="flex flex-col xl:flex-row justify-between items-start gap-8">
           
-          {/* Title Section */}
           <div className="flex-shrink-0 min-w-[240px]">
             <div className="flex items-center gap-3 mb-2">
                 <div className="p-3 bg-gradient-to-tr from-pink-500 to-rose-500 rounded-2xl shadow-lg shadow-pink-500/30 text-white">
@@ -225,7 +197,6 @@ const RequestCardsPage: React.FC<RequestCardsPageProps> = ({ bookings, requireme
             )}
           </div>
 
-          {/* BATCH GRID (HIDDEN FOR SELF SERVICE) */}
           {!isSelfService && (
               <div className="flex-1 w-full bg-slate-50 dark:bg-slate-800/50 rounded-2xl p-4 border border-slate-100 dark:border-slate-700/50">
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
@@ -250,11 +221,9 @@ const RequestCardsPage: React.FC<RequestCardsPageProps> = ({ bookings, requireme
                                   `}>
                                       {idx + 1}
                                   </div>
-                                  
                                   <div className="flex-shrink-0 pl-2 pr-2 text-slate-400">
                                       {match ? <User size={14} className="text-green-600"/> : <Search size={14} />}
                                   </div>
-
                                   <input 
                                       type="text"
                                       autoComplete="off"
@@ -263,7 +232,6 @@ const RequestCardsPage: React.FC<RequestCardsPageProps> = ({ bookings, requireme
                                       value={input}
                                       onChange={(e) => handleSlotChange(idx, e.target.value)}
                                   />
-                                  
                                   <div className="pr-2">
                                       {match ? (
                                           <CheckCircle2 size={16} className="text-green-500 animate-bounce-in" />
@@ -287,25 +255,7 @@ const RequestCardsPage: React.FC<RequestCardsPageProps> = ({ bookings, requireme
         </div>
       </div>
 
-      {/* Notifications */}
-      <div className="fixed top-24 right-6 z-50 pointer-events-none">
-          {requestSent && (
-            <div className="bg-white dark:bg-slate-800 border-l-4 border-green-500 p-4 rounded-xl shadow-2xl flex items-center gap-4 animate-slide-in-right pointer-events-auto max-w-sm">
-                <div className="bg-green-100 dark:bg-green-900/30 p-2 rounded-full text-green-600">
-                    <Sparkles size={24} />
-                </div>
-                <div>
-                    <h4 className="font-bold text-slate-800 dark:text-white text-sm">Request Successful</h4>
-                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Your card batch has been forwarded to the print queue.</p>
-                </div>
-            </div>
-          )}
-      </div>
-
-      {/* --- PREVIEW CANVAS --- */}
       <div className="flex-1 min-h-[500px] relative">
-        
-        {/* Background Decor */}
         <div className="absolute inset-0 bg-slate-100 dark:bg-slate-900/50 rounded-3xl border border-slate-200 dark:border-slate-800 overflow-hidden">
             <div className="absolute inset-0 opacity-[0.03] dark:opacity-[0.05]" style={{ backgroundImage: 'radial-gradient(#64748b 1px, transparent 1px)', backgroundSize: '24px 24px' }}></div>
         </div>
@@ -338,19 +288,13 @@ const RequestCardsPage: React.FC<RequestCardsPageProps> = ({ bookings, requireme
           <div className={`relative z-10 grid gap-8 p-8 ${isSelfService ? 'place-items-center' : 'grid-cols-1 md:grid-cols-2 xl:grid-cols-4'}`}>
                {slots.map((booking, idx) => {
                    if (!booking) return null;
-
                    return (
-                   <div 
-                    key={String(booking.id)}
-                    className="group relative perspective-1000"
-                   >
-                     {/* Floating Actions */}
+                   <div key={String(booking.id)} className="group relative perspective-1000">
                      <div className="absolute -top-3 -right-3 z-30 flex gap-2 opacity-0 group-hover:opacity-100 transition-all duration-300 transform translate-y-2 group-hover:translate-y-0">
                         {!isSelfService && (
                             <button 
                                 onClick={() => clearSlot(idx)}
                                 className="bg-white dark:bg-slate-800 text-red-500 p-2 rounded-full shadow-lg border border-slate-100 dark:border-slate-700 hover:bg-red-50 dark:hover:bg-red-900/30 transition-colors"
-                                title="Remove"
                             >
                                 <Trash2 size={16} />
                             </button>
@@ -358,36 +302,26 @@ const RequestCardsPage: React.FC<RequestCardsPageProps> = ({ bookings, requireme
                         <button 
                             onClick={() => setZoomedBookingId(booking.id)}
                             className="bg-white dark:bg-slate-800 text-blue-500 p-2 rounded-full shadow-lg border border-slate-100 dark:border-slate-700 hover:bg-blue-50 dark:hover:bg-blue-900/30 transition-colors"
-                            title="Inspect"
                         >
                             <ZoomIn size={16} />
                         </button>
                      </div>
 
-                     {/* Card Container */}
                      <div className="relative bg-white rounded-2xl shadow-xl border border-slate-200 dark:border-slate-700 overflow-hidden transform transition-all duration-500 group-hover:-translate-y-2 group-hover:shadow-2xl group-hover:shadow-blue-500/10">
-                        
-                        {/* Slot Badge */}
-                        {!isSelfService && (
-                            <div className="absolute top-4 left-4 z-20">
+                        <div className="absolute top-4 left-4 z-20">
+                            {!isSelfService && (
                                 <span className="bg-slate-900/90 text-white text-[10px] font-bold px-2 py-1 rounded shadow-sm backdrop-blur-md">
                                     SLOT {idx + 1}
                                 </span>
-                            </div>
-                        )}
-
-                        {/* Valid Indicator */}
+                            )}
+                        </div>
                         <div className="absolute top-4 right-4 z-20">
                             <div className="bg-green-500 text-white p-1 rounded-full shadow-lg shadow-green-500/40">
                                 <CheckCircle2 size={16} />
                             </div>
                         </div>
 
-                        {/* Card Render Area */}
                         <div className="bg-slate-100 dark:bg-slate-800 p-6 flex justify-center items-center h-[320px] relative">
-                            {/* Reflection Effect */}
-                            <div className="absolute inset-0 bg-gradient-to-tr from-white/0 via-white/0 to-white/40 opacity-0 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none z-10"></div>
-                            
                             <div className="transform scale-[0.85] origin-center shadow-lg transition-transform duration-500">
                                 <CardTemplate 
                                     booking={booking} 
@@ -395,11 +329,10 @@ const RequestCardsPage: React.FC<RequestCardsPageProps> = ({ bookings, requireme
                                     allBookings={bookings}
                                     racDefinitions={racDefinitions}
                                     sessions={sessions}
+                                    companies={companies} // Pass companies for live branding
                                 />
                             </div>
                         </div>
-                        
-                        {/* Footer Info */}
                         <div className="px-5 py-4 bg-white dark:bg-slate-900 border-t border-slate-100 dark:border-slate-800">
                             <h4 className="font-bold text-slate-800 dark:text-white text-sm truncate">{booking.employee.name}</h4>
                             <div className="flex justify-between items-center mt-1">
@@ -415,7 +348,6 @@ const RequestCardsPage: React.FC<RequestCardsPageProps> = ({ bookings, requireme
         )}
       </div>
 
-      {/* --- FLOATING ACTION DOCK --- */}
       <div className="fixed bottom-8 left-1/2 transform -translate-x-1/2 z-40">
         <div className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-md p-2 rounded-full shadow-2xl border border-white/20 dark:border-slate-700 ring-1 ring-black/5 flex items-center gap-2">
             <button
@@ -445,14 +377,10 @@ const RequestCardsPage: React.FC<RequestCardsPageProps> = ({ bookings, requireme
         </div>
       </div>
 
-      {/* --- LIGHTBOX MODAL --- */}
       {zoomedBooking && (
           <div className="fixed inset-0 z-[100] bg-slate-900/90 backdrop-blur-md flex items-center justify-center p-4 animate-fade-in" onClick={() => setZoomedBookingId(null)}>
-              <div className="relative transform transition-all duration-300 scale-100" onClick={(e) => e.stopPropagation()}>
-                  <button 
-                    onClick={() => setZoomedBookingId(null)}
-                    className="absolute -top-16 right-0 md:-right-16 text-white/70 hover:text-white bg-white/10 hover:bg-white/20 p-3 rounded-full transition-all"
-                  >
+              <div className="relative" onClick={(e) => e.stopPropagation()}>
+                  <button onClick={() => setZoomedBookingId(null)} className="absolute -top-16 right-0 text-white/70 hover:text-white bg-white/10 p-3 rounded-full transition-all">
                       <X size={24} />
                   </button>
                   <div className="transform scale-[1.5] md:scale-[1.8] origin-center shadow-2xl rounded-lg overflow-hidden ring-8 ring-white/10">
@@ -462,12 +390,12 @@ const RequestCardsPage: React.FC<RequestCardsPageProps> = ({ bookings, requireme
                         allBookings={bookings}
                         racDefinitions={racDefinitions}
                         sessions={sessions}
+                        companies={companies} // Pass companies for live branding
                       />
                   </div>
               </div>
           </div>
       )}
-
     </div>
   );
 };

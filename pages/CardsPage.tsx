@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Booking, BookingStatus, EmployeeRequirement, RacDef, TrainingSession, UserRole } from '../types';
+import { Booking, BookingStatus, EmployeeRequirement, RacDef, TrainingSession, UserRole, Company } from '../types';
 import CardTemplate from '../components/CardTemplate';
 import { Printer, AlertCircle, ArrowLeft } from 'lucide-react';
 import { useLanguage } from '../contexts/LanguageContext';
@@ -11,10 +11,11 @@ interface CardsPageProps {
   requirements: EmployeeRequirement[];
   racDefinitions: RacDef[];
   sessions: TrainingSession[];
-  userRole?: UserRole; // Added to get current user name context
+  userRole?: UserRole;
+  companies?: Company[]; // Passed from App.tsx
 }
 
-const CardsPage: React.FC<CardsPageProps> = ({ bookings, requirements, racDefinitions, sessions, userRole }) => {
+const CardsPage: React.FC<CardsPageProps> = ({ bookings, requirements, racDefinitions, sessions, userRole, companies = [] }) => {
   const { t } = useLanguage();
   const location = useLocation();
   const navigate = useNavigate();
@@ -51,7 +52,6 @@ const CardsPage: React.FC<CardsPageProps> = ({ bookings, requirements, racDefini
 
   const handleBack = () => {
       if (savedInputs) {
-          // Use replace to avoid stacking history and ensure cleaner state restoration
           navigate('/request-cards', { state: { savedInputs }, replace: true });
       } else {
           navigate(-1);
@@ -136,6 +136,7 @@ const CardsPage: React.FC<CardsPageProps> = ({ bookings, requirements, racDefini
                               racDefinitions={racDefinitions}
                               sessions={sessions}
                               printedBy={printerName}
+                              companies={companies} // Dynamic lookup
                             />
                         </div>
                     ))}
@@ -152,6 +153,7 @@ const CardsPage: React.FC<CardsPageProps> = ({ bookings, requirements, racDefini
                             racDefinitions={racDefinitions}
                             sessions={sessions}
                             printedBy={printerName}
+                            companies={companies} // Dynamic lookup
                         />
                     </div>
                 ))}
