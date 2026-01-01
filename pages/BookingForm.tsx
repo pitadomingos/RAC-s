@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
-import { Employee, BookingStatus, Booking, UserRole, TrainingSession, SystemNotification, EmployeeRequirement, RacDef } from '../types';
-import { COMPANIES, DEPARTMENTS, ROLES } from '../constants';
+import { Employee, BookingStatus, Booking, UserRole, TrainingSession, SystemNotification, EmployeeRequirement, RacDef, Company } from '../types';
+import { DEPARTMENTS, ROLES } from '../constants';
 import { 
     Plus, Trash2, Save, Settings, ShieldCheck, Calendar, UserPlus, 
     FileSignature, CheckCircle2, AlertCircle, Search, UserCheck, 
@@ -12,6 +12,8 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { sanitizeInput } from '../utils/security';
 import { logger } from '../utils/logger';
 import { useLanguage } from '../contexts/LanguageContext';
+import { useAuth } from '../contexts/AuthContext';
+import { db } from '../services/databaseService';
 
 interface BookingFormProps {
   addBookings: (newBookings: Booking[]) => void;
@@ -22,6 +24,7 @@ interface BookingFormProps {
   currentEmployeeId?: string;
   requirements?: EmployeeRequirement[];
   racDefinitions: RacDef[];
+  companies?: Company[];
 }
 
 interface RenewalBatch {
@@ -29,11 +32,13 @@ interface RenewalBatch {
     employees: Employee[];
 }
 
-const BookingForm: React.FC<BookingFormProps> = ({ addBookings, sessions, userRole, existingBookings = [], addNotification, currentEmployeeId, requirements = [], racDefinitions }) => {
+const BookingForm: React.FC<BookingFormProps> = ({ addBookings, sessions, userRole, existingBookings = [], addNotification, currentEmployeeId, requirements = [], racDefinitions, companies = [] }) => {
   const navigate = useNavigate();
   const location = useLocation();
   const { t } = useLanguage();
-  const [selectedSession, setSelectedSession] = useState('');
+  const { user } = useAuth();
+  const [selectedSession] = useState('');
+  const [activeSessionId, setActiveSessionId] = useState('');
   
   const [targetRac, setTargetRac] = useState<string>('');
   const [renewalQueue, setRenewalQueue] = useState<RenewalBatch[]>([]);
@@ -41,17 +46,19 @@ const BookingForm: React.FC<BookingFormProps> = ({ addBookings, sessions, userRo
   const canManageSessions = userRole === UserRole.SYSTEM_ADMIN || userRole === UserRole.RAC_ADMIN;
   const isSelfService = userRole === UserRole.USER;
 
-  const initialRows = Array.from({ length: isSelfService ? 1 : 5 }).map(() => ({
+  const defaultCompany = useMemo(() => companies[0]?.name || 'Internal', [companies]);
+
+  const initialRows = useMemo(() => Array.from({ length: isSelfService ? 1 : 5 }).map(() => ({
     id: uuidv4(),
     name: '',
     recordId: '',
-    company: COMPANIES[0],
+    company: defaultCompany,
     department: DEPARTMENTS[0],
     role: ROLES[0],
     driverLicenseNumber: '',
     driverLicenseClass: '',
     driverLicenseExpiry: ''
-  }));
+  })), [isSelfService, defaultCompany]);
 
   const [rows, setRows] = useState(initialRows);
   const [submitted, setSubmitted] = useState(false);
@@ -78,7 +85,7 @@ const BookingForm: React.FC<BookingFormProps> = ({ addBookings, sessions, userRo
             setTargetRac(state.targetRac);
             // Auto-select first session matching target if available
             const match = availableSessions.find(s => s.racType.includes(state.targetRac!));
-            if (match) setSelectedSession(match.id);
+            if (match) setActiveSessionId(match.id);
         }
         if (state.remainingBatches) setRenewalQueue(state.remainingBatches);
         window.history.replaceState({}, document.title);
@@ -108,9 +115,9 @@ const BookingForm: React.FC<BookingFormProps> = ({ addBookings, sessions, userRo
     setRows([...rows, { ...initialRows[0], id: uuidv4() }]);
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!selectedSession) {
+    if (!activeSessionId) {
       addNotification({ id: uuidv4(), type: 'warning', title: 'Input Error', message: 'Please select a session.', timestamp: new Date(), isRead: false });
       return;
     }
@@ -118,22 +125,26 @@ const BookingForm: React.FC<BookingFormProps> = ({ addBookings, sessions, userRo
     const validRows = rows.filter(r => r.name.trim() !== '' && r.recordId.trim() !== '');
     if (validRows.length === 0) return;
 
+    const session = availableSessions.find(s => s.id === activeSessionId);
+
     const newBookings: Booking[] = validRows.map(row => ({
         id: uuidv4(),
-        sessionId: selectedSession,
+        sessionId: activeSessionId,
         employee: { ...row },
         status: BookingStatus.PENDING,
         isAutoBooked: false
     }));
 
     addBookings(newBookings);
+    await db.addLog('AUDIT', `NEW_REQUISITION_CREATED: ${newBookings.length} employees for ${session?.racType}`, user?.name || 'System', { sessionId: activeSessionId });
+
     setSubmitted(true);
     addNotification({ id: uuidv4(), type: 'success', title: 'Success', message: `Requisition for ${newBookings.length} personnel sent.`, timestamp: new Date(), isRead: false });
     
     setTimeout(() => {
         setSubmitted(false);
         setRows(initialRows);
-        setSelectedSession('');
+        setActiveSessionId('');
         if (renewalQueue.length === 0) navigate('/');
     }, 1500);
   };
@@ -173,8 +184,8 @@ const BookingForm: React.FC<BookingFormProps> = ({ addBookings, sessions, userRo
                </label>
                <div className="relative">
                    <select 
-                      value={selectedSession} 
-                      onChange={(e) => setSelectedSession(e.target.value)}
+                      value={activeSessionId} 
+                      onChange={(e) => setActiveSessionId(e.target.value)}
                       className={`w-full bg-white dark:bg-slate-700 border-2 rounded-2xl p-4 text-xl font-bold appearance-none cursor-pointer transition-all ${targetRac ? 'border-indigo-500 ring-4 ring-indigo-500/10' : 'border-slate-200 dark:border-slate-600 focus:border-indigo-500'}`}
                       required
                     >
@@ -222,7 +233,7 @@ const BookingForm: React.FC<BookingFormProps> = ({ addBookings, sessions, userRo
                       </td>
                       <td className="px-2 py-3">
                         <select className="w-full bg-slate-50 dark:bg-slate-700 border-transparent rounded-lg p-2 text-xs" value={row.company} onChange={(e) => handleRowChange(index, 'company', e.target.value)}>
-                            {COMPANIES.map(c => <option key={c} value={c}>{c}</option>)}
+                            {companies.map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
                         </select>
                       </td>
                       <td className="px-2 py-3 text-center">

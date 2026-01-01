@@ -1,7 +1,9 @@
 
 import React, { useState, useEffect } from 'react';
-import { ScrollText, Filter, AlertTriangle, CheckCircle, Info, ShieldAlert, Clock, Terminal, ChevronLeft, ChevronRight, Zap, Bot, Skull, Activity, CheckCircle2, Cpu } from 'lucide-react';
+import { ScrollText, Filter, AlertTriangle, CheckCircle, Info, ShieldAlert, Clock, Terminal, ChevronLeft, ChevronRight, Zap, Bot, Skull, RefreshCw, Database } from 'lucide-react';
 import { useLanguage } from '../contexts/LanguageContext';
+import { db } from '../services/databaseService';
+import { isSupabaseConfigured } from '../services/supabaseClient';
 
 type LogLevel = 'INFO' | 'WARN' | 'ERROR' | 'AUDIT';
 
@@ -9,31 +11,11 @@ interface LogEntry {
     id: string;
     level: LogLevel;
     messageKey: string; 
-    params?: any; 
     user: string;
     timestamp: string;
-    aiFix?: string; // New field for Gemini fixes
+    aiFix?: string;
 }
 
-const MOCK_LOGS_DATA: LogEntry[] = [
-    { 
-        id: '0', 
-        level: 'ERROR', 
-        messageKey: 'CRASH PREVENTED: Infinite Render Loop detected in UI Thread', 
-        user: 'RoboTech AI', 
-        timestamp: '2024-05-21 11:42:15',
-        aiFix: 'Interceptor engaged. Recursive dependency chain broken in component lifecycle. State rolled back to last stable snapshot.'
-    },
-    { id: '1', level: 'AUDIT', messageKey: 'User System Admin updated System Configuration', user: 'System Admin', timestamp: '2024-05-20 09:30:15' },
-    { id: '2', level: 'INFO', messageKey: 'Auto-booking service ran successfully', user: 'SYSTEM', timestamp: '2024-05-20 08:00:00' },
-    { id: '3', level: 'WARN', messageKey: 'Expiry Notification sent', user: 'SYSTEM', timestamp: '2024-05-19 14:20:00' },
-    { id: '4', level: 'ERROR', messageKey: 'Failed to generate AI report', user: 'Sarah Connor', timestamp: '2024-05-19 10:15:22' },
-    { id: '5', level: 'AUDIT', messageKey: 'User Sarah Connor manually added 5 bookings', user: 'Sarah Connor', timestamp: '2024-05-19 09:10:05' },
-    { id: '6', level: 'INFO', messageKey: 'User John Doe logged in', user: 'John Doe', timestamp: '2024-05-19 08:05:10' },
-    { id: '7', level: 'AUDIT', messageKey: 'User System Admin deleted User ID 45', user: 'System Admin', timestamp: '2024-05-18 16:45:00' },
-];
-
-// Helper component to actually throw the error for the Boundary to catch
 const CrashTrigger = () => {
     throw new Error("MANUAL SYSTEM CRASH: UAT Simulation Initiated by Admin");
 };
@@ -41,35 +23,28 @@ const CrashTrigger = () => {
 const LogsPage: React.FC = () => {
     const { t, language } = useLanguage();
     const [filterLevel, setFilterLevel] = useState<LogLevel | 'ALL'>('ALL');
-    const [allLogs, setAllLogs] = useState<LogEntry[]>(MOCK_LOGS_DATA);
-    
-    // State to trigger the crash component
+    const [allLogs, setAllLogs] = useState<LogEntry[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
     const [shouldCrash, setShouldCrash] = useState(false);
 
     // Pagination State
     const [currentPage, setCurrentPage] = useState(1);
     const [itemsPerPage, setItemsPerPage] = useState(20);
 
-    // Load AI-detected logs from LocalStorage (Simulating DB persist)
-    useEffect(() => {
+    const loadLogs = async () => {
+        setIsLoading(true);
         try {
-            const backlog = localStorage.getItem('sys_logs_backlog');
-            if (backlog) {
-                const parsed = JSON.parse(backlog);
-                // Merge and deduplicate simple logic
-                setAllLogs(prev => {
-                    // Create a map of existing IDs to prevent duplicates
-                    const existingIds = new Set(prev.map(l => l.id));
-                    const newUnique = parsed.filter((l: LogEntry) => !existingIds.has(l.id));
-                    
-                    const combined = [...newUnique, ...prev];
-                    // Simple sort by time descending (assuming string ISO or close enough for mock)
-                    return combined.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
-                });
-            }
+            const data = await db.getLogs();
+            setAllLogs(data);
         } catch (e) {
-            console.error("Failed to load system logs", e);
+            console.error("Failed to fetch logs:", e);
+        } finally {
+            setIsLoading(false);
         }
+    };
+
+    useEffect(() => {
+        loadLogs();
     }, []);
 
     const getTranslatedMessage = (log: LogEntry) => {
@@ -90,16 +65,10 @@ const LogsPage: React.FC = () => {
         ? allLogs 
         : allLogs.filter(log => log.level === filterLevel);
 
-    // Pagination Logic
     const totalPages = Math.ceil(filteredLogs.length / itemsPerPage);
     const paginatedLogs = filteredLogs.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
     const goToPage = (page: number) => setCurrentPage(Math.max(1, Math.min(page, totalPages)));
-
-    const handlePageSizeChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-        setItemsPerPage(Number(e.target.value));
-        setCurrentPage(1);
-    };
 
     const getIcon = (level: LogLevel) => {
         switch (level) {
@@ -110,45 +79,47 @@ const LogsPage: React.FC = () => {
         }
     };
 
-    // If simulating, render the CrashTrigger which throws immediately,
-    // activating the ErrorBoundary parent.
-    if (shouldCrash) {
-        return <CrashTrigger />;
-    }
+    if (shouldCrash) return <CrashTrigger />;
 
     return (
         <div className="space-y-6 pb-20 animate-fade-in-up h-[calc(100vh-100px)] flex flex-col">
-            {/* Header */}
             <div className="bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 rounded-2xl shadow-xl p-6 text-white shrink-0 relative overflow-hidden">
                 <div className="absolute top-0 right-0 opacity-5 pointer-events-none">
                     <Terminal size={150} />
                 </div>
-                <div className="relative z-10 flex justify-between items-center">
+                <div className="relative z-10 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                     <div>
                         <h2 className="text-2xl font-black tracking-tight flex items-center gap-3">
                             <ScrollText size={28} className="text-purple-400" />
                             {t.logs.title}
                         </h2>
-                        <p className="text-slate-400 mt-1 text-sm font-mono">
-                            /var/log/vulcan-safety.log
-                        </p>
+                        <div className="flex items-center gap-2 mt-1">
+                             <span className="text-slate-400 text-sm font-mono">/var/log/vulcan-safety.log</span>
+                             <div className={`px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-widest ${isSupabaseConfigured ? 'bg-emerald-500/20 text-emerald-400' : 'bg-orange-500/20 text-orange-400'}`}>
+                                {isSupabaseConfigured ? 'Production Live' : 'Local Sandbox'}
+                             </div>
+                        </div>
                     </div>
                     
-                    <div className="flex gap-4">
+                    <div className="flex flex-wrap gap-2">
+                        <button 
+                            onClick={loadLogs}
+                            className="flex items-center gap-2 bg-white/5 hover:bg-white/10 text-white px-4 py-2 rounded-xl border border-white/10 transition-all text-xs font-bold uppercase"
+                        >
+                            <RefreshCw size={14} className={isLoading ? 'animate-spin' : ''} /> Refresh
+                        </button>
                         <button 
                             onClick={() => setShouldCrash(true)}
-                            className="flex items-center gap-2 bg-red-900/50 hover:bg-red-800 text-red-200 px-4 py-2 rounded-xl border border-red-800 transition-colors text-xs font-bold uppercase tracking-wider shadow-lg hover:shadow-red-900/20"
-                            title="Safe Test of Self-Healing System (Triggers ErrorBoundary)"
+                            className="flex items-center gap-2 bg-red-900/50 hover:bg-red-800 text-red-200 px-4 py-2 rounded-xl border border-red-800 transition-colors text-xs font-bold uppercase shadow-lg"
                         >
                             <Skull size={16} /> Simulate Crash
                         </button>
-
                         <div className="flex items-center gap-2 bg-slate-800 p-1.5 rounded-xl border border-slate-700">
                             <Filter size={16} className="text-slate-400 ml-2" />
                             <select 
                                 className="bg-transparent text-white text-sm font-bold focus:outline-none p-1.5 cursor-pointer"
                                 value={filterLevel}
-                                onChange={(e) => setFilterLevel(e.target.value as any)}
+                                onChange={(e) => { setFilterLevel(e.target.value as any); setCurrentPage(1); }}
                             >
                                 <option value="ALL">{t.logs.levels.all}</option>
                                 <option value="INFO">{t.logs.levels.info}</option>
@@ -161,7 +132,16 @@ const LogsPage: React.FC = () => {
                 </div>
             </div>
 
-            <div className="flex-1 bg-white dark:bg-slate-800 rounded-xl shadow-lg border border-slate-100 dark:border-slate-700 overflow-hidden flex flex-col transition-colors">
+            <div className="flex-1 bg-white dark:bg-slate-800 rounded-xl shadow-lg border border-slate-100 dark:border-slate-700 overflow-hidden flex flex-col transition-colors relative">
+                {isLoading && (
+                    <div className="absolute inset-0 bg-white/50 dark:bg-slate-900/50 backdrop-blur-sm z-30 flex items-center justify-center">
+                        <div className="flex flex-col items-center gap-4">
+                            <RefreshCw size={40} className="text-indigo-500 animate-spin" />
+                            <span className="text-sm font-black uppercase tracking-widest text-slate-500">Retrieving Cloud Logs...</span>
+                        </div>
+                    </div>
+                )}
+
                 <div className="overflow-auto flex-1">
                     <table className="min-w-full divide-y divide-slate-100 dark:divide-slate-700">
                         <thead className="bg-slate-50 dark:bg-slate-900/50 sticky top-0 z-10">
@@ -191,8 +171,8 @@ const LogsPage: React.FC = () => {
                                             </div>
                                         </td>
                                         <td className="px-6 py-3 whitespace-nowrap text-slate-900 dark:text-slate-400 flex items-center gap-2">
-                                            <Clock size={12} className="text-slate-400 group-hover:text-slate-600 dark:group-hover:text-slate-300" />
-                                            {log.timestamp}
+                                            <Clock size={12} className="text-slate-400" />
+                                            {new Date(log.timestamp).toLocaleString()}
                                         </td>
                                         <td className="px-6 py-3 whitespace-nowrap text-slate-900 dark:text-white font-bold flex items-center gap-2">
                                             {log.user === 'RoboTech AI' && <Bot size={14} className="text-indigo-500" />}
@@ -205,7 +185,7 @@ const LogsPage: React.FC = () => {
                                                     <div className="mt-2 p-3 bg-cyan-50 dark:bg-cyan-900/20 border border-cyan-200 dark:border-cyan-800 rounded-lg flex gap-3 items-start animate-pulse-slow">
                                                         <div className="mt-0.5 text-cyan-600 dark:text-cyan-400"><Zap size={14} /></div>
                                                         <div>
-                                                            <p className="text-[10px] font-black text-cyan-700 dark:text-cyan-300 uppercase mb-0.5 tracking-wider">RoboTech Resolution:</p>
+                                                            <p className="text-[10px] font-black text-cyan-700 dark:text-cyan-300 uppercase mb-0.5 tracking-wider">Resolution Engine:</p>
                                                             <p className="text-slate-600 dark:text-slate-400 text-xs leading-relaxed">{log.aiFix}</p>
                                                         </div>
                                                     </div>
@@ -215,37 +195,29 @@ const LogsPage: React.FC = () => {
                                     </tr>
                                 );
                             })}
+                            
+                            {paginatedLogs.length === 0 && !isLoading && (
+                                <tr>
+                                    <td colSpan={4} className="py-20 text-center text-slate-400">
+                                        <div className="flex flex-col items-center">
+                                            <Database size={48} className="opacity-20 mb-4" />
+                                            <p>No log records found matching your filters.</p>
+                                        </div>
+                                    </td>
+                                </tr>
+                            )}
                         </tbody>
                     </table>
                 </div>
 
-                {/* Footer Pagination */}
                 <div className="p-3 border-t border-slate-100 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 flex flex-col md:flex-row justify-between items-center gap-4">
                     <div className="flex items-center gap-4">
-                        <div className="flex items-center gap-2">
-                            <span className="text-xs text-slate-600 dark:text-slate-400">{t.common.rowsPerPage}</span>
-                            <select 
-                                value={itemsPerPage}
-                                onChange={handlePageSizeChange}
-                                className="text-xs border border-slate-300 dark:border-slate-600 rounded bg-white dark:bg-slate-700 text-slate-800 dark:text-white px-2 py-1 outline-none focus:ring-1 focus:ring-blue-500"
-                            >
-                                <option value={10}>10</option>
-                                <option value={20}>20</option>
-                                <option value={30}>30</option>
-                                <option value={50}>50</option>
-                                <option value={100}>100</option>
-                                <option value={120}>120</option>
-                            </select>
+                        <div className="text-xs text-slate-600 dark:text-slate-400">
+                            {t.common.page} {currentPage} {t.common.of} {Math.max(1, totalPages)} ({filteredLogs.length} total)
                         </div>
-                        
-                        <div className="flex items-center gap-4 border-l border-slate-300 dark:border-slate-600 pl-4">
-                            <div className="text-xs text-slate-600 dark:text-slate-400">
-                                {t.common.page} {currentPage} {t.common.of} {Math.max(1, totalPages)} ({filteredLogs.length} total)
-                            </div>
-                            <div className="flex items-center gap-1">
-                                <button onClick={() => goToPage(currentPage - 1)} disabled={currentPage === 1} className="p-1 rounded hover:bg-gray-200 dark:hover:bg-slate-700 disabled:opacity-30 text-slate-600 dark:text-slate-300"><ChevronLeft size={16} /></button>
-                                <button onClick={() => goToPage(currentPage + 1)} disabled={currentPage === totalPages} className="p-1 rounded hover:bg-gray-200 dark:hover:bg-slate-700 disabled:opacity-30 text-slate-600 dark:text-slate-300"><ChevronRight size={16} /></button>
-                            </div>
+                        <div className="flex items-center gap-1">
+                            <button onClick={() => goToPage(currentPage - 1)} disabled={currentPage === 1} className="p-1 rounded hover:bg-gray-200 dark:hover:bg-slate-700 disabled:opacity-30 text-slate-600 dark:text-slate-300"><ChevronLeft size={16} /></button>
+                            <button onClick={() => goToPage(currentPage + 1)} disabled={currentPage === totalPages} className="p-1 rounded hover:bg-gray-200 dark:hover:bg-slate-700 disabled:opacity-30 text-slate-600 dark:text-slate-300"><ChevronRight size={16} /></button>
                         </div>
                     </div>
                 </div>

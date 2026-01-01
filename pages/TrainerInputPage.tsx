@@ -8,6 +8,8 @@ import {
 } from 'lucide-react';
 import { useLanguage } from '../contexts/LanguageContext';
 import { addMonths, format } from 'date-fns';
+import { db } from '../services/databaseService';
+import { useAuth } from '../contexts/AuthContext';
 
 interface TrainerInputPageProps {
   bookings: Booking[];
@@ -27,6 +29,7 @@ const TrainerInputPage: React.FC<TrainerInputPageProps> = ({
   racDefinitions
 }) => {
   const { t, language } = useLanguage();
+  const { user } = useAuth();
   
   // -- SELECTION STATE --
   const [selectedSessionId, setSelectedSessionId] = useState('');
@@ -63,7 +66,7 @@ const TrainerInputPage: React.FC<TrainerInputPageProps> = ({
       const session = sessions.find(s => s.id === sessionId);
       if (!session) return { needsDl: false, needsPractical: true }; 
       
-      const racCode = session.racType.split(' - ')[0].replace(/\s/g, '');
+      const racCode = session.racType.split(' - ')[0].replace(/\s+/g, '');
       const def = racDefinitions.find(r => r.name === session.racType || r.code === racCode);
       
       return {
@@ -150,13 +153,13 @@ const TrainerInputPage: React.FC<TrainerInputPageProps> = ({
       setShowBulkTools(false);
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     const selectedSession = sessions.find(s => s.id === selectedSessionId);
     const sessionDateStr = selectedSession?.date || new Date().toISOString().split('T')[0];
     
     let racValidity = 24; 
     if (selectedSession) {
-        const racCode = selectedSession.racType.split(' - ')[0].replace(/\s/g, '');
+        const racCode = selectedSession.racType.split(' - ')[0].replace(/\s+/g, '');
         const def = racDefinitions.find(r => r.code === racCode || r.name === selectedSession.racType);
         if (def && def.validityMonths) racValidity = def.validityMonths;
     }
@@ -175,6 +178,8 @@ const TrainerInputPage: React.FC<TrainerInputPageProps> = ({
     });
 
     updateBookings(bookingsToSave);
+    await db.addLog('AUDIT', `TRAINING_RESULTS_COMMITTED: ${bookingsToSave.length} records for ${selectedSession?.racType}`, user?.name || 'Instructor', { sessionId: selectedSessionId });
+
     setSuccessMsg('Results saved successfully!');
     setHasUnsavedChanges(false);
     

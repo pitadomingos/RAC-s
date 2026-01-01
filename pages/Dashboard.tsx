@@ -1,8 +1,8 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import DashboardStats from '../components/DashboardStats';
-import { Booking, UserRole, EmployeeRequirement, TrainingSession, BookingStatus, RacDef } from '../types';
-import { COMPANIES, DEPARTMENTS, OPS_KEYS, RAC_KEYS } from '../constants';
+import { Booking, UserRole, EmployeeRequirement, TrainingSession, BookingStatus, RacDef, Company } from '../types';
+import { DEPARTMENTS, OPS_KEYS, RAC_KEYS } from '../constants';
 import { 
     Calendar, Clock, MapPin, ChevronRight, Filter, Timer, User, 
     CheckCircle, XCircle, ChevronLeft, Zap, Layers, Briefcase, 
@@ -13,6 +13,7 @@ import { useNavigate } from 'react-router-dom';
 import { v4 as uuidv4 } from 'uuid';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useMessages } from '../contexts/MessageContext';
+import RacIcon from '../components/RacIcon';
 
 interface DashboardProps {
   bookings: Booking[];
@@ -23,6 +24,7 @@ interface DashboardProps {
   onRejectAutoBooking?: (bookingId: string) => void;
   racDefinitions?: RacDef[];
   currentSiteId: string;
+  companies?: Company[];
 }
 
 const Dashboard: React.FC<DashboardProps> = ({ 
@@ -33,7 +35,8 @@ const Dashboard: React.FC<DashboardProps> = ({
   onApproveAutoBooking,
   onRejectAutoBooking,
   racDefinitions = [],
-  currentSiteId
+  currentSiteId,
+  companies = []
 }) => {
   const navigate = useNavigate();
   const { t, language } = useLanguage();
@@ -44,7 +47,7 @@ const Dashboard: React.FC<DashboardProps> = ({
   const employeesWithStatus = useMemo(() => {
       const empMap = new Map<string, any>();
       bookings.forEach(b => {
-          if (!empMap.has(b.employee.id)) {
+          if (b.employee && !empMap.has(b.employee.id)) {
               empMap.set(b.employee.id, b.employee);
           }
       });
@@ -128,6 +131,13 @@ const Dashboard: React.FC<DashboardProps> = ({
         .slice(0, 10); 
   }, [sessions, currentSiteId]);
 
+  const expiringSoonCount = useMemo(() => {
+      const today = new Date();
+      const thirtyDays = new Date();
+      thirtyDays.setDate(today.getDate() + 30);
+      return filteredBookingsForStats.filter(b => b.expiryDate && new Date(b.expiryDate) > today && new Date(b.expiryDate) <= thirtyDays).length;
+  }, [filteredBookingsForStats]);
+
   const handleBookRenewals = () => {
       const today = new Date();
       const thirtyDays = new Date();
@@ -159,13 +169,13 @@ const Dashboard: React.FC<DashboardProps> = ({
                       <div className="absolute inset-0 rounded-full border-4 border-emerald-500 border-t-transparent animate-spin-slow"></div>
                       <span className="text-3xl font-black">{globalStats.rate}%</span>
                   </div>
-                  <span className="text-[10px] font-black uppercase tracking-[0.2em] text-emerald-400 text-center">Global Readiness</span>
+                  <span className="text-[10px] font-black uppercase tracking-[0.2em] text-emerald-400 text-center">{t.dashboard.globalReadiness}</span>
               </div>
 
               <div className="flex-1 p-8 flex flex-col justify-between relative z-10 border-l border-white/5">
                   <div>
-                      <h3 className="text-2xl font-black text-white uppercase tracking-tight mb-2">Executive Overview</h3>
-                      <p className="text-slate-400 text-sm max-w-md">Critical Activity Requisition Matrix (Enterprise View). Real-time compliance monitoring across all site operations.</p>
+                      <h3 className="text-2xl font-black text-white uppercase tracking-tight mb-2">{t.dashboard.executiveOverview}</h3>
+                      <p className="text-slate-400 text-sm max-w-md">{t.dashboard.systemDescription}</p>
                   </div>
                   <div className="mt-8 flex flex-wrap gap-4">
                       <button 
@@ -178,7 +188,7 @@ const Dashboard: React.FC<DashboardProps> = ({
                         onClick={() => navigate('/reports')}
                         className="bg-white/10 hover:bg-white/20 border border-white/10 text-white px-6 py-3 rounded-2xl font-bold text-sm transition-all"
                       >
-                        Compliance Analytics
+                        {t.dashboard.complianceAnalytics}
                       </button>
                   </div>
               </div>
@@ -189,17 +199,17 @@ const Dashboard: React.FC<DashboardProps> = ({
               <div>
                   <div className="flex items-center gap-2 text-indigo-600 mb-4">
                       <AlertTriangle size={20} />
-                      <h3 className="font-black text-xs uppercase tracking-widest">Renewal Management</h3>
+                      <h3 className="font-black text-xs uppercase tracking-widest">{t.dashboard.renewalManagement}</h3>
                   </div>
                   <p className="text-slate-500 dark:text-slate-400 text-sm leading-relaxed mb-6">
-                      System identified <strong className="text-slate-800 dark:text-white">5</strong> staff members with certifications expiring in the next 7 days.
+                      {t.dashboard.renewalDescription.replace('{count}', String(expiringSoonCount))}
                   </p>
               </div>
               <button 
                 onClick={handleBookRenewals}
                 className="w-full bg-slate-900 text-white dark:bg-slate-700 hover:bg-indigo-600 dark:hover:bg-indigo-900/30 py-3 rounded-2xl font-bold text-sm transition-all flex items-center justify-center gap-2"
               >
-                  Auto-Book Renewals <ArrowRight size={16} />
+                  {t.dashboard.autoBookRenewals} <ArrowRight size={16} />
               </button>
           </div>
       </div>
@@ -209,7 +219,7 @@ const Dashboard: React.FC<DashboardProps> = ({
             <div className="p-2 bg-indigo-50 dark:bg-indigo-900/30 rounded-lg">
                 <Activity size={20} className="text-indigo-600 dark:text-indigo-400" />
             </div>
-            <h2 className="text-lg font-bold text-slate-800 dark:text-white">Live Workforce Matrix</h2>
+            <h2 className="text-lg font-bold text-slate-800 dark:text-white">{t.dashboard.liveWorkforceMatrix}</h2>
         </div>
         
         <div className="flex flex-wrap gap-3 items-center w-full xl:w-auto">
@@ -221,7 +231,7 @@ const Dashboard: React.FC<DashboardProps> = ({
                     className="w-full bg-transparent text-sm font-medium text-slate-800 dark:text-white outline-none cursor-pointer"
                 >
                     <option value="All">{t.common.all} {t.common.company}</option>
-                    {COMPANIES.map(c => <option key={c} value={c}>{c}</option>)}
+                    {companies.map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
                 </select>
             </div>
             <button 
@@ -236,6 +246,7 @@ const Dashboard: React.FC<DashboardProps> = ({
       <DashboardStats 
           bookings={filteredBookingsForStats} 
           requirements={filteredRequirements} 
+          sessions={sessions} 
           onBookRenewals={handleBookRenewals}
       />
 
@@ -245,7 +256,7 @@ const Dashboard: React.FC<DashboardProps> = ({
           <div className="px-6 py-5 border-b border-slate-200 dark:border-slate-700 bg-gray-50/50 dark:bg-slate-800/50 flex justify-between items-center">
              <div className="flex items-center gap-2">
                 <Calendar className="text-indigo-600 dark:text-indigo-400" size={20} />
-                <h3 className="font-bold text-slate-800 dark:text-white text-lg">Next Scheduled Requisitions</h3>
+                <h3 className="font-bold text-slate-800 dark:text-white text-lg">{t.dashboard.upcoming.title}</h3>
              </div>
           </div>
           <div className="overflow-auto flex-1">
@@ -265,8 +276,13 @@ const Dashboard: React.FC<DashboardProps> = ({
                       <div className="text-[10px] font-mono text-slate-400">{session.startTime}</div>
                     </td>
                     <td className="px-6 py-4">
-                      <div className="text-sm font-bold text-slate-800 dark:text-slate-200 group-hover:text-indigo-600 transition-colors">{getTranslatedRacName(session.racType)}</div>
-                      <div className="text-xs text-slate-400 flex items-center gap-1"><MapPin size={10}/> {session.location}</div>
+                      <div className="flex items-center gap-4">
+                        <RacIcon racCode={session.racType.split(' - ')[0]} racName={session.racType} size={32} className="shrink-0" />
+                        <div>
+                          <div className="text-sm font-bold text-slate-800 dark:text-slate-200 group-hover:text-indigo-600 transition-colors">{getTranslatedRacName(session.racType)}</div>
+                          <div className="text-xs text-slate-400 flex items-center gap-1"><MapPin size={10}/> {session.location}</div>
+                        </div>
+                      </div>
                     </td>
                     <td className="px-6 py-4 text-center">
                        <span className="text-xs font-black text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-700 px-2.5 py-1 rounded-lg">
@@ -285,38 +301,44 @@ const Dashboard: React.FC<DashboardProps> = ({
            <div className="px-6 py-5 border-b border-slate-200 dark:border-slate-700 bg-gray-50/50 dark:bg-slate-800/50">
              <div className="flex items-center gap-2">
                 <User className="text-blue-600 dark:text-blue-400" size={20} />
-                <h3 className="font-bold text-slate-800 dark:text-white text-lg">Active Personnel Status</h3>
+                <h3 className="font-bold text-slate-800 dark:text-white text-lg">{t.dashboard.personnelStatus}</h3>
              </div>
            </div>
            <div className="overflow-auto flex-1">
               <table className="min-w-full divide-y divide-gray-200 dark:divide-slate-700">
                 <thead className="bg-gray-50 dark:bg-slate-800 sticky top-0 z-10">
                    <tr>
-                     <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Personnel</th>
-                     <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Module</th>
-                     <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Authorization</th>
+                     <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">{t.common.name}</th>
+                     <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">{t.results.table.session}</th>
+                     <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">{t.results.table.status}</th>
                    </tr>
                 </thead>
                 <tbody className="bg-white dark:bg-slate-800 divide-y divide-gray-100 dark:divide-slate-700/50">
-                   {filteredBookingsForStats.slice(0, 15).map((item) => (
-                    <tr key={item.id} className="hover:bg-slate-50 dark:hover:bg-slate-700/30 transition-colors">
-                       <td className="px-6 py-4">
-                         <div className="text-sm font-bold text-slate-900 dark:text-white">{item.employee.name}</div>
-                         <div className="text-[10px] text-slate-500 font-mono">{item.employee.recordId}</div>
-                       </td>
-                       <td className="px-6 py-4">
-                         <span className="text-[10px] font-bold text-blue-700 dark:text-blue-300 bg-blue-50 dark:bg-blue-900/30 px-2 py-0.5 rounded-full uppercase">
-                           {sessions.find(s => s.id === item.sessionId)?.racType.split(' - ')[0] || item.sessionId.split('|')[0]}
-                         </span>
-                       </td>
-                       <td className="px-6 py-4">
-                          <span className={`text-[10px] font-black uppercase flex items-center gap-1 ${item.status === 'Passed' ? 'text-emerald-500' : 'text-amber-500'}`}>
-                             {item.status === 'Passed' ? <CheckCircle size={10}/> : <Clock size={10}/>}
-                             {item.status}
-                          </span>
-                       </td>
-                    </tr>
-                   ))}
+                   {filteredBookingsForStats.slice(0, 15).map((item) => {
+                    const session = sessions.find(s => s.id === item.sessionId);
+                    const racCode = session ? session.racType.split(' - ')[0] : item.sessionId.split('|')[0];
+                    return (
+                      <tr key={item.id} className="hover:bg-slate-50 dark:hover:bg-slate-700/30 transition-colors">
+                         <td className="px-6 py-4">
+                           <div className="text-sm font-bold text-slate-900 dark:text-white">{item.employee?.name || 'Unknown'}</div>
+                           <div className="text-[10px] text-slate-500 font-mono">{item.employee?.recordId || 'N/A'}</div>
+                         </td>
+                         <td className="px-6 py-4">
+                           <div className="flex items-center gap-2">
+                             <RacIcon racCode={racCode} racName={session?.racType || item.sessionId} size={18} />
+                             <span className="text-[10px] font-bold text-blue-700 dark:text-blue-300 bg-blue-50 dark:bg-blue-900/30 px-2 py-0.5 rounded-full uppercase">
+                               {racCode}
+                             </span>
+                           </div>
+                         </td>
+                         <td className="px-6 py-4">
+                            <span className={`text-[10px] font-black uppercase flex items-center gap-1 ${item.status === 'Passed' ? 'text-emerald-500' : 'text-amber-500'}`}>
+                               {item.status === 'Passed' ? <CheckCircle size={10}/> : <Clock size={10}/>}
+                               {item.status === 'Passed' ? t.common.passed : t.common.pending}
+                            </span>
+                         </td>
+                      </tr>
+                   )})}
                 </tbody>
               </table>
            </div>

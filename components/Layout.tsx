@@ -44,7 +44,9 @@ import {
   GitMerge,
   Cloud,
   CloudOff,
-  LogOut
+  LogOut,
+  Rocket,
+  Code
 } from 'lucide-react';
 import { UserRole, SystemNotification, Site, Company } from '../types';
 import { useLanguage } from '../contexts/LanguageContext';
@@ -142,6 +144,7 @@ const Layout: React.FC<LayoutProps> = ({
   };
 
   const allNavItems = [
+    { path: '/presentation', label: t.nav.presentation, icon: Rocket, visible: true },
     { path: '/', label: t.nav.dashboard, icon: LayoutDashboard, visible: ![UserRole.USER, UserRole.RAC_TRAINER, UserRole.ENTERPRISE_ADMIN].includes(userRole) },
     { path: '/booking', label: t.nav.booking, icon: CalendarPlus, visible: userRole !== UserRole.RAC_TRAINER && userRole !== UserRole.ENTERPRISE_ADMIN && userRole !== UserRole.SITE_ADMIN },
     { path: '/results', label: t.nav.records, icon: ClipboardList, visible: userRole !== UserRole.RAC_TRAINER && userRole !== UserRole.ENTERPRISE_ADMIN },
@@ -157,6 +160,7 @@ const Layout: React.FC<LayoutProps> = ({
     { path: '/trainer-input', label: t.nav.trainerInput, icon: PenTool, visible: [UserRole.SYSTEM_ADMIN, UserRole.RAC_TRAINER].includes(userRole) },
     { path: '/users', label: t.nav.users, icon: Users, visible: userRole === UserRole.SYSTEM_ADMIN },
     { path: '/settings', label: t.nav.settings, icon: Settings, visible: [UserRole.SYSTEM_ADMIN, UserRole.ENTERPRISE_ADMIN, UserRole.SITE_ADMIN].includes(userRole) },
+    { path: '/tech-docs', label: t.nav.techDocs, icon: FileCode, visible: [UserRole.SYSTEM_ADMIN, UserRole.ENTERPRISE_ADMIN].includes(userRole) },
     { path: '/logs', label: t.nav.logs, icon: ScrollText, visible: [UserRole.SYSTEM_ADMIN, UserRole.ENTERPRISE_ADMIN].includes(userRole) },
     { path: '/manuals', label: t.nav.manuals, icon: BookOpen, visible: true },
   ];

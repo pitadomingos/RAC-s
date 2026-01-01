@@ -1,19 +1,7 @@
 
-export enum RAC {
-  RAC01 = 'RAC 01 - Working at Height',
-  RAC02 = 'RAC 02 - Vehicles and Mobile Equipment',
-  RAC03 = 'RAC 03 - Mobile Equipment Lockout',
-  RAC04 = 'RAC 04 - Machine Guarding',
-  RAC05 = 'RAC 05 - Confined Space',
-  RAC06 = 'RAC 06 - Lifting Operations',
-  RAC07 = 'RAC 07 - Ground Stability',
-  RAC08 = 'RAC 08 - Electricity',
-  RAC09 = 'RAC 09 - Explosives',
-  RAC10 = 'RAC 10 - Liquid Metal'
-}
-
 export interface RacDef {
   id: string;
+  companyId?: string;
   code: string;
   name: string;
   validityMonths?: number;
@@ -178,7 +166,6 @@ export interface Feedback {
   adminNotes?: string;
 }
 
-// --- NEW TYPES FOR DATA INTEGRATION HUB ---
 export type ConnectorType = 'Excel' | 'Database' | 'API';
 
 export interface DataConnector {
@@ -193,7 +180,7 @@ export interface DataConnector {
     filePath?: string;
     dbType?: string;
   };
-  mapping: Record<string, string>; // systemField -> sourceField
+  mapping: Record<string, string>; 
 }
 
 export interface SyncResult {

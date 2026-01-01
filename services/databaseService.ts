@@ -1,9 +1,8 @@
 
 import { supabase, isSupabaseConfigured } from './supabaseClient';
-import { Booking, Employee, TrainingSession, EmployeeRequirement, Site, Company, BookingStatus, User, UserRole } from '../types';
-import { MOCK_EMPLOYEES, MOCK_BOOKINGS, MOCK_SESSIONS, MOCK_REQUIREMENTS, INITIAL_RAC_DEFINITIONS } from '../constants';
+import { Booking, Employee, TrainingSession, EmployeeRequirement, Site, Company, BookingStatus, User, UserRole, RacDef, Room, Trainer, Feedback, SystemNotification } from '../types';
+import { MOCK_EMPLOYEES, MOCK_BOOKINGS, MOCK_SESSIONS, MOCK_REQUIREMENTS } from '../constants';
 
-// Seed data for the requested System Admin
 const FALLBACK_USERS: User[] = [
     {
         id: 1337,
@@ -17,150 +16,288 @@ const FALLBACK_USERS: User[] = [
     }
 ];
 
-/**
- * Robust Database Service
- * Automatically detects missing tables (42P01) and falls back to local data.
- */
 export const db = {
-    // Helper to safely execute Supabase queries
     async safeQuery<T>(tableName: string, query: any, fallback: T): Promise<T> {
         if (!isSupabaseConfigured || !supabase) return fallback;
         try {
             const { data, error } = await query;
             if (error) {
-                // 42P01 = Table/Relation does not exist in Postgres
                 if (error.code === '42P01') {
-                    console.warn(`[Supabase] Table "${tableName}" not found. Falling back to local mock data.`);
+                    console.warn(`[Supabase] Table "${tableName}" not found. Falling back to mock data.`);
                     return fallback;
                 }
                 throw error;
             }
-            return data as T;
+            return (data as T) || fallback;
         } catch (e: any) {
             console.error(`[Supabase] Error fetching ${tableName}:`, e?.message || e);
             return fallback;
         }
     },
 
+    mapUserFromDb(data: any): User {
+        if (!data) return data;
+        const { job_title, phone_number, site_id, ...rest } = data;
+        return {
+            ...rest,
+            jobTitle: job_title || '',
+            phoneNumber: phone_number || '',
+            siteId: site_id || 'all'
+        };
+    },
+
+    mapUserToDb(user: Partial<User>): any {
+        const payload: any = {};
+        if (user.id !== undefined) payload.id = user.id;
+        if (user.name !== undefined) payload.name = user.name;
+        if (user.email !== undefined) payload.email = user.email;
+        if (user.role !== undefined) payload.role = user.role;
+        if (user.status !== undefined) payload.status = user.status;
+        if (user.company !== undefined) payload.company = user.company;
+        if (user.jobTitle !== undefined) payload.job_title = user.jobTitle;
+        if (user.phoneNumber !== undefined) payload.phone_number = user.phoneNumber;
+        if (user.siteId !== undefined) payload.site_id = user.siteId;
+        return payload;
+    },
+
+    mapEmployeeFromDb(data: any): Employee {
+        if (!data) return data;
+        const { record_id, site_id, phone_number, driver_license_number, driver_license_class, driver_license_expiry, is_active, ...rest } = data;
+        return {
+            ...rest,
+            recordId: record_id,
+            siteId: site_id || 's1',
+            phoneNumber: phone_number,
+            driverLicenseNumber: driver_license_number,
+            driverLicenseClass: driver_license_class,
+            driverLicenseExpiry: driver_license_expiry,
+            isActive: is_active
+        };
+    },
+
+    mapEmployeeToDb(emp: Partial<Employee>): any {
+        const payload: any = {};
+        if (emp.id !== undefined) payload.id = emp.id;
+        if (emp.name !== undefined) payload.name = emp.name;
+        if (emp.recordId !== undefined) payload.record_id = emp.recordId;
+        if (emp.siteId !== undefined) payload.site_id = emp.siteId;
+        if (emp.phoneNumber !== undefined) payload.phone_number = emp.phoneNumber;
+        if (emp.driverLicenseNumber !== undefined) payload.driver_license_number = emp.driverLicenseNumber;
+        if (emp.driverLicenseClass !== undefined) payload.driver_license_class = emp.driverLicenseClass;
+        if (emp.driverLicenseExpiry !== undefined) payload.driver_license_expiry = emp.driverLicenseExpiry;
+        if (emp.isActive !== undefined) payload.is_active = emp.isActive;
+        return payload;
+    },
+
+    mapSessionFromDb(data: any): TrainingSession {
+        if (!data) return data;
+        const { rac_type, start_time, session_language, site_id, ...rest } = data;
+        return {
+            ...rest,
+            racType: rac_type,
+            startTime: start_time,
+            sessionLanguage: session_language,
+            siteId: site_id
+        };
+    },
+
+    mapBookingFromDb(data: any): Booking {
+        if (!data) return data;
+        const { session_id, theory_score, practical_score, driver_license_verified, result_date, expiry_date, is_auto_booked, employee, ...rest } = data;
+        return {
+            ...rest,
+            sessionId: session_id,
+            theoryScore: theory_score,
+            practicalScore: practical_score,
+            driverLicenseVerified: driver_license_verified,
+            resultDate: result_date,
+            expiryDate: expiry_date,
+            isAutoBooked: is_auto_booked,
+            employee: this.mapEmployeeFromDb(employee)
+        };
+    },
+
     async getCompanies(): Promise<Company[]> {
-        const fallback = [{ id: 'c1', name: 'Vulcan', appName: 'CARS Manager', status: 'Active', features: { alcohol: true } }] as Company[];
-        return this.safeQuery('companies', supabase?.from('companies').select('*'), fallback);
+        const raw = await this.safeQuery('companies', supabase?.from('companies').select('*'), []);
+        return raw.map((c: any) => ({
+            id: c.id,
+            name: c.name,
+            appName: c.app_name,
+            logoUrl: c.logo_url,
+            safetyLogoUrl: c.safety_logo_url,
+            status: c.status || 'Active',
+            defaultLanguage: c.default_language || 'en',
+            features: c.features || { alcohol: false }
+        }));
     },
 
     async getSites(): Promise<Site[]> {
-        const fallback = [{ id: 's1', companyId: 'c1', name: 'Moatize Site', location: 'Tete' }] as Site[];
-        return this.safeQuery('sites', supabase?.from('sites').select('*'), fallback);
+        return this.safeQuery('sites', supabase?.from('sites').select('*'), []);
     },
 
     async getUsers(): Promise<User[]> {
-        return this.safeQuery('users', supabase?.from('users').select('*').order('name', { ascending: true }), FALLBACK_USERS);
+        const raw = await this.safeQuery('users', supabase?.from('users').select('*').order('name', { ascending: true }), []);
+        if (raw.length === 0 && !isSupabaseConfigured) return FALLBACK_USERS;
+        return raw.map(u => this.mapUserFromDb(u));
     },
 
     async getEmployees(): Promise<Employee[]> {
-        return this.safeQuery('employees', supabase?.from('employees').select('*'), MOCK_EMPLOYEES);
+        const raw = await this.safeQuery('employees', supabase?.from('employees').select('*'), []);
+        if (raw.length === 0 && !isSupabaseConfigured) return MOCK_EMPLOYEES;
+        return raw.map(e => this.mapEmployeeFromDb(e));
     },
 
     async getSessions(): Promise<TrainingSession[]> {
-        return this.safeQuery('training_sessions', supabase?.from('training_sessions').select('*').order('date', { ascending: true }), MOCK_SESSIONS);
+        const raw = await this.safeQuery('training_sessions', supabase?.from('training_sessions').select('*').order('date', { ascending: true }), []);
+        if (raw.length === 0 && !isSupabaseConfigured) return MOCK_SESSIONS;
+        return raw.map(s => this.mapSessionFromDb(s));
     },
 
     async getBookings(): Promise<Booking[]> {
-        // Complex query for bookings with join
         if (!isSupabaseConfigured || !supabase) return MOCK_BOOKINGS;
         try {
-            const { data, error } = await supabase
-                .from('bookings')
-                .select(`*, employee:employees(*)`);
-            
-            if (error && error.code === '42P01') return MOCK_BOOKINGS;
+            const { data, error } = await supabase.from('bookings').select(`*, employee:employees(*)`);
             if (error) throw error;
-            return (data as any[]) || MOCK_BOOKINGS;
+            return ((data as any[]) || []).map(b => this.mapBookingFromDb(b));
         } catch (e: any) {
-            console.error("[Supabase] Booking Load Error:", e?.message || e);
             return MOCK_BOOKINGS;
         }
     },
 
     async getRequirements(): Promise<EmployeeRequirement[]> {
-        return this.safeQuery('employee_requirements', supabase?.from('employee_requirements').select('*'), MOCK_REQUIREMENTS);
+        const raw = await this.safeQuery('employee_requirements', supabase?.from('employee_requirements').select('*'), []);
+        if (raw.length === 0 && !isSupabaseConfigured) return MOCK_REQUIREMENTS;
+        return raw.map(r => ({
+            ...r,
+            employeeId: r.employee_id,
+            asoExpiryDate: r.aso_expiry_date,
+            requiredRacs: r.required_racs
+        }));
     },
 
-    // --- MUTATIONS ---
+    async getRacDefinitions(): Promise<RacDef[]> {
+        return this.safeQuery('rac_definitions', supabase?.from('rac_definitions').select('*').order('code'), []);
+    },
+
+    async getRooms(): Promise<Room[]> {
+        return this.safeQuery('rooms', supabase?.from('rooms').select('*'), []);
+    },
+
+    async getTrainers(): Promise<Trainer[]> {
+        const raw = await this.safeQuery('trainers', supabase?.from('trainers').select('*'), []);
+        return raw.map((t: any) => ({ ...t, racs: t.authorized_racs || [] }));
+    },
+
+    async getFeedback(): Promise<Feedback[]> {
+        return this.safeQuery('feedback', supabase?.from('feedback').select('*').order('timestamp', { ascending: false }), []);
+    },
+
+    async getNotifications(): Promise<SystemNotification[]> {
+        return this.safeQuery('notifications', supabase?.from('notifications').select('*').order('timestamp', { ascending: false }), []);
+    },
+
+    async saveCompany(company: Company) {
+        if (!isSupabaseConfigured || !supabase) return company;
+        const payload = {
+            id: company.id,
+            name: company.name,
+            app_name: company.appName,
+            logo_url: company.logoUrl,
+            safety_logo_url: company.safetyLogoUrl,
+            status: company.status,
+            default_language: company.defaultLanguage,
+            features: company.features
+        };
+        const { data, error } = await supabase.from('companies').upsert(payload).select();
+        if (error) throw error;
+        return data[0];
+    },
+
+    async saveRacDefinition(rac: RacDef) {
+        if (!isSupabaseConfigured || !supabase) return rac;
+        const payload = {
+            id: rac.id,
+            company_id: rac.companyId,
+            code: rac.code,
+            name: rac.name,
+            validity_months: rac.validityMonths,
+            requires_driver_license: rac.requiresDriverLicense,
+            requires_practical: rac.requiresPractical
+        };
+        const { data, error } = await supabase.from('rac_definitions').upsert(payload).select();
+        if (error) throw error;
+        return data[0];
+    },
+
     async upsertUser(user: Partial<User>) {
         if (!isSupabaseConfigured || !supabase) return user;
-        try {
-            // Upsert by ID if exists, otherwise try to match on email to prevent unique constraint errors
-            const { data, error } = await supabase.from('users').upsert(user, { onConflict: 'email' }).select();
-            if (error) throw error;
-            return data[0];
-        } catch (e: any) {
-            console.error("Failed to save user to cloud:", e?.message || e);
-            return user;
-        }
+        const payload = this.mapUserToDb(user);
+        const { data, error } = await supabase.from('users').upsert(payload, { onConflict: 'email' }).select();
+        if (error) throw error;
+        return this.mapUserFromDb(data[0]);
     },
 
-    async deleteUser(id: number) {
+    async updateUserPassword(id: number, password: string) {
         if (!isSupabaseConfigured || !supabase) return;
-        try {
-            const { error } = await supabase.from('users').delete().eq('id', id);
-            if (error) throw error;
-        } catch (e: any) { 
-            console.warn("Delete User Failed:", e?.message || e); 
-        }
+        const { error } = await supabase.from('users').update({ password }).eq('id', id);
+        if (error) throw error;
     },
 
     async upsertEmployee(emp: Partial<Employee>) {
         if (!isSupabaseConfigured || !supabase) return emp;
-        try {
-            const { data, error } = await supabase.from('employees').upsert(emp).select();
-            if (error) throw error;
-            return data[0];
-        } catch (e: any) { 
-            console.error("Employee Upsert Failed:", e?.message || e);
-            return emp; 
-        }
+        const payload = this.mapEmployeeToDb(emp);
+        const { data, error } = await supabase.from('employees').upsert(payload).select();
+        if (error) throw error;
+        return this.mapEmployeeFromDb(data[0]);
     },
 
     async saveBooking(booking: Partial<Booking>) {
         if (!isSupabaseConfigured || !supabase) return booking;
-        try {
-            const payload = { ...booking };
-            if (booking.employee) {
-                // @ts-ignore
-                payload.employee_id = booking.employee.id;
-                delete payload.employee;
-            }
-            const { data, error } = await supabase.from('bookings').upsert(payload).select();
-            if (error) throw error;
-            return data[0];
-        } catch (e: any) { 
-            console.error("Booking Save Failed:", e?.message || e);
-            return booking; 
-        }
+        const payload: any = { ...booking };
+        if (booking.employee) payload.employee_id = booking.employee.id;
+        delete payload.employee;
+        const { data, error } = await supabase.from('bookings').upsert(payload).select();
+        if (error) throw error;
+        return data[0];
     },
 
     async updateRequirement(req: EmployeeRequirement) {
         if (!isSupabaseConfigured || !supabase) return;
-        try {
-            const { error } = await supabase.from('employee_requirements').upsert(req);
-            if (error) throw error;
-        } catch (e: any) { 
-            console.error("Requirement Update Failed:", e?.message || e);
-        }
+        const payload = { employee_id: req.employeeId, aso_expiry_date: req.asoExpiryDate, required_racs: req.requiredRacs };
+        await supabase.from('employee_requirements').upsert(payload);
     },
 
-    async addLog(level: string, key: string, user: string, meta?: any) {
+    async saveFeedback(f: Partial<Feedback>) {
         if (!isSupabaseConfigured || !supabase) return;
-        try {
-            await supabase.from('system_logs').insert({
-                level,
-                message_key: key,
-                user_name: user,
-                metadata: meta
-            });
-        } catch (e: any) { 
-            /* ignore silent but log for developer */
-            console.warn("Log creation suppressed:", e?.message || e);
-        }
+        await supabase.from('feedback').upsert(f);
+    },
+
+    async addLog(level: string, message: string, user: string, metadata?: any) {
+        if (!isSupabaseConfigured || !supabase) return;
+        await supabase.from('system_logs').insert({
+            level,
+            message_key: message, // Mapping column name for consistency with schema
+            user_name: user,
+            metadata: metadata || {}
+        });
+    },
+
+    async getLogs(): Promise<any[]> {
+        if (!isSupabaseConfigured || !supabase) return [];
+        const { data, error } = await supabase
+            .from('system_logs')
+            .select('*')
+            .order('timestamp', { ascending: false })
+            .limit(100);
+        
+        if (error) throw error;
+        return data.map(l => ({
+            id: l.id,
+            level: l.level,
+            messageKey: l.message_key,
+            user: l.user_name,
+            timestamp: l.timestamp,
+            aiFix: l.metadata?.aiFix || null
+        }));
     }
 };

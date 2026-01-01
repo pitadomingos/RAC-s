@@ -1,4 +1,3 @@
-
 import React, { useMemo, useState } from 'react';
 import { Site, Booking, EmployeeRequirement, BookingStatus, UserRole } from '../types';
 import { 
@@ -10,7 +9,8 @@ import {
   Map as MapIcon, Filter, Sparkles, FileText, Briefcase, Zap,
   Server
 } from 'lucide-react';
-import { COMPANIES, DEPARTMENTS } from '../constants';
+/* Fix: Removed COMPANIES from import as it is not exported from constants.ts */
+import { DEPARTMENTS } from '../constants';
 import { generateSafetyReport } from '../services/geminiService';
 import { useLanguage } from '../contexts/LanguageContext';
 
@@ -32,6 +32,15 @@ const EnterpriseDashboard: React.FC<EnterpriseDashboardProps> = ({ sites, bookin
   // AI State
   const [isGenerating, setIsGenerating] = useState(false);
   const [aiReport, setAiReport] = useState<string | null>(null);
+
+  /* Fix: Compute available companies dynamically from the bookings data instead of using a missing constant. */
+  const availableCompanies = useMemo(() => {
+      const comps = new Set<string>();
+      bookings.forEach(b => {
+          if (b.employee.company) comps.add(b.employee.company);
+      });
+      return Array.from(comps).sort();
+  }, [bookings]);
 
   // --- FILTERING LOGIC ---
   // 1. Get filtered employees (unique) based on criteria
@@ -278,7 +287,7 @@ const EnterpriseDashboard: React.FC<EnterpriseDashboardProps> = ({ sites, bookin
                         className="bg-transparent text-sm font-bold text-slate-700 dark:text-slate-200 outline-none cursor-pointer pr-2"
                     >
                         <option value="All">{t.common.all} {t.common.company}s</option>
-                        {COMPANIES.map(c => <option key={c} value={c}>{c}</option>)}
+                        {availableCompanies.map(c => <option key={c} value={c}>{c}</option>)}
                     </select>
                 </div>
 

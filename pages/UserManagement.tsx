@@ -1,9 +1,8 @@
 
-import React, { useState, useRef } from 'react';
-import { UserRole, User, SystemNotification, Site } from '../types';
-import { Shield, MoreVertical, Plus, X, Trash2, Edit, Users, Lock, Key, ChevronLeft, ChevronRight, Mail, Briefcase, CheckCircle2, XCircle, Search, Upload, Download, Smartphone, MapPin, Loader2 } from 'lucide-react';
+import React, { useState, useRef, useMemo } from 'react';
+import { UserRole, User, SystemNotification, Site, Company } from '../types';
+import { Shield, MoreVertical, Plus, X, Trash2, Edit, Users, Lock, Key, ChevronLeft, ChevronRight, Mail, Briefcase, CheckCircle2, XCircle, Search, Upload, Download, Smartphone, MapPin, Loader2, Info, RefreshCw } from 'lucide-react';
 import { useLanguage } from '../contexts/LanguageContext';
-import { COMPANIES } from '../constants';
 import ConfirmModal from '../components/ConfirmModal';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -14,16 +13,20 @@ interface UserManagementProps {
     addNotification: (notif: SystemNotification) => void;
     sites: Site[];
     currentSiteId: string;
+    companies?: Company[];
 }
 
-const UserManagement: React.FC<UserManagementProps> = ({ users, onUpdateUser, onDeleteUser, addNotification, sites, currentSiteId }) => {
+const UserManagement: React.FC<UserManagementProps> = ({ users, onUpdateUser, onDeleteUser, addNotification, sites, currentSiteId, companies = [] }) => {
   const { t } = useLanguage();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [filterQuery, setFilterQuery] = useState('');
+  
+  const defaultCompany = useMemo(() => companies[0]?.name || 'Internal', [companies]);
+
   const [newUser, setNewUser] = useState<Partial<User>>({
-      name: '', email: '', phoneNumber: '', role: UserRole.USER, status: 'Active', company: COMPANIES[0], jobTitle: '', siteId: currentSiteId !== 'all' ? currentSiteId : (sites[0]?.id || '')
+      name: '', email: '', phoneNumber: '', role: UserRole.USER, status: 'Active', company: defaultCompany, jobTitle: '', siteId: currentSiteId !== 'all' ? currentSiteId : (sites[0]?.id || 'all')
   });
   const [openActionId, setOpenActionId] = useState<number | null>(null);
 
@@ -69,18 +72,18 @@ const UserManagement: React.FC<UserManagementProps> = ({ users, onUpdateUser, on
               status: newUser.status || 'Active',
               company: newUser.company || 'Unknown',
               jobTitle: newUser.jobTitle || 'N/A',
-              siteId: newUser.siteId || (currentSiteId !== 'all' ? currentSiteId : sites[0]?.id)
+              siteId: newUser.siteId || (currentSiteId !== 'all' ? currentSiteId : 'all')
           };
           
           await onUpdateUser(userToAdd);
           
           setIsModalOpen(false);
-          setNewUser({ name: '', email: '', phoneNumber: '', role: UserRole.USER, status: 'Active', company: COMPANIES[0], jobTitle: '', siteId: currentSiteId !== 'all' ? currentSiteId : (sites[0]?.id || '') });
+          setNewUser({ name: '', email: '', phoneNumber: '', role: UserRole.USER, status: 'Active', company: defaultCompany, jobTitle: '', siteId: currentSiteId !== 'all' ? currentSiteId : 'all' });
           addNotification({
               id: uuidv4(),
               type: 'success',
               title: 'User Created',
-              message: `User ${userToAdd.name} added and saved to cloud.`,
+              message: `User ${userToAdd.name} added. A welcome email has been sent for password setup.`,
               timestamp: new Date(),
               isRead: false
           });
@@ -163,7 +166,7 @@ const UserManagement: React.FC<UserManagementProps> = ({ users, onUpdateUser, on
                       status: cols[3]?.toLowerCase() === 'inactive' ? 'Inactive' : 'Active',
                       company: cols[4] || 'Unknown',
                       jobTitle: cols[5] || 'N/A',
-                      siteId: cols[6] || (currentSiteId !== 'all' ? currentSiteId : sites[0]?.id)
+                      siteId: cols[6] || (currentSiteId !== 'all' ? currentSiteId : 'all')
                   });
                   importCount++;
               }
@@ -186,12 +189,18 @@ const UserManagement: React.FC<UserManagementProps> = ({ users, onUpdateUser, on
 
   // Filter Logic
   const filteredUsers = users.filter(u => {
-      if (currentSiteId !== 'all' && u.siteId !== currentSiteId) return false;
-      return (
-        u.name.toLowerCase().includes(filterQuery.toLowerCase()) || 
-        u.email.toLowerCase().includes(filterQuery.toLowerCase()) ||
-        u.role.toLowerCase().includes(filterQuery.toLowerCase())
-      );
+      const uSite = (u.siteId || 'all').toLowerCase();
+      const currSite = (currentSiteId || 'all').toLowerCase();
+      
+      const siteMatch = currSite === 'all' || uSite === 'all' || uSite === currSite;
+      if (!siteMatch) return false;
+
+      const name = (u.name || '').toLowerCase();
+      const email = (u.email || '').toLowerCase();
+      const role = (u.role || '').toLowerCase();
+      const q = filterQuery.toLowerCase();
+
+      return name.includes(q) || email.includes(q) || role.includes(q);
   });
 
   // Pagination Logic
@@ -217,6 +226,7 @@ const UserManagement: React.FC<UserManagementProps> = ({ users, onUpdateUser, on
 
   const getSiteName = (id?: string) => {
       if (!id) return '-';
+      if (id.toLowerCase() === 'all') return 'Enterprise (Global)';
       const s = sites.find(s => s.id === id);
       return s ? s.name : id;
   };
@@ -298,59 +308,75 @@ const UserManagement: React.FC<UserManagementProps> = ({ users, onUpdateUser, on
         </div>
 
         <div className="flex-1 overflow-auto">
-            <table className="min-w-full divide-y divide-slate-100 dark:divide-slate-700">
-            <thead className="bg-slate-50 dark:bg-slate-900/50">
-                <tr>
-                <th className="px-6 py-4 text-left text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">{t.users.table.user}</th>
-                <th className="px-6 py-4 text-left text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider hidden md:table-cell">{t.common.company}</th>
-                <th className="px-6 py-4 text-left text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider hidden md:table-cell">{t.common.jobTitle}</th>
-                <th className="px-6 py-4 text-left text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Site</th>
-                <th className="px-6 py-4 text-left text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">{t.users.table.role}</th>
-                <th className="px-6 py-4 text-center text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">{t.users.table.status}</th>
-                <th className="px-6 py-4 text-right text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">{t.users.table.actions}</th>
-                </tr>
-            </thead>
-            <tbody className="bg-white dark:bg-slate-800 divide-y divide-slate-100 dark:divide-slate-700">
-                {paginatedUsers.map((u) => {
-                const bgColors = ['bg-blue-500', 'bg-purple-500', 'bg-pink-500', 'bg-indigo-500', 'bg-orange-500', 'bg-teal-500'];
-                const colorClass = bgColors[u.id % bgColors.length];
-                return (
-                <tr key={String(u.id)} className="hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors group">
-                    <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="flex items-center">
-                        <div className={`h-10 w-10 rounded-full ${colorClass} flex items-center justify-center text-white font-bold shadow-md ring-2 ring-white dark:ring-slate-700`}>
-                        {String(u.name).charAt(0)}
+            {paginatedUsers.length > 0 ? (
+                <table className="min-w-full divide-y divide-slate-100 dark:divide-slate-700">
+                <thead className="bg-slate-50 dark:bg-slate-900/50">
+                    <tr>
+                    <th className="px-6 py-4 text-left text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">{t.users.table.user}</th>
+                    <th className="px-6 py-4 text-left text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider hidden md:table-cell">{t.common.company}</th>
+                    <th className="px-6 py-4 text-left text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider hidden md:table-cell">{t.common.jobTitle}</th>
+                    <th className="px-6 py-4 text-left text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Site</th>
+                    <th className="px-6 py-4 text-left text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">{t.users.table.role}</th>
+                    <th className="px-6 py-4 text-center text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">{t.users.table.status}</th>
+                    <th className="px-6 py-4 text-right text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">{t.users.table.actions}</th>
+                    </tr>
+                </thead>
+                <tbody className="bg-white dark:bg-slate-800 divide-y divide-slate-100 dark:divide-slate-700">
+                    {paginatedUsers.map((u) => {
+                    const bgColors = ['bg-blue-500', 'bg-purple-500', 'bg-pink-500', 'bg-indigo-500', 'bg-orange-500', 'bg-teal-500'];
+                    const colorClass = bgColors[u.id % bgColors.length];
+                    return (
+                    <tr key={String(u.id)} className="hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors group">
+                        <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="flex items-center">
+                            <div className={`h-10 w-10 rounded-full ${colorClass} flex items-center justify-center text-white font-bold shadow-md ring-2 ring-white dark:ring-slate-700`}>
+                            {(u.name || 'U').charAt(0)}
+                            </div>
+                            <div className="ml-4">
+                            <div className="text-sm font-bold text-slate-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">{u.name || '-'}</div>
+                            <div className="text-xs text-slate-500 dark:text-slate-400 font-mono flex items-center gap-1 mt-0.5"><Mail size={10} />{u.email || '-'}</div>
+                            </div>
                         </div>
-                        <div className="ml-4">
-                        <div className="text-sm font-bold text-slate-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">{String(u.name)}</div>
-                        <div className="text-xs text-slate-500 dark:text-slate-400 font-mono flex items-center gap-1 mt-0.5"><Mail size={10} />{String(u.email)}</div>
-                        </div>
-                    </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap hidden md:table-cell"><div className="text-sm font-medium text-slate-700 dark:text-slate-300">{String(u.company || '-')}</div></td>
-                    <td className="px-6 py-4 whitespace-nowrap hidden md:table-cell"><div className="flex items-center gap-1.5 text-sm text-slate-600 dark:text-slate-400"><Briefcase size={14} className="text-slate-400" />{String(u.jobTitle || '-')}</div></td>
-                    <td className="px-6 py-4 whitespace-nowrap"><div className="flex items-center gap-1.5 text-sm text-slate-600 dark:text-slate-400"><MapPin size={14} className="text-slate-400" />{getSiteName(u.siteId)}</div></td>
-                    <td className="px-6 py-4 whitespace-nowrap"><span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold border ${getRoleColor(u.role)}`}><Key size={10} />{String(u.role)}</span></td>
-                    <td className="px-6 py-4 whitespace-nowrap text-center">
-                        {u.status === 'Active' ? (
-                            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-green-50 text-green-600 border border-green-200 dark:bg-green-900/30 dark:text-green-400 dark:border-green-800"><CheckCircle2 size={12} /> {t.database.active}</span>
-                        ) : (
-                            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-red-50 text-red-600 border border-red-200 dark:bg-red-900/30 dark:text-red-400 dark:border-red-800"><XCircle size={12} /> Inactive</span>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap hidden md:table-cell"><div className="text-sm font-medium text-slate-700 dark:text-slate-300">{u.company || '-'}</div></td>
+                        <td className="px-6 py-4 whitespace-nowrap hidden md:table-cell"><div className="flex items-center gap-1.5 text-sm text-slate-600 dark:text-slate-400"><Briefcase size={14} className="text-slate-400" />{u.jobTitle || '-'}</div></td>
+                        <td className="px-6 py-4 whitespace-nowrap"><div className="flex items-center gap-1.5 text-sm text-slate-600 dark:text-slate-400"><MapPin size={14} className="text-slate-400" />{getSiteName(u.siteId)}</div></td>
+                        <td className="px-6 py-4 whitespace-nowrap"><span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold border ${getRoleColor(u.role)}`}><Key size={10} />{u.role || '-'}</span></td>
+                        <td className="px-6 py-4 whitespace-nowrap text-center">
+                            {u.status === 'Active' ? (
+                                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-green-50 text-green-600 border border-green-200 dark:bg-green-900/30 dark:text-green-400 dark:border-green-800"><CheckCircle2 size={12} /> {t.database.active}</span>
+                            ) : (
+                                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-red-50 text-red-600 border border-red-200 dark:bg-red-900/30 dark:text-red-400 dark:border-red-800"><XCircle size={12} /> Inactive</span>
+                            )}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium relative">
+                        <button onClick={() => setOpenActionId(openActionId === u.id ? null : u.id)} className="text-slate-400 hover:text-slate-700 dark:hover:text-white p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"><MoreVertical size={18} /></button>
+                        {openActionId === u.id && (
+                            <div className="absolute right-10 top-2 w-40 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-xl z-50 overflow-hidden animate-fade-in-up">
+                                <button className="w-full text-left px-4 py-3 text-xs font-bold hover:bg-slate-50 dark:hover:bg-slate-700 flex items-center gap-2 text-slate-700 dark:text-slate-300 transition-colors"><Edit size={14} /> {t.common.edit}</button>
+                                <button onClick={() => handleDeleteUser(u.id)} className="w-full text-left px-4 py-3 text-xs font-bold hover:bg-red-50 dark:hover:bg-red-900/20 text-red-600 dark:text-red-400 flex items-center gap-2 transition-colors border-t border-slate-100 dark:border-slate-700"><Trash2 size={14} /> {t.common.delete}</button>
+                            </div>
                         )}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium relative">
-                    <button onClick={() => setOpenActionId(openActionId === u.id ? null : u.id)} className="text-slate-400 hover:text-slate-700 dark:hover:text-white p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"><MoreVertical size={18} /></button>
-                    {openActionId === u.id && (
-                        <div className="absolute right-10 top-2 w-40 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-xl z-50 overflow-hidden animate-fade-in-up">
-                            <button className="w-full text-left px-4 py-3 text-xs font-bold hover:bg-slate-50 dark:hover:bg-slate-700 flex items-center gap-2 text-slate-700 dark:text-slate-300 transition-colors"><Edit size={14} /> {t.common.edit}</button>
-                            <button onClick={() => handleDeleteUser(u.id)} className="w-full text-left px-4 py-3 text-xs font-bold hover:bg-red-50 dark:hover:bg-red-900/20 text-red-600 dark:text-red-400 flex items-center gap-2 transition-colors border-t border-slate-100 dark:border-slate-700"><Trash2 size={14} /> {t.common.delete}</button>
-                        </div>
-                    )}
-                    </td>
-                </tr>
-                )})}
-            </tbody>
-            </table>
+                        </td>
+                    </tr>
+                    )})}
+                </tbody>
+                </table>
+            ) : (
+                <div className="flex flex-col items-center justify-center py-32 text-slate-400">
+                    <div className="bg-slate-50 dark:bg-slate-900 p-8 rounded-full mb-6 ring-4 ring-slate-100 dark:ring-slate-800">
+                        <Users size={64} className="opacity-20" />
+                    </div>
+                    <h3 className="text-xl font-bold text-slate-600 dark:text-slate-300">No users found</h3>
+                    <p className="text-sm mt-2 text-center max-w-md">This may be due to active site filters or database **RLS security policies**. <br/> Please check the **Technical Docs** to fix security errors.</p>
+                    <button 
+                        onClick={() => window.location.reload()} 
+                        className="mt-8 flex items-center gap-2 text-blue-600 font-bold hover:bg-blue-50 px-4 py-2 rounded-lg transition-all"
+                    >
+                        <RefreshCw size={16} /> Try Reconnecting
+                    </button>
+                </div>
+            )}
         </div>
 
         <div className="p-4 border-t border-slate-100 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 flex flex-col md:flex-row justify-between items-center gap-4">
@@ -379,29 +405,29 @@ const UserManagement: React.FC<UserManagementProps> = ({ users, onUpdateUser, on
                    <div className="p-8 space-y-5">
                        <div>
                            <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2 block ml-1">{t.users.modal.name}</label>
-                           <input className="w-full bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-xl p-3 text-sm font-semibold focus:ring-2 focus:ring-green-500 outline-none text-slate-900 dark:text-white transition-all" value={String(newUser.name)} onChange={e => setNewUser({...newUser, name: e.target.value})} placeholder="Full Name" />
+                           <input className="w-full bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-xl p-3 text-sm font-semibold focus:ring-2 focus:ring-green-500 outline-none text-slate-900 dark:text-white transition-all" value={newUser.name || ''} onChange={e => setNewUser({...newUser, name: e.target.value})} placeholder="Full Name" />
                        </div>
                        <div>
                            <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2 block ml-1">{t.users.modal.email}</label>
-                           <input className="w-full bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-xl p-3 text-sm font-semibold focus:ring-2 focus:ring-green-500 outline-none text-slate-900 dark:text-white transition-all" value={String(newUser.email)} onChange={e => setNewUser({...newUser, email: e.target.value})} placeholder="email@example.com" />
+                           <input className="w-full bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-xl p-3 text-sm font-semibold focus:ring-2 focus:ring-green-500 outline-none text-slate-900 dark:text-white transition-all" value={newUser.email || ''} onChange={e => setNewUser({...newUser, email: e.target.value})} placeholder="email@example.com" />
                        </div>
                        <div>
                            <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2 block ml-1">Phone Number</label>
                            <div className="relative">
-                               <input className="w-full bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-xl p-3 pl-10 text-sm font-semibold focus:ring-2 focus:ring-green-500 outline-none text-slate-900 dark:text-white transition-all" value={String(newUser.phoneNumber || '')} onChange={e => setNewUser({...newUser, phoneNumber: e.target.value})} placeholder="+258 84..." />
+                               <input className="w-full bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-xl p-3 pl-10 text-sm font-semibold focus:ring-2 focus:ring-green-500 outline-none text-slate-900 dark:text-white transition-all" value={newUser.phoneNumber || ''} onChange={e => setNewUser({...newUser, phoneNumber: e.target.value})} placeholder="+258 84..." />
                                <Smartphone size={16} className="absolute left-3 top-3.5 text-slate-400" />
                            </div>
                        </div>
                        <div className="grid grid-cols-2 gap-5">
                            <div>
                                <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2 block ml-1">{t.common.company}</label>
-                               <select className="w-full bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-xl p-3 text-sm font-medium focus:ring-2 focus:ring-green-500 outline-none text-slate-900 dark:text-white appearance-none" value={String(newUser.company)} onChange={e => setNewUser({...newUser, company: e.target.value})}>
-                                   {COMPANIES.map(c => <option key={c} value={c}>{c}</option>)}
+                               <select className="w-full bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-xl p-3 text-sm font-medium focus:ring-2 focus:ring-green-500 outline-none text-slate-900 dark:text-white appearance-none" value={newUser.company || ''} onChange={e => setNewUser({...newUser, company: e.target.value})}>
+                                   {companies.map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
                                </select>
                            </div>
                            <div>
                                <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2 block ml-1">{t.common.role}</label>
-                               <select className="w-full bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-xl p-3 text-sm font-medium focus:ring-2 focus:ring-green-500 outline-none text-slate-900 dark:text-white appearance-none" value={String(newUser.role)} onChange={e => setNewUser({...newUser, role: e.target.value as UserRole})}>
+                               <select className="w-full bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-xl p-3 text-sm font-medium focus:ring-2 focus:ring-green-500 outline-none text-slate-900 dark:text-white appearance-none" value={newUser.role || ''} onChange={e => setNewUser({...newUser, role: e.target.value as UserRole})}>
                                     {Object.values(UserRole).map(r => <option key={String(r)} value={String(r)}>{String(r)}</option>)}
                                 </select>
                            </div>
@@ -409,11 +435,12 @@ const UserManagement: React.FC<UserManagementProps> = ({ users, onUpdateUser, on
                        <div className="grid grid-cols-2 gap-5">
                            <div>
                                <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2 block ml-1">{t.common.jobTitle}</label>
-                               <input className="w-full bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-xl p-3 text-sm font-semibold focus:ring-2 focus:ring-green-500 outline-none text-slate-900 dark:text-white transition-all" value={String(newUser.jobTitle)} onChange={e => setNewUser({...newUser, jobTitle: e.target.value})} placeholder="e.g. Safety Officer" />
+                               <input className="w-full bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-xl p-3 text-sm font-semibold focus:ring-2 focus:ring-green-500 outline-none text-slate-900 dark:text-white transition-all" value={newUser.jobTitle || ''} onChange={e => setNewUser({...newUser, jobTitle: e.target.value})} placeholder="e.g. Safety Officer" />
                            </div>
                            <div>
                                <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2 block ml-1">Site</label>
-                               <select className="w-full bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-xl p-3 text-sm font-medium focus:ring-2 focus:ring-green-500 outline-none text-slate-900 dark:text-white appearance-none" value={String(newUser.siteId)} onChange={e => setNewUser({...newUser, siteId: e.target.value})}>
+                               <select className="w-full bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-xl p-3 text-sm font-medium focus:ring-2 focus:ring-blue-500 outline-none text-slate-800 dark:text-white appearance-none" value={newUser.siteId || ''} onChange={e => setNewUser({...newUser, siteId: e.target.value})}>
+                                   <option value="all">Enterprise (Global)</option>
                                    {sites.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
                                </select>
                            </div>

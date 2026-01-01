@@ -4,8 +4,8 @@ import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, 
   PieChart, Pie, Cell, Legend
 } from 'recharts';
-import { Booking, BookingStatus, EmployeeRequirement } from '../types';
-import { MOCK_SESSIONS, RAC_KEYS } from '../constants';
+import { Booking, BookingStatus, EmployeeRequirement, TrainingSession } from '../types';
+import { RAC_KEYS } from '../constants';
 import { AlertTriangle, Users, CheckCircle, Clock, Activity, ShieldAlert } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useLanguage } from '../contexts/LanguageContext';
@@ -13,13 +13,14 @@ import { useLanguage } from '../contexts/LanguageContext';
 interface DashboardStatsProps {
   bookings: Booking[];
   requirements: EmployeeRequirement[];
+  sessions: TrainingSession[]; // Added sessions prop
   onBookRenewals?: () => void;
 }
 
 // Fixed colors by index: 0 = Compliant (Green), 1 = Non-Compliant (Red)
 const PIE_COLORS = ['#059669', '#ef4444'];
 
-const DashboardStats: React.FC<DashboardStatsProps> = memo(({ bookings, requirements, onBookRenewals }) => {
+const DashboardStats: React.FC<DashboardStatsProps> = memo(({ bookings, requirements, sessions, onBookRenewals }) => {
   const navigate = useNavigate();
   const { t } = useLanguage();
 
@@ -75,10 +76,11 @@ const DashboardStats: React.FC<DashboardStatsProps> = memo(({ bookings, requirem
              if (b.status !== BookingStatus.PASSED) return false;
              if (!b.expiryDate || b.expiryDate <= todayStr) return false;
              
-             const session = MOCK_SESSIONS.find(s => s.id === b.sessionId);
-             const sessionName = session ? session.racType : b.sessionId;
-             const bookingRacKey = sessionName.split(' - ')[0].replace(' ', '');
-             return bookingRacKey === racKey;
+             // Check if session or booking ID matches the RAC key
+             const sess = sessions.find(s => s.id === b.sessionId);
+             const sessionName = sess ? sess.racType : b.sessionId;
+             const bookingRacKey = sessionName.split(' - ')[0].replace(/\s+/g, '').toUpperCase();
+             return bookingRacKey === racKey.toUpperCase();
          });
 
          if (hasTraining) racComplianceStats[racKey].compliant++;
@@ -126,7 +128,7 @@ const DashboardStats: React.FC<DashboardStatsProps> = memo(({ bookings, requirem
                  <p className={`text-2xl font-bold ${Number(adherencePercentage) > 85 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
                    {String(adherencePercentage)}%
                  </p>
-                 <span className="text-[10px] text-gray-400">Access Granted</span>
+                 <span className="text-[10px] text-gray-400">{t.dashboard.kpi.accessGranted}</span>
               </div>
             </div>
             <div className={`p-2 rounded-full ${Number(adherencePercentage) > 85 ? 'bg-green-100 text-green-600 dark:bg-green-900/30 dark:text-green-400' : 'bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400'}`}>
@@ -179,7 +181,7 @@ const DashboardStats: React.FC<DashboardStatsProps> = memo(({ bookings, requirem
           <div className="flex items-center justify-between">
             <div>
               <p className="text-[10px] text-gray-500 dark:text-gray-400 uppercase font-bold tracking-wider">{t.dashboard.kpi.scheduled}</p>
-              <p className="text-2xl font-bold text-slate-800 dark:text-white">{String(MOCK_SESSIONS.length)}</p>
+              <p className="text-2xl font-bold text-slate-800 dark:text-white">{String(sessions.length)}</p>
             </div>
             <div className="p-2 bg-indigo-100 text-indigo-600 dark:bg-indigo-900/30 dark:text-indigo-400 rounded-full">
               <Activity size={20} />
@@ -243,8 +245,11 @@ const DashboardStats: React.FC<DashboardStatsProps> = memo(({ bookings, requirem
             </ResponsiveContainer>
           </div>
           <div className="text-xs text-center text-gray-500 dark:text-gray-400 mt-2">
-            <p>"{t.dashboard.charts.compliant}" = Valid ASO + All Required RACs passed.</p>
-            <p>"{t.dashboard.charts.nonCompliant}" = Expired ASO or Missing Required RACs.</p>
+            <p>
+                {t.dashboard.charts.accessLegend
+                    .replace('{compliant}', t.dashboard.charts.compliant)
+                    .replace('{nonCompliant}', t.dashboard.charts.nonCompliant)}
+            </p>
           </div>
         </div>
       </div>

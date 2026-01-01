@@ -2,47 +2,68 @@
 import { User, UserRole } from '../types';
 import { supabase, isSupabaseConfigured } from './supabaseClient';
 
+export interface AuthResponse {
+    user: User | null;
+    status: 'success' | 'invalid' | 'needs_setup';
+}
+
 export const authService = {
   /**
    * Authenticates user against provided credentials.
    * Specific logic for Pita Domingos included as System Admin.
    */
-  async authenticate(username: string, password: string): Promise<User | null> {
+  async authenticate(username: string, password?: string): Promise<AuthResponse> {
     // 1. HARDCODED SYSTEM ADMIN CHECK (The Master Override)
-    // This allows access even if the database tables are not yet created.
     if (username === "Pita Domingos" && password === "native@13035") {
       return {
-        id: 1337,
-        name: "Pita Domingos",
-        email: "p.domingos@vulcan.com",
-        role: UserRole.SYSTEM_ADMIN,
-        status: 'Active',
-        company: 'Vulcan',
-        jobTitle: 'Lead System Architect',
-        siteId: 'all'
+        user: {
+            id: 1337,
+            name: "Pita Domingos",
+            email: "p.domingos@vulcan.com",
+            role: UserRole.SYSTEM_ADMIN,
+            status: 'Active',
+            company: 'Vulcan',
+            jobTitle: 'Lead System Architect',
+            siteId: 'all'
+        },
+        status: 'success'
       };
     }
 
     // 2. SUPABASE DB CHECK (Live Users Table)
     if (isSupabaseConfigured && supabase) {
         try {
-            // Check the users table. If it's missing, this will fail gracefully.
+            // Find the user by name
             const { data, error } = await supabase
                 .from('users')
                 .select('*')
                 .eq('name', username)
-                .single();
+                .maybeSingle();
 
-            // Simple password comparison for the POC/Internal environment
-            if (!error && data && data.password === password) {
-                return data as User;
+            if (error) throw error;
+            if (!data) return { user: null, status: 'invalid' };
+
+            // DETECT FIRST TIME LOGIN
+            // If password column is NULL or empty string, trigger setup workflow
+            if (!data.password || data.password.trim() === '') {
+                return {
+                    user: data as User,
+                    status: 'needs_setup'
+                };
+            }
+
+            // Normal authentication
+            if (data.password === password) {
+                return {
+                    user: data as User,
+                    status: 'success'
+                };
             }
         } catch (e) {
-            // Table doesn't exist or network error
             console.warn("DB Auth not available. Using fallback logic.");
         }
     }
 
-    return null;
+    return { user: null, status: 'invalid' };
   }
 };

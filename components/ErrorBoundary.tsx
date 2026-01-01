@@ -1,6 +1,6 @@
 
 import React, { ErrorInfo, ReactNode } from 'react';
-import { Cpu, Zap, Activity, Terminal, CheckCircle2, RefreshCw, Power } from 'lucide-react';
+import { Cpu, Terminal, CheckCircle2, Power } from 'lucide-react';
 import { analyzeRuntimeError } from '../services/geminiService';
 
 interface Props {
@@ -20,25 +20,25 @@ interface State {
  * Catches runtime errors and triggers autonomous repair visuals.
  * Inherits from React.Component to provide error boundary lifecycle methods.
  */
-/* Fix: Explicitly extending React.Component to ensure TypeScript correctly identifies the class as a React component and grants access to state, setState, and props. */
+/* Fix: Explicitly using React.Component with generic parameters to ensure TypeScript correctly identifies inherited properties like setState and props. */
 export class ErrorBoundary extends React.Component<Props, State> {
-  /* Fix: Correctly typed member variable for the simulation interval. */
   private simulationInterval: any = null;
 
-  /* Fix: Explicitly defining constructor to initialize state and call super(props). */
+  /* Fix: Initialized state with the explicit State interface. */
+  public state: State = {
+    hasError: false,
+    error: null,
+    aiDiagnosis: null,
+    repairProgress: 0,
+    repairStep: 'Initializing Diagnostics...',
+    isRepaired: false
+  };
+
   constructor(props: Props) {
     super(props);
-    this.state = {
-      hasError: false,
-      error: null,
-      aiDiagnosis: null,
-      repairProgress: 0,
-      repairStep: 'Initializing Diagnostics...',
-      isRepaired: false
-    };
   }
 
-  // Standard static getDerivedStateFromError implementation for React Error Boundaries.
+  /* Standard static getDerivedStateFromError implementation for React Error Boundaries. */
   public static getDerivedStateFromError(error: Error): State {
     return { 
         hasError: true, 
@@ -50,7 +50,7 @@ export class ErrorBoundary extends React.Component<Props, State> {
     };
   }
 
-  // Correct componentDidCatch implementation ensuring error metadata is logged and repair protocols triggered.
+  /* Correct componentDidCatch implementation ensuring error metadata is logged and repair protocols triggered. */
   public componentDidCatch(error: Error, errorInfo: ErrorInfo) {
     const errorString = error.toString();
     const errorMessage = error.message || errorString;
@@ -62,18 +62,17 @@ export class ErrorBoundary extends React.Component<Props, State> {
         console.error('CARS Manager Critical Error:', errorMessage);
     }
 
-    // 1. Start Visuals
+    /* 1. Start Visuals */
     this.startRepairSimulation();
 
-    // 2. Run Real Diagnosis (Async)
+    /* 2. Run Real Diagnosis (Async) */
     this.runSilentDiagnosis(errorMessage, errorInfo);
   }
 
-  componentWillUnmount() {
+  public componentWillUnmount() {
       if (this.simulationInterval) clearInterval(this.simulationInterval);
   }
 
-  /* Fix: Private method to handle the progress animation using this.setState. */
   private startRepairSimulation() {
       const steps = [
           "Scanning Neural Pathways...",
@@ -88,7 +87,7 @@ export class ErrorBoundary extends React.Component<Props, State> {
       let stepIndex = 0;
 
       this.simulationInterval = setInterval(() => {
-          /* Fix: Accessing setState from React.Component to update internal progress state. */
+          /* Fix: Progress simulation visuals using instance setState inherited from React.Component. Using arrow function to preserve 'this'. */
           this.setState((prevState) => {
               // Stop progressing if we are waiting for AI but hit 90%
               const canFinish = !!prevState.aiDiagnosis;
@@ -114,14 +113,12 @@ export class ErrorBoundary extends React.Component<Props, State> {
       }, 200);
   }
 
-  /* Fix: Asynchronous method to analyze the error using Gemini and trigger repair completion. */
   private async runSilentDiagnosis(errorMessage: string, errorInfo: ErrorInfo) {
       try {
-          // Real World: Attempt to get AI analysis
           const stack = errorInfo.componentStack || '';
           const diagnosis = await analyzeRuntimeError(errorMessage, stack);
           
-          // Force wait to ensure animation plays a bit for effect
+          // Force wait to ensure animation plays for effect
           setTimeout(() => {
               this.completeRepair(diagnosis);
           }, 2000); 
@@ -133,16 +130,15 @@ export class ErrorBoundary extends React.Component<Props, State> {
       }
   }
 
-  /* Fix: Finalize the repair state by updating state with the AI diagnosis results. */
   private completeRepair(diagnosis: { rootCause: string, fix: string }) {
       if (this.simulationInterval) clearInterval(this.simulationInterval);
 
-      // Real World: Clear potentially corrupted session state
+      // Clear potentially corrupted session state
       try {
           sessionStorage.clear();
       } catch(e) { /* ignore */ }
 
-      /* Fix: Final state update after autonomous repair completes. */
+      /* Fix: Update instance state with diagnostic results using setState inherited from React.Component. */
       this.setState({ 
           aiDiagnosis: diagnosis,
           repairProgress: 100,
@@ -167,7 +163,6 @@ export class ErrorBoundary extends React.Component<Props, State> {
       }
   }
 
-  // Bound event handler for system reboot.
   private forceReload = () => {
       try {
           window.location.reload();
@@ -176,10 +171,9 @@ export class ErrorBoundary extends React.Component<Props, State> {
       }
   };
 
-  /* Fix: The render method correctly checks this.state to determine whether to show the error UI or children. */
   public render() {
+    // Access component state via this.state inherited from React.Component
     if (this.state.hasError) {
-      // FULL SCREEN OVERLAY
       return (
         <div className="fixed inset-0 z-[99999] bg-slate-950 flex flex-col items-center justify-center p-6 font-mono overflow-hidden text-white animate-fade-in">
           
@@ -232,7 +226,7 @@ export class ErrorBoundary extends React.Component<Props, State> {
                 </div>
                 <div className="h-3 w-full bg-slate-900 rounded-full border border-slate-800 overflow-hidden relative">
                     <div 
-                        className={`h-full transition-all duration-300 ease-out relative overflow-hidden ${this.state.isRepaired ? 'bg-green-500' : 'bg-cyan-500'}`}
+                        className={`h-full transition-all duration-300 ease-out relative overflow-hidden ${this.state.isRepaired ? 'bg-green-500' : 'bg-cyan-50'}`}
                         style={{ width: `${this.state.repairProgress}%` }}
                     >
                         <div className="absolute top-0 left-0 bottom-0 right-0 bg-gradient-to-r from-transparent via-white/30 to-transparent w-full -translate-x-full animate-[shimmer_1.5s_infinite]"></div>
@@ -273,7 +267,7 @@ export class ErrorBoundary extends React.Component<Props, State> {
       );
     }
 
-    /* Fix: Correctly access this.props.children from the React.Component base class. */
+    /* Fix: Correctly accessing children via this.props as required for class components inheriting from React.Component. */
     return (this.props.children as ReactNode) || null;
   }
 }

@@ -3,8 +3,7 @@ import { GoogleGenAI, Type } from "@google/genai";
 import { logger } from '../utils/logger';
 import { translations, Language } from '../utils/translations';
 
-// Initialize Google GenAI client directly with process.env.API_KEY as per guidelines
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+// Removed global 'ai' initialization to comply with guidelines of creating a new instance before each call.
 
 export const getSafetyAdvice = async (rac: string, query: string, language: Language = 'en'): Promise<string> => {
   try {
@@ -13,6 +12,9 @@ export const getSafetyAdvice = async (rac: string, query: string, language: Lang
         return "AI Configuration Error: Missing translations.";
     }
 
+    // Always create a new GoogleGenAI instance right before making an API call per guidelines
+    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+    
     // Using gemini-3-flash-preview for Basic Text Tasks
     const model = 'gemini-3-flash-preview';
     const langName = language === 'en' ? 'English' : 'Portuguese';
@@ -45,6 +47,9 @@ export const generateSafetyReport = async (stats: any, period: string, language:
     if (!t?.ai?.systemPromptReport) {
         return "AI Configuration Error: Missing translations.";
     }
+
+    // Always create a new GoogleGenAI instance right before making an API call per guidelines
+    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
     // Using gemini-3-flash-preview for Basic Text Tasks
     const model = 'gemini-3-flash-preview';
@@ -99,13 +104,16 @@ export const analyzeRuntimeError = async (errorMsg: string, stackTrace: string):
     }
 
     try {
+        // Always create a new GoogleGenAI instance right before making an API call per guidelines
+        const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+
         // Using gemini-3-pro-preview for Complex Text Tasks like code analysis
         const model = 'gemini-3-pro-preview'; 
         const systemPrompt = `You are a Senior React/TypeScript Site Reliability Engineer. 
         Analyze the provided error and stack trace. 
         Return a JSON object with two keys: 'rootCause' (concise explanation) and 'fix' (specific code fix or mitigation strategy).`;
 
-        // Fix: Added responseSchema to strictly enforce the JSON structure required for runtime error analysis.
+        // Using responseSchema to strictly enforce the JSON structure required for runtime error analysis.
         const response = await ai.models.generateContent({
             model: model,
             contents: `Error: ${errorMsg}\nStack: ${stackTrace}`,
