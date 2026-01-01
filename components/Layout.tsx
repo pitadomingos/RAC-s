@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useMemo } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { 
@@ -144,7 +143,7 @@ const Layout: React.FC<LayoutProps> = ({
   };
 
   const allNavItems = [
-    { path: '/presentation', label: t.nav.presentation, icon: Rocket, visible: true },
+    { path: '/presentation', label: t.nav.presentation, icon: Rocket, visible: userRole === UserRole.SYSTEM_ADMIN },
     { path: '/', label: t.nav.dashboard, icon: LayoutDashboard, visible: ![UserRole.USER, UserRole.RAC_TRAINER, UserRole.ENTERPRISE_ADMIN].includes(userRole) },
     { path: '/booking', label: t.nav.booking, icon: CalendarPlus, visible: userRole !== UserRole.RAC_TRAINER && userRole !== UserRole.ENTERPRISE_ADMIN && userRole !== UserRole.SITE_ADMIN },
     { path: '/results', label: t.nav.records, icon: ClipboardList, visible: userRole !== UserRole.RAC_TRAINER && userRole !== UserRole.ENTERPRISE_ADMIN },

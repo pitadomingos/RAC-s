@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useMemo } from 'react';
 import { HashRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import Layout from './components/Layout';
@@ -10,8 +9,6 @@ import CardsPage from './pages/CardsPage';
 import VerificationPage from './pages/VerificationPage';
 import IntegrationHub from './pages/IntegrationHub';
 import PresentationPage from './pages/PresentationPage';
-import ProjectProposal from './pages/ProjectProposal';
-import GeminiAdvisor from './components/GeminiAdvisor';
 import TrainerInputPage from './pages/TrainerInputPage';
 import RequestCardsPage from './pages/RequestCardsPage';
 import MessageLogPage from './pages/MessageLogPage';
@@ -26,6 +23,8 @@ import ResultsPage from './pages/ResultsPage';
 import SettingsPage from './pages/SettingsPage';
 import AlcoholIntegration from './pages/AlcoholIntegration';
 import EnterpriseDashboard from './pages/EnterpriseDashboard';
+// Fix: Added missing import for GeminiAdvisor component
+import GeminiAdvisor from './components/GeminiAdvisor';
 import { AdvisorProvider } from './contexts/AdvisorContext';
 import { MessageProvider } from './contexts/MessageContext';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
@@ -91,7 +90,7 @@ const AppContent: React.FC = () => {
               setIsLoading(true);
               await refreshData();
               if (user?.role === UserRole.SYSTEM_ADMIN && isSupabaseConfigured && supabase) {
-                  const tables = ['companies', 'sites', 'users', 'employees', 'bookings', 'rac_definitions', 'rooms', 'trainers'];
+                  const tables = ['companies', 'sites', 'users', 'employees', 'bookings', 'rac_definitions', 'rooms', 'trainers', 'system_logs'];
                   const health = await Promise.all(tables.map(async t => {
                       const { error } = await supabase.from(t).select('id').limit(1);
                       return { table: t, status: error?.code === '42P01' ? 'missing' : 'ok' } as any;
@@ -118,6 +117,7 @@ const AppContent: React.FC = () => {
               }
           }
           setCompanies(updatedCompanies);
+          await db.addLog('AUDIT', 'UPDATE_TENANT_CONFIG', user?.name || 'Admin', { count: updatedCompanies.length });
       } catch (err) {
           console.error("Error saving tenant settings:", err);
       }
@@ -129,6 +129,7 @@ const AppContent: React.FC = () => {
               await db.saveRacDefinition(rac);
           }
           setRacDefinitions(updatedRacs);
+          await db.addLog('AUDIT', 'UPDATE_RAC_DEFINITIONS', user?.name || 'Admin', { count: updatedRacs.length });
       } catch (err) {
           console.error("Error saving dynamic modules:", err);
       }
@@ -138,6 +139,7 @@ const AppContent: React.FC = () => {
       try {
           for (const b of newBookings) { await db.saveBooking(b); }
           setBookings(prev => [...newBookings, ...prev]);
+          await db.addLog('AUDIT', `NEW_BOOKING: ${newBookings.length} employees registered`, user?.name || 'Admin');
       } catch (err) { console.error("Error saving bookings:", err); }
   };
 
@@ -148,6 +150,7 @@ const AppContent: React.FC = () => {
               const updated = { ...booking, status };
               await db.saveBooking(updated);
               setBookings(prev => prev.map(b => b.id === id ? updated : b));
+              await db.addLog('AUDIT', `STATUS_CHANGE: ${booking.employee.recordId} -> ${status}`, user?.name || 'Admin');
           }
       } catch (err) { console.error("Error updating status:", err); }
   };
@@ -160,7 +163,29 @@ const AppContent: React.FC = () => {
               const untouched = prev.filter(b => !updatedIds.has(b.id));
               return [...updates, ...untouched];
           });
+          await db.addLog('AUDIT', `TRAINER_INPUT: ${updates.length} results committed`, user?.name || 'Trainer');
       } catch (err) { console.error("Error committing results:", err); }
+  };
+
+  const handleImportBookings = async (newBookings: Booking[], sideEffects?: { employee: Employee, aso: string, ops: Record<string, boolean> }[]) => {
+      try {
+          for (const b of newBookings) {
+              await db.saveBooking(b);
+          }
+          if (sideEffects) {
+              for (const se of sideEffects) {
+                  await db.upsertEmployee(se.employee);
+                  if (se.aso) {
+                      const currentReq = requirements.find(r => r.employeeId === se.employee.id) || { employeeId: se.employee.id, asoExpiryDate: '', requiredRacs: {} };
+                      await handleUpdateRequirement({ ...currentReq, asoExpiryDate: se.aso, requiredRacs: { ...currentReq.requiredRacs, ...se.ops } });
+                  }
+              }
+          }
+          setBookings(prev => [...newBookings, ...prev]);
+          await db.addLog('AUDIT', `DATA_IMPORT: ${newBookings.length} records processed from CSV`, user?.name || 'Admin');
+      } catch (err) {
+          console.error("Import failed:", err);
+      }
   };
 
   const handleUpdateUser = async (updatedUser: Partial<User>) => {
@@ -171,6 +196,7 @@ const AppContent: React.FC = () => {
               const exists = prev.find(u => u.id === result.id);
               return exists ? prev.map(u => u.id === result.id ? { ...u, ...result } : u) : [...prev, result];
           });
+          await db.addLog('AUDIT', `USER_UPSERT: ${updatedUser.name}`, user?.name || 'Admin');
       } catch (err) { console.error(err); }
   };
 
@@ -215,7 +241,7 @@ const AppContent: React.FC = () => {
                   <Route path="/" element={<Dashboard bookings={bookings} requirements={requirements} sessions={sessions} userRole={user?.role || UserRole.USER} racDefinitions={racDefinitions} currentSiteId={currentSiteId} companies={companies} />} />
                   <Route path="/database" element={<DatabasePage bookings={bookings} requirements={requirements} updateRequirements={handleUpdateRequirement} sessions={sessions} onUpdateEmployee={() => {}} onDeleteEmployee={() => {}} racDefinitions={racDefinitions} addNotification={addNotification} currentSiteId={currentSiteId} companies={companies} />} />
                   <Route path="/booking" element={<BookingForm addBookings={handleAddBookings} sessions={sessions} userRole={user?.role || UserRole.USER} existingBookings={bookings} addNotification={addNotification} racDefinitions={racDefinitions} companies={companies} />} />
-                  <Route path="/results" element={<ResultsPage bookings={bookings} updateBookingStatus={handleUpdateBookingStatus} userRole={user?.role || UserRole.USER} sessions={sessions} racDefinitions={racDefinitions} addNotification={addNotification} currentSiteId={currentSiteId} />} />
+                  <Route path="/results" element={<ResultsPage bookings={bookings} updateBookingStatus={handleUpdateBookingStatus} importBookings={handleImportBookings} userRole={user?.role || UserRole.USER} sessions={sessions} racDefinitions={racDefinitions} addNotification={addNotification} currentSiteId={currentSiteId} />} />
                   <Route path="/users" element={<UserManagement users={users} onUpdateUser={handleUpdateUser} onDeleteUser={() => {}} addNotification={addNotification} sites={sites} currentSiteId={currentSiteId} companies={companies} />} />
                   <Route path="/settings" element={<SettingsPage racDefinitions={racDefinitions} onUpdateRacs={handleUpdateRacs} rooms={rooms} onUpdateRooms={setRooms} trainers={trainers} onUpdateTrainers={setTrainers} sites={sites} onUpdateSites={setSites} companies={companies} onUpdateCompanies={handleUpdateCompanies} userRole={user?.role} addNotification={addNotification} />} />
                   <Route path="/schedule" element={<ScheduleTraining sessions={sessions} setSessions={setSessions} rooms={rooms} trainers={trainers} racDefinitions={racDefinitions} addNotification={addNotification} currentSiteId={currentSiteId} />} />

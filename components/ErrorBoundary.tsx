@@ -1,5 +1,5 @@
 
-import React, { ErrorInfo, ReactNode } from 'react';
+import React, { Component, ErrorInfo, ReactNode } from 'react';
 import { Cpu, Terminal, CheckCircle2, Power } from 'lucide-react';
 import { analyzeRuntimeError } from '../services/geminiService';
 
@@ -18,13 +18,13 @@ interface State {
 
 /**
  * Catches runtime errors and triggers autonomous repair visuals.
- * Inherits from React.Component to provide error boundary lifecycle methods.
+ * Inherits from Component to provide error boundary lifecycle methods.
  */
-/* Fix: Explicitly using React.Component with generic parameters to ensure TypeScript correctly identifies inherited properties like setState and props. */
-export class ErrorBoundary extends React.Component<Props, State> {
+// Fixed: Explicitly using Component from react to resolve issues where setState and props were not properly mapped.
+export class ErrorBoundary extends Component<Props, State> {
   private simulationInterval: any = null;
 
-  /* Fix: Initialized state with the explicit State interface. */
+  /* State initialization aligned with React Component life-cycle standards. */
   public state: State = {
     hasError: false,
     error: null,
@@ -87,7 +87,7 @@ export class ErrorBoundary extends React.Component<Props, State> {
       let stepIndex = 0;
 
       this.simulationInterval = setInterval(() => {
-          /* Fix: Progress simulation visuals using instance setState inherited from React.Component. Using arrow function to preserve 'this'. */
+          // Fixed: setState is correctly accessed on Component subclass
           this.setState((prevState) => {
               // Stop progressing if we are waiting for AI but hit 90%
               const canFinish = !!prevState.aiDiagnosis;
@@ -138,7 +138,7 @@ export class ErrorBoundary extends React.Component<Props, State> {
           sessionStorage.clear();
       } catch(e) { /* ignore */ }
 
-      /* Fix: Update instance state with diagnostic results using setState inherited from React.Component. */
+      // Fixed: setState is correctly accessed on Component subclass
       this.setState({ 
           aiDiagnosis: diagnosis,
           repairProgress: 100,
@@ -172,7 +172,7 @@ export class ErrorBoundary extends React.Component<Props, State> {
   };
 
   public render() {
-    // Access component state via this.state inherited from React.Component
+    // Fixed: Standard access to component state via this.state inherited from Component
     if (this.state.hasError) {
       return (
         <div className="fixed inset-0 z-[99999] bg-slate-950 flex flex-col items-center justify-center p-6 font-mono overflow-hidden text-white animate-fade-in">
@@ -267,7 +267,7 @@ export class ErrorBoundary extends React.Component<Props, State> {
       );
     }
 
-    /* Fix: Correctly accessing children via this.props as required for class components inheriting from React.Component. */
+    // Fixed: props is correctly accessed on Component subclass
     return (this.props.children as ReactNode) || null;
   }
 }

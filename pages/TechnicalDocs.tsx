@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { FileCode, Database, Layers, Terminal, ShieldAlert, Sparkles, Copy } from 'lucide-react';
 
@@ -55,6 +54,8 @@ CREATE TABLE employees (
   company TEXT,
   department TEXT,
   role TEXT,
+  driver_license_number TEXT,
+  driver_license_class TEXT,
   driver_license_expiry DATE,
   is_active BOOLEAN DEFAULT true
 );
@@ -76,6 +77,28 @@ CREATE TABLE employee_requirements (
   employee_id UUID PRIMARY KEY REFERENCES employees(id) ON DELETE CASCADE,
   aso_expiry_date DATE,
   required_racs JSONB DEFAULT '{}'
+);
+
+-- 5. IDENTITY & AUDIT
+CREATE TABLE users (
+  id SERIAL PRIMARY KEY,
+  name TEXT NOT NULL,
+  email TEXT UNIQUE NOT NULL,
+  password TEXT,
+  role TEXT NOT NULL,
+  status TEXT DEFAULT 'Active',
+  company TEXT,
+  job_title TEXT,
+  site_id TEXT
+);
+
+CREATE TABLE system_logs (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  timestamp TIMESTAMPTZ DEFAULT now(),
+  level TEXT NOT NULL,
+  message_key TEXT NOT NULL,
+  user_name TEXT,
+  metadata JSONB DEFAULT '{}'
 );`;
 
   const handleCopy = (text: string) => {
@@ -119,7 +142,7 @@ CREATE TABLE employee_requirements (
                             <p className="text-slate-500 dark:text-slate-400 text-sm">Optimized for dynamic module handles and site-level isolation.</p>
                           </div>
                           <button onClick={() => handleCopy(sqlSchema)} className="px-4 py-2 bg-slate-900 text-white rounded-lg font-bold text-xs flex items-center gap-2 hover:bg-slate-800">
-                              <Copy size={14} /> Copy SQL
+                              <Copy size={14} /> {copied ? 'Copied!' : 'Copy SQL'}
                           </button>
                       </div>
                       <div className="rounded-xl overflow-hidden border border-slate-200 dark:border-slate-700 mt-4">

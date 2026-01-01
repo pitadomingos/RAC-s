@@ -1,4 +1,3 @@
-
 import { supabase, isSupabaseConfigured } from './supabaseClient';
 import { Booking, Employee, TrainingSession, EmployeeRequirement, Site, Company, BookingStatus, User, UserRole, RacDef, Room, Trainer, Feedback, SystemNotification } from '../types';
 import { MOCK_EMPLOYEES, MOCK_BOOKINGS, MOCK_SESSIONS, MOCK_REQUIREMENTS } from '../constants';
@@ -87,34 +86,6 @@ export const db = {
         if (emp.driverLicenseExpiry !== undefined) payload.driver_license_expiry = emp.driverLicenseExpiry;
         if (emp.isActive !== undefined) payload.is_active = emp.isActive;
         return payload;
-    },
-
-    mapSessionFromDb(data: any): TrainingSession {
-        if (!data) return data;
-        const { rac_type, start_time, session_language, site_id, ...rest } = data;
-        return {
-            ...rest,
-            racType: rac_type,
-            startTime: start_time,
-            sessionLanguage: session_language,
-            siteId: site_id
-        };
-    },
-
-    mapBookingFromDb(data: any): Booking {
-        if (!data) return data;
-        const { session_id, theory_score, practical_score, driver_license_verified, result_date, expiry_date, is_auto_booked, employee, ...rest } = data;
-        return {
-            ...rest,
-            sessionId: session_id,
-            theoryScore: theory_score,
-            practicalScore: practical_score,
-            driverLicenseVerified: driver_license_verified,
-            resultDate: result_date,
-            expiryDate: expiry_date,
-            isAutoBooked: is_auto_booked,
-            employee: this.mapEmployeeFromDb(employee)
-        };
     },
 
     async getCompanies(): Promise<Company[]> {
@@ -246,7 +217,7 @@ export const db = {
     async upsertEmployee(emp: Partial<Employee>) {
         if (!isSupabaseConfigured || !supabase) return emp;
         const payload = this.mapEmployeeToDb(emp);
-        const { data, error } = await supabase.from('employees').upsert(payload).select();
+        const { data, error } = await supabase.from('employees').upsert(payload, { onConflict: 'record_id' }).select();
         if (error) throw error;
         return this.mapEmployeeFromDb(data[0]);
     },
@@ -276,7 +247,7 @@ export const db = {
         if (!isSupabaseConfigured || !supabase) return;
         await supabase.from('system_logs').insert({
             level,
-            message_key: message, // Mapping column name for consistency with schema
+            message_key: message,
             user_name: user,
             metadata: metadata || {}
         });

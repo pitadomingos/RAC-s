@@ -1,4 +1,3 @@
-
 export type Language = 'en' | 'pt';
 
 export const formatDate = (dateString: string | undefined): string => {
@@ -458,18 +457,18 @@ export const translations = {
             phase5desc: 'Maintenance'
         },
         techStack: {
-            title: 'Technological Blueprint',
-            frontendTitle: 'Frontend Tier',
-            frontend: 'React 19 with Tailwind CSS for high-performance responsive UI.',
-            backendTitle: 'Data Layer',
-            backend: 'Supabase Realtime for secure, distributed cloud storage.',
-            databaseTitle: 'Intelligence',
-            database: 'Google Gemini 2.0 for automated safety diagnostics.',
-            securityTitle: 'Identity',
-            security: 'Encrypted Master Key protocols with session persistence.'
+          title: 'Technological Blueprint',
+          frontendTitle: 'Frontend Tier',
+          frontend: 'React 19 with Tailwind CSS for high-performance responsive UI.',
+          backendTitle: 'Data Layer',
+          backend: 'Supabase Realtime for secure, distributed cloud storage.',
+          databaseTitle: 'Intelligence',
+          database: 'Google Gemini 2.0 for automated safety diagnostics.',
+          securityTitle: 'Identity',
+          security: 'Encrypted Master Key protocols with session persistence.'
         },
         financials: {
-            title: 'Investment Model'
+          title: 'Investment Model'
         },
         roadmap: {
             title: 'Feature Roadmap',
@@ -749,7 +748,7 @@ export const translations = {
         viewSchedule: 'Ver Cronograma',
         date: 'Data',
         session: 'Sessão',
-        capacity: 'Capacidade'
+        capacity: 'Capacity'
       },
       booked: {
         title: 'Requisitados Recentemente'
@@ -985,66 +984,6 @@ export const translations = {
         },
         noShowsTitle: 'Ausências Não Autorizadas'
     },
-    manuals: {
-        title: 'Manuais do Operador',
-        subtitle: 'Documentação de uso do sistema',
-        sysAdmin: {
-            title: 'Administrador do Sistema',
-            subtitle: 'Gestão total da plataforma',
-            configTitle: 'Configuração do Sistema',
-            configDesc: 'Gerencie entidades de alto nível para garantir a continuidade operacional.',
-            rooms: 'Defina salas de treinamento e seus limites de capacidade.',
-            trainers: 'Atribua módulos RAC autorizados a avaliadores específicos.',
-            racs: 'Configure meses de validade e requisitos práticos para cada RAC.',
-            dbTitle: 'Gestão de Base de Dados',
-            dbDesc: 'O RACS opera como um repositório unificado para todo o pessoal.',
-            restrictionWarning: 'Nota: Os filtros de base de dados restringem os dados pelo site operacional selecionado.',
-            csv: 'Use o assistente de Importação CSV para sincronizar com sistemas de RH externos.',
-            active: 'Alterne o status "Ativo" para bloquear o acesso de funcionários desligados.'
-        },
-        racAdmin: {
-            title: 'Coordenador RAC',
-            subtitle: 'Agendamento de avaliações',
-            schedTitle: 'Agendamento de Sessões',
-            schedDesc: 'Planeamento de coortes de treinamento com base na disponibilidade de salas.',
-            create: 'Crie novas sessões selecionando o Tipo de RAC e a Data.',
-            lang: 'Selecione o idioma da sessão (Inglês/Português) para instrução.',
-            autoTitle: 'Lógica de Auto-Agendamento',
-            autoDesc: 'O sistema agenda automaticamente pessoal com expiração < 7 dias.',
-            approve: 'Os administradores devem revisar e confirmar candidatos auto-agendados.',
-            renewTitle: 'Acompanhamento de Renovações',
-            renewDesc: 'Os painéis destacam candidatos na zona vermelha "Expirando em Breve".'
-        },
-        racTrainer: {
-            title: 'Instrutor de Segurança',
-            subtitle: 'Graduação e registo',
-            inputTitle: 'Entrada de Resultados',
-            inputDesc: 'Inserção de pontuações de avaliação teórica e prática.',
-            grading: 'A aprovação requer >= 70% em ambos os componentes.',
-            rac02: 'O RAC 02 requer uma verificação de validade da Carta de Condução.',
-            save: 'Clique em "Salvar Resultados" para acionar atualizações de certificados digitais.'
-        },
-        deptAdmin: {
-            title: 'Gestor de Departamento',
-            subtitle: 'Conformidade operacional',
-            reqTitle: 'Acompanhamento de Conformidade',
-            reqDesc: 'Monitorize a prontidão do seu segmento específico da força de trabalho.',
-            search: 'Pesquise membros da equipa pelo ID de Pessoal.',
-            print: 'Imprima listas atuais para auditoria de entrada no site.',
-            repTitle: 'Análises',
-            repDesc: 'Analise tendências de reprovação para identificar gargalos de treinamento.'
-        },
-        user: {
-            title: 'Utilizador Geral',
-            subtitle: 'Registo pessoal de segurança',
-            statusTitle: 'Status de Conformidade',
-            statusDesc: 'Verifique a sua prontidão atual para tarefas críticas.',
-            filterAlert: 'Alerta: Certifique-se de verificar o "Filtro de Site" para ver os dados da sua localização.',
-            green: 'O status verde significa que está totalmente autorizado para entrada no site.',
-            red: 'O status vermelho indica treinamento em falta ou exame médico (ASO) expirado.',
-            qr: 'Digitalize o QR do Passaporte nos terminais de entrada para verificação instantânea.'
-        }
-    },
     proposal: {
         aboutMe: {
             title: 'Perfil do Arquiteto',
@@ -1089,18 +1028,18 @@ export const translations = {
             phase5desc: 'Manutenção'
         },
         techStack: {
-            title: 'Projeto Tecnológico',
-            frontendTitle: 'Camada Frontend',
-            frontend: 'React 19 com Tailwind CSS para uma interface responsiva de alta performance.',
-            backendTitle: 'Camada de Dados',
-            backend: 'Supabase Realtime para armazenamento seguro em nuvem distribuída.',
-            databaseTitle: 'Inteligência',
-            database: 'Google Gemini 2.0 para diagnósticos de segurança automatizados.',
-            securityTitle: 'Identidade',
-            security: 'Protocolos de Chave Mestra encriptados com persistência de sessão.'
+          title: 'Projeto Tecnológico',
+          frontendTitle: 'Camada Frontend',
+          frontend: 'React 19 com Tailwind CSS para uma interface responsiva de alta performance.',
+          backendTitle: 'Camada de Dados',
+          backend: 'Supabase Realtime para armazenamento seguro em nuvem distribuída.',
+          databaseTitle: 'Inteligência',
+          database: 'Google Gemini 2.0 para diagnósticos de segurança automatizados.',
+          securityTitle: 'Identidade',
+          security: 'Protocolos de Chave Mestra encriptados com persistência de sessão.'
         },
         financials: {
-            title: 'Modelo de Investimento'
+          title: 'Modelo de Investimento'
         },
         roadmap: {
             title: 'Roteiro de Funcionalidades',
@@ -1131,7 +1070,7 @@ export const translations = {
         },
         conclusion: {
             title: 'O Futuro do HSE',
-            text: 'Padronizando a segurança através da arquitetura.'
+            text: 'Standardizando a segurança através da arquitetura.'
         },
         thankYou: {
             title: 'Sessão de P&R'
@@ -1162,12 +1101,65 @@ export const translations = {
             }
         }
     },
-    advisor: {
-        title: 'Consultor de Segurança IA',
-        button: 'Consultar IA',
-        sender: 'Guia IA',
-        placeholder: 'Pergunte sobre segurança...',
-        emptyState: 'Como posso ajudar com sua requisição de segurança hoje?'
+    manuals: {
+      title: 'Manuais do Operador',
+      subtitle: 'Documentação de uso do sistema',
+      sysAdmin: {
+          title: 'Administrador do Sistema',
+          subtitle: 'Gestão total da plataforma',
+          configTitle: 'Configuração do Sistema',
+          configDesc: 'Gerencie entidades de alto nível para garantir a continuidade operacional.',
+          rooms: 'Defina salas de treinamento e seus limites de capacidade.',
+          trainers: 'Atribua módulos RAC autorizados a avaliadores específicos.',
+          racs: 'Configure meses de validade e requisitos práticos para cada RAC.',
+          dbTitle: 'Gestão de Base de Dados',
+          dbDesc: 'O RACS opera como um repositório unificado para todo o pessoal.',
+          restrictionWarning: 'Nota: Os filtros de base de dados restringem os dados pelo site operacional selecionado.',
+          csv: 'Use o assistente de Importação CSV para sincronizar com sistemas de RH externos.',
+          active: 'Alterne o status "Ativo" para bloquear o acesso de funcionários desligados.'
+      },
+      racAdmin: {
+          title: 'Coordenador RAC',
+          subtitle: 'Agendamento de avaliações',
+          schedTitle: 'Agendamento de Sessões',
+          schedDesc: 'Planeamento de coortes de treinamento com base na disponibilidade de salas.',
+          create: 'Crie novas sessões selecionando o Tipo de RAC e a Data.',
+          lang: 'Selecione o idioma da sessão (Inglês/Português) para instrução.',
+          autoTitle: 'Lógica de Auto-Agendamento',
+          autoDesc: 'O sistema agenda automaticamente pessoal com expiração < 7 dias.',
+          approve: 'Os administradores devem revisar e confirmar candidatos auto-agendados.',
+          renewTitle: 'Acompanhamento de Renovações',
+          renewDesc: 'Os painéis destacam candidatos na zona vermelha "Expirando em Breve".'
+      },
+      racTrainer: {
+          title: 'Instrutor de Segurança',
+          subtitle: 'Graduação e registo',
+          inputTitle: 'Entrada de Resultados',
+          inputDesc: 'Inserção de pontuações de avaliação teórica e prática.',
+          grading: 'A aprovação requer >= 70% em ambos os componentes.',
+          rac02: 'O RAC 02 requer uma verificação de validade da Carta de Condução.',
+          save: 'Clique em "Salvar Resultados" para acionar atualizações de certificados digitais.'
+      },
+      deptAdmin: {
+          title: 'Gestor de Departamento',
+          subtitle: 'Conformidade operacional',
+          reqTitle: 'Acompanhamento de Conformidade',
+          reqDesc: 'Monitorize a prontidão do seu segmento específico da força de trabalho.',
+          search: 'Pesquise membros da equipa pelo ID de Pessoal.',
+          print: 'Imprima listas atuais para auditoria de entrada no site.',
+          repTitle: 'Análises',
+          repDesc: 'Analise tendências de reprovação para identificar gargalos de treinamento.'
+      },
+      user: {
+          title: 'Utilizador Geral',
+          subtitle: 'Registo pessoal de segurança',
+          statusTitle: 'Status de Conformidade',
+          statusDesc: 'Verifique a sua prontidão atual para tarefas críticas.',
+          filterAlert: 'Alerta: Certifique-se de verificar o "Filtro de Site" para ver os dados da sua localização.',
+          green: 'O status verde significa que está totalmente autorizado para entrada no site.',
+          red: 'O status vermelho indica treinamento em falta ou exame médico (ASO) expirado.',
+          qr: 'Digitalize o QR do Passaporte nos terminais de entrada para verificação instantânea.'
+      }
     },
     cards: {
         title: 'Cartões de Certificação',
@@ -1178,6 +1170,13 @@ export const translations = {
             failedMsg: 'Você não está autorizado a gerar um cartão. Certifique-se de que todos os RACs obrigatórios e o ASO estão válidos.',
             checkReqs: 'Verificar Requisitos'
         }
+    },
+    advisor: {
+        title: 'Consultor de Segurança IA',
+        button: 'Consultar IA',
+        sender: 'Guia IA',
+        placeholder: 'Pergunte sobre segurança...',
+        emptyState: 'Como posso ajudar com sua requisição de segurança hoje?'
     },
     verification: {
         title: 'Verificação Digital',
