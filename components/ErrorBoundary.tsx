@@ -1,4 +1,5 @@
-import React, { Component, ErrorInfo, ReactNode } from 'react';
+
+import React, { ErrorInfo, ReactNode } from 'react';
 import { Cpu, Zap, Activity, Terminal, CheckCircle2, RefreshCw, Power } from 'lucide-react';
 import { analyzeRuntimeError } from '../services/geminiService';
 
@@ -19,8 +20,8 @@ interface State {
  * Catches runtime errors and triggers autonomous repair visuals.
  * Inherits from Component to provide error boundary lifecycle methods.
  */
-/* Fix: Explicitly import and extend Component from 'react' to resolve missing setState and props errors. */
-export class ErrorBoundary extends Component<Props, State> {
+/* Fix: Explicitly extend React.Component to ensure 'setState' and 'props' are correctly typed and recognized by the TypeScript compiler. */
+export class ErrorBoundary extends React.Component<Props, State> {
   // Initialize state to satisfy the React Component lifecycle.
   public state: State = {
     hasError: false,
@@ -33,8 +34,8 @@ export class ErrorBoundary extends Component<Props, State> {
 
   private simulationInterval: any = null;
 
-  /* Fix: Specified static getDerivedStateFromError with correct return type. */
-  public static getDerivedStateFromError(error: Error): Partial<State> {
+  // Fix: Standard static getDerivedStateFromError implementation for React Error Boundaries.
+  public static getDerivedStateFromError(error: Error): State {
     return { 
         hasError: true, 
         error, 
@@ -45,7 +46,7 @@ export class ErrorBoundary extends Component<Props, State> {
     };
   }
 
-  /* Fix: Correct implementation of componentDidCatch lifecycle method. */
+  // Fix: Correct componentDidCatch implementation ensuring error metadata is logged and repair protocols triggered.
   public componentDidCatch(error: Error, errorInfo: ErrorInfo) {
     const errorString = error.toString();
     const errorMessage = error.message || errorString;
@@ -68,8 +69,8 @@ export class ErrorBoundary extends Component<Props, State> {
       if (this.simulationInterval) clearInterval(this.simulationInterval);
   }
 
-  /* Fix: Use instance reference for setState within arrow function assigned to property. */
-  private startRepairSimulation = () => {
+  // Fix: Standard method using 'this' from correctly extended Component instance.
+  private startRepairSimulation() {
       const steps = [
           "Scanning Neural Pathways...",
           "Isolating Corrupt Segments...",
@@ -83,6 +84,7 @@ export class ErrorBoundary extends Component<Props, State> {
       let stepIndex = 0;
 
       this.simulationInterval = setInterval(() => {
+          /* Fix: Access setState via the class instance inherited from React.Component. */
           this.setState((prevState) => {
               // Stop progressing if we are waiting for AI but hit 90%
               const canFinish = !!prevState.aiDiagnosis;
@@ -106,10 +108,10 @@ export class ErrorBoundary extends Component<Props, State> {
               };
           });
       }, 200);
-  };
+  }
 
-  /* Fix: Async diagnosis method to update state once AI analysis is complete. */
-  private runSilentDiagnosis = async (errorMessage: string, errorInfo: ErrorInfo) => {
+  // Fix: Correct use of 'this' in async context.
+  private async runSilentDiagnosis(errorMessage: string, errorInfo: ErrorInfo) {
       try {
           // Real World: Attempt to get AI analysis
           const stack = errorInfo.componentStack || '';
@@ -127,8 +129,8 @@ export class ErrorBoundary extends Component<Props, State> {
       }
   }
 
-  /* Fix: helper method to finalize the repair state using setState. */
-  private completeRepair = (diagnosis: { rootCause: string, fix: string }) => {
+  // Fix: Finalize repair state using setState inherited from React.Component.
+  private completeRepair(diagnosis: { rootCause: string, fix: string }) {
       if (this.simulationInterval) clearInterval(this.simulationInterval);
 
       // Real World: Clear potentially corrupted session state
@@ -136,6 +138,7 @@ export class ErrorBoundary extends Component<Props, State> {
           sessionStorage.clear();
       } catch(e) { /* ignore */ }
 
+      /* Fix: Access setState via the class instance inherited from React.Component. */
       this.setState({ 
           aiDiagnosis: diagnosis,
           repairProgress: 100,
@@ -160,6 +163,7 @@ export class ErrorBoundary extends Component<Props, State> {
       }
   }
 
+  // Fix: Bound event handler for system reboot.
   private forceReload = () => {
       try {
           window.location.reload();
@@ -168,11 +172,11 @@ export class ErrorBoundary extends Component<Props, State> {
       }
   };
 
-  /* Fix: Access props.children via class instance property inherited from Component. */
+  /* Fix: render method correctly accesses this.state and this.props from base React.Component. */
   public render() {
     if (this.state.hasError) {
+      // FULL SCREEN OVERLAY
       return (
-        // FULL SCREEN OVERLAY
         <div className="fixed inset-0 z-[99999] bg-slate-950 flex flex-col items-center justify-center p-6 font-mono overflow-hidden text-white animate-fade-in">
           
           {/* Background Grid */}
@@ -265,7 +269,7 @@ export class ErrorBoundary extends Component<Props, State> {
       );
     }
 
-    /* Fix: Return children from props, which is accessible from the extended Component. */
+    /* Fix: Access props via the class instance inherited from React.Component. */
     return this.props.children;
   }
 }

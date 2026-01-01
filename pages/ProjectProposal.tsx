@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useLanguage } from '../contexts/LanguageContext';
 import { 
@@ -507,22 +506,13 @@ const ProjectProposal: React.FC = () => {
   );
 
   const FinancialsSlide = () => {
-      const calculateTotals = () => {
-          const items = t.proposal.financials.items;
-          const getVal = (idx: number) => {
-              if (!items[idx]) return 0;
-              return parseFloat(items[idx].cost.replace(/[^0-9.]/g, '') || '0');
-          };
-          // Items 1 & 2 (index 0 and 1) - Initial payment
-          const initial = getVal(0) + getVal(1); 
-          // Item 4 (index 3) - Training & Documentation (Post UAT)
-          const postUat = getVal(3);
-          // Items 3 & 5 (index 2 and 4) - Monthly (Cloud & Maintenance)
-          const monthly = getVal(2) + getVal(4);
-          return { initial, postUat, monthly };
-      };
-      
-      const totals = calculateTotals();
+      // Adjusted for exactly $18,000 Initial and $4,000 Recurring
+      const financialsItems = [
+          { name: 'Core Architecture & Initial Development', type: 'Phase 1', cost: '$12,000.00' },
+          { name: 'System Setup & API Integration Layer', type: 'Phase 2', cost: '$6,000.00' },
+          { name: 'Cloud Infrastructure & Managed SaaS Hosting', type: 'Monthly', cost: '$2,500.00' },
+          { name: 'Ongoing Maintenance & Robotic Engine Support', type: 'Monthly', cost: '$1,500.00' }
+      ];
 
       return (
       <div className="flex flex-col justify-center h-full max-w-6xl mx-auto px-4 relative z-10 animate-fade-in-up">
@@ -536,7 +526,7 @@ const ProjectProposal: React.FC = () => {
                       <div className="col-span-3">Type</div>
                       <div className="col-span-2 text-right">Cost</div>
                   </div>
-                  {t.proposal.financials.items.map((item: any, i: number) => (
+                  {financialsItems.map((item: any, i: number) => (
                       <div key={i} className="grid grid-cols-12 p-5 hover:bg-slate-800/50 transition-colors items-center">
                           <div className="col-span-1 text-center font-mono text-slate-500">{i+1}</div>
                           <div className="col-span-6 text-white font-medium text-base">{item.name}</div>
@@ -547,20 +537,15 @@ const ProjectProposal: React.FC = () => {
               </div>
 
               <div className="bg-gradient-to-r from-slate-950 to-slate-900 p-8 flex flex-col md:flex-row justify-between items-stretch text-white relative overflow-hidden gap-6 border-t border-slate-700">
-                  <div className="flex-1 bg-slate-800/50 p-4 rounded-xl border border-slate-700 relative overflow-hidden">
+                  <div className="flex-1 bg-slate-800/50 p-4 rounded-xl border border-emerald-500/30 relative overflow-hidden">
                       <div className="absolute top-0 left-0 w-1 h-full bg-emerald-500"></div>
-                      <div className="text-xs uppercase font-bold text-slate-400 mb-1">Initial Payment</div>
-                      <div className="text-3xl font-black font-mono tracking-tight text-white">${totals.initial.toLocaleString()}</div>
+                      <div className="text-xs uppercase font-bold text-slate-400 mb-1">Total Initial Investment</div>
+                      <div className="text-3xl font-black font-mono tracking-tight text-white">$18,000.00</div>
                   </div>
-                  <div className="flex-1 bg-slate-800/50 p-4 rounded-xl border border-slate-700 relative overflow-hidden">
-                      <div className="absolute top-0 left-0 w-1 h-full bg-yellow-500"></div>
-                      <div className="text-xs uppercase font-bold text-slate-400 mb-1">Deployment & Handover</div>
-                      <div className="text-3xl font-black font-mono tracking-tight text-white">${totals.postUat.toLocaleString()}</div>
-                  </div>
-                  <div className="flex-1 bg-slate-800/50 p-4 rounded-xl border border-slate-700 relative overflow-hidden">
+                  <div className="flex-1 bg-slate-800/50 p-4 rounded-xl border border-blue-500/30 relative overflow-hidden">
                       <div className="absolute top-0 left-0 w-1 h-full bg-blue-500"></div>
-                      <div className="text-xs uppercase font-bold text-slate-400 mb-1">Monthly Recurring</div>
-                      <div className="text-3xl font-black font-mono tracking-tight text-white">${totals.monthly.toLocaleString()}</div>
+                      <div className="text-xs uppercase font-bold text-slate-400 mb-1">Monthly Recurring Services</div>
+                      <div className="text-3xl font-black font-mono tracking-tight text-white">$4,000.00</div>
                   </div>
               </div>
           </div>
@@ -605,11 +590,11 @@ const ProjectProposal: React.FC = () => {
           <div className="flex flex-col md:flex-row gap-8 mt-8">
               <div className="bg-slate-900 border border-slate-700 px-10 py-6 rounded-3xl flex items-center gap-4">
                   <Mail size={32} className="text-blue-400"/>
-                  <span className="text-xl md:text-2xl font-bold text-white">{t.proposal.thankYou.contact}</span>
+                  <span className="text-xl md:text-2xl font-bold text-white">pita.domingos@example.com</span>
               </div>
               <div className="bg-slate-900 border border-slate-700 px-10 py-6 rounded-3xl flex items-center gap-4">
                   <Phone size={32} className="text-green-400"/>
-                  <span className="text-xl md:text-2xl font-bold text-white">{t.proposal.thankYou.phone}</span>
+                  <span className="text-xl md:text-2xl font-bold text-white">+258 84 123 4567</span>
               </div>
           </div>
       </div>

@@ -16,7 +16,7 @@ export interface RacDef {
   id: string;
   code: string;
   name: string;
-  validityMonths?: number; // Configurable validity period
+  validityMonths?: number;
   requiresDriverLicense?: boolean;
   requiresPractical?: boolean;
 }
@@ -24,14 +24,13 @@ export interface RacDef {
 export interface Company {
   id: string;
   name: string;
-  appName?: string; // Overrides system name (e.g. "Vulcan Safety")
-  logoUrl?: string; // Corporate Brand Logo
-  safetyLogoUrl?: string; // Specific Safety Logo
+  appName?: string;
+  logoUrl?: string;
+  safetyLogoUrl?: string;
   status: 'Active' | 'Inactive';
   defaultLanguage?: 'en' | 'pt';
   features?: {
       alcohol?: boolean;
-      // Add other modules here in future
   };
 }
 
@@ -40,7 +39,6 @@ export interface Site {
   companyId: string;
   name: string;
   location: string;
-  // New: Defines which RACs are mandatory for *everyone* at this site by default
   mandatoryRacs?: string[]; 
 }
 
@@ -48,7 +46,7 @@ export interface Room {
   id: string;
   name: string;
   capacity: number;
-  siteId?: string; // Room belongs to a site
+  siteId?: string;
 }
 
 export interface Trainer {
@@ -58,9 +56,9 @@ export interface Trainer {
 }
 
 export enum UserRole {
-  SYSTEM_ADMIN = 'System Admin',       // SaaS Owner (Manages Companies)
-  ENTERPRISE_ADMIN = 'Enterprise Admin', // Client HQ (Manages Sites & Global Standards)
-  SITE_ADMIN = 'Site Admin',           // Site Manager (Manages daily ops)
+  SYSTEM_ADMIN = 'System Admin',
+  ENTERPRISE_ADMIN = 'Enterprise Admin',
+  SITE_ADMIN = 'Site Admin',
   RAC_ADMIN = 'RAC Admin',
   DEPT_ADMIN = 'Department Admin',
   RAC_TRAINER = 'RAC Trainer',
@@ -71,26 +69,25 @@ export interface User {
     id: number;
     name: string;
     email: string;
-    phoneNumber?: string; // New field for SMS
+    phoneNumber?: string;
     role: UserRole;
     status: 'Active' | 'Inactive';
     company?: string;
     jobTitle?: string;
-    department?: string; // Added for Access Control
-    siteId?: string; // New: Context for User Login to filter data
+    department?: string;
+    siteId?: string;
 }
 
 export interface Employee {
   id: string;
   name: string;
-  recordId: string; // National ID or Company/Contractor ID
+  recordId: string;
   company: string;
   department: string;
   role: string;
   isActive?: boolean;
-  siteId?: string; // Multi-site support
-  phoneNumber?: string; // New field for SMS alerts
-  // Driver License Details (Specific for RAC 02)
+  siteId?: string;
+  phoneNumber?: string;
   driverLicenseNumber?: string;
   driverLicenseClass?: string;
   driverLicenseExpiry?: string;
@@ -105,7 +102,7 @@ export interface TrainingSession {
   instructor: string;
   capacity: number;
   sessionLanguage: 'English' | 'Portuguese';
-  siteId?: string; // Session belongs to a site
+  siteId?: string;
 }
 
 export enum BookingStatus {
@@ -122,24 +119,19 @@ export interface Booking {
   employee: Employee;
   status: BookingStatus;
   resultDate?: string;
-  expiryDate?: string; // Valid for 2 years
+  expiryDate?: string;
   attendance?: boolean;
   theoryScore?: number;
   practicalScore?: number;
-  driverLicenseVerified?: boolean; // New field for Trainer validation
+  driverLicenseVerified?: boolean;
   isAutoBooked?: boolean;
-  comments?: string; // New field for Trainer remarks
-}
-
-export interface ChartData {
-  name: string;
-  value: number;
+  comments?: string;
 }
 
 export interface EmployeeRequirement {
   employeeId: string;
-  asoExpiryDate: string; // Medical Exam Expiry
-  requiredRacs: Record<string, boolean>; // e.g. { 'RAC01': true, 'RAC02': false }
+  asoExpiryDate: string;
+  requiredRacs: Record<string, boolean>;
 }
 
 export interface SystemNotification {
@@ -151,17 +143,16 @@ export interface SystemNotification {
   isRead: boolean;
 }
 
-// --- NEW TYPES FOR ALCOHOL IOT ---
 export interface BreathalyzerTest {
   id: string;
   deviceId: string;
   employeeId: string;
   employeeName: string;
-  date: string; // Added Date field
+  date: string;
   timestamp: string;
-  result: number; // BAC level
+  result: number;
   status: 'PASS' | 'FAIL';
-  imageUrl?: string; // Face capture placeholder
+  imageUrl?: string;
 }
 
 export interface IotDevice {
@@ -172,13 +163,12 @@ export interface IotDevice {
   lastPing: string;
 }
 
-// --- NEW TYPES FOR FEEDBACK SYSTEM ---
 export type FeedbackType = 'Bug' | 'Improvement' | 'General';
 export type FeedbackStatus = 'New' | 'In Progress' | 'Resolved' | 'Dismissed';
 
 export interface Feedback {
   id: string;
-  userId?: string; // Optional if anonymous
+  userId?: string;
   userName: string;
   type: FeedbackType;
   message: string;
@@ -186,4 +176,33 @@ export interface Feedback {
   isActionable: boolean;
   timestamp: string;
   adminNotes?: string;
+}
+
+// --- NEW TYPES FOR DATA INTEGRATION HUB ---
+export type ConnectorType = 'Excel' | 'Database' | 'API';
+
+export interface DataConnector {
+  id: string;
+  name: string;
+  type: ConnectorType;
+  lastSync?: string;
+  status: 'Healthy' | 'Error' | 'Idle';
+  config: {
+    url?: string;
+    apiKey?: string;
+    filePath?: string;
+    dbType?: string;
+  };
+  mapping: Record<string, string>; // systemField -> sourceField
+}
+
+export interface SyncResult {
+  id: string;
+  connectorId: string;
+  timestamp: string;
+  added: number;
+  updated: number;
+  errors: number;
+  status: 'Success' | 'Partial' | 'Failed';
+  log: string[];
 }

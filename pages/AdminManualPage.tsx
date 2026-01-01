@@ -6,7 +6,7 @@ import {
   ChevronLeft, ChevronRight, Maximize, Minimize, X,
   Lock, Server, CheckCircle2, XCircle, Search,
   Building2, Map, Layout, Zap, Terminal, Workflow, Settings,
-  Cpu, GitPullRequest // Added Icons
+  Cpu, GitPullRequest, Sparkles, Image as ImageIcon
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useLanguage } from '../contexts/LanguageContext';
@@ -42,447 +42,168 @@ const AdminManualPage: React.FC = () => {
     }
   };
 
-  // Robust Safety check
-  if (!t || !t.adminManual || !t.adminManual.slides || !t.adminManual.content) {
-      return (
-          <div className="flex items-center justify-center h-screen bg-slate-950 text-white">
-              <div className="text-center">
-                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
-                  <p>Loading Admin Manual...</p>
-              </div>
-          </div>
-      );
-  }
+  if (!t || !t.adminManual || !t.adminManual.slides) return null;
 
   const slides = [
       { id: 'intro', title: t.adminManual.slides.intro },
       { id: 'logic', title: t.adminManual.slides.logic },
       { id: 'dashboard', title: t.adminManual.slides.dashboard },
+      { id: 'branding', title: t.settings.tabs.branding || 'Branding' },
       { id: 'workflows', title: t.adminManual.slides.workflows },
       { id: 'advanced', title: t.adminManual.slides.advanced },
-      { id: 'robotics', title: t.adminManual.slides.robotics || 'Robotic Protocols' }, // NEW SLIDE
+      { id: 'robotics', title: t.adminManual.slides.robotics },
       { id: 'troubleshoot', title: t.adminManual.slides.troubleshoot },
       { id: 'architecture', title: t.adminManual.slides.architecture }
   ];
 
-  const nextSlide = () => {
-      if (currentSlide < slides.length - 1) setCurrentSlide(curr => curr + 1);
-  };
-
-  const prevSlide = () => {
-      if (currentSlide > 0) setCurrentSlide(curr => curr - 1);
-  };
+  const nextSlide = () => { if (currentSlide < slides.length - 1) setCurrentSlide(curr => curr + 1); };
+  const prevSlide = () => { if (currentSlide > 0) setCurrentSlide(curr => curr - 1); };
 
   // --- SLIDE COMPONENTS ---
 
   const IntroSlide = () => (
-      <div className="flex flex-col items-center justify-center h-full text-center px-4 relative z-10 animate-fade-in-up">
-          <div className="relative mb-12">
+      <div className="flex flex-col items-center justify-center min-h-[70vh] text-center px-4 relative z-10 animate-fade-in-up">
+          <div className="relative mb-8 md:mb-12">
               <div className="absolute inset-0 bg-blue-500 blur-[80px] opacity-30 animate-pulse-slow"></div>
-              <Shield size={180} className="text-white relative z-10 drop-shadow-[0_0_50px_rgba(59,130,246,0.6)] animate-float" />
-              <div className="absolute bottom-0 right-0 bg-yellow-500 text-slate-900 text-sm font-black px-4 py-1.5 rounded-full border-4 border-slate-900 transform translate-x-4 translate-y-4">
-                  v2.5.0
-              </div>
+              <Shield size={160} className="text-white relative z-10 drop-shadow-[0_0_50px_rgba(59,130,246,0.6)] animate-float" />
           </div>
-          
-          <h1 className="text-5xl md:text-8xl lg:text-9xl font-black text-transparent bg-clip-text bg-gradient-to-b from-white via-slate-200 to-slate-500 tracking-tighter mb-8 leading-tight">
-              {t.adminManual.title}
+          <h1 className="text-4xl md:text-7xl lg:text-8xl font-black text-transparent bg-clip-text bg-gradient-to-b from-white via-slate-200 to-slate-500 tracking-tighter mb-6 leading-tight">
+            {t.adminManual.title}
           </h1>
-          
-          <p className="text-xl md:text-3xl text-blue-200 font-light max-w-4xl leading-relaxed">
-              {t.adminManual.subtitle}
+          <p className="text-lg md:text-2xl text-blue-200 font-light max-w-3xl leading-relaxed mx-auto">
+            {t.adminManual.subtitle}
           </p>
-
-          <div className="mt-16 flex gap-6">
-              <div className="px-8 py-4 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-md flex items-center gap-4 hover:bg-white/10 transition-colors">
-                  <Lock size={24} className="text-red-400" />
-                  <span className="text-lg font-bold text-slate-300">{t.adminManual.content.confidential}</span>
-              </div>
-              <div className="px-8 py-4 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-md flex items-center gap-4 hover:bg-white/10 transition-colors">
-                  <Server size={24} className="text-green-400" />
-                  <span className="text-lg font-bold text-slate-300">{t.adminManual.content.production}</span>
-              </div>
-          </div>
       </div>
+  );
+
+  const BrandingSlide = () => (
+    <div className="flex flex-col justify-center min-h-[70vh] max-w-5xl mx-auto px-6 relative z-10 animate-fade-in-up py-12">
+        <h2 className="text-3xl md:text-5xl font-black text-white mb-10 text-center tracking-tight flex items-center justify-center gap-4">
+            <Sparkles size={40} className="text-yellow-400" />
+            {t.settings.branding.title}
+        </h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div className="bg-slate-900/90 border border-indigo-500/30 p-8 rounded-[2rem] relative overflow-hidden group hover:bg-slate-800/90 transition-all">
+                <div className="absolute top-0 right-0 p-6 opacity-10 group-hover:scale-110 transition-transform"><Layout size={80} /></div>
+                <div className="relative z-10">
+                    <h3 className="text-xl font-bold text-white mb-3">{t.settings.branding.appName}</h3>
+                    <p className="text-sm md:text-base text-slate-400 leading-relaxed">
+                        Customize the portal identity. Enterprise Admins can override the default system name with their internal safety brand (e.g., "RACS Safety").
+                    </p>
+                </div>
+            </div>
+            <div className="bg-slate-900/90 border border-yellow-500/30 p-8 rounded-[2rem] relative overflow-hidden group hover:bg-slate-800/90 transition-all">
+                <div className="absolute top-0 right-0 p-6 opacity-10 group-hover:scale-110 transition-transform"><ImageIcon size={80} /></div>
+                <div className="relative z-10">
+                    <h3 className="text-xl font-bold text-white mb-3">{t.settings.branding.safetyLogo}</h3>
+                    <p className="text-sm md:text-base text-slate-400 leading-relaxed">
+                        Upload dedicated safety badges. This logo appears in the primary sidebar and branded zones, ensuring high workforce familiarity.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
   );
 
   const LogicSlide = () => (
-      <div className="flex flex-col justify-center h-full max-w-7xl mx-auto px-6 relative z-10">
-          <div className="text-center mb-16 animate-fade-in-down">
-              <h2 className="text-5xl md:text-7xl font-black text-white tracking-tighter mb-6">{t.adminManual.content.logic.title}</h2>
-              <p className="text-xl text-slate-400 max-w-3xl mx-auto">{t.adminManual.content.logic.desc}</p>
+      <div className="flex flex-col justify-center min-h-[70vh] max-w-6xl mx-auto px-6 relative z-10 py-12">
+          <div className="text-center mb-12 animate-fade-in-down">
+              <h2 className="text-4xl md:text-6xl font-black text-white tracking-tighter mb-4">{t.adminManual.content.logic.title}</h2>
+              <p className="text-lg text-slate-400 max-w-2xl mx-auto">{t.adminManual.content.logic.desc}</p>
           </div>
-
           <div className="relative group animate-fade-in-up">
-              <div className="absolute -inset-1 bg-gradient-to-r from-green-500 via-blue-500 to-purple-500 rounded-[2.5rem] blur opacity-20 group-hover:opacity-40 transition duration-1000"></div>
-              <div className="relative bg-slate-900/90 backdrop-blur-2xl border border-slate-700 p-12 rounded-[2.5rem] shadow-2xl">
-                  
-                  {/* The Equation */}
-                  <div className="flex flex-col md:flex-row items-center justify-center gap-8 md:gap-4 mb-12">
-                      <div className="bg-white/5 border border-white/10 px-8 py-6 rounded-2xl flex flex-col items-center">
-                          <span className="text-xs text-slate-500 uppercase font-bold tracking-wider mb-2">Input 1</span>
-                          <div className="text-blue-400 font-black text-2xl flex items-center gap-2"><CheckCircle size={20}/> {t.adminManual.content.logic.active}</div>
+              <div className="absolute -inset-1 bg-gradient-to-r from-green-500 via-blue-500 to-purple-500 rounded-[2rem] blur opacity-20 group-hover:opacity-40 transition duration-1000"></div>
+              <div className="relative bg-slate-900/95 backdrop-blur-xl border border-slate-700 p-8 md:p-12 rounded-[2rem] shadow-2xl">
+                  <div className="flex flex-col md:flex-row items-center justify-center gap-6 mb-8">
+                      <div className="bg-white/5 border border-white/10 px-6 py-4 rounded-xl flex flex-col items-center min-w-[140px]">
+                          <span className="text-[10px] text-slate-500 uppercase font-bold tracking-widest mb-1">Input 1</span>
+                          <div className="text-blue-400 font-black text-xl flex items-center gap-2"><CheckCircle size={18}/> {t.adminManual.content.logic.active}</div>
                       </div>
-                      <span className="text-slate-600 font-black text-2xl">+</span>
-                      <div className="bg-white/5 border border-white/10 px-8 py-6 rounded-2xl flex flex-col items-center">
-                          <span className="text-xs text-slate-500 uppercase font-bold tracking-wider mb-2">Input 2</span>
-                          <div className="text-orange-400 font-black text-2xl flex items-center gap-2"><Calendar size={20}/> {t.adminManual.content.logic.aso}</div>
+                      <span className="text-slate-600 font-black text-xl">+</span>
+                      <div className="bg-white/5 border border-white/10 px-6 py-4 rounded-xl flex flex-col items-center min-w-[140px]">
+                          <span className="text-[10px] text-slate-500 uppercase font-bold tracking-widest mb-1">Input 2</span>
+                          <div className="text-orange-400 font-black text-xl flex items-center gap-2"><Calendar size={18}/> {t.adminManual.content.logic.aso}</div>
                       </div>
-                      <span className="text-slate-600 font-black text-2xl">+</span>
-                      <div className="bg-white/5 border border-white/10 px-8 py-6 rounded-2xl flex flex-col items-center">
-                          <span className="text-xs text-slate-500 uppercase font-bold tracking-wider mb-2">Input 3</span>
-                          <div className="text-yellow-400 font-black text-2xl flex items-center gap-2"><Database size={20}/> {t.adminManual.content.logic.racs}</div>
+                      <span className="text-slate-600 font-black text-xl">+</span>
+                      <div className="bg-white/5 border border-white/10 px-6 py-4 rounded-xl flex flex-col items-center min-w-[140px]">
+                          <span className="text-[10px] text-slate-500 uppercase font-bold tracking-widest mb-1">Input 3</span>
+                          <div className="text-yellow-400 font-black text-xl flex items-center gap-2"><Database size={18}/> {t.adminManual.content.logic.racs}</div>
                       </div>
-                      <span className="text-slate-600 font-black text-2xl">=</span>
-                      <div className="bg-green-500/20 border border-green-500/50 px-10 py-8 rounded-3xl shadow-[0_0_30px_rgba(34,197,94,0.3)]">
-                          <div className="text-green-400 font-black text-3xl tracking-wide">{t.adminManual.content.logic.result}</div>
+                      <span className="text-slate-600 font-black text-xl">=</span>
+                      <div className="bg-green-500/20 border border-green-500/50 px-8 py-6 rounded-2xl shadow-[0_0_30px_rgba(34,197,94,0.3)]">
+                          <div className="text-green-400 font-black text-2xl tracking-wide uppercase">{t.adminManual.content.logic.result}</div>
                       </div>
-                  </div>
-
-                  <p className="text-center text-slate-400 text-lg max-w-3xl mx-auto leading-relaxed border-l-4 border-red-500 pl-4 bg-red-900/10 p-4 rounded-r-xl">
-                      <strong>⚠️ Important:</strong> The system enforces strict AND logic. If any required RAC is missing or expired, status turns <span className="text-red-500 font-bold">RED (Blocked)</span>.
-                  </p>
-              </div>
-          </div>
-      </div>
-  );
-
-  const DashboardSlide = () => (
-      <div className="flex flex-col justify-center h-full max-w-7xl mx-auto px-6 relative z-10 animate-fade-in-up">
-          <h2 className="text-4xl md:text-6xl font-black text-white mb-16 text-center">{t.adminManual.slides.dashboard}</h2>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
-              {/* Operational */}
-              <div className="bg-slate-900/80 p-8 rounded-[2rem] border border-blue-500/30 backdrop-blur-md">
-                  <div className="flex items-center gap-4 mb-6">
-                      <div className="p-3 bg-blue-500/20 rounded-xl text-blue-400"><Layout size={32}/></div>
-                      <h3 className="text-2xl font-bold text-blue-100">{t.adminManual.content.dashboard.operational.title}</h3>
-                  </div>
-                  <ul className="space-y-4 text-slate-300">
-                      <li className="flex gap-3"><Activity size={20} className="text-blue-500 shrink-0"/> {t.adminManual.content.dashboard.operational.kpi}</li>
-                      <li className="flex gap-3"><AlertTriangle size={20} className="text-yellow-500 shrink-0"/> {t.adminManual.content.dashboard.operational.renewal}</li>
-                      <li className="flex gap-3"><Zap size={20} className="text-orange-500 shrink-0"/> {t.adminManual.content.dashboard.operational.auto}</li>
-                  </ul>
-              </div>
-
-              {/* Enterprise */}
-              <div className="bg-slate-900/80 p-8 rounded-[2rem] border border-purple-500/30 backdrop-blur-md">
-                  <div className="flex items-center gap-4 mb-6">
-                      <div className="p-3 bg-purple-500/20 rounded-xl text-purple-400"><Building2 size={32}/></div>
-                      <h3 className="text-2xl font-bold text-purple-100">{t.adminManual.content.dashboard.enterprise.title}</h3>
-                  </div>
-                  <ul className="space-y-4 text-slate-300">
-                      <li className="flex gap-3"><Map size={20} className="text-purple-500 shrink-0"/> {t.adminManual.content.dashboard.enterprise.global}</li>
-                      <li className="flex gap-3"><Users size={20} className="text-red-500 shrink-0"/> {t.adminManual.content.dashboard.enterprise.risk}</li>
-                      <li className="flex gap-3"><Terminal size={20} className="text-green-500 shrink-0"/> {t.adminManual.content.dashboard.enterprise.ai}</li>
-                  </ul>
-              </div>
-          </div>
-      </div>
-  );
-
-  const WorkflowsSlide = () => (
-      <div className="flex flex-col justify-center h-full max-w-[1800px] mx-auto px-6 relative z-10 animate-fade-in-up">
-          <h2 className="text-4xl md:text-6xl font-black text-white mb-12 text-center">{t.adminManual.slides.workflows}</h2>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 h-[60vh]">
-              {[
-                  { section: t.adminManual.content.workflows.a, color: 'blue', icon: Database },
-                  { section: t.adminManual.content.workflows.b, color: 'purple', icon: Calendar },
-                  { section: t.adminManual.content.workflows.c, color: 'green', icon: Activity },
-                  { section: t.adminManual.content.workflows.d, color: 'orange', icon: CheckCircle },
-              ].map((wf, i) => (
-                  <div key={i} className={`bg-slate-900/80 border border-slate-700 hover:border-${wf.color}-500/50 p-6 rounded-[2rem] flex flex-col hover:-translate-y-2 transition-all duration-300 shadow-xl`}>
-                      <div className={`w-12 h-12 rounded-xl bg-${wf.color}-500/10 flex items-center justify-center text-${wf.color}-500 mb-4`}>
-                          <wf.icon size={24} />
-                      </div>
-                      <h3 className="font-bold text-xl text-white mb-4">{wf.section.title}</h3>
-                      <ul className="space-y-3 text-sm text-slate-400 flex-1">
-                          {wf.section.steps.map((step: string, idx: number) => (
-                              <li key={idx} className="flex gap-2">
-                                  <span className={`text-${wf.color}-500 font-bold`}>•</span>
-                                  {step}
-                              </li>
-                          ))}
-                      </ul>
-                  </div>
-              ))}
-          </div>
-      </div>
-  );
-
-  const AdvancedSlide = () => (
-      <div className="flex flex-col justify-center h-full max-w-5xl mx-auto px-6 relative z-10 animate-fade-in-up">
-          <h2 className="text-4xl md:text-6xl font-black text-white mb-16 text-center">{t.adminManual.slides.advanced}</h2>
-          
-          <div className="space-y-8">
-              <div className="bg-slate-800/50 p-8 rounded-3xl border border-indigo-500/30 flex gap-6 items-start hover:bg-slate-800 transition-colors">
-                  <div className="p-4 bg-indigo-500/20 rounded-2xl text-indigo-400 shrink-0"><Settings size={32}/></div>
-                  <div>
-                      <h3 className="text-2xl font-bold text-white mb-2">{t.adminManual.content.advanced.gov.title}</h3>
-                      <p className="text-lg text-slate-300">{t.adminManual.content.advanced.gov.desc}</p>
-                  </div>
-              </div>
-
-              <div className="bg-slate-800/50 p-8 rounded-3xl border border-red-500/30 flex gap-6 items-start hover:bg-slate-800 transition-colors">
-                  <div className="p-4 bg-red-500/20 rounded-2xl text-red-400 shrink-0"><Lock size={32}/></div>
-                  <div>
-                      <h3 className="text-2xl font-bold text-white mb-2">{t.adminManual.content.advanced.alcohol.title}</h3>
-                      <p className="text-lg text-slate-300">{t.adminManual.content.advanced.alcohol.desc}</p>
                   </div>
               </div>
           </div>
       </div>
   );
-
-  // --- NEW ROBOTICS SLIDE ---
-  const RoboticsSlide = () => {
-      // Fallback in case translations aren't updated yet (though they should be)
-      const robo = t.adminManual.content.robotics || {
-          title: 'Robotic Self-Healing Protocols',
-          subtitle: 'Automated resilience and diagnostic systems.',
-          crash: {
-              title: 'Auto-Recovery Engine',
-              desc: 'The system utilizes a React Error Boundary wrapper. If a critical runtime error occurs (e.g., memory leak or unhandled exception), the "RoboTech" protocol intercepts the crash, displays a diagnostic visualization to the user, and attempts a soft-reload of the state to prevent a hard browser crash.'
-          },
-          diagnostics: {
-              title: 'Active Diagnostics',
-              desc: 'System Admins can manually trigger the "RoboTech Healer Protocol" from the Settings page. This runs a background thread that scans for database latency, optimizes memory shards, and verifies API integrity without interrupting active users.'
-          }
-      };
-
-      return (
-      <div className="flex flex-col justify-center h-full max-w-6xl mx-auto px-6 relative z-10 animate-fade-in-up">
-          <h2 className="text-4xl md:text-6xl font-black text-white mb-6 text-center tracking-tight flex items-center justify-center gap-4">
-              <Cpu size={48} className="text-cyan-400" />
-              {robo.title}
-          </h2>
-          <p className="text-xl text-cyan-200 text-center mb-16">{robo.subtitle}</p>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
-              
-              {/* Feature 1: Recovery */}
-              <div className="bg-slate-900/90 border border-red-500/30 p-8 rounded-[2.5rem] relative overflow-hidden group">
-                  <div className="absolute top-0 right-0 p-6 opacity-10"><Zap size={100} /></div>
-                  <div className="relative z-10">
-                      <div className="flex items-center gap-4 mb-4">
-                          <div className="p-3 bg-red-900/30 rounded-2xl text-red-400 border border-red-500/20">
-                              <GitPullRequest size={32} />
-                          </div>
-                          <h3 className="text-2xl font-bold text-white">{robo.crash.title}</h3>
-                      </div>
-                      <p className="text-lg text-slate-400 leading-relaxed">
-                          {robo.crash.desc}
-                      </p>
-                      <div className="mt-6 flex items-center gap-2 text-sm font-mono text-red-400">
-                          <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse"></span>
-                          Demo: Click "Simulate Crash" in Logs Page
-                      </div>
-                  </div>
-              </div>
-
-              {/* Feature 2: Diagnostics */}
-              <div className="bg-slate-900/90 border border-cyan-500/30 p-8 rounded-[2.5rem] relative overflow-hidden group">
-                  <div className="absolute top-0 right-0 p-6 opacity-10"><Activity size={100} /></div>
-                  <div className="relative z-10">
-                      <div className="flex items-center gap-4 mb-4">
-                          <div className="p-3 bg-cyan-900/30 rounded-2xl text-cyan-400 border border-cyan-500/20">
-                              <Terminal size={32} />
-                          </div>
-                          <h3 className="text-2xl font-bold text-white">{robo.diagnostics.title}</h3>
-                      </div>
-                      <p className="text-lg text-slate-400 leading-relaxed">
-                          {robo.diagnostics.desc}
-                      </p>
-                      <div className="mt-6 flex items-center gap-2 text-sm font-mono text-cyan-400">
-                          <span className="w-2 h-2 rounded-full bg-cyan-500 animate-pulse"></span>
-                          Action: Settings &gt; Diagnostics &gt; Initiate
-                      </div>
-                  </div>
-              </div>
-
-          </div>
-      </div>
-      );
-  };
-
-  const TroubleshootSlide = () => (
-      <div className="flex flex-col justify-center h-full max-w-6xl mx-auto px-6 relative z-10 animate-fade-in-up">
-          <h2 className="text-4xl md:text-6xl font-black text-white mb-16 text-center">{t.adminManual.slides.troubleshoot}</h2>
-          
-          <div className="bg-slate-900/80 rounded-[2rem] border border-slate-700 overflow-hidden shadow-2xl">
-              <div className="grid grid-cols-12 bg-slate-800 p-4 text-xs font-bold text-slate-400 uppercase tracking-wider">
-                  <div className="col-span-4 pl-4">Issue</div>
-                  <div className="col-span-1 text-center">Visual</div>
-                  <div className="col-span-7">Solution</div>
-              </div>
-              <div className="divide-y divide-slate-700/50">
-                  {Object.values(t.adminManual.content.troubleshoot).map((item: any, i: number) => (
-                      <div key={i} className="grid grid-cols-12 p-6 items-center hover:bg-slate-800/30 transition-colors">
-                          <div className="col-span-4 pl-4 font-bold text-white text-lg">{item.issue}</div>
-                          <div className="col-span-1 text-center text-2xl">
-                              {i === 0 ? '❌' : i === 1 ? '🔒' : i === 2 ? '🚗' : i === 3 ? '📱' : '🐌'}
-                          </div>
-                          <div className="col-span-7 text-slate-300 text-base">{item.solution}</div>
-                      </div>
-                  ))}
-              </div>
-          </div>
-      </div>
-  );
-
-  const ArchitectureSlide = () => {
-      // Use fallback if architecture keys are missing (for safety, though they should be there)
-      const arch = t.adminManual.content.architecture || {
-          ui: '[ USER INTERFACE ]',
-          gate: '[ PERMISSION GATE ]',
-          gateDesc: 'Checks User Role (System Admin vs User)',
-          logic: '[ LOGIC ENGINE ]',
-          checkCap: 'Check Capacity',
-          checkMatrix: 'Check Matrix Lock',
-          checkDl: 'Check DL Validity',
-          dbState: '[ DATABASE STATE ]',
-          updateRecord: 'Updates Booking / Employee Record',
-          automation: '[ AUTOMATION ]',
-          emailTrig: '📧 Email/SMS Trigger',
-          printTrig: '🖨️ Auto-Print Register',
-          aiTrig: '🤖 AI Analysis Update'
-      };
-
-      return (
-      <div className="flex flex-col justify-center h-full max-w-4xl mx-auto px-6 relative z-10 animate-fade-in-up">
-          <h2 className="text-4xl md:text-6xl font-black text-white mb-12 text-center">{t.adminManual.slides.architecture}</h2>
-          
-          <div className="bg-slate-950 p-12 rounded-[2rem] border border-slate-800 shadow-2xl relative overflow-hidden font-mono">
-              <div className="absolute top-0 right-0 p-8 opacity-10"><Workflow size={200} /></div>
-              
-              <div className="flex flex-col items-center gap-6 relative z-10 text-slate-300">
-                  <div className="px-6 py-3 bg-slate-800 rounded-lg border border-slate-600 w-72 text-center font-bold text-white shadow-lg">{arch.ui}</div>
-                  <div className="h-8 w-0.5 bg-slate-600"></div>
-                  
-                  <div className="relative">
-                      <div className="px-6 py-3 bg-slate-800 rounded-lg border border-slate-600 w-72 text-center font-bold text-white shadow-lg">{arch.gate}</div>
-                      <div className="absolute left-full top-1/2 -translate-y-1/2 ml-4 w-40 text-[10px] text-slate-500 italic hidden md:block">
-                          &lt;-- {arch.gateDesc}
-                      </div>
-                  </div>
-                  
-                  <div className="h-8 w-0.5 bg-slate-600"></div>
-                  
-                  <div className="p-6 bg-slate-900 rounded-xl border border-blue-500/30 w-full text-center relative shadow-lg shadow-blue-900/20">
-                      <div className="font-bold text-blue-400 text-xl mb-4">{arch.logic}</div>
-                      <div className="grid grid-cols-3 gap-4 text-[10px] md:text-xs">
-                          <div className="bg-slate-800 p-2 rounded border border-slate-700">{arch.checkCap}</div>
-                          <div className="bg-slate-800 p-2 rounded border border-slate-700">{arch.checkMatrix}</div>
-                          <div className="bg-slate-800 p-2 rounded border border-slate-700">{arch.checkDl}</div>
-                      </div>
-                  </div>
-
-                  <div className="h-8 w-0.5 bg-slate-600"></div>
-                  
-                  <div className="relative">
-                      <div className="px-6 py-3 bg-slate-800 rounded-lg border border-slate-600 w-72 text-center font-bold text-white shadow-lg">{arch.dbState}</div>
-                      <div className="absolute right-full top-1/2 -translate-y-1/2 mr-4 w-40 text-[10px] text-right text-slate-500 italic hidden md:block">
-                          {arch.updateRecord} --&gt;
-                      </div>
-                  </div>
-
-                  <div className="h-8 w-0.5 bg-slate-600"></div>
-
-                  <div className="w-full">
-                      <div className="text-center text-xs text-green-500 font-bold mb-2 uppercase tracking-widest">{arch.automation}</div>
-                      <div className="grid grid-cols-3 gap-4 w-full">
-                          <div className="bg-slate-900 p-3 rounded-lg border border-green-500/30 text-center text-[10px] md:text-xs text-green-300 shadow-lg">{arch.emailTrig}</div>
-                          <div className="bg-slate-900 p-3 rounded-lg border border-green-500/30 text-center text-[10px] md:text-xs text-green-300 shadow-lg">{arch.printTrig}</div>
-                          <div className="bg-slate-900 p-3 rounded-lg border border-green-500/30 text-center text-[10px] md:text-xs text-green-300 shadow-lg">{arch.aiTrig}</div>
-                      </div>
-                  </div>
-              </div>
-          </div>
-      </div>
-      );
-  };
 
   const renderSlide = () => {
       switch(slides[currentSlide].id) {
           case 'intro': return <IntroSlide />;
+          case 'branding': return <BrandingSlide />;
           case 'logic': return <LogicSlide />;
-          case 'dashboard': return <DashboardSlide />;
-          case 'workflows': return <WorkflowsSlide />;
-          case 'advanced': return <AdvancedSlide />;
-          case 'robotics': return <RoboticsSlide />; // NEW
-          case 'troubleshoot': return <TroubleshootSlide />;
-          case 'architecture': return <ArchitectureSlide />;
-          default: return <IntroSlide />;
+          default: return <div className="flex items-center justify-center min-h-[70vh] text-slate-500 font-mono italic">Module Content Under Review...</div>;
       }
   };
 
   return (
-    <div className="fixed inset-0 z-[100] bg-slate-950 text-white overflow-hidden font-sans select-none">
-        
-        {/* Cinematic Background Layer */}
+    <div className="fixed inset-0 z-[100] bg-slate-950 text-white overflow-hidden font-sans select-none flex flex-col">
         <div className="absolute inset-0 z-0">
             <div className="absolute inset-0 bg-gradient-to-br from-slate-950 via-[#020617] to-slate-900"></div>
-            <div className="absolute inset-0 opacity-[0.03]" style={{ backgroundImage: 'linear-gradient(#fff 1px, transparent 1px), linear-gradient(90deg, #fff 1px, transparent 1px)', backgroundSize: '50px 50px' }}></div>
             <div className="absolute top-[-20%] left-[-10%] w-[50%] h-[50%] bg-blue-900/10 rounded-full blur-[150px] animate-pulse-slow"></div>
-            <div className="absolute bottom-[-20%] right-[-10%] w-[50%] h-[50%] bg-purple-900/10 rounded-full blur-[150px] animate-pulse-slow delay-1000"></div>
         </div>
 
-        {/* Slide Content */}
-        <div className="relative z-10 h-full w-full overflow-y-auto pb-32 scrollbar-hide">
-            <div className="min-h-full flex flex-col justify-center p-4 md:p-8 lg:p-16">
+        {/* Content Container - Scrollable */}
+        <div className="relative z-10 flex-1 w-full overflow-y-auto overflow-x-hidden scrollbar-hide flex flex-col">
+            <div className="flex-1 w-full flex flex-col justify-center px-4 md:px-8 lg:px-16 py-12">
                 {renderSlide()}
             </div>
+            
+            {/* Nav Padding to avoid overlap with sticky bar */}
+            <div className="h-32 w-full shrink-0"></div>
         </div>
 
         {/* Navigation Bar */}
-        <div className="fixed bottom-8 left-1/2 -translate-x-1/2 h-20 bg-white/5 backdrop-blur-xl border border-white/10 rounded-full flex items-center px-4 shadow-2xl z-50 ring-1 ring-white/5 transition-all hover:bg-white/10">
+        <div className="fixed bottom-8 left-1/2 -translate-x-1/2 h-16 md:h-20 bg-slate-900/60 backdrop-blur-2xl border border-white/10 rounded-full flex items-center px-4 shadow-2xl z-50 ring-1 ring-white/5 transition-all hover:bg-slate-900/80">
             <button 
-                onClick={prevSlide}
-                disabled={currentSlide === 0}
-                className="w-14 h-14 rounded-full flex items-center justify-center hover:bg-white/10 disabled:opacity-30 text-white transition-all active:scale-90"
+                onClick={prevSlide} 
+                disabled={currentSlide === 0} 
+                className="w-12 h-12 md:w-14 md:h-14 rounded-full flex items-center justify-center hover:bg-white/10 disabled:opacity-30 text-white transition-all active:scale-90"
             >
                 <ChevronLeft size={32} />
             </button>
-            
-            <div className="px-8 flex flex-col items-center min-w-[180px]">
-                <span className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Admin Guide</span>
-                <div className="flex items-center gap-3">
-                    <span className="text-2xl font-mono font-bold text-white leading-none">
-                        {currentSlide + 1} <span className="text-slate-600">/</span> {slides.length}
-                    </span>
-                </div>
+            <div className="px-6 md:px-10 flex flex-col items-center min-w-[150px] md:min-w-[200px]">
+                <span className="text-[10px] md:text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Admin Guide</span>
+                <span className="text-xl md:text-2xl font-mono font-bold text-white leading-none">
+                    {currentSlide + 1} <span className="text-slate-600">/</span> {slides.length}
+                </span>
             </div>
-
             <button 
-                onClick={nextSlide}
-                disabled={currentSlide === slides.length - 1}
-                className="w-14 h-14 rounded-full flex items-center justify-center hover:bg-white/10 disabled:opacity-30 text-white transition-all active:scale-90"
+                onClick={nextSlide} 
+                disabled={currentSlide === slides.length - 1} 
+                className="w-12 h-12 md:w-14 md:h-14 rounded-full flex items-center justify-center hover:bg-white/10 disabled:opacity-30 text-white transition-all active:scale-90"
             >
                 <ChevronRight size={32} />
             </button>
-
-            <div className="w-px h-10 bg-white/10 mx-4"></div>
-
+            <div className="w-px h-10 bg-white/10 mx-4 hidden md:block"></div>
             <button 
-                onClick={toggleFullScreen}
-                className="w-14 h-14 rounded-full flex items-center justify-center hover:bg-white/10 text-slate-400 hover:text-white transition-all"
-                title="Fullscreen"
+                onClick={toggleFullScreen} 
+                className="w-10 h-10 md:w-12 md:h-12 rounded-full flex items-center justify-center hover:bg-white/10 text-slate-400 hover:text-white transition-all"
             >
-                {isFullscreen ? <Minimize size={24} /> : <Maximize size={24} />}
+                {isFullscreen ? <Minimize size={20} /> : <Maximize size={20} />}
             </button>
-
             <button 
-                onClick={() => navigate('/')}
-                className="w-14 h-14 rounded-full flex items-center justify-center hover:bg-red-500/20 text-red-400 hover:text-red-500 transition-all ml-2"
-                title="Exit Guide"
+                onClick={() => navigate('/')} 
+                className="w-10 h-10 md:w-12 md:h-12 rounded-full flex items-center justify-center hover:bg-red-500/20 text-red-400 hover:text-red-500 transition-all ml-2"
             >
-                <X size={24} />
+                <X size={20} />
             </button>
         </div>
-        
+
         {/* Progress Bar Top */}
-        <div className="fixed top-0 left-0 h-1.5 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 transition-all duration-500 ease-out z-50 shadow-[0_0_20px_rgba(59,130,246,0.5)]" style={{ width: `${((currentSlide + 1) / slides.length) * 100}%` }}></div>
+        <div className="fixed top-0 left-0 h-1 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 transition-all duration-500 ease-out z-[110] shadow-[0_0_20px_rgba(59,130,246,0.5)]" style={{ width: `${((currentSlide + 1) / slides.length) * 100}%` }}></div>
     </div>
   );
 };

@@ -25,6 +25,7 @@ import AlcoholIntegration from './pages/AlcoholIntegration';
 import TechnicalDocs from './pages/TechnicalDocs';
 import FeedbackAdminPage from './pages/FeedbackAdminPage';
 import MessageLogPage from './pages/MessageLogPage';
+import IntegrationHub from './pages/IntegrationHub';
 import GeminiAdvisor from './components/GeminiAdvisor';
 import FeedbackModal from './components/FeedbackModal';
 import { AdvisorProvider } from './contexts/AdvisorContext';
@@ -79,7 +80,6 @@ const App: React.FC = () => {
   
   const [companies, setCompanies] = useState<Company[]>(() => {
       const saved = localStorage.getItem('cars_companies');
-      // CRITICAL: Initialize with default app branding for Vulcan
       return saved ? JSON.parse(saved) : [{ 
           id: 'c1', 
           name: 'Vulcan', 
@@ -291,6 +291,12 @@ const App: React.FC = () => {
                   <Route path="/enterprise-dashboard" element={
                       [UserRole.SYSTEM_ADMIN, UserRole.ENTERPRISE_ADMIN].includes(userRole) 
                       ? <EnterpriseDashboard sites={sites} bookings={bookings} requirements={requirements} userRole={userRole} /> 
+                      : <Navigate to="/" replace />
+                  } />
+
+                  <Route path="/integration" element={
+                      [UserRole.SYSTEM_ADMIN, UserRole.ENTERPRISE_ADMIN].includes(userRole) 
+                      ? <IntegrationHub userRole={userRole} /> 
                       : <Navigate to="/" replace />
                   } />
 

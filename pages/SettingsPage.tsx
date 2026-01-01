@@ -1,4 +1,4 @@
-import React, { useState, useRef, useMemo } from 'react';
+import React, { useState, useRef, useMemo, useEffect } from 'react';
 import { Settings, Users, Box, Save, Plus, Trash2, Tag, Edit2, Check, X, AlertCircle, Sliders, MapPin, User as UserIcon, Hash, LayoutGrid, Building2, Map, ShieldCheck, Mail, Lock, Calendar, MessageSquare, Clock, GitMerge, RefreshCw, Terminal, CheckCircle, ChevronLeft, ChevronRight, Activity, Cpu, Zap, Power, UploadCloud, Globe, Wine, Edit, Upload, Image as ImageIcon, Sparkles } from 'lucide-react';
 import { RacDef, Room, Trainer, Site, Company, UserRole, User, SystemNotification } from '../types';
 import { v4 as uuidv4 } from 'uuid';
@@ -95,11 +95,16 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
   
   // Local Tenant Branding State (for Enterprise Admins)
   const myCompany = useMemo(() => {
-    return companies.find(c => c.id === 'c1') || companies[0];
+    return (companies || []).find(c => c.id === 'c1') || companies?.[0];
   }, [companies]);
 
-  const [brandDraft, setBrandDraft] = useState<Partial<Company>>(myCompany);
+  const [brandDraft, setBrandDraft] = useState<Partial<Company>>(myCompany || {});
   
+  // Refresh brandDraft if myCompany changes (due to global state update)
+  useEffect(() => {
+    if (myCompany) setBrandDraft(myCompany);
+  }, [myCompany]);
+
   // ROOM STATE (Fixed Capacity)
   const [newRoom, setNewRoom] = useState<{ name: string; capacity: string }>({ name: '', capacity: '20' });
   const [editingRoomId, setEditingRoomId] = useState<string | null>(null);
@@ -134,7 +139,6 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
       }
   };
 
-  // Fix: Added handleDeleteCompany to handle tenant removal with confirmation.
   const handleDeleteCompany = (id: string) => {
       if (onUpdateCompanies) {
           setConfirmState({
@@ -147,7 +151,6 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
       }
   };
 
-  // Fix: Added handleUpdateCompany to save changes to an existing tenant profile.
   const handleUpdateCompany = () => {
       if (editingCompany && onUpdateCompanies) {
           onUpdateCompanies(companies.map(c => c.id === editingCompany.id ? editingCompany : c));
@@ -272,13 +275,18 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
       }, 200);
   };
 
-  const handleManualReboot = () => {
-      try {
-          window.location.reload();
-      } catch {
-          window.location.href = window.location.href;
+  const activeTabs = useMemo(() => {
+      const tabs = ['General', 'Trainers'];
+      if (canAccessRacs) tabs.push('RACs');
+      if (canAccessSites) tabs.push('Sites');
+      if (canAccessBranding) tabs.push('Branding');
+      if (isSystemAdmin) {
+          tabs.push('Companies');
+          tabs.push('Integration');
+          tabs.push('Diagnostics');
       }
-  };
+      return tabs;
+  }, [canAccessRacs, canAccessSites, canAccessBranding, isSystemAdmin]);
 
   return (
     <div className="space-y-6 pb-24 animate-fade-in-up relative h-full">
@@ -320,21 +328,14 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
             {/* Sidebar */}
             <div className="w-full lg:w-72 space-y-3 h-fit">
                 <nav className="bg-white dark:bg-slate-800 rounded-2xl shadow-xl border border-slate-100 dark:border-slate-700 p-3">
-                    {[
-                        'General', 
-                        'Trainers', 
-                        ...(canAccessRacs ? ['RACs'] : []), 
-                        ...(canAccessSites ? ['Sites'] : []), 
-                        ...(canAccessBranding ? ['Branding'] : []),
-                        ...(isSystemAdmin ? ['Companies', 'Integration', 'Diagnostics'] : [])
-                    ].map((tab) => (
+                    {activeTabs.map((tab) => (
                         <button 
                             key={tab}
                             onClick={() => setActiveTab(tab as any)}
                             className={`w-full text-left px-4 py-4 rounded-xl text-sm font-bold transition-all flex items-center gap-4 group mb-1 ${activeTab === tab ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-lg' : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700/50'}`}
                         >
                             {tab === 'Diagnostics' ? <Activity size={20} /> : tab === 'Companies' ? <Building2 size={20} /> : tab === 'Branding' ? <Sparkles size={20} /> : <Box size={20} />}
-                            <span>{tab}</span>
+                            <span>{t.settings.tabs[tab.toLowerCase().replace(' ', '') as keyof typeof t.settings.tabs] || tab}</span>
                         </button>
                     ))}
                 </nav>
@@ -383,42 +384,42 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
                         <div className="max-w-4xl mx-auto animate-fade-in">
                             <div className="flex justify-between items-center mb-8 border-b border-slate-200 dark:border-slate-700 pb-6">
                                 <div>
-                                    <h3 className="text-2xl font-black text-slate-900 dark:text-white">Tenant Branding</h3>
-                                    <p className="text-sm text-slate-500 mt-1">Update your application identity and safety logos.</p>
+                                    <h3 className="text-2xl font-black text-slate-900 dark:text-white">{t.settings.branding.title}</h3>
+                                    <p className="text-sm text-slate-500 mt-1">{t.settings.branding.subtitle}</p>
                                 </div>
                                 <button 
                                     onClick={handleSaveBranding}
                                     className="px-6 py-2 bg-indigo-600 text-white rounded-xl font-bold hover:bg-indigo-500 shadow-lg transition-all"
                                 >
-                                    Save Branding
+                                    {t.settings.branding.save}
                                 </button>
                             </div>
 
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                                 <div className="space-y-6">
                                     <div>
-                                        <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-2 ml-1">Brand Name</label>
+                                        <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-2 ml-1">{t.settings.branding.brandName}</label>
                                         <input 
-                                            className="w-full p-4 rounded-xl border-2 dark:border-slate-600 dark:bg-slate-700 font-bold text-lg"
-                                            value={brandDraft.name}
+                                            className="w-full p-4 rounded-xl border-2 dark:border-slate-600 dark:bg-slate-700 font-bold text-lg text-slate-800 dark:text-white"
+                                            value={brandDraft.name || ''}
                                             onChange={e => setBrandDraft({...brandDraft, name: e.target.value})}
                                         />
                                     </div>
                                     <div>
-                                        <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-2 ml-1">Application Name</label>
+                                        <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-2 ml-1">{t.settings.branding.appName}</label>
                                         <input 
                                             className="w-full p-4 rounded-xl border-2 dark:border-slate-600 dark:bg-slate-700 font-bold text-lg text-indigo-600 dark:text-indigo-400"
-                                            value={brandDraft.appName}
+                                            value={brandDraft.appName || ''}
                                             placeholder="e.g. Vulcan Safety"
                                             onChange={e => setBrandDraft({...brandDraft, appName: e.target.value})}
                                         />
-                                        <p className="text-[10px] text-slate-400 mt-2">This name appears in the sidebar and main header.</p>
+                                        <p className="text-[10px] text-slate-400 mt-2">{t.settings.branding.appNameDesc}</p>
                                     </div>
                                 </div>
 
                                 <div className="space-y-6">
                                     <div>
-                                        <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-3 ml-1">Corporate Logo</label>
+                                        <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-3 ml-1">{t.settings.branding.corporateLogo}</label>
                                         <div 
                                             onClick={() => editFileInputRef.current?.click()}
                                             className="h-32 border-2 border-dashed border-slate-300 dark:border-slate-600 rounded-2xl flex flex-col items-center justify-center cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-900 transition-all overflow-hidden"
@@ -428,7 +429,7 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
                                             ) : (
                                                 <div className="text-center">
                                                     <Upload className="mx-auto text-slate-400 mb-2" size={24} />
-                                                    <span className="text-xs font-bold text-slate-500">Upload Brand Logo</span>
+                                                    <span className="text-xs font-bold text-slate-500">{t.settings.branding.upload}</span>
                                                 </div>
                                             )}
                                         </div>
@@ -436,7 +437,7 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
                                     </div>
 
                                     <div>
-                                        <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-3 ml-1">Safety First Logo</label>
+                                        <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-3 ml-1">{t.settings.branding.safetyLogo}</label>
                                         <div 
                                             onClick={() => safetyLogoRef.current?.click()}
                                             className="h-32 border-2 border-dashed border-slate-300 dark:border-slate-600 rounded-2xl flex flex-col items-center justify-center cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-900 transition-all overflow-hidden"
@@ -446,12 +447,12 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
                                             ) : (
                                                 <div className="text-center">
                                                     <ShieldCheck className="mx-auto text-yellow-500 mb-2" size={24} />
-                                                    <span className="text-xs font-bold text-slate-500">Upload Safety Logo</span>
+                                                    <span className="text-xs font-bold text-slate-500">{t.settings.branding.upload}</span>
                                                 </div>
                                             )}
                                         </div>
                                         <input type="file" ref={safetyLogoRef} className="hidden" accept="image/*" onChange={(e) => handleLogoUpload(e, 'safety')} />
-                                        <p className="text-[10px] text-slate-400 mt-2 italic">Typically a "Safety First" or RAC-specific badge.</p>
+                                        <p className="text-[10px] text-slate-400 mt-2 italic">{t.settings.branding.safetyLogoDesc}</p>
                                     </div>
                                 </div>
                             </div>
@@ -557,7 +558,7 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
                             {provisionSuccess && <div className="mb-4 p-3 bg-green-100 text-green-700 rounded-lg flex items-center gap-2"><CheckCircle size={16}/> {provisionSuccess}</div>}
                             
                             <div className="space-y-3 mb-8">
-                                {companies.map(comp => (
+                                {(companies || []).map(comp => (
                                     <div key={comp.id} className="flex justify-between items-center p-4 bg-white dark:bg-slate-800 border dark:border-slate-700 rounded-xl hover:border-indigo-300 transition-colors">
                                         <div className="font-bold text-slate-800 dark:text-white flex items-center gap-3">
                                             {comp.logoUrl ? (

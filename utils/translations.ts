@@ -1,4 +1,3 @@
-
 export type Language = 'en' | 'pt';
 
 export const formatDate = (dateString: string | undefined): string => {
@@ -23,7 +22,6 @@ export const translations = {
       of: 'of',
       name: 'Name',
       id: 'ID',
-      // Added missing date property
       date: 'Date',
       company: 'Company',
       department: 'Department',
@@ -94,11 +92,50 @@ export const translations = {
       feedbackAdmin: 'Feedback',
       adminGuide: 'Admin Guide',
       presentation: 'Presentation',
-      proposal: 'Proposal'
+      proposal: 'Proposal',
+      integration: 'Connectors'
     },
-    auth: {
-      login: 'Login',
-      logout: 'Logout'
+    integrationHub: {
+      title: 'Data Integration Hub',
+      subtitle: 'Connect to external employee databases (SAP, Excel, SQL)',
+      newConnector: 'New Connector',
+      activeConnectors: 'Active Connectors',
+      syncHistory: 'Sync History',
+      lastSync: 'Last Sync',
+      healthy: 'Healthy',
+      error: 'Error',
+      idle: 'Idle',
+      syncNow: 'Sync Now',
+      dryRun: 'Dry Run',
+      validateMapping: 'Validate Mapping',
+      scheduler: 'Sync Schedule',
+      wizard: {
+        step1Title: 'Select Source Type',
+        step1Desc: 'Choose how your employee data is stored.',
+        step2Title: 'Configuration',
+        step2Desc: 'Enter connection details or upload file.',
+        step3Title: 'Visual Column Mapper',
+        step3Desc: 'Bridge your data fields with the CARS system.',
+        step4Title: 'Validation & Preview',
+        step4Desc: 'Verify data integrity before finalizing.',
+        systemField: 'System Field',
+        sourceField: 'Source Column',
+        mappingSuccess: 'Mapping Validated'
+      },
+      types: {
+        excel: 'Excel / CSV',
+        database: 'SQL Database',
+        api: 'Custom App / API'
+      },
+      conflicts: {
+        title: 'Conflict Resolution',
+        desc: 'Duplicate records found across sources. Select the master data.',
+        trustSource: 'Trust Hierarchy',
+        manualReview: 'Review Conflict',
+        resolveAll: 'Auto-Resolve All',
+        keepSource: 'Keep Source',
+        keepSystem: 'Keep System'
+      }
     },
     dashboard: {
       title: 'Dashboard',
@@ -308,7 +345,9 @@ export const translations = {
         racs: 'RAC Definitions',
         sites: 'Sites',
         companies: 'Companies',
-        integration: 'Integration'
+        integration: 'Integration',
+        branding: 'Branding',
+        diagnostics: 'Diagnostics'
       },
       rooms: {
         title: 'Training Rooms',
@@ -325,6 +364,18 @@ export const translations = {
         title: 'RAC Standards',
         code: 'Code',
         description: 'Description'
+      },
+      branding: {
+        title: 'Tenant Branding',
+        subtitle: 'Update application identity and safety logos.',
+        save: 'Save Branding',
+        brandName: 'Brand Name',
+        appName: 'Application Name',
+        appNameDesc: 'This name appears in the sidebar and main header.',
+        corporateLogo: 'Corporate Logo',
+        safetyLogo: 'Safety First Logo',
+        safetyLogoDesc: 'Typically a "Safety First" or RAC-specific badge.',
+        upload: 'Upload Logo'
       },
       integrationPage: {
         title: 'Data Integration',
@@ -480,37 +531,37 @@ export const translations = {
         complianceRatio: 'Compliance Ratio',
         liveStream: 'Real-time Stream',
         mqtt: 'MQTT Protocol',
-        deviceHealth: 'Device Fleet Health',
+        deviceHealth: 'Device Health',
         alert: {
           title: 'ALCOHOL DETECTED',
-          desc: 'Positive reading detected at gate.',
-          measured: 'Measured BAC'
+          desc: 'Positive reading detected.',
+          measured: 'Measured'
         },
-        actions: 'Automated Actions',
+        actions: 'Actions',
         actionLog: {
-          locked: 'Turnstile Locked',
-          generating: 'Generating Incident Report...',
-          logged: 'Incident Logged',
-          contacting: 'Contacting Supervisor...',
-          sent: 'Alert Sent'
+          locked: 'Locked',
+          generating: 'Generating...',
+          logged: 'Logged',
+          contacting: 'Contacting...',
+          sent: 'Sent'
         },
-        close: 'Dismiss Alert'
+        close: 'Close'
       },
       protocol: {
-        title: 'Safety Protocol',
-        positiveTitle: 'Positive Test (> 0.000)',
-        positiveDesc: 'Immediate turnstile lockout. Supervisor notified.',
-        resetTitle: 'System Reset',
-        resetDesc: 'Manual reset required by HSE officer.'
+        title: 'Protocol',
+        positiveTitle: 'Positive',
+        positiveDesc: 'Lockout.',
+        resetTitle: 'Reset',
+        resetDesc: 'Manual.'
       },
       features: {
-        title: 'System Features',
-        iotTitle: 'IoT Integration',
-        iotDesc: 'Real-time synchronization with breathalyzers.',
-        accessTitle: 'Access Control',
-        accessDesc: 'Physical barrier integration.',
-        complianceTitle: 'Zero Tolerance',
-        complianceDesc: 'Strict compliance enforcement.'
+        title: 'Features',
+        iotTitle: 'IoT',
+        iotDesc: 'Connected.',
+        accessTitle: 'Access',
+        accessDesc: 'Barriers.',
+        complianceTitle: 'Compliance',
+        complianceDesc: 'Rules.'
       }
     },
     logs: {
@@ -538,9 +589,9 @@ export const translations = {
         dashboard: '3. Dashboard',
         workflows: '4. Workflows',
         advanced: '5. Advanced Config',
-        robotics: '7. Robotic Protocols',
-        troubleshoot: '8. Troubleshooting',
-        architecture: '6. System Architecture'
+        robotics: '6. Robotic Protocols',
+        troubleshoot: '7. Troubleshooting',
+        architecture: '8. System Architecture'
       },
       content: {
         confidential: 'CONFIDENTIAL',
@@ -571,7 +622,7 @@ export const translations = {
           a: { title: 'Data Ingestion', steps: ['Source A (SAP)', 'Source B (Contractor)', 'Middleware Sync'] },
           b: { title: 'Processing', steps: ['ID Normalization', 'Conflict Resolution', 'Status Calculation'] },
           c: { title: 'Analytics', steps: ['Compliance Rate', 'Trend Analysis', 'AI Reporting'] },
-          d: { title: 'Saída', steps: ['KPI do Painel', 'Controle de Acesso', 'Notificações'] }
+          d: { title: 'Output', steps: ['KPI Panel', 'Access Control', 'Notifications'] }
         },
         advanced: {
           gov: { title: 'Site Governance', desc: 'Define mandatory RACs per site.' },
@@ -587,28 +638,28 @@ export const translations = {
         architecture: {
           ui: '[ USER INTERFACE ]',
           gate: '[ PERMISSION GATE ]',
-          gateDesc: 'Checks User Role (System Admin vs User)',
+          gateDesc: 'Checks User Role',
           logic: '[ LOGIC ENGINE ]',
           checkCap: 'Check Capacity',
           checkMatrix: 'Check Matrix Lock',
           checkDl: 'Check DL Validity',
           dbState: '[ DATABASE STATE ]',
-          updateRecord: 'Updates Booking / Employee Record',
+          updateRecord: 'Updates Record',
           automation: '[ AUTOMATION ]',
-          emailTrig: '📧 Email/SMS Trigger',
-          printTrig: '🖨️ Auto-Print Register',
-          aiTrig: '🤖 AI Analysis Update'
+          emailTrig: '📧 Email/SMS',
+          printTrig: '🖨️ Auto-Print',
+          aiTrig: '🤖 AI Analysis'
         },
         robotics: {
           title: 'Robotic Self-Healing Protocols',
           subtitle: 'Automated resilience and diagnostic systems.',
           crash: {
             title: 'Auto-Recovery Engine',
-            desc: 'The system utilizes a React Error Boundary wrapper. If a critical runtime error occurs (e.g., memory leak or unhandled exception), the "RoboTech" protocol intercepts the crash, displays a diagnostic visualization to the user, and attempts a soft-reload of the state to prevent a hard browser crash.'
+            desc: 'The system utilizes a React Error Boundary wrapper. Intercepts crashes and attempts state recovery.'
           },
           diagnostics: {
             title: 'Active Diagnostics',
-            desc: 'System Admins can manually trigger the "RoboTech Healer Protocol" from the Settings page. This runs a background thread that scans for database latency, optimizes memory shards, and verifies API integrity without interrupting active users.'
+            desc: 'System Admins can manually trigger the "RoboTech Healer Protocol" to optimize memory and shards.'
           }
         }
       }
@@ -620,7 +671,7 @@ export const translations = {
         preferred: 'Pita',
         cert: 'Full Stack Developer',
         role: 'Lead Architect',
-        bio: 'Experienced developer specializing in enterprise safety systems and digital transformation.'
+        bio: 'Experienced developer specializing in enterprise safety systems.'
       },
       execSummary: {
         title: 'Executive Summary',
@@ -641,15 +692,15 @@ export const translations = {
       },
       timeline: {
         title: 'Implementation Timeline',
-        phase1: 'Phase 1: Discovery',
-        phase1desc: 'Requirements gathering',
-        phase2: 'Phase 2: Development',
-        phase2desc: 'Core system build',
-        phase3: 'Phase 3: Testing',
-        phase3desc: 'UAT & Bug fixes',
-        phase4: 'Phase 4: Deployment',
-        phase4desc: 'Go Live',
-        phase5: 'Phase 5: Support',
+        phase1: 'Discovery',
+        phase1desc: 'Requirements',
+        phase2: 'Development',
+        phase2desc: 'Build',
+        phase3: 'Testing',
+        phase3desc: 'UAT',
+        phase4: 'Deployment',
+        phase4desc: 'Live',
+        phase5: 'Support',
         phase5desc: 'Maintenance'
       },
       techStack: {
@@ -659,54 +710,54 @@ export const translations = {
         backendTitle: 'Backend',
         backend: 'Node.js, Express',
         databaseTitle: 'Database',
-        database: 'PostgreSQL / Supabase',
+        database: 'PostgreSQL',
         securityTitle: 'Security',
-        security: 'JWT, Role-Based Access'
+        security: 'JWT'
       },
       financials: {
         title: 'Financial Proposal',
         items: [
-          { name: 'Initial Development', type: 'One-time', cost: '$15,000.00' },
-          { name: 'Development & Setup', type: 'One-time', cost: '$3,000.00' },
-          { name: 'Cloud Infrastructure', type: 'Monthly', cost: '$3,500.00' },
+          { name: 'Initial Development', type: 'One-time', cost: '$12,000.00' },
+          { name: 'Development & Setup', type: 'One-time', cost: '$6,000.00' },
+          { name: 'Cloud Infrastructure', type: 'Monthly', cost: '$2,500.00' },
           { name: 'Training & Documentation', type: 'One-time', cost: '$2,500.00' },
-          { name: 'Maintenance & Support', type: 'Monthly', cost: '$3,000.00' }
+          { name: 'Maintenance & Support', type: 'Monthly', cost: '$1,500.00' }
         ]
       },
       roadmap: {
         title: 'Strategic Roadmap',
         auth: 'Authentication',
-        authDesc: 'SSO Integration',
+        authDesc: 'SSO',
         db: 'Database',
-        dbDesc: 'Cloud Migration',
+        dbDesc: 'Cloud',
         email: 'Notifications',
-        emailDesc: 'Email/SMS Gateway',
+        emailDesc: 'Gateway',
         hosting: 'Hosting',
-        hostingDesc: 'Scalable Cloud'
+        hostingDesc: 'Cloud'
       },
       aiFeatures: {
         title: 'AI Integration',
-        chatbot: 'Safety Advisor Chatbot',
-        reporting: 'Automated Insight Reports'
+        chatbot: 'Advisor',
+        reporting: 'Reports'
       },
       futureUpdates: {
         title: 'Future Modules',
-        moduleA: 'Module A - ERP Integration',
-        moduleB: 'Module B - Biometric Hardware'
+        moduleA: 'A - ERP',
+        moduleB: 'B - Hardware'
       },
       enhancedCaps: {
         title: 'Enhanced Capabilities',
-        mobileVerify: { desc: 'Mobile Verification App' },
-        autoBooking: { desc: 'Automated Booking Engine' },
-        massData: { desc: 'Big Data Analytics' }
+        mobileVerify: { desc: 'Mobile App' },
+        autoBooking: { desc: 'Auto-Booking' },
+        massData: { desc: 'Analytics' }
       },
       conclusion: {
         title: 'Conclusion',
-        text: 'This system represents a significant leap forward in safety management efficiency and compliance.'
+        text: 'This system represents a significant leap forward.'
       },
       thankYou: {
         title: 'Thank You',
-        contact: 'Contact us for more info',
+        contact: 'Contact us',
         phone: '+258 84 123 4567'
       },
       digitalTrans: 'Digital Transformation Initiative'
@@ -743,8 +794,8 @@ export const translations = {
       systemIntelligence: 'Platform-wide Intelligence',
       companyIntelligence: 'Intelligence for',
       aiPrompt: 'Generating AI Insights...',
-      aiPromptSystem: 'Analyzing multi-tenant risk vectors across all enterprises.',
-      aiPromptEnterprise: 'Analyzing site-specific compliance trends and bottlenecks.',
+      aiPromptSystem: 'Analyzing multi-tenant risk vectors.',
+      aiPromptEnterprise: 'Analyzing site compliance.',
       bottlenecks: 'Training Bottlenecks',
       failure: 'Fail Rate'
     },
@@ -780,7 +831,6 @@ export const translations = {
       of: 'de',
       name: 'Nome',
       id: 'ID',
-      // Added missing date property
       date: 'Data',
       company: 'Empresa',
       department: 'Departamento',
@@ -851,11 +901,50 @@ export const translations = {
       feedbackAdmin: 'Feedback',
       adminGuide: 'Guia do Admin',
       presentation: 'Apresentação',
-      proposal: 'Proposta'
+      proposal: 'Proposta',
+      integration: 'Conectores'
     },
-    auth: {
-      login: 'Entrar',
-      logout: 'Sair'
+    integrationHub: {
+      title: 'Hub de Integração de Dados',
+      subtitle: 'Conecte bases externas de funcionários (SAP, Excel, SQL)',
+      newConnector: 'Novo Conector',
+      activeConnectors: 'Conectores Ativos',
+      syncHistory: 'Histórico de Sincronização',
+      lastSync: 'Última Sinc.',
+      healthy: 'Saudável',
+      error: 'Erro',
+      idle: 'Inativo',
+      syncNow: 'Sincronizar Agora',
+      dryRun: 'Simulação',
+      validateMapping: 'Validar Mapeamento',
+      scheduler: 'Agendamento',
+      wizard: {
+        step1Title: 'Tipo de Origem',
+        step1Desc: 'Como seus dados estão armazenados.',
+        step2Title: 'Configuração',
+        step2Desc: 'Detalhes de conexão ou arquivo.',
+        step3Title: 'Mapeador Visual',
+        step3Desc: 'Ligue seus campos ao sistema RACS.',
+        step4Title: 'Validação e Prévia',
+        step4Desc: 'Verifique a integridade antes de finalizar.',
+        systemField: 'Campo do Sistema',
+        sourceField: 'Coluna de Origem',
+        mappingSuccess: 'Mapeamento Validado'
+      },
+      types: {
+        excel: 'Excel / CSV',
+        database: 'Banco SQL',
+        api: 'App Customizado / API'
+      },
+      conflicts: {
+        title: 'Resolução de Conflitos',
+        desc: 'Registros duplicados encontrados. Selecione a fonte mestre.',
+        trustSource: 'Hierarquia de Confiança',
+        manualReview: 'Revisar Conflito',
+        resolveAll: 'Auto-Resolver Tudo',
+        keepSource: 'Manter Origem',
+        keepSystem: 'Manter Sistema'
+      }
     },
     dashboard: {
       title: 'Painel',
@@ -863,7 +952,7 @@ export const translations = {
       upcoming: {
         title: 'Sessões Futuras',
         viewSchedule: 'Ver Cronograma',
-        date: 'Data',
+        date: 'Date',
         session: 'Sessão',
         capacity: 'Capacidade',
         status: 'Status'
@@ -903,7 +992,6 @@ export const translations = {
         subPart2: 'foram agendados automaticamente.'
       }
     },
-    // Portuguese Translations aligned with English Structure
     booking: {
       title: 'Novo Agendamento',
       selfServiceTitle: 'Autoatendimento',
@@ -1066,7 +1154,9 @@ export const translations = {
         racs: 'Definições RAC',
         sites: 'Locais',
         companies: 'Empresas',
-        integration: 'Integração'
+        integration: 'Integração',
+        branding: 'Marca',
+        diagnostics: 'Diagnósticos'
       },
       rooms: {
         title: 'Salas de Treinamento',
@@ -1084,17 +1174,29 @@ export const translations = {
         code: 'Código',
         description: 'Descrição'
       },
+      branding: {
+        title: 'Marca do Locatário',
+        subtitle: 'Atualize a identidade do aplicativo e logotipos de segurança.',
+        save: 'Salvar Marca',
+        brandName: 'Nome da Marca',
+        appName: 'Nome do Aplicativo',
+        appNameDesc: 'Este nome aparece na barra lateral e no cabeçalho principal.',
+        corporateLogo: 'Logotipo Corporativo',
+        safetyLogo: 'Logotipo Safety First',
+        safetyLogoDesc: 'Geralmente um distintivo "Safety First" ou específico de RAC.',
+        upload: 'Carregar Logotipo'
+      },
       integrationPage: {
         title: 'Integração de Dados',
         sourceA: 'Fonte A',
         sourceB: 'Fonte B',
         middleware: 'Status do Middleware',
-        processing: 'Processing...',
+        processing: 'Processando...',
         syncNow: 'Sincronizar Agora',
-        waiting: 'Aguardando comando de sincronização...'
+        waiting: 'Aguardando comando...'
       },
       saving: 'Salvando...',
-      saveAll: 'Salvar Todas as Alterações'
+      saveAll: 'Salvar Alterações'
     },
     cards: {
       title: 'Impressão de Cartões',
@@ -1102,7 +1204,7 @@ export const translations = {
       sending: 'Enviando Solicitação...',
       eligibility: {
         failedTitle: 'Não Elegível',
-        failedMsg: 'Você não atende aos requisitos para um cartão.',
+        failedMsg: 'Você não atende aos requisitos.',
         checkReqs: 'Verificar Requisitos'
       }
     },
@@ -1117,78 +1219,78 @@ export const translations = {
     },
     manuals: {
       title: 'Manuais do Usuário',
-      subtitle: 'Documentação do Sistema e Guias',
+      subtitle: 'Documentação do Sistema',
       sysAdmin: {
         title: 'Manual Admin do Sistema',
-        subtitle: 'Controle Completo do Sistema',
-        configTitle: 'Configuração do Sistema',
-        configDesc: 'Configurando os dados fundamentais.',
+        subtitle: 'Controle Completo',
+        configTitle: 'Configuração',
+        configDesc: 'Dados fundamentais.',
         rooms: 'Configurar Salas',
         trainers: 'Gerenciar Formadores',
-        racs: 'Definir RACs',
-        dbTitle: 'Gerenciamento de Banco de Dados',
-        dbDesc: 'Gerenciando registros de funcionários.',
-        restrictionWarning: 'Nota: Restrições de matriz se aplicam.',
-        csv: 'Suporta Importação CSV.',
+        racs: 'Definiir RACs',
+        dbTitle: 'Gerenciamento BD',
+        dbDesc: 'Registros de funcionários.',
+        restrictionWarning: 'Nota: Restrições de matriz.',
+        csv: 'Importação CSV.',
         active: 'Garantir status ativo.'
       },
       racAdmin: {
         title: 'Manual Admin RAC',
         subtitle: 'Operações de Treinamento',
         schedTitle: 'Agendamento',
-        schedDesc: 'Criando calendários de treinamento.',
+        schedDesc: 'Calendários.',
         create: 'Criar Sessão',
-        lang: 'Definir Idioma',
+        lang: 'Idioma',
         autoTitle: 'Auto-Agendamento',
-        autoDesc: 'Lidando com agendamentos automáticos.',
-        approve: 'Aprovar ou Rejeitar agendamentos pendentes.',
+        autoDesc: 'Manuseio.',
+        approve: 'Aprovar ou Rejeitar.',
         renewTitle: 'Renovações',
-        renewDesc: 'Processar filas de renovação.'
+        renewDesc: 'Filas.'
       },
       racTrainer: {
         title: 'Manual do Formador',
-        subtitle: 'Avaliação e Presença',
-        inputTitle: 'Entrada de Resultados',
-        inputDesc: 'Inserindo resultados da sessão.',
-        grading: 'Marcar presença e notas.',
-        rac02: 'Regra Especial: RAC 02 requer verificação de Carta.',
-        save: 'Salvar e finalizar.'
+        subtitle: 'Avaliação',
+        inputTitle: 'Resultados',
+        inputDesc: 'Inserção.',
+        grading: 'Presença e notas.',
+        rac02: 'Regra RAC 02.',
+        save: 'Salvar.'
       },
       deptAdmin: {
         title: 'Manual Admin Dept',
-        subtitle: 'Supervisão do Departamento',
-        reqTitle: 'Solicitações de Cartão',
-        reqDesc: 'Gerenciando emissão de cartões.',
-        search: 'Pesquisar funcionários.',
-        print: 'Selecionar e Imprimir.',
+        subtitle: 'Supervisão',
+        reqTitle: 'Cartões',
+        reqDesc: 'Emissão.',
+        search: 'Pesquisar.',
+        print: 'Imprimir.',
         repTitle: 'Relatórios',
-        repDesc: 'Ver análises do departamento.'
+        repDesc: 'Análises.'
       },
       user: {
         title: 'Manual do Usuário',
-        subtitle: 'Autoatendimento do Funcionário',
+        subtitle: 'Autoatendimento',
         statusTitle: 'Verificando Status',
-        statusDesc: 'Entendendo seu painel.',
-        filterAlert: 'Use filtros para encontrar registros específicos.',
-        green: 'Verde significa Conforme.',
-        red: 'Vermelho significa Atenção Necessária.',
-        qr: 'Passaporte Digital QR.'
+        statusDesc: 'Painel.',
+        filterAlert: 'Filtros.',
+        green: 'Conforme.',
+        red: 'Atenção.',
+        qr: 'QR Digital.'
       }
     },
     feedback: {
       title: 'Feedback',
       subtitle: 'Ajude-nos a melhorar',
-      typeLabel: 'Tipo de Feedback',
+      typeLabel: 'Tipo',
       types: {
-        Bug: 'Relatório de Erro',
-        Improvement: 'Solicitação de Recurso',
-        General: 'Comentário Geral'
+        Bug: 'Erro',
+        Improvement: 'Recurso',
+        General: 'Comentário'
       },
       messageLabel: 'Mensagem',
-      msgPlaceholder: 'Descreva seu problema ou ideia...',
-      button: 'Enviar Feedback',
-      adminTitle: 'Administração de Feedback',
-      manage: 'Gerenciar Feedback do Usuário',
+      msgPlaceholder: 'Descreva...',
+      button: 'Enviar',
+      adminTitle: 'Administração',
+      manage: 'Gerenciar Feedback',
       status: {
         New: 'Novo',
         InProgress: 'Em Progresso',
@@ -1196,85 +1298,85 @@ export const translations = {
         Dismissed: 'Dispensado'
       },
       actionable: 'Acionável',
-      noSelection: 'Nenhum feedback selecionado',
-      selectPrompt: 'Selecione um item de feedback para ver detalhes',
+      noSelection: 'Nenhum item',
+      selectPrompt: 'Selecione.',
       submittedBy: 'Enviado Por',
-      internalNotes: 'Notas Internas',
-      visibleAdmin: 'Visível Apenas para Admins',
-      deleteRecord: 'Excluir Registro',
-      markedActionable: 'Marked Actionable',
-      markActionable: 'Marcar como Acionável',
-      workflow: 'Status do Fluxo de Trabalho',
+      internalNotes: 'Notas',
+      visibleAdmin: 'Admins',
+      deleteRecord: 'Excluir',
+      markedActionable: 'Actionable',
+      markActionable: 'Acionável',
+      workflow: 'Status',
       priority: 'Prioridade'
     },
     communications: {
       title: 'Comunicações',
       subtitle: 'Log de Mensagens',
-      clear: 'Limpar Log',
-      search: 'Pesquisar mensagens...',
-      empty: 'Nenhuma mensagem encontrada',
-      select: 'Selecione uma mensagem para ver detalhes',
+      clear: 'Limpar',
+      search: 'Pesquisar...',
+      empty: 'Vazio',
+      select: 'Selecione.',
       sms: 'Notificação SMS',
-      gateway: 'Enviado via Gateway',
+      gateway: 'Gateway',
       to: 'Para',
-      automated: 'Esta é uma mensagem automática do sistema.'
+      automated: 'Automático.'
     },
     alcohol: {
       dashboard: {
         title: 'Controle de Álcool',
-        subtitle: 'Painel de Monitoramento IoT',
-        live: 'TRANSMISSÃO AO VIVO',
+        subtitle: 'Painel IoT',
+        live: 'AO VIVO',
         backToLive: 'Voltar ao Vivo',
-        specs: 'Especificações Técnicas',
+        specs: 'Especificações',
         kpi: {
-          total: 'Total de Testes',
+          total: 'Total',
           violations: 'Violações',
-          health: 'Saúde do Sistema'
+          health: 'Saúde'
         },
         online: 'Online',
         hourlyTrend: 'Tendência Horária',
         dailyTrend: 'Tendência Diária',
-        deviceLoad: 'Carga do Dispositivo',
-        complianceRatio: 'Taxa de Conformidade',
-        liveStream: 'Transmissão em Tempo Real',
-        mqtt: 'Protocolo MQTT',
-        deviceHealth: 'Saúde da Frota de Dispositivos',
+        deviceLoad: 'Carga',
+        complianceRatio: 'Taxa',
+        liveStream: 'Real-time',
+        mqtt: 'MQTT',
+        deviceHealth: 'Saúde Dispositivo',
         alert: {
-          title: 'ÁLCOOL DETECTADO',
-          desc: 'Leitura positiva detectada no portão.',
-          measured: 'BAC Medido'
+          title: 'ÁLCOOL',
+          desc: 'Positivo.',
+          measured: 'Medido'
         },
-        actions: 'Ações Automatizadas',
+        actions: 'Ações',
         actionLog: {
-          locked: 'Catraca Bloqueada',
-          generating: 'Gerando Relatório de Incidente...',
-          logged: 'Incidente Registrado',
-          contacting: 'Contatando Supervisor...',
-          sent: 'Alerta Enviado'
+          locked: 'Bloqueado',
+          generating: 'Gerando...',
+          logged: 'Registrado',
+          contacting: 'Contatando...',
+          sent: 'Enviado'
         },
-        close: 'Dispensar Alerta'
+        close: 'Fechar'
       },
       protocol: {
-        title: 'Protocolo de Segurança',
-        positiveTitle: 'Teste Positivo (> 0.000)',
-        positiveDesc: 'Bloqueio imediato da catraca. Supervisor notificado.',
-        resetTitle: 'Reinicialização do Sistema',
-        resetDesc: 'Reinicialização manual necessária pelo oficial de HSE.'
+        title: 'Protocolo',
+        positiveTitle: 'Positivo',
+        positiveDesc: 'Bloqueio.',
+        resetTitle: 'Reset',
+        resetDesc: 'Manual.'
       },
       features: {
-        title: 'Recursos do Sistema',
-        iotTitle: 'Integração IoT',
-        iotDesc: 'Sincronização em tempo real com bafômetros.',
-        accessTitle: 'Controle de Acesso',
-        accessDesc: 'Integração com barreira física.',
-        complianceTitle: 'Tolerância Zero',
-        complianceDesc: 'Aplicação estrita de conformidade.'
+        title: 'Recursos',
+        iotTitle: 'IoT',
+        iotDesc: 'Conectado.',
+        accessTitle: 'Acesso',
+        accessDesc: 'Barriers.',
+        complianceTitle: 'Conformidade',
+        complianceDesc: 'Regras.'
       }
     },
     logs: {
-      title: 'Logs do Sistema',
+      title: 'Logs',
       levels: {
-        all: 'Todos os Níveis',
+        all: 'Todos',
         info: 'Info',
         warn: 'Aviso',
         error: 'Erro',
@@ -1282,250 +1384,250 @@ export const translations = {
       },
       table: {
         level: 'Nível',
-        timestamp: 'Carimbo de Data/Hora',
+        timestamp: 'Timestamp',
         user: 'Usuário',
         message: 'Mensagem'
       }
     },
     adminManual: {
       title: 'Manual Admin',
-      subtitle: 'Guia Abrangente do Sistema',
+      subtitle: 'Guia do Sistema',
       slides: {
         intro: '1. Introdução',
         logic: '2. Motor Lógico',
         dashboard: '3. Painel',
-        workflows: '4. Fluxos de Trabalho',
-        advanced: '5. Config Avançada',
-        robotics: '7. Protocolos Robóticos',
-        troubleshoot: '8. Solução de Problemas',
-        architecture: '6. Arquitetura do Sistema'
+        workflows: '4. Fluxos',
+        advanced: '5. Config',
+        robotics: '6. Protocolos',
+        troubleshoot: '7. Solução',
+        architecture: '8. Arquitetura'
       },
       content: {
-        confidential: 'CONFIDENCIAL',
-        production: 'SISTEMA DE PRODUÇÃO',
+        confidential: 'CONFIDENTIAL',
+        production: 'PRODUÇÃO',
         logic: {
-          title: 'Lógica de Conformidade',
-          desc: 'O sistema usa uma matriz booleana para determinar o acesso.',
-          active: 'Status Ativo',
-          aso: 'Validade ASO',
-          racs: 'Certificações RAC',
-          result: 'STATUS DE ACESSO'
+          title: 'Conformidade',
+          desc: 'Matriz booleana.',
+          active: 'Ativo',
+          aso: 'ASO',
+          racs: 'RACs',
+          result: 'STATUS'
         },
         dashboard: {
           operational: {
-            title: 'Painel Operacional',
-            kpi: 'KPIs em Tempo Real',
-            renewal: 'Rastreamento de Renovação',
-            auto: 'Motor de Auto-Agendamento'
+            title: 'Operacional',
+            kpi: 'KPIs',
+            renewal: 'Renovação',
+            auto: 'Auto-Agendamento'
           },
           enterprise: {
-            title: 'Painel Empresarial',
+            title: 'Empresarial',
             global: 'Visão Global',
-            risk: 'Mapas de Calor de Risco',
-            ai: 'Insights de IA'
+            risk: 'Mapas de Risco',
+            ai: 'IA'
           }
         },
         workflows: {
-          a: { title: 'Ingestão de Dados', steps: ['Fonte A (SAP)', 'Fonte B (Empreiteiro)', 'Sincronização Middleware'] },
-          b: { title: 'Processamento', steps: ['Normalização de ID', 'Resolução de Conflitos', 'Cálculo de Status'] },
-          c: { title: 'Análise', steps: ['Taxa de Conformidade', 'Análise de Tendência', 'Relatórios IA'] },
-          d: { title: 'Saída', steps: ['KPI do Painel', 'Controle de Acesso', 'Notificações'] }
+          a: { title: 'Ingestão', steps: ['Fonte A', 'Fonte B', 'Sync'] },
+          b: { title: 'Processo', steps: ['Normalização', 'Conflitos', 'Status'] },
+          c: { title: 'Análise', steps: ['Taxas', 'Tendências', 'Relatórios IA'] },
+          d: { title: 'Saída', steps: ['KPIs', 'Acesso', 'Alertas'] }
         },
         advanced: {
-          gov: { title: 'Governança de Local', desc: 'Definir RACs obrigatórios por local.' },
-          alcohol: { title: 'IoT de Álcool', desc: 'Integração com catracas de bafômetro.' }
+          gov: { title: 'Governança', desc: 'Regras por local.' },
+          alcohol: { title: 'IoT Álcool', desc: 'Integração catracas.' }
         },
         troubleshoot: {
-          0: { issue: 'Falha no Login', solution: 'Verifique a conexão de rede e credenciais.' },
-          1: { issue: 'Erro de Sincronização', solution: 'Verifique os logs do Middleware em Configurações > Integração.' },
-          2: { issue: 'Painel Lento', solution: 'Limpe o cache do navegador ou verifique a velocidade da internet.' },
-          3: { issue: 'Layout Móvel', solution: 'Gire o dispositivo para paisagem para tabelas.' },
-          4: { issue: 'Outros Problemas', solution: 'Contate o Suporte do Sistema.' }
+          0: { issue: 'Login', solution: 'Rede.' },
+          1: { issue: 'Sync', solution: 'Middleware.' },
+          2: { issue: 'Lento', solution: 'Cache.' },
+          3: { issue: 'Mobile', solution: 'Gire.' },
+          4: { issue: 'Outros', solution: 'Suporte.' }
         },
         architecture: {
-          ui: '[ INTERFACE DE USUÁRIO ]',
-          gate: '[ PORTÃO DE PERMISSÃO ]',
-          gateDesc: 'Verifica Função do Usuário (Admin do Sistema vs Usuário)',
-          logic: '[ MOTOR LÓGICO ]',
-          checkCap: 'Verificar Capacidade',
-          checkMatrix: 'Verificar Bloqueio Matriz',
-          checkDl: 'Verificar Validade Carta',
-          dbState: '[ ESTADO DO BANCO DE DADOS ]',
-          updateRecord: 'Atualiza Registro de Agendamento / Funcionário',
+          ui: '[ UI ]',
+          gate: '[ GATE ]',
+          gateDesc: 'Regras.',
+          logic: '[ ENGINE ]',
+          checkCap: 'Capacidade',
+          checkMatrix: 'Matriz',
+          checkDl: 'Carta',
+          dbState: '[ DB ]',
+          updateRecord: 'Atualiza.',
           automation: '[ AUTOMAÇÃO ]',
-          emailTrig: '📧 Gatilho Email/SMS',
-          printTrig: '🖨️ Registro Auto-Impressão',
-          aiTrig: '🤖 Atualização de Análise IA'
+          emailTrig: '📧 Email/SMS',
+          printTrig: '🖨️ Impressão',
+          aiTrig: '🤖 Análise IA'
         },
         robotics: {
-          title: 'Protocolos de Autocura Robótica',
-          subtitle: 'Sistemas automatizados de resiliência e diagnóstico.',
+          title: 'Cura Robótica',
+          subtitle: 'Resiliência automática.',
           crash: {
-            title: 'Motor de Auto-Recuperação',
-            desc: 'O sistema utiliza um wrapper React Error Boundary. Se ocorrer um erro crítico de tempo de execução (por exemplo, vazamento de memória ou exceção não tratada), o protocolo "RoboTech" intercepta a falha, exibe uma visualização de diagnóstico ao usuário e tenta um recarregamento suave do estado para evitar uma falha total do navegador.'
+            title: 'Recuperação',
+            desc: 'Intercepta falhas.'
           },
           diagnostics: {
-            title: 'Diagnósticos Ativos',
-            desc: 'Administradores do Sistema podem acionar manualmente o "Protocolo de Cura RoboTech" na página de Configurações. Isso executa um thread em segundo plano que verifica a latência do banco de dados, otimiza fragmentos de memória e verifica a integridade da API sem interromper os usuários ativos.'
+            title: 'Ativo',
+            desc: 'Otimização.'
           }
         }
       }
     },
     proposal: {
       aboutMe: {
-        title: 'Sobre o Desenvolvedor',
+        title: 'Sobre',
         name: 'Pita Domingos',
         preferred: 'Pita',
-        cert: 'Full Stack Developer',
-        role: 'Arquiteto Líder',
-        bio: 'Desenvolvedor experiente especializado em sistemas de segurança empresarial e transformação digital.'
+        cert: 'Full Stack',
+        role: 'Arquiteto',
+        bio: 'Experiente em segurança.'
       },
       execSummary: {
-        title: 'Resumo Executivo',
-        text: 'Uma solução abrangente para digitalizar e automatizar a conformidade de segurança.',
-        quote: '"Segurança não é apenas uma prioridade, é um valor."'
+        title: 'Resumo',
+        text: 'Solução digital.',
+        quote: '"Segurança é valor."'
       },
       objectives: {
-        title: 'Objetivos do Projeto',
-        problemTitle: 'The Problem',
-        problemText: 'Processos manuais, dados fragmentados e riscos de conformidade.',
-        solutionTitle: 'A Solução',
-        goals: ['Dados Centralizados', 'Conformidade Automatizada', 'Relatórios em Tempo Real']
+        title: 'Objetivos',
+        problemTitle: 'Problema',
+        problemText: 'Manuais.',
+        solutionTitle: 'Solução',
+        goals: ['Centralizado', 'Automático', 'Real-time']
       },
       organogram: {
-        title: 'Organograma Técnico',
-        tech1: 'Arquitetura Frontend',
-        tech2: 'Serviços Backend'
+        title: 'Técnico',
+        tech1: 'Frontend',
+        tech2: 'Backend'
       },
       timeline: {
-        title: 'Cronograma de Implementação',
-        phase1: 'Fase 1: Descoberta',
-        phase1desc: 'Levantamento de requisitos',
-        phase2: 'Fase 2: Desenvolvimento',
-        phase2desc: 'Construção do sistema principal',
-        phase3: 'Fase 3: Testes',
-        phase3desc: 'UAT e correções de bugs',
-        phase4: 'Fase 4: Implantação',
-        phase4desc: 'Entrada em operação',
-        phase5: 'Fase 5: Suporte',
-        phase5desc: 'Manutenção'
+        title: 'Cronograma',
+        phase1: 'Fase 1',
+        phase1desc: 'Discovery',
+        phase2: 'Fase 2',
+        phase2desc: 'Build',
+        phase3: 'Fase 3',
+        phase3desc: 'Testes',
+        phase4: 'Fase 4',
+        phase4desc: 'Live',
+        phase5: 'Fase 5',
+        phase5desc: 'Suporte'
       },
       techStack: {
-        title: 'Pilha Tecnológica',
+        title: 'Tecnologia',
         frontendTitle: 'Frontend',
-        frontend: 'React, TypeScript, Tailwind',
+        frontend: 'React',
         backendTitle: 'Backend',
-        backend: 'Node.js, Express',
-        databaseTitle: 'Banco de Dados',
-        database: 'PostgreSQL / Supabase',
+        backend: 'Node.js',
+        databaseTitle: 'BD',
+        database: 'PostgreSQL',
         securityTitle: 'Segurança',
-        security: 'JWT, Acesso Baseado em Função'
+        security: 'JWT'
       },
       financials: {
-        title: 'Proposta Financeira',
+        title: 'Financeiro',
         items: [
-          { name: 'Desenvolvimento Inicial', type: 'Pagamento Único', cost: '$15,000.00' },
-          { name: 'Desenvolvimento e Configuração', type: 'Pagamento Único', cost: '$3,000.00' },
-          { name: 'Infraestrutura em Nuvem', type: 'Mensal', cost: '$3,500.00' },
-          { name: 'Treinamento e Documentação', type: 'Pagamento Único', cost: '$2,500.00' },
-          { name: 'Manutenção e Suporte', type: 'Mensal', cost: '$3,000.00' }
+          { name: 'Initial', type: 'Unico', cost: '$12,000' },
+          { name: 'Setup', type: 'Unico', cost: '$6,000' },
+          { name: 'Cloud', type: 'Mensal', cost: '$2,500' },
+          { name: 'Training', type: 'Unico', cost: '$2,500' },
+          { name: 'Maintenance', type: 'Mensal', cost: '$1,500' }
         ]
       },
       roadmap: {
-        title: 'Roteiro Estratégico',
-        auth: 'Autenticação',
-        authDesc: 'Integração SSO',
-        db: 'Banco de Dados',
-        dbDesc: 'Migração para Nuvem',
-        email: 'Notificações',
-        emailDesc: 'Gateway de Email/SMS',
-        hosting: 'Hospedagem',
-        hostingDesc: 'Nuvem Escalável'
+        title: 'Estratégico',
+        auth: 'Auth',
+        authDesc: 'SSO',
+        db: 'BD',
+        dbDesc: 'Nuvem',
+        email: 'Alertas',
+        emailDesc: 'Gateway',
+        hosting: 'Nuvem',
+        hostingDesc: 'Nuvem'
       },
       aiFeatures: {
-        title: 'Integração IA',
-        chatbot: 'Chatbot Consultor de Segurança',
-        reporting: 'Relatórios de Insights Automatizados'
+        title: 'Recursos IA',
+        chatbot: 'Chatbot',
+        reporting: 'Insights'
       },
       futureUpdates: {
-        title: 'Módulos Futuros',
-        moduleA: 'Módulo A - Integração ERP',
-        moduleB: 'Módulo B - Hardware Biométrico'
+        title: 'Módulos',
+        moduleA: 'ERP',
+        moduleB: 'IoT'
       },
       enhancedCaps: {
-        title: 'Capacidades Aprimoradas',
-        mobileVerify: { desc: 'App de Verificação Móvel' },
-        autoBooking: { desc: 'Motor de Agendamento Automático' },
-        massData: { desc: 'Análise de Big Data' }
+        title: 'Capacidades',
+        mobileVerify: { desc: 'App Verificação' },
+        autoBooking: { desc: 'Auto-Agendamento' },
+        massData: { desc: 'Big Data' }
       },
       conclusion: {
-        title: 'Conclusão',
-        text: 'Este sistema representa um salto significativo na eficiência e conformidade do gerenciamento de segurança.'
+        title: 'Conclusion',
+        text: 'Grande avanço.'
       },
       thankYou: {
         title: 'Obrigado',
-        contact: 'Contate-nos para mais informações',
+        contact: 'Contato',
         phone: '+258 84 123 4567'
       },
       digitalTrans: 'Iniciativa de Transformação Digital'
     },
     ai: {
-      systemPromptAdvice: 'Você é um especialista em segurança. Forneça conselhos sobre {rac} em {language}.',
-      systemPromptReport: 'Você é um analista de dados de segurança. Gere um relatório em {language}.'
+      systemPromptAdvice: 'Especialista. Conselhos sobre {rac} em {language}.',
+      systemPromptReport: 'Analista. Relatório em {language}.'
     },
     advisor: {
-      button: 'Consultor de Segurança',
-      title: 'Consultor de Segurança Gemini',
+      button: 'Consultor',
+      title: 'Consultor Gemini',
       sender: 'Gemini',
-      emptyState: 'Como posso ajudar com padrões de segurança hoje?',
-      placeholder: 'Pergunte sobre RACs, procedimentos...'
+      emptyState: 'Como posso ajudar?',
+      placeholder: 'RACs, procedimentos...'
     },
     enterprise: {
-      systemTitle: 'Centro de Comando Empresarial',
-      systemSubtitle: 'Administração SaaS Multi-Locatário',
+      systemTitle: 'Comando Empresarial',
+      systemSubtitle: 'Multi-Tenant SaaS',
       title: 'Painel Empresarial',
-      subtitle: 'Visão Geral das Operações Globais',
-      siteName: 'Local',
-      globalHealth: 'Pontuação Global de Saúde',
-      totalWorkforce: 'Força de Trabalho Total',
-      topPerformer: 'Local com Melhor Desempenho',
-      needsAttention: 'Precisa de Atenção',
-      noData: 'Sem dados disponíveis',
-      tenantMatrix: 'Matriz de Desempenho do Locatário',
-      systemView: 'Visão do Sistema',
-      siteComparison: 'Comparação de Locais',
-      riskHeatmap: 'Mapa de Calor de Risco do Departamento',
-      selectPrompt: 'Selecione "Todos os Locais" para ver a comparação',
-      aiAuditor: 'Auditor de Sistema IA',
-      aiDirector: 'Diretor de Segurança IA',
-      systemIntelligence: 'Inteligência em Toda a Plataforma',
-      companyIntelligence: 'Inteligência para',
-      aiPrompt: 'Gerando Insights de IA...',
-      aiPromptSystem: 'Analisando vetores de risco multi-locatário em todas as empresas.',
-      aiPromptEnterprise: 'Analisando tendências de conformidade específicas do local e gargalos.',
-      bottlenecks: 'Gargalos de Treinamento',
-      failure: 'Taxa de Reprovação'
+      subtitle: 'Operações Globais',
+      siteName: 'Site',
+      globalHealth: 'Saúde Global',
+      totalWorkforce: 'Total Pessoal',
+      topPerformer: 'Melhor Unidade',
+      needsAttention: 'Requer Atenção',
+      noData: 'Vazio',
+      tenantMatrix: 'Matriz de Locatários',
+      systemView: 'Sistema',
+      siteComparison: 'Comparação Sites',
+      riskHeatmap: 'Risco por Depto',
+      selectPrompt: 'Selecione "Todos".',
+      aiAuditor: 'Auditor IA',
+      aiDirector: 'Diretor IA',
+      systemIntelligence: 'Inteligência',
+      companyIntelligence: 'Para',
+      aiPrompt: 'Gerando...',
+      aiPromptSystem: 'Analisando vetores.',
+      aiPromptEnterprise: 'Analisando conformidade.',
+      bottlenecks: 'Gargalos Treinamento',
+      failure: 'Falha'
     },
     racDefs: {
         RAC01: 'RAC 01 - Trabalho em Altura',
-        RAC02: 'RAC 02 - Veículos e Equipamentos Móveis',
-        RAC03: 'RAC 03 - Bloqueio de Equipamentos Móveis',
-        RAC04: 'RAC 04 - Proteção de Máquinas',
-        RAC05: 'RAC 05 - Espaço Confinado',
-        RAC06: 'RAC 06 - Operações de Içamento',
-        RAC07: 'RAC 07 - Estabilidade do Solo',
-        RAC08: 'RAC 08 - Eletricidade',
+        RAC02: 'RAC 02 - Veículos e Equipamentos',
+        RAC03: 'RAC 03 - Bloqueio',
+        RAC04: 'RAC 04 - Proteção',
+        RAC05: 'RAC 05 - Confinado',
+        RAC06: 'RAC 06 - Içamento',
+        RAC07: 'RAC 07 - Solo',
+        RAC08: 'RAC 08 - Elétrica',
         RAC09: 'RAC 09 - Explosivos',
-        RAC10: 'RAC 10 - Metal Líquido',
-        RAC11: 'RAC 11 - Tráfego de Mina',
-        PTS: 'PTS - Permissão de Trabalho Seguro',
-        ART: 'ART - Análise de Risco da Tarefa',
-        LIB_OPS: 'LIB-OPS - Liberação Operacional',
-        LIB_MOV: 'LIB-MOV - Liberação de Movimentação'
+        RAC10: 'RAC 10 - Metal',
+        RAC11: 'RAC 11 - Tráfego',
+        PTS: 'PTS - Permissão',
+        ART: 'ART - Análise',
+        LIB_OPS: 'LIB-OPS - Operacional',
+        LIB_MOV: 'LIB-MOV - Movimentação'
     },
     notifications: {
-        capacityTitle: 'Aviso de Capacidade',
-        capacityMsg: 'Alguns agendamentos foram movidos automaticamente para a próxima sessão disponível em'
+        capacityTitle: 'Capacidade',
+        capacityMsg: 'Movidos para'
     }
   }
 };
