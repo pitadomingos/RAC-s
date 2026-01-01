@@ -18,23 +18,27 @@ interface State {
 
 /**
  * Catches runtime errors and triggers autonomous repair visuals.
- * Inherits from Component to provide error boundary lifecycle methods.
+ * Inherits from React.Component to provide error boundary lifecycle methods.
  */
-/* Fix: Explicitly extend React.Component to ensure 'setState' and 'props' are correctly typed and recognized by the TypeScript compiler. */
+/* Fix: Explicitly extending React.Component to ensure TypeScript correctly identifies the class as a React component and grants access to state, setState, and props. */
 export class ErrorBoundary extends React.Component<Props, State> {
-  // Initialize state to satisfy the React Component lifecycle.
-  public state: State = {
-    hasError: false,
-    error: null,
-    aiDiagnosis: null,
-    repairProgress: 0,
-    repairStep: 'Initializing Diagnostics...',
-    isRepaired: false
-  };
-
+  /* Fix: Correctly typed member variable for the simulation interval. */
   private simulationInterval: any = null;
 
-  // Fix: Standard static getDerivedStateFromError implementation for React Error Boundaries.
+  /* Fix: Explicitly defining constructor to initialize state and call super(props). */
+  constructor(props: Props) {
+    super(props);
+    this.state = {
+      hasError: false,
+      error: null,
+      aiDiagnosis: null,
+      repairProgress: 0,
+      repairStep: 'Initializing Diagnostics...',
+      isRepaired: false
+    };
+  }
+
+  // Standard static getDerivedStateFromError implementation for React Error Boundaries.
   public static getDerivedStateFromError(error: Error): State {
     return { 
         hasError: true, 
@@ -46,7 +50,7 @@ export class ErrorBoundary extends React.Component<Props, State> {
     };
   }
 
-  // Fix: Correct componentDidCatch implementation ensuring error metadata is logged and repair protocols triggered.
+  // Correct componentDidCatch implementation ensuring error metadata is logged and repair protocols triggered.
   public componentDidCatch(error: Error, errorInfo: ErrorInfo) {
     const errorString = error.toString();
     const errorMessage = error.message || errorString;
@@ -69,7 +73,7 @@ export class ErrorBoundary extends React.Component<Props, State> {
       if (this.simulationInterval) clearInterval(this.simulationInterval);
   }
 
-  // Fix: Standard method using 'this' from correctly extended Component instance.
+  /* Fix: Private method to handle the progress animation using this.setState. */
   private startRepairSimulation() {
       const steps = [
           "Scanning Neural Pathways...",
@@ -84,7 +88,7 @@ export class ErrorBoundary extends React.Component<Props, State> {
       let stepIndex = 0;
 
       this.simulationInterval = setInterval(() => {
-          /* Fix: Access setState via the class instance inherited from React.Component. */
+          /* Fix: Accessing setState from React.Component to update internal progress state. */
           this.setState((prevState) => {
               // Stop progressing if we are waiting for AI but hit 90%
               const canFinish = !!prevState.aiDiagnosis;
@@ -110,7 +114,7 @@ export class ErrorBoundary extends React.Component<Props, State> {
       }, 200);
   }
 
-  // Fix: Correct use of 'this' in async context.
+  /* Fix: Asynchronous method to analyze the error using Gemini and trigger repair completion. */
   private async runSilentDiagnosis(errorMessage: string, errorInfo: ErrorInfo) {
       try {
           // Real World: Attempt to get AI analysis
@@ -129,7 +133,7 @@ export class ErrorBoundary extends React.Component<Props, State> {
       }
   }
 
-  // Fix: Finalize repair state using setState inherited from React.Component.
+  /* Fix: Finalize the repair state by updating state with the AI diagnosis results. */
   private completeRepair(diagnosis: { rootCause: string, fix: string }) {
       if (this.simulationInterval) clearInterval(this.simulationInterval);
 
@@ -138,7 +142,7 @@ export class ErrorBoundary extends React.Component<Props, State> {
           sessionStorage.clear();
       } catch(e) { /* ignore */ }
 
-      /* Fix: Access setState via the class instance inherited from React.Component. */
+      /* Fix: Final state update after autonomous repair completes. */
       this.setState({ 
           aiDiagnosis: diagnosis,
           repairProgress: 100,
@@ -163,7 +167,7 @@ export class ErrorBoundary extends React.Component<Props, State> {
       }
   }
 
-  // Fix: Bound event handler for system reboot.
+  // Bound event handler for system reboot.
   private forceReload = () => {
       try {
           window.location.reload();
@@ -172,7 +176,7 @@ export class ErrorBoundary extends React.Component<Props, State> {
       }
   };
 
-  /* Fix: render method correctly accesses this.state and this.props from base React.Component. */
+  /* Fix: The render method correctly checks this.state to determine whether to show the error UI or children. */
   public render() {
     if (this.state.hasError) {
       // FULL SCREEN OVERLAY
@@ -188,7 +192,7 @@ export class ErrorBoundary extends React.Component<Props, State> {
             
             {/* --- CENTRAL VISUAL --- */}
             <div className="flex justify-center mb-10 relative">
-                <div className={`absolute inset-0 rounded-full blur-xl transition-all duration-1000 ${this.state.isRepaired ? 'bg-green-500/40' : 'bg-red-500/30 animate-pulse'}`}></div>
+                <div className={`absolute inset-0 rounded-full blur-xl transition-all duration-1000 ${this.state.isRepaired ? 'bg-green-50/40' : 'bg-red-50/30 animate-pulse'}`}></div>
                 
                 <div className={`relative h-32 w-32 bg-slate-900 rounded-full border-4 flex items-center justify-center shadow-2xl transition-all duration-500 ${this.state.isRepaired ? 'border-green-500 shadow-green-500/50' : 'border-red-500 shadow-red-500/50'}`}>
                     {this.state.isRepaired ? (
@@ -269,7 +273,7 @@ export class ErrorBoundary extends React.Component<Props, State> {
       );
     }
 
-    /* Fix: Access props via the class instance inherited from React.Component. */
-    return this.props.children;
+    /* Fix: Correctly access this.props.children from the React.Component base class. */
+    return (this.props.children as ReactNode) || null;
   }
 }

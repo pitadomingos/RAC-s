@@ -33,7 +33,7 @@ const GeminiAdvisor: React.FC = () => {
         >
           <Sparkles size={24} className="animate-pulse" />
           <span className="max-w-0 overflow-hidden group-hover:max-w-xs transition-all duration-500 ease-in-out whitespace-nowrap font-bold text-sm">
-            {t.advisor.button}
+            {t?.advisor?.button || 'Ask AI'}
           </span>
         </button>
       )}
@@ -45,7 +45,7 @@ const GeminiAdvisor: React.FC = () => {
             <div className="bg-gradient-to-r from-blue-600 to-indigo-600 p-4 flex justify-between items-center text-white">
               <div className="flex items-center gap-2">
                 <Sparkles size={18} />
-                <h3 className="font-bold">{t.advisor.title}</h3>
+                <h3 className="font-bold">{t?.advisor?.title || 'AI Advisor'}</h3>
               </div>
               <button onClick={() => setIsOpen(false)} className="hover:bg-white/20 rounded p-1">
                 <X size={18} />
@@ -55,12 +55,12 @@ const GeminiAdvisor: React.FC = () => {
             <div className="p-4 h-64 overflow-y-auto bg-gray-50 dark:bg-slate-900 text-sm">
               {response ? (
                 <div className="bg-white dark:bg-slate-700 p-3 rounded-lg shadow-sm border border-gray-100 dark:border-slate-600 text-gray-800 dark:text-white">
-                  <p className="font-medium text-blue-600 dark:text-blue-400 mb-1">{t.advisor.sender}:</p>
+                  <p className="font-medium text-blue-600 dark:text-blue-400 mb-1">{t?.advisor?.sender || 'AI'}:</p>
                   {response}
                 </div>
               ) : (
                 <div className="text-center text-gray-400 mt-10">
-                  <p>{t.advisor.emptyState}</p>
+                  <p>{t?.advisor?.emptyState || 'How can I help?'}</p>
                 </div>
               )}
               {loading && (
@@ -77,7 +77,7 @@ const GeminiAdvisor: React.FC = () => {
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
                   onKeyDown={(e) => e.key === 'Enter' && handleAsk()}
-                  placeholder={t.advisor.placeholder}
+                  placeholder={t?.advisor?.placeholder || 'Type here...'}
                   className="flex-1 border dark:border-slate-600 dark:bg-slate-700 dark:text-white rounded-full px-3 py-2 text-sm focus:outline-none focus:border-blue-500"
                 />
                 <button 

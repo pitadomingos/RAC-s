@@ -1,485 +1,323 @@
 
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { HashRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import Layout from './components/Layout';
 import Dashboard from './pages/Dashboard';
-import EnterpriseDashboard from './pages/EnterpriseDashboard';
-import SiteGovernancePage from './pages/SiteGovernancePage';
 import DatabasePage from './pages/DatabasePage';
 import ReportsPage from './pages/ReportsPage';
 import BookingForm from './pages/BookingForm';
-import TrainerInputPage from './pages/TrainerInputPage';
-import ResultsPage from './pages/ResultsPage';
-import UserManagement from './pages/UserManagement';
-import ScheduleTraining from './pages/ScheduleTraining';
-import SettingsPage from './pages/SettingsPage';
-import RequestCardsPage from './pages/RequestCardsPage';
 import CardsPage from './pages/CardsPage';
 import VerificationPage from './pages/VerificationPage';
-import UserManualsPage from './pages/UserManualsPage';
-import AdminManualPage from './pages/AdminManualPage';
-import LogsPage from './pages/LogsPage';
-import ProjectProposal from './pages/ProjectProposal';
-import PresentationPage from './pages/PresentationPage';
-import AlcoholIntegration from './pages/AlcoholIntegration';
-import TechnicalDocs from './pages/TechnicalDocs';
-import FeedbackAdminPage from './pages/FeedbackAdminPage';
-import MessageLogPage from './pages/MessageLogPage';
 import IntegrationHub from './pages/IntegrationHub';
+import PresentationPage from './pages/PresentationPage';
+import ProjectProposal from './pages/ProjectProposal';
 import GeminiAdvisor from './components/GeminiAdvisor';
-import FeedbackModal from './components/FeedbackModal';
+import TrainerInputPage from './pages/TrainerInputPage';
+import RequestCardsPage from './pages/RequestCardsPage';
+import MessageLogPage from './pages/MessageLogPage';
+import UserManagement from './pages/UserManagement';
+import ScheduleTraining from './pages/ScheduleTraining';
+import SiteGovernancePage from './pages/SiteGovernancePage';
+import LogsPage from './pages/LogsPage';
+import UserManualsPage from './pages/UserManualsPage';
+import TechnicalDocs from './pages/TechnicalDocs';
+import LoginPage from './pages/LoginPage';
+import ResultsPage from './pages/ResultsPage';
 import { AdvisorProvider } from './contexts/AdvisorContext';
 import { MessageProvider } from './contexts/MessageContext';
-import { UserRole, Booking, EmployeeRequirement, TrainingSession, RacDef, Room, Trainer, Site, Company, User, SystemNotification, Employee, Feedback, FeedbackType, BookingStatus } from './types';
-import { MOCK_SESSIONS, INITIAL_RAC_DEFINITIONS, MOCK_BOOKINGS, MOCK_REQUIREMENTS, MOCK_FEEDBACK, RAW_HR_SOURCE, RAW_CONTRACTOR_SOURCE } from './constants';
+import { AuthProvider, useAuth } from './contexts/AuthContext';
+import { db } from './services/databaseService';
+import { isSupabaseConfigured, supabase } from './services/supabaseClient';
+import { UserRole, Booking, EmployeeRequirement, TrainingSession, RacDef, Site, Company, SystemNotification, Employee, User } from './types';
+import { INITIAL_RAC_DEFINITIONS } from './constants';
 import { v4 as uuidv4 } from 'uuid';
-import { MessageSquarePlus } from 'lucide-react';
-import { useLanguage } from './contexts/LanguageContext';
+import { Loader2, Database, AlertCircle, CheckCircle2 } from 'lucide-react';
 
-const App: React.FC = () => {
-  const [userRole, setUserRole] = useState<UserRole>(UserRole.SYSTEM_ADMIN);
-  const [simulatedJobTitle, setSimulatedJobTitle] = useState('HSE Manager');
-  const [simulatedDept, setSimulatedDept] = useState('HSE');
-
+const AppContent: React.FC = () => {
+  const { isAuthenticated, user, logout } = useAuth();
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  
+  // Data State
+  const [bookings, setBookings] = useState<Booking[]>([]);
+  const [requirements, setRequirements] = useState<EmployeeRequirement[]>([]);
+  const [sessions, setSessions] = useState<TrainingSession[]>([]);
+  const [racDefinitions] = useState<RacDef[]>(INITIAL_RAC_DEFINITIONS);
+  const [sites, setSites] = useState<Site[]>([]);
+  const [companies, setCompanies] = useState<Company[]>([]);
   const [notifications, setNotifications] = useState<SystemNotification[]>([]);
-
-  const [bookings, setBookings] = useState<Booking[]>(() => {
-      const saved = localStorage.getItem('cars_bookings');
-      return saved ? JSON.parse(saved) : MOCK_BOOKINGS;
-  });
-  
-  const [requirements, setRequirements] = useState<EmployeeRequirement[]>(() => {
-      const saved = localStorage.getItem('cars_requirements');
-      return saved ? JSON.parse(saved) : MOCK_REQUIREMENTS;
-  });
-
-  const [sessions, setSessions] = useState<TrainingSession[]>(() => {
-      const saved = localStorage.getItem('cars_sessions');
-      return saved ? JSON.parse(saved) : MOCK_SESSIONS;
-  });
-
-  const [racDefinitions, setRacDefinitions] = useState<RacDef[]>(() => {
-      const saved = localStorage.getItem('cars_rac_defs');
-      return saved ? JSON.parse(saved) : INITIAL_RAC_DEFINITIONS;
-  });
-
-  const [rooms, setRooms] = useState<Room[]>(() => {
-      const saved = localStorage.getItem('cars_rooms');
-      return saved ? JSON.parse(saved) : [{ id: 'r1', name: 'Room A', capacity: 20 }, { id: 'r2', name: 'Room B', capacity: 15 }];
-  });
-
-  const [trainers, setTrainers] = useState<Trainer[]>(() => {
-      const saved = localStorage.getItem('cars_trainers');
-      return saved ? JSON.parse(saved) : [{ id: 't1', name: 'John Doe', racs: ['RAC01', 'RAC02'] }];
-  });
-
-  const [sites, setSites] = useState<Site[]>(() => {
-      const saved = localStorage.getItem('cars_sites');
-      return saved ? JSON.parse(saved) : [{ id: 's1', companyId: 'c1', name: 'Moatize Mine', location: 'Tete' }];
-  });
-  
-  const [companies, setCompanies] = useState<Company[]>(() => {
-      const saved = localStorage.getItem('cars_companies');
-      return saved ? JSON.parse(saved) : [{ 
-          id: 'c1', 
-          name: 'Vulcan', 
-          appName: 'RACS Safety',
-          status: 'Active', 
-          defaultLanguage: 'pt', 
-          features: { alcohol: true } 
-      }];
-  });
-
-  useEffect(() => { localStorage.setItem('cars_bookings', JSON.stringify(bookings)); }, [bookings]);
-  useEffect(() => { localStorage.setItem('cars_requirements', JSON.stringify(requirements)); }, [requirements]);
-  useEffect(() => { localStorage.setItem('cars_sessions', JSON.stringify(sessions)); }, [sessions]);
-  useEffect(() => { localStorage.setItem('cars_rac_defs', JSON.stringify(racDefinitions)); }, [racDefinitions]);
-  useEffect(() => { localStorage.setItem('cars_rooms', JSON.stringify(rooms)); }, [rooms]);
-  useEffect(() => { localStorage.setItem('cars_trainers', JSON.stringify(trainers)); }, [trainers]);
-  useEffect(() => { localStorage.setItem('cars_sites', JSON.stringify(sites)); }, [sites]);
-  useEffect(() => { localStorage.setItem('cars_companies', JSON.stringify(companies)); }, [companies]);
-
-  const [users, setUsers] = useState<User[]>([
-      { id: 1, name: 'System Admin', email: 'admin@vulcan.com', role: UserRole.SYSTEM_ADMIN, status: 'Active', company: 'Vulcan', jobTitle: 'IT Manager', siteId: 's1' }
-  ]);
   const [currentSiteId, setCurrentSiteId] = useState<string>('all');
+  const [users, setUsers] = useState<User[]>([]);
 
-  const [feedbackList, setFeedbackList] = useState<Feedback[]>(MOCK_FEEDBACK);
-  const [isFeedbackModalOpen, setIsFeedbackModalOpen] = useState(false);
-  
-  const [feedbackConfig, setFeedbackConfig] = useState<{mode: string, expiry: string | null}>({
-      mode: 'always', 
-      expiry: null
-  });
+  // Connectivity Health
+  const [dbHealth, setDbHealth] = useState<{table: string, status: 'ok'|'missing'}[]>([]);
 
-  const isFeedbackSystemActive = useMemo(() => {
-      if (feedbackConfig.mode === 'disabled') return false;
-      if (feedbackConfig.mode === 'always') return true;
-      if (feedbackConfig.expiry) {
-          const now = new Date();
-          const expiryDate = new Date(feedbackConfig.expiry);
-          return now < expiryDate;
-      }
-      return false;
-  }, [feedbackConfig]);
-
-  const handleUpdateFeedbackConfig = (mode: string) => {
-      let expiry = null;
-      const now = new Date();
-      if (mode === '1_week') {
-          now.setDate(now.getDate() + 7);
-          expiry = now.toISOString();
-      } else if (mode === '1_month') {
-          now.setMonth(now.getMonth() + 1);
-          expiry = now.toISOString();
-      }
-      setFeedbackConfig({ mode, expiry });
-  };
-
-  const addNotification = (notif: SystemNotification) => {
-      setNotifications(prev => [notif, ...prev]);
-  };
-
-  const handleBookingsUpdate = (newBookings: Booking[]) => {
-      setBookings(prev => [...prev, ...newBookings]);
-  };
-
-  const handleUpdateRequirement = (updatedReq: EmployeeRequirement) => {
-      setRequirements(prev => {
-          const idx = prev.findIndex(r => r.employeeId === updatedReq.employeeId);
-          if (idx >= 0) {
-              const newReqs = [...prev];
-              newReqs[idx] = updatedReq;
-              return newReqs;
+  useEffect(() => {
+      const initApp = async () => {
+          if (!isAuthenticated) {
+              setIsLoading(false);
+              return;
           }
-          return [...prev, updatedReq];
-      });
-  };
+          
+          try {
+              setIsLoading(true);
+              setError(null);
 
-  const handleMiddlewareSync = () => {
-      const processedHR = RAW_HR_SOURCE.map(raw => ({
-          id: uuidv4(), name: raw.name, recordId: `VUL-${raw.id}`, company: 'Vulcan', department: raw.dept, role: raw.role, isActive: true, siteId: 's1'
-      }));
-      const processedCont = RAW_CONTRACTOR_SOURCE.map(raw => ({
-          id: uuidv4(), name: raw.name, recordId: `CON-${raw.id}`, company: raw.company, department: raw.dept, role: raw.role, isActive: true, siteId: 's1'
-      }));
-      const allNewEmployees = [...processedHR, ...processedCont];
-      const newBookings: Booking[] = [];
-      const newReqs: EmployeeRequirement[] = [];
-      const existingIds = new Set(bookings.map(b => b.employee.recordId));
+              // 1. Initial Load
+              const [c, s, sess, e, b, req, u] = await Promise.all([
+                  db.getCompanies(),
+                  db.getSites(),
+                  db.getSessions(),
+                  db.getEmployees(),
+                  db.getBookings(),
+                  db.getRequirements(),
+                  db.getUsers()
+              ]);
 
-      allNewEmployees.forEach(emp => {
-          if (!existingIds.has(emp.recordId)) {
-              newBookings.push({
-                  id: uuidv4(), sessionId: 'System Initialization', employee: emp as Employee, status: BookingStatus.PENDING, attendance: true
-              });
-              newReqs.push({ employeeId: emp.id, asoExpiryDate: '', requiredRacs: {} });
+              setCompanies(c);
+              setSites(s);
+              setSessions(sess);
+              setBookings(b);
+              setRequirements(req);
+              setUsers(u);
+
+              // 2. Connectivity check for System Admins
+              if (user?.role === UserRole.SYSTEM_ADMIN && isSupabaseConfigured && supabase) {
+                  const tables = ['companies', 'sites', 'users', 'employees', 'bookings', 'employee_requirements'];
+                  const health = await Promise.all(tables.map(async t => {
+                      const { error } = await supabase.from(t).select('id').limit(1);
+                      return { table: t, status: error?.code === '42P01' ? 'missing' : 'ok' } as any;
+                  }));
+                  setDbHealth(health);
+              }
+
+          } catch (err: any) {
+              console.error("Initialization Error:", err);
+              // In this version, we don't set a blocking error unless it's critical (e.g. auth fail)
+          } finally {
+              setIsLoading(false);
           }
-      });
-
-      if (newBookings.length > 0) {
-          setBookings(prev => [...prev, ...newBookings]);
-          setRequirements(prev => [...prev, ...newReqs]);
-          return { added: newBookings.length, msg: `Successfully synced ${newBookings.length} new profiles.` };
-      } else {
-          return { added: 0, msg: "No new records found in sources." };
-      }
-  };
-
-  const handleApproveAutoBooking = (bookingId: string) => {
-      setBookings(prev => prev.map(b => b.id === bookingId ? { ...b, isAutoBooked: false } : b));
-      addNotification({ id: uuidv4(), type: 'success', title: 'Auto-Booking Approved', message: 'Booking confirmed for employee.', timestamp: new Date(), isRead: false });
-  };
-
-  const handleRejectAutoBooking = (bookingId: string) => {
-      setBookings(prev => prev.filter(b => b.id !== bookingId));
-  };
-
-  const handleUpdateRacDefinitions = (newDefs: RacDef[]) => setRacDefinitions(newDefs);
-
-  const handleUpdateEmployee = (id: string, updates: Partial<Employee>) => {
-      setBookings(prev => prev.map(b => b.employee.id === id ? { ...b, employee: { ...b.employee, ...updates } } : b));
-  };
-
-  const handleDeleteEmployee = (id: string) => {
-      setBookings(prev => prev.filter(b => b.employee.id !== id));
-      setRequirements(prev => prev.filter(r => r.employeeId !== id));
-  };
-
-  const handleImportBookings = (newBookings: Booking[], sideEffects?: { employee: Employee, aso: string, ops: Record<string, boolean> }[]) => {
-      setBookings(prev => [...prev, ...newBookings]);
-      if (sideEffects) {
-          setRequirements(prev => {
-              const newReqs = [...prev];
-              sideEffects.forEach(effect => {
-                  const idx = newReqs.findIndex(r => r.employeeId === effect.employee.id);
-                  if (idx >= 0) {
-                      if (effect.aso) newReqs[idx].asoExpiryDate = effect.aso;
-                      if (effect.ops) newReqs[idx].requiredRacs = { ...newReqs[idx].requiredRacs, ...effect.ops };
-                  } else {
-                      newReqs.push({ employeeId: effect.employee.id, asoExpiryDate: effect.aso || '', requiredRacs: effect.ops || {} });
-                  }
-              });
-              return newReqs;
-          });
-      }
-  };
-
-  const updateBookingsStatus = (updatedBookings: Booking[]) => {
-      setBookings(prev => {
-          const map = new Map(prev.map(b => [b.id, b]));
-          updatedBookings.forEach(b => map.set(b.id, b));
-          return Array.from(map.values());
-      });
-  };
-
-  const handleSubmitFeedback = (type: FeedbackType, message: string) => {
-      const newFeedback: Feedback = {
-          id: uuidv4(), userId: 'current-user', userName: userRole === UserRole.USER ? 'Safe Worker 1' : 'Admin User', type, message, status: 'New', isActionable: type === 'Bug', timestamp: new Date().toISOString()
       };
-      setFeedbackList(prev => [newFeedback, ...prev]);
-      addNotification({ id: uuidv4(), type: 'success', title: 'Feedback Sent', message: 'Thank you! Your feedback has been logged.', timestamp: new Date(), isRead: false });
+      initApp();
+  }, [isAuthenticated, user?.role]);
+
+  const addNotification = (notif: SystemNotification) => setNotifications(prev => [notif, ...prev]);
+
+  const handleBookingsUpdate = async (newBookings: Booking[]) => {
+      try {
+          for (const booking of newBookings) {
+              await db.saveBooking(booking);
+          }
+          setBookings(prev => [...prev, ...newBookings]);
+      } catch (err) {
+          addNotification({ id: uuidv4(), type: 'alert', title: 'Sync Error', message: 'Failed to save to cloud.', timestamp: new Date(), isRead: false });
+      }
   };
 
-  const handleUpdateFeedback = (id: string, updates: Partial<Feedback>) => {
-      setFeedbackList(prev => prev.map(f => f.id === id ? { ...f, ...updates } : f));
+  const handleUpdateUser = async (updatedUser: Partial<User>) => {
+      try {
+          const result = await db.upsertUser(updatedUser);
+          if (!result || !result.id) return; // Prevent updating state with invalid data
+          
+          setUsers(prev => {
+              const exists = prev.find(u => u.id === result.id);
+              if (exists) {
+                  return prev.map(u => u.id === result.id ? { ...u, ...result } : u);
+              }
+              return [...prev, result];
+          });
+      } catch (err) {
+          addNotification({ id: uuidv4(), type: 'alert', title: 'User Save Error', message: 'Failed to persist user to cloud.', timestamp: new Date(), isRead: false });
+      }
   };
 
-  const handleDeleteFeedback = (id: string) => {
-      setFeedbackList(prev => prev.filter(f => f.id !== id));
+  const handleDeleteUser = async (id: number) => {
+      try {
+          await db.deleteUser(id);
+          setUsers(prev => prev.filter(u => u.id !== id));
+      } catch (err) {
+          console.error("Delete Error:", err);
+      }
   };
 
-  const currentEmployeeId = bookings.length > 0 ? bookings[0].employee.id : 'user-123';
+  const handleUpdateRequirement = async (updatedReq: EmployeeRequirement) => {
+      try {
+          await db.updateRequirement(updatedReq);
+          setRequirements(prev => {
+              const idx = prev.findIndex(r => r.employeeId === updatedReq.employeeId);
+              if (idx >= 0) {
+                  const newReqs = [...prev];
+                  newReqs[idx] = updatedReq;
+                  return newReqs;
+              }
+              return [...prev, updatedReq];
+          });
+      } catch (err) {
+          console.error(err);
+      }
+  };
+
+  const handleUpdateEmployee = async (id: string, updates: Partial<Employee>) => {
+      try {
+          const result = await db.upsertEmployee({ ...updates, id });
+          if (!result) return;
+          
+          setBookings(prev => prev.map(b => b.employee.id === id ? { ...b, employee: { ...b.employee, ...updates } } : b));
+      } catch (err) {
+          console.error(err);
+      }
+  };
+
+  if (!isAuthenticated) {
+      return <LoginPage />;
+  }
+
+  if (isLoading) {
+      return (
+          <div className="h-screen w-screen bg-slate-950 flex flex-col items-center justify-center text-white font-sans overflow-hidden">
+              <div className="relative">
+                  <div className="absolute inset-0 bg-blue-500/20 blur-3xl rounded-full animate-pulse"></div>
+                  <Loader2 size={80} className="text-blue-500 animate-spin relative z-10" />
+              </div>
+              <h2 className="text-2xl font-black tracking-widest uppercase mt-8 animate-pulse">Establishing Secure Session</h2>
+              <p className="text-slate-500 mt-2 font-mono text-sm tracking-tight">
+                  {isSupabaseConfigured ? `Syncing for ${user?.name}...` : "Initializing Offline Engine..."}
+              </p>
+          </div>
+      );
+  }
+
+  const missingTables = dbHealth.filter(h => h.status === 'missing');
 
   return (
     <AdvisorProvider>
       <MessageProvider>
         <Router>
+          {/* DATABASE SETUP WIZARD BANNER (System Admin Only) */}
+          {user?.role === UserRole.SYSTEM_ADMIN && missingTables.length > 0 && (
+              <div className="fixed top-0 left-0 right-0 z-[100] bg-indigo-600 text-white p-2 flex items-center justify-center gap-4 shadow-xl">
+                  <Database size={16} className="animate-bounce" />
+                  <span className="text-xs font-bold uppercase tracking-wider">
+                      Supabase Setup Required: {missingTables.length} tables missing in Public schema.
+                  </span>
+                  <button 
+                    onClick={() => window.location.hash = '#/tech-docs'} 
+                    className="bg-white text-indigo-600 px-3 py-1 rounded-full text-[10px] font-black hover:bg-indigo-50 transition-colors"
+                  >
+                      VIEW SQL SCRIPTS
+                  </button>
+              </div>
+          )}
+
+          {!isSupabaseConfigured && (
+              <div className="fixed top-0 left-0 right-0 z-[100] bg-orange-600 text-white text-[10px] font-black uppercase tracking-widest text-center py-1">
+                  Offline Mode: No Cloud Credentials Found.
+              </div>
+          )}
+
           <Routes>
             <Route path="/presentation" element={<PresentationPage />} />
             <Route path="/proposal" element={<ProjectProposal />} />
             <Route path="/verify/:recordId" element={<VerificationPage bookings={bookings} requirements={requirements} racDefinitions={racDefinitions} sessions={sessions} />} />
-            <Route path="/print-cards" element={<CardsPage bookings={bookings} requirements={requirements} racDefinitions={racDefinitions} sessions={sessions} userRole={userRole} companies={companies} />} />
+            <Route path="/print-cards" element={<CardsPage bookings={bookings} requirements={requirements} racDefinitions={racDefinitions} sessions={sessions} userRole={user?.role} companies={companies} />} />
 
             <Route path="*" element={
               <Layout 
-                userRole={userRole} 
-                setUserRole={setUserRole} 
+                userRole={user?.role || UserRole.USER} 
+                setUserRole={() => {}} 
                 notifications={notifications}
                 clearNotifications={() => setNotifications([])}
                 sites={sites}
                 currentSiteId={currentSiteId}
                 setCurrentSiteId={setCurrentSiteId}
-                simulatedJobTitle={simulatedJobTitle}
-                setSimulatedJobTitle={setSimulatedJobTitle}
-                simulatedDept={simulatedDept}
-                setSimulatedDept={setSimulatedDept}
                 companies={companies}
               >
                 <Routes>
-                  <Route path="/" element={<Dashboard 
-                      bookings={bookings} 
-                      requirements={requirements} 
-                      sessions={sessions} 
-                      userRole={userRole}
-                      onApproveAutoBooking={handleApproveAutoBooking}
-                      onRejectAutoBooking={handleRejectAutoBooking}
-                      racDefinitions={racDefinitions}
-                      currentSiteId={currentSiteId}
-                  />} />
-                  
-                  <Route path="/enterprise-dashboard" element={
-                      [UserRole.SYSTEM_ADMIN, UserRole.ENTERPRISE_ADMIN].includes(userRole) 
-                      ? <EnterpriseDashboard sites={sites} bookings={bookings} requirements={requirements} userRole={userRole} /> 
-                      : <Navigate to="/" replace />
+                  <Route path="/" element={
+                    user?.role === UserRole.USER ? <Navigate to="/booking" replace /> :
+                    user?.role === UserRole.RAC_TRAINER ? <Navigate to="/trainer-input" replace /> :
+                    <Dashboard 
+                        bookings={bookings} 
+                        requirements={requirements} 
+                        sessions={sessions} 
+                        userRole={user?.role || UserRole.USER}
+                        racDefinitions={racDefinitions}
+                        currentSiteId={currentSiteId}
+                    />
                   } />
-
-                  <Route path="/integration" element={
-                      [UserRole.SYSTEM_ADMIN, UserRole.ENTERPRISE_ADMIN].includes(userRole) 
-                      ? <IntegrationHub userRole={userRole} /> 
-                      : <Navigate to="/" replace />
-                  } />
-
-                  <Route path="/site-governance" element={
-                      [UserRole.SYSTEM_ADMIN, UserRole.ENTERPRISE_ADMIN, UserRole.SITE_ADMIN].includes(userRole)
-                      ? <SiteGovernancePage 
-                          sites={sites} 
-                          setSites={setSites} 
-                          racDefinitions={racDefinitions} 
-                          bookings={bookings} 
-                          requirements={requirements} 
-                          updateRequirements={handleUpdateRequirement}
-                        />
-                      : <Navigate to="/" replace />
-                  } />
-
-                  <Route path="/database" element={
-                      userRole !== UserRole.USER && userRole !== UserRole.RAC_TRAINER 
-                      ? <DatabasePage 
+                  <Route path="/database" element={<DatabasePage 
                           bookings={bookings} 
                           requirements={requirements} 
                           updateRequirements={handleUpdateRequirement} 
                           sessions={sessions}
                           onUpdateEmployee={handleUpdateEmployee}
-                          onDeleteEmployee={handleDeleteEmployee}
+                          onDeleteEmployee={() => {}}
                           racDefinitions={racDefinitions}
-                          importBookings={handleImportBookings}
                           addNotification={addNotification}
                           currentSiteId={currentSiteId}
-                        /> 
-                      : <Navigate to="/" replace />
-                  } />
-
-                  <Route path="/reports" element={<ReportsPage bookings={bookings} sessions={sessions} currentSiteId={currentSiteId} />} />
-                  
-                  <Route path="/booking" element={
-                      userRole !== UserRole.RAC_TRAINER && userRole !== UserRole.ENTERPRISE_ADMIN && userRole !== UserRole.SITE_ADMIN
-                      ? <BookingForm 
+                  />} />
+                  <Route path="/booking" element={<BookingForm 
                           addBookings={handleBookingsUpdate} 
                           sessions={sessions} 
-                          userRole={userRole} 
+                          userRole={user?.role || UserRole.USER} 
                           existingBookings={bookings}
                           addNotification={addNotification}
-                          currentEmployeeId={currentEmployeeId}
                           requirements={requirements}
                           racDefinitions={racDefinitions}
-                        /> 
-                      : <Navigate to="/" replace />
-                  } />
-                  
-                  <Route path="/trainer-input" element={
-                      [UserRole.SYSTEM_ADMIN, UserRole.RAC_TRAINER].includes(userRole) 
-                      ? <TrainerInputPage 
-                          bookings={bookings} 
-                          updateBookings={updateBookingsStatus} 
-                          sessions={sessions} 
-                          userRole={userRole}
-                          currentUserName="Instructor"
-                          racDefinitions={racDefinitions}
-                        /> 
-                      : <Navigate to="/" replace />
-                  } />
-                  
-                  <Route path="/results" element={<ResultsPage 
-                      bookings={bookings} 
-                      updateBookingStatus={(id, status) => {
-                          setBookings(prev => prev.map(b => b.id === id ? { ...b, status } : b));
-                      }}
-                      importBookings={handleImportBookings}
-                      userRole={userRole}
-                      sessions={sessions}
-                      currentEmployeeId={currentEmployeeId}
-                      racDefinitions={racDefinitions}
-                      addNotification={addNotification}
-                      currentSiteId={currentSiteId}
                   />} />
-                  
-                  <Route path="/users" element={userRole === UserRole.SYSTEM_ADMIN ? <UserManagement users={users} setUsers={setUsers} addNotification={addNotification} sites={sites} currentSiteId={currentSiteId} /> : <Navigate to="/" replace />} />
-                  
-                  <Route path="/schedule" element={
-                      [UserRole.SYSTEM_ADMIN, UserRole.SITE_ADMIN].includes(userRole) 
-                      ? <ScheduleTraining 
-                          sessions={sessions} 
-                          setSessions={setSessions} 
-                          rooms={rooms} 
-                          trainers={trainers} 
-                          racDefinitions={racDefinitions} 
-                          addNotification={addNotification}
-                          currentSiteId={currentSiteId}
-                        /> 
-                      : <Navigate to="/" replace />
-                  } />
-                  
-                  <Route path="/settings" element={[UserRole.SYSTEM_ADMIN, UserRole.ENTERPRISE_ADMIN, UserRole.SITE_ADMIN].includes(userRole) ? 
-                    <SettingsPage 
-                      racDefinitions={racDefinitions} 
-                      onUpdateRacs={handleUpdateRacDefinitions} 
-                      rooms={rooms} 
-                      onUpdateRooms={setRooms} 
-                      trainers={trainers} 
-                      onUpdateTrainers={setTrainers} 
-                      sites={sites} 
-                      onUpdateSites={setSites} 
-                      companies={companies} 
-                      onUpdateCompanies={setCompanies} 
-                      userRole={userRole}
-                      users={users}
-                      onUpdateUsers={setUsers}
-                      feedbackConfig={feedbackConfig}
-                      onUpdateFeedbackConfig={handleUpdateFeedbackConfig}
-                      onSyncDatabases={handleMiddlewareSync}
-                      addNotification={addNotification}
-                    /> : <Navigate to="/" replace />} 
-                  />
-                  
-                  <Route path="/request-cards" element={
-                      userRole !== UserRole.ENTERPRISE_ADMIN && userRole !== UserRole.RAC_TRAINER
-                      ? <RequestCardsPage 
-                          bookings={bookings} 
-                          requirements={requirements} 
-                          racDefinitions={racDefinitions} 
-                          sessions={sessions} 
-                          userRole={userRole}
-                          currentEmployeeId={currentEmployeeId}
-                          currentSiteId={currentSiteId}
-                          companies={companies}
-                        />
-                      : <Navigate to="/" replace />
-                  } />
-                  
-                  <Route path="/manuals" element={<UserManualsPage userRole={userRole} />} />
-                  <Route path="/admin-manual" element={userRole === UserRole.SYSTEM_ADMIN ? <AdminManualPage /> : <Navigate to="/" replace />} />
-                  <Route path="/tech-docs" element={userRole === UserRole.SYSTEM_ADMIN ? <TechnicalDocs /> : <Navigate to="/" replace />} />
-                  <Route path="/logs" element={[UserRole.SYSTEM_ADMIN, UserRole.ENTERPRISE_ADMIN].includes(userRole) ? <LogsPage /> : <Navigate to="/" replace />} />
-                  
-                  <Route path="/feedback-admin" element={
-                      [UserRole.SYSTEM_ADMIN, UserRole.ENTERPRISE_ADMIN].includes(userRole) 
-                      ? <FeedbackAdminPage 
-                          feedbackList={feedbackList}
-                          onUpdateFeedback={handleUpdateFeedback}
-                          onDeleteFeedback={handleDeleteFeedback}
-                        />
-                      : <Navigate to="/" replace />
-                  } />
-
-                  <Route path="/messages" element={
-                      userRole === UserRole.SYSTEM_ADMIN 
-                      ? <MessageLogPage />
-                      : <Navigate to="/" replace />
-                  } />
-
-                  <Route path="/alcohol-control" element={
-                      [UserRole.SYSTEM_ADMIN, UserRole.ENTERPRISE_ADMIN, UserRole.SITE_ADMIN].includes(userRole) 
-                      ? <AlcoholIntegration addNotification={addNotification} /> 
-                      : <Navigate to="/" replace />
-                  } />
+                  <Route path="/results" element={<ResultsPage 
+                        bookings={bookings} 
+                        updateBookingStatus={() => {}} 
+                        userRole={user?.role || UserRole.USER} 
+                        sessions={sessions}
+                        currentEmployeeId="emp1" 
+                        racDefinitions={racDefinitions} 
+                        addNotification={addNotification}
+                        currentSiteId={currentSiteId}
+                  />} />
+                  <Route path="/trainer-input" element={<TrainerInputPage 
+                        bookings={bookings} 
+                        updateBookings={handleBookingsUpdate} 
+                        sessions={sessions} 
+                        userRole={user?.role || UserRole.USER}
+                        currentUserName={user?.name}
+                        racDefinitions={racDefinitions}
+                  />} />
+                  <Route path="/request-cards" element={<RequestCardsPage 
+                        bookings={bookings} 
+                        requirements={requirements} 
+                        racDefinitions={racDefinitions} 
+                        sessions={sessions} 
+                        userRole={user?.role || UserRole.USER}
+                        currentEmployeeId="emp1"
+                        currentSiteId={currentSiteId}
+                        companies={companies}
+                  />} />
+                  <Route path="/messages" element={<MessageLogPage />} />
+                  <Route path="/users" element={<UserManagement users={users} onUpdateUser={handleUpdateUser} onDeleteUser={handleDeleteUser} addNotification={addNotification} sites={sites} currentSiteId={currentSiteId} />} />
+                  <Route path="/schedule" element={<ScheduleTraining sessions={sessions} setSessions={setSessions} rooms={[]} trainers={[]} racDefinitions={racDefinitions} addNotification={addNotification} currentSiteId={currentSiteId} />} />
+                  <Route path="/site-governance" element={<SiteGovernancePage sites={sites} setSites={setSites} racDefinitions={racDefinitions} bookings={bookings} requirements={requirements} updateRequirements={handleUpdateRequirement} />} />
+                  <Route path="/logs" element={<LogsPage />} />
+                  <Route path="/manuals" element={<UserManualsPage userRole={user?.role || UserRole.USER} />} />
+                  <Route path="/tech-docs" element={<TechnicalDocs />} />
+                  <Route path="/integration" element={<IntegrationHub userRole={user?.role || UserRole.USER} />} />
+                  <Route path="/reports" element={<ReportsPage bookings={bookings} sessions={sessions} currentSiteId={currentSiteId} />} />
                 </Routes>
-                
                 <GeminiAdvisor />
-
-                {isFeedbackSystemActive && (
-                    <>
-                      <button
-                          onClick={() => setIsFeedbackModalOpen(true)}
-                          className="fixed bottom-6 right-24 z-40 bg-white dark:bg-slate-800 text-slate-500 hover:text-indigo-600 dark:text-slate-400 dark:hover:text-indigo-400 p-3 rounded-full shadow-lg border border-slate-200 dark:border-slate-700 hover:shadow-xl transition-all transform hover:scale-110 group no-print"
-                          title="Give Feedback"
-                      >
-                          <MessageSquarePlus size={24} />
-                      </button>
-                      <FeedbackModal 
-                          isOpen={isFeedbackModalOpen} 
-                          onClose={() => setIsFeedbackModalOpen(false)}
-                          onSubmit={handleSubmitFeedback}
-                      />
-                    </>
-                )}
-
               </Layout>
             } />
           </Routes>
         </Router>
       </MessageProvider>
     </AdvisorProvider>
+  );
+};
+
+const App: React.FC = () => {
+  return (
+    <AuthProvider>
+        <AppContent />
+    </AuthProvider>
   );
 };
 

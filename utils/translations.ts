@@ -1,3 +1,4 @@
+
 export type Language = 'en' | 'pt';
 
 export const formatDate = (dateString: string | undefined): string => {
@@ -47,6 +48,7 @@ export const translations = {
       passed: 'Passed',
       failed: 'Failed',
       pending: 'Pending',
+      enterpriseView: 'Enterprise View',
       complianceRate: 'Compliance Rate',
       testsProcessed: 'Tests Processed',
       stats: {
@@ -57,24 +59,11 @@ export const translations = {
         totalUsers: 'Total Users',
         active: 'Active',
         admins: 'Admins'
-      },
-      operationalMatrix: 'Operational Matrix',
-      owner: 'Owner',
-      sending: 'Sending...',
-      smsBlast: 'SMS Blast',
-      simulateRole: 'Simulate Role',
-      superuser: 'Superuser Access',
-      restricted: 'Restricted Access',
-      enterpriseView: 'Enterprise View',
-      exitFullScreen: 'Exit Full Screen',
-      fullScreen: 'Full Screen',
-      notifications: 'Notifications',
-      noNotifications: 'No notifications',
-      clearAll: 'Clear All'
+      }
     },
     nav: {
       dashboard: 'Dashboard',
-      booking: 'Booking',
+      booking: 'Requisitions',
       records: 'Records',
       database: 'Database',
       reports: 'Reports',
@@ -89,736 +78,542 @@ export const translations = {
       settings: 'Settings',
       logs: 'Logs',
       manuals: 'Manuals',
-      feedbackAdmin: 'Feedback',
-      adminGuide: 'Admin Guide',
-      presentation: 'Presentation',
-      proposal: 'Proposal',
-      integration: 'Connectors'
-    },
-    integrationHub: {
-      title: 'Data Integration Hub',
-      subtitle: 'Connect to external employee databases (SAP, Excel, SQL)',
-      newConnector: 'New Connector',
-      activeConnectors: 'Active Connectors',
-      syncHistory: 'Sync History',
-      lastSync: 'Last Sync',
-      healthy: 'Healthy',
-      error: 'Error',
-      idle: 'Idle',
-      syncNow: 'Sync Now',
-      dryRun: 'Dry Run',
-      validateMapping: 'Validate Mapping',
-      scheduler: 'Sync Schedule',
-      wizard: {
-        step1Title: 'Select Source Type',
-        step1Desc: 'Choose how your employee data is stored.',
-        step2Title: 'Configuration',
-        step2Desc: 'Enter connection details or upload file.',
-        step3Title: 'Visual Column Mapper',
-        step3Desc: 'Bridge your data fields with the CARS system.',
-        step4Title: 'Validation & Preview',
-        step4Desc: 'Verify data integrity before finalizing.',
-        systemField: 'System Field',
-        sourceField: 'Source Column',
-        mappingSuccess: 'Mapping Validated'
-      },
-      types: {
-        excel: 'Excel / CSV',
-        database: 'SQL Database',
-        api: 'Custom App / API'
-      },
-      conflicts: {
-        title: 'Conflict Resolution',
-        desc: 'Duplicate records found across sources. Select the master data.',
-        trustSource: 'Trust Hierarchy',
-        manualReview: 'Review Conflict',
-        resolveAll: 'Auto-Resolve All',
-        keepSource: 'Keep Source',
-        keepSystem: 'Keep System'
-      }
+      integration: 'Integration'
     },
     dashboard: {
-      title: 'Dashboard',
-      subtitle: 'Overview',
+      title: 'Safety Command Center',
+      subtitle: 'Critical Activity Requisition System (CARS)',
+      systemStatus: 'Global Readiness Status',
+      newRequisition: 'New Requisition',
       upcoming: {
         title: 'Upcoming Sessions',
         viewSchedule: 'View Schedule',
         date: 'Date',
         session: 'Session',
-        capacity: 'Capacity',
-        status: 'Status'
+        capacity: 'Capacity'
       },
       booked: {
-        title: 'Booked Employees',
-        tableEmployee: 'Employee',
-        tableRac: 'RAC',
-        tableDate: 'Date',
-        tableRoom: 'Room',
-        tableTrainer: 'Trainer',
-        noData: 'No bookings found'
+        title: 'Recently Requisitioned'
       },
       kpi: {
-        adherence: 'Adherence',
+        adherence: 'Workforce Adherence',
         certifications: 'Certifications',
-        pending: 'Pending',
-        expiring: 'Expiring',
-        scheduled: 'Scheduled'
+        pending: 'Pending Reqs',
+        expiring: 'Expiring Soon',
+        scheduled: 'Scheduled Sessions'
       },
       charts: {
-        compliant: 'Compliant',
-        nonCompliant: 'Non-Compliant',
-        complianceTitle: 'Compliance Overview',
-        complianceSubtitle: 'By RAC Type',
-        accessTitle: 'Access Status',
+        compliant: 'Authorized',
+        nonCompliant: 'Blocked',
+        complianceTitle: 'Training Compliance Matrix',
+        complianceSubtitle: 'Requirement Adherence by Module',
+        accessTitle: 'Site Access Permissions',
         missing: 'Missing Requirements'
-      },
-      renewal: {
-        title: 'Renewal Alerts',
-        message: 'employees with training expiring within 30 days.',
-        button: 'Process Renewals'
-      },
-      autoBooking: {
-        title: 'Auto-Booking Triggered',
-        subPart1: 'Employees with Critical expiry',
-        subPart2: 'have been auto-booked.'
       }
     },
     booking: {
-      title: 'New Booking',
-      selfServiceTitle: 'Self Service Booking',
-      selfServiceDesc: 'Book your own training session.',
-      secureMode: 'Secure Mode Active',
-      manageSchedule: 'Manage Schedule',
-      success: 'Booking Submitted Successfully',
-      selectSession: 'Select Session',
+      title: 'New Requisition',
+      selfServiceTitle: 'Self-Service Requisition',
+      secureMode: 'Secure Matrix Active',
+      success: 'Requisition Submitted Successfully',
+      selectSession: 'Select Training Session',
       chooseSession: 'Choose a session...',
-      dlRequired: 'Driver License details are required for this module.',
-      addRow: 'Add Employee',
-      submitBooking: 'Submit Booking'
+      addRow: 'Add Personnel',
+      submitBooking: 'Submit Requisition'
     },
     results: {
       searchPlaceholder: 'Search by Name or ID...',
       passport: 'My Passport',
       export: 'Export CSV',
       table: {
-        employee: 'Employee',
-        session: 'Session',
-        date: 'Date',
-        trainer: 'Trainer',
+        employee: 'Personnel',
+        session: 'Requirement',
+        date: 'Evaluation Date',
+        trainer: 'Evaluator',
         theory: 'Theory',
-        status: 'Status',
+        status: 'Authorization',
         expiry: 'Expiry'
       }
     },
-    database: {
-      title: 'Database',
-      subtitle: 'Master Records',
-      mappingTitle: 'Import Mapping',
-      mappingSubtitle: 'Map CSV columns to system fields',
-      preview: 'File Preview',
-      coreData: 'Core Data',
-      complianceTrain: 'Compliance & Training',
-      sourceCol: 'Source Column',
-      processImport: 'Process Import',
-      importSuccess: 'Import Successful',
-      active: 'Active',
-      granted: 'Granted',
-      blocked: 'Blocked',
-      accessStatus: 'Access Status',
-      aso: 'ASO Expiry',
-      opsMatrix: 'OPS Matrix',
-      cardBack: 'Card Back Preview',
-      contactInfo: 'Contact Info',
-      cell: 'Cell Phone',
-      dlDetails: 'Driver License Details',
-      number: 'Number',
-      class: 'Class',
-      editModal: 'Edit Employee',
-      confirmDelete: 'Confirm Delete',
-      confirmDeleteMsg: 'Are you sure you want to delete this record? This action cannot be undone.',
-      confirmDeactivate: 'Deactivate User',
-      confirmDeactivateMsg: 'Are you sure you want to deactivate this user? They will lose system access.',
-      massQr: 'Mass QR Download',
-      zipping: 'Zipping...',
-      exportDb: 'Export DB',
-      wizard: 'Import Wizard',
-      importCsv: 'Import CSV',
-      ops: {
-          EMI_PTS: 'Emi-PTS',
-          APR_ART: 'Apr-ART',
-          DONO_AREA_PTS: 'Dono-Area',
-          EXEC: 'Exec'
-      },
-      bulkQrMessage: 'This will generate and download {count} QR codes. Continue?'
-    },
-    reports: {
-      title: 'Reports & Analytics',
-      subtitle: 'Performance Metrics',
-      executiveAnalysis: 'Executive AI Analysis',
-      analyzing: 'Analyzing...',
-      generate: 'Generate Report',
-      leaderboard: 'Trainer Leaderboard',
-      noShowsTitle: 'No Shows Alert',
-      filters: {
-        period: 'Period',
-        startDate: 'Start Date',
-        endDate: 'End Date',
-        department: 'Department',
-        racType: 'RAC Type'
-      },
-      periods: {
-        weekly: 'Weekly',
-        monthly: 'Monthly',
-        ytd: 'Year to Date',
-        custom: 'Custom Range'
-      },
-      stats: {
-        totalTrained: 'Total Trained',
-        passRate: 'Pass Rate',
-        attendance: 'Attendance Rate',
-        noShows: 'No Shows'
-      },
-      charts: {
-        performance: 'Performance by Module',
-        breakdownTitle: 'Pass vs Fail Breakdown',
-        distributionTitle: 'Overall Distribution',
-        distributionSubtitle: 'Global Pass/Fail Ratio',
-        aiSubtitle: 'Powered by Gemini 2.5'
-      },
-      trainerMetrics: {
-        students: 'Students',
-        avgTheory: 'Avg Theory'
-      },
-      printReport: 'Print Report'
-    },
-    schedule: {
-      title: 'Training Schedule',
-      subtitle: 'Manage Sessions',
-      newSession: 'New Session',
-      modal: {
-        title: 'Schedule Session',
-        racType: 'RAC Type',
-        date: 'Date',
-        startTime: 'Start Time',
-        location: 'Location',
-        capacity: 'Capacity',
-        instructor: 'Instructor',
-        language: 'Language',
-        portuguese: 'Portuguese',
-        english: 'English',
-        saveSession: 'Save Session'
-      }
-    },
-    trainer: {
-      title: 'Trainer Input',
-      loggedInAs: 'Logged in as',
-      noSessions: 'No pending sessions found.',
-      selectSession: 'Select Session to Grade',
-      chooseSession: 'Choose a session...',
-      saveResults: 'Save Results'
-    },
-    users: {
-      title: 'User Management',
-      subtitle: 'Manage system access and roles',
-      addUser: 'Add User',
-      table: {
-        user: 'User',
-        role: 'Role',
-        status: 'Status',
-        actions: 'Actions'
-      },
-      modal: {
-        title: 'Add New User',
-        name: 'Full Name',
-        email: 'Email Address',
-        createUser: 'Create User'
-      }
-    },
-    settings: {
-      title: 'System Settings',
-      globalConfig: 'Global Configuration',
-      localConfig: 'Local Configuration',
-      feedbackConfig: 'Feedback Widget Configuration',
-      tabs: {
-        general: 'General',
-        trainers: 'Trainers',
-        racs: 'RAC Definitions',
-        sites: 'Sites',
-        companies: 'Companies',
-        integration: 'Integration',
-        branding: 'Branding',
-        diagnostics: 'Diagnostics'
-      },
-      rooms: {
-        title: 'Training Rooms',
-        new: 'New Room',
-        name: 'Room Name',
-        capacity: 'Capacity'
-      },
-      trainers: {
-        title: 'Qualified Trainers',
-        name: 'Trainer Name',
-        new: 'New Trainer'
-      },
-      racs: {
-        title: 'RAC Standards',
-        code: 'Code',
-        description: 'Description'
-      },
-      branding: {
-        title: 'Tenant Branding',
-        subtitle: 'Update application identity and safety logos.',
-        save: 'Save Branding',
-        brandName: 'Brand Name',
-        appName: 'Application Name',
-        appNameDesc: 'This name appears in the sidebar and main header.',
-        corporateLogo: 'Corporate Logo',
-        safetyLogo: 'Safety First Logo',
-        safetyLogoDesc: 'Typically a "Safety First" or RAC-specific badge.',
-        upload: 'Upload Logo'
-      },
-      integrationPage: {
-        title: 'Data Integration',
-        sourceA: 'Source A',
-        sourceB: 'Source B',
-        middleware: 'Middleware Status',
-        processing: 'Processing...',
-        syncNow: 'Sync Now',
-        waiting: 'Waiting for sync command...'
-      },
-      saving: 'Saving...',
-      saveAll: 'Save All Changes'
-    },
     cards: {
-      title: 'Card Printing',
-      requestButton: 'Request Cards',
-      sending: 'Sending Request...',
-      eligibility: {
-        failedTitle: 'Not Eligible',
-        failedMsg: 'You do not meet the requirements for a card.',
-        checkReqs: 'Check Requirements'
-      }
-    },
-    verification: {
-      title: 'Verification',
-      notFound: 'Record Not Found',
-      verified: 'VERIFIED',
-      notVerified: 'NOT VERIFIED',
-      scanTime: 'Scan Time',
-      asoStatus: 'ASO Status',
-      dlStatus: 'DL Status'
-    },
-    manuals: {
-      title: 'User Manuals',
-      subtitle: 'System Documentation & Guides',
-      sysAdmin: {
-        title: 'System Admin Manual',
-        subtitle: 'Complete System Control',
-        configTitle: 'System Configuration',
-        configDesc: 'Setting up the foundational data.',
-        rooms: 'Configure Rooms',
-        trainers: 'Manage Trainers',
-        racs: 'Define RACs',
-        dbTitle: 'Database Management',
-        dbDesc: 'Managing employee records.',
-        restrictionWarning: 'Note: Matrix restrictions apply.',
-        csv: 'Supports CSV Import.',
-        active: 'Ensure active status.'
-      },
-      racAdmin: {
-        title: 'RAC Admin Manual',
-        subtitle: 'Training Operations',
-        schedTitle: 'Scheduling',
-        schedDesc: 'Creating training calendars.',
-        create: 'Create Session',
-        lang: 'Set Language',
-        autoTitle: 'Auto-Booking',
-        autoDesc: 'Handling automated bookings.',
-        approve: 'Approve or Reject pending bookings.',
-        renewTitle: 'Renewals',
-        renewDesc: 'Process renewal queues.'
-      },
-      racTrainer: {
-        title: 'Trainer Manual',
-        subtitle: 'Grading & Attendance',
-        inputTitle: 'Result Input',
-        inputDesc: 'Entering session results.',
-        grading: 'Mark attendance and scores.',
-        rac02: 'Special Rule: RAC 02 requires DL verification.',
-        save: 'Save and finalize.'
-      },
-      deptAdmin: {
-        title: 'Dept Admin Manual',
-        subtitle: 'Department Oversight',
-        reqTitle: 'Card Requests',
-        reqDesc: 'Managing card issuance.',
-        search: 'Search for employees.',
-        print: 'Select and Print.',
-        repTitle: 'Reports',
-        repDesc: 'View department analytics.'
-      },
-      user: {
-        title: 'User Manual',
-        subtitle: 'Employee Self-Service',
-        statusTitle: 'Checking Status',
-        statusDesc: 'Understanding your dashboard.',
-        filterAlert: 'Use filters to find specific records.',
-        green: 'Green means Compliant.',
-        red: 'Red means Attention Needed.',
-        qr: 'Digital QR Passport.'
-      }
-    },
-    feedback: {
-      title: 'Feedback',
-      subtitle: 'Help us improve',
-      typeLabel: 'Feedback Type',
-      types: {
-        Bug: 'Bug Report',
-        Improvement: 'Feature Request',
-        General: 'General Comment'
-      },
-      messageLabel: 'Message',
-      msgPlaceholder: 'Describe your issue or idea...',
-      button: 'Send Feedback',
-      adminTitle: 'Feedback Administration',
-      manage: 'Manage User Feedback',
-      status: {
-        New: 'New',
-        InProgress: 'In Progress',
-        Resolved: 'Resolved',
-        Dismissed: 'Dismissed'
-      },
-      actionable: 'Actionable',
-      noSelection: 'No feedback selected',
-      selectPrompt: 'Select a feedback item to view details',
-      submittedBy: 'Submitted By',
-      internalNotes: 'Internal Notes',
-      visibleAdmin: 'Visible to Admins Only',
-      deleteRecord: 'Delete Record',
-      markedActionable: 'Marked Actionable',
-      markActionable: 'Mark as Actionable',
-      workflow: 'Workflow Status',
-      priority: 'Priority'
-    },
-    communications: {
-      title: 'Communications',
-      subtitle: 'Message Log',
-      clear: 'Clear Log',
-      search: 'Search messages...',
-      empty: 'No messages found',
-      select: 'Select a message to view details',
-      sms: 'SMS Notification',
-      gateway: 'Sent via Gateway',
-      to: 'To',
-      automated: 'This is an automated system message.'
-    },
-    alcohol: {
-      dashboard: {
-        title: 'Alcohol Control',
-        subtitle: 'IoT Monitoring Dashboard',
-        live: 'LIVE FEED',
-        backToLive: 'Back to Live',
-        specs: 'Tech Specs',
-        kpi: {
-          total: 'Total Tests',
-          violations: 'Violations',
-          health: 'System Health'
-        },
-        online: 'Online',
-        hourlyTrend: 'Hourly Trend',
-        dailyTrend: 'Daily Trend',
-        deviceLoad: 'Device Load',
-        complianceRatio: 'Compliance Ratio',
-        liveStream: 'Real-time Stream',
-        mqtt: 'MQTT Protocol',
-        deviceHealth: 'Device Health',
-        alert: {
-          title: 'ALCOHOL DETECTED',
-          desc: 'Positive reading detected.',
-          measured: 'Measured'
-        },
-        actions: 'Actions',
-        actionLog: {
-          locked: 'Locked',
-          generating: 'Generating...',
-          logged: 'Logged',
-          contacting: 'Contacting...',
-          sent: 'Sent'
-        },
-        close: 'Close'
-      },
-      protocol: {
-        title: 'Protocol',
-        positiveTitle: 'Positive',
-        positiveDesc: 'Lockout.',
-        resetTitle: 'Reset',
-        resetDesc: 'Manual.'
-      },
-      features: {
-        title: 'Features',
-        iotTitle: 'IoT',
-        iotDesc: 'Connected.',
-        accessTitle: 'Access',
-        accessDesc: 'Barriers.',
-        complianceTitle: 'Compliance',
-        complianceDesc: 'Rules.'
-      }
-    },
-    logs: {
-      title: 'System Logs',
-      levels: {
-        all: 'All Levels',
-        info: 'Info',
-        warn: 'Warning',
-        error: 'Error',
-        audit: 'Audit'
-      },
-      table: {
-        level: 'Level',
-        timestamp: 'Timestamp',
-        user: 'User',
-        message: 'Message'
-      }
-    },
-    adminManual: {
-      title: 'Admin Manual',
-      subtitle: 'Comprehensive System Guide',
-      slides: {
-        intro: '1. Introduction',
-        logic: '2. Logic Engine',
-        dashboard: '3. Dashboard',
-        workflows: '4. Workflows',
-        advanced: '5. Advanced Config',
-        robotics: '6. Robotic Protocols',
-        troubleshoot: '7. Troubleshooting',
-        architecture: '8. System Architecture'
-      },
-      content: {
-        confidential: 'CONFIDENTIAL',
-        production: 'PRODUCTION SYSTEM',
-        logic: {
-          title: 'Compliance Logic',
-          desc: 'The system uses a boolean matrix to determine access.',
-          active: 'Active Status',
-          aso: 'ASO Validity',
-          racs: 'RAC Certifications',
-          result: 'ACCESS STATUS'
-        },
-        dashboard: {
-          operational: {
-            title: 'Operational Dashboard',
-            kpi: 'Real-time KPIs',
-            renewal: 'Renewal Tracking',
-            auto: 'Auto-Booking Engine'
-          },
-          enterprise: {
-            title: 'Enterprise Dashboard',
-            global: 'Global Overview',
-            risk: 'Risk Heatmaps',
-            ai: 'AI Insights'
-          }
-        },
-        workflows: {
-          a: { title: 'Data Ingestion', steps: ['Source A (SAP)', 'Source B (Contractor)', 'Middleware Sync'] },
-          b: { title: 'Processing', steps: ['ID Normalization', 'Conflict Resolution', 'Status Calculation'] },
-          c: { title: 'Analytics', steps: ['Compliance Rate', 'Trend Analysis', 'AI Reporting'] },
-          d: { title: 'Output', steps: ['KPI Panel', 'Access Control', 'Notifications'] }
-        },
-        advanced: {
-          gov: { title: 'Site Governance', desc: 'Define mandatory RACs per site.' },
-          alcohol: { title: 'Alcohol IoT', desc: 'Integration with breathalyzer turnstiles.' }
-        },
-        troubleshoot: {
-          0: { issue: 'Login Failed', solution: 'Check network connection and credentials.' },
-          1: { issue: 'Sync Error', solution: 'Check Middleware logs in Settings > Integration.' },
-          2: { issue: 'Slow Dashboard', solution: 'Clear browser cache or check internet speed.' },
-          3: { issue: 'Mobile Layout', solution: 'Rotate device to landscape for tables.' },
-          4: { issue: 'Other Issues', solution: 'Contact System Support.' }
-        },
-        architecture: {
-          ui: '[ USER INTERFACE ]',
-          gate: '[ PERMISSION GATE ]',
-          gateDesc: 'Checks User Role',
-          logic: '[ LOGIC ENGINE ]',
-          checkCap: 'Check Capacity',
-          checkMatrix: 'Check Matrix Lock',
-          checkDl: 'Check DL Validity',
-          dbState: '[ DATABASE STATE ]',
-          updateRecord: 'Updates Record',
-          automation: '[ AUTOMATION ]',
-          emailTrig: '📧 Email/SMS',
-          printTrig: '🖨️ Auto-Print',
-          aiTrig: '🤖 AI Analysis'
-        },
-        robotics: {
-          title: 'Robotic Self-Healing Protocols',
-          subtitle: 'Automated resilience and diagnostic systems.',
-          crash: {
-            title: 'Auto-Recovery Engine',
-            desc: 'The system utilizes a React Error Boundary wrapper. Intercepts crashes and attempts state recovery.'
-          },
-          diagnostics: {
-            title: 'Active Diagnostics',
-            desc: 'System Admins can manually trigger the "RoboTech Healer Protocol" to optimize memory and shards.'
-          }
+        title: 'Certification Cards',
+        requestButton: 'Request Cards',
+        sending: 'Sending Requisition...',
+        eligibility: {
+            failedTitle: 'Compliance Error',
+            failedMsg: 'You are currently not authorized to generate a card. Please ensure all mandatory RACs and ASO are valid.',
+            checkReqs: 'Check Requirements'
         }
-      }
-    },
-    proposal: {
-      aboutMe: {
-        title: 'About the Developer',
-        name: 'Pita Domingos',
-        preferred: 'Pita',
-        cert: 'Full Stack Developer',
-        role: 'Lead Architect',
-        bio: 'Experienced developer specializing in enterprise safety systems.'
-      },
-      execSummary: {
-        title: 'Executive Summary',
-        text: 'A comprehensive solution to digitize and automate safety compliance.',
-        quote: '"Safety is not just a priority, it is a value."'
-      },
-      objectives: {
-        title: 'Project Objectives',
-        problemTitle: 'The Problem',
-        problemText: 'Manual processes, fragmented data, and compliance risks.',
-        solutionTitle: 'The Solution',
-        goals: ['Centralized Data', 'Automated Compliance', 'Real-time Reporting']
-      },
-      organogram: {
-        title: 'Technical Organogram',
-        tech1: 'Frontend Architecture',
-        tech2: 'Backend Services'
-      },
-      timeline: {
-        title: 'Implementation Timeline',
-        phase1: 'Discovery',
-        phase1desc: 'Requirements',
-        phase2: 'Development',
-        phase2desc: 'Build',
-        phase3: 'Testing',
-        phase3desc: 'UAT',
-        phase4: 'Deployment',
-        phase4desc: 'Live',
-        phase5: 'Support',
-        phase5desc: 'Maintenance'
-      },
-      techStack: {
-        title: 'Technology Stack',
-        frontendTitle: 'Frontend',
-        frontend: 'React, TypeScript, Tailwind',
-        backendTitle: 'Backend',
-        backend: 'Node.js, Express',
-        databaseTitle: 'Database',
-        database: 'PostgreSQL',
-        securityTitle: 'Security',
-        security: 'JWT'
-      },
-      financials: {
-        title: 'Financial Proposal',
-        items: [
-          { name: 'Initial Development', type: 'One-time', cost: '$12,000.00' },
-          { name: 'Development & Setup', type: 'One-time', cost: '$6,000.00' },
-          { name: 'Cloud Infrastructure', type: 'Monthly', cost: '$2,500.00' },
-          { name: 'Training & Documentation', type: 'One-time', cost: '$2,500.00' },
-          { name: 'Maintenance & Support', type: 'Monthly', cost: '$1,500.00' }
-        ]
-      },
-      roadmap: {
-        title: 'Strategic Roadmap',
-        auth: 'Authentication',
-        authDesc: 'SSO',
-        db: 'Database',
-        dbDesc: 'Cloud',
-        email: 'Notifications',
-        emailDesc: 'Gateway',
-        hosting: 'Hosting',
-        hostingDesc: 'Cloud'
-      },
-      aiFeatures: {
-        title: 'AI Integration',
-        chatbot: 'Advisor',
-        reporting: 'Reports'
-      },
-      futureUpdates: {
-        title: 'Future Modules',
-        moduleA: 'A - ERP',
-        moduleB: 'B - Hardware'
-      },
-      enhancedCaps: {
-        title: 'Enhanced Capabilities',
-        mobileVerify: { desc: 'Mobile App' },
-        autoBooking: { desc: 'Auto-Booking' },
-        massData: { desc: 'Analytics' }
-      },
-      conclusion: {
-        title: 'Conclusion',
-        text: 'This system represents a significant leap forward.'
-      },
-      thankYou: {
-        title: 'Thank You',
-        contact: 'Contact us',
-        phone: '+258 84 123 4567'
-      },
-      digitalTrans: 'Digital Transformation Initiative'
-    },
-    ai: {
-      systemPromptAdvice: 'You are a safety expert. Provide advice on {rac} in {language}.',
-      systemPromptReport: 'You are a safety data analyst. Generate a report in {language}.'
     },
     advisor: {
-      button: 'Safety Advisor',
-      title: 'Gemini Safety Advisor',
-      sender: 'Gemini',
-      emptyState: 'How can I help you with safety standards today?',
-      placeholder: 'Ask about RACs, procedures...'
+        title: 'Safety AI Advisor',
+        button: 'Ask AI Advisor',
+        sender: 'AI Guide',
+        placeholder: 'Ask about safety rules...',
+        emptyState: 'How can I help with your safety requisition today?'
+    },
+    verification: {
+        title: 'Digital Verification',
+        verified: 'AUTHORIZED',
+        notVerified: 'ACCESS DENIED',
+        notFound: 'RECORD NOT FOUND',
+        scanTime: 'Verification Time',
+        asoStatus: 'Medical (ASO)',
+        dlStatus: 'Driver License'
+    },
+    reports: {
+        title: 'Safety Analytics',
+        subtitle: 'CARS Performance Metrics',
+        generate: 'Generate Report',
+        analyzing: 'Analyzing...',
+        executiveAnalysis: 'Executive AI Summary',
+        stats: {
+            totalTrained: 'Total Personnel',
+            passRate: 'Success Rate',
+            attendance: 'Attendance',
+            noShows: 'No-Shows'
+        },
+        filters: {
+            period: 'Period',
+            department: 'Department',
+            racType: 'RAC Module',
+            startDate: 'Start Date',
+            endDate: 'End Date'
+        },
+        periods: {
+            weekly: 'Weekly',
+            monthly: 'Monthly',
+            ytd: 'Year to Date',
+            custom: 'Custom Range'
+        },
+        charts: {
+            performance: 'Training Success',
+            distributionTitle: 'Compliance Breakdown',
+            distributionSubtitle: 'Pass/Fail ratio for current selection',
+            aiSubtitle: 'Contextual Safety Intelligence',
+            breakdownTitle: 'Module specific evaluation results'
+        },
+        leaderboard: 'Evaluator Performance',
+        printReport: 'Print Statistics',
+        trainerMetrics: {
+            students: 'Students',
+            avgTheory: 'Avg. Theory'
+        },
+        noShowsTitle: 'Unauthorized Absences'
+    },
+    proposal: {
+        digitalTrans: 'Digital Safety Transformation',
+        aboutMe: {
+            title: 'About The Architect',
+            name: 'Pita Domingos',
+            preferred: 'Pita',
+            role: 'Lead System Architect',
+            cert: 'Full Stack & AI Engineer',
+            bio: 'Specializing in high-reliability safety systems and automated compliance frameworks.'
+        },
+        execSummary: {
+            title: 'Executive Summary',
+            text: 'CARS Manager is a next-generation safety compliance platform designed to automate the requisition of critical activity evaluations and site access controls.',
+            quote: 'Building safety through automation.'
+        },
+        objectives: {
+            title: 'Strategic Objectives',
+            problemTitle: 'The Challenge',
+            problemText: 'Manual evaluation tracking and fragmented data sources lead to site access delays and safety risks.',
+            solutionTitle: 'The Solution',
+            goals: ['Automate Evaluator Inputs', 'Centralize Workforce Registry', 'Real-time Compliance Reporting']
+        },
+        organogram: {
+            title: 'Project Structure',
+            tech1: 'Frontend Development',
+            tech2: 'Cloud Architecture'
+        },
+        timeline: {
+            title: 'Development Roadmap',
+            phase1: 'Requirement Analysis',
+            phase1desc: 'Identifying site-specific safety constraints.',
+            phase2: 'Core Development',
+            phase2desc: 'Building evaluation and booking engines.',
+            phase3: 'Integration Layer',
+            phase3desc: 'Connecting HR and Contractor databases.',
+            phase4: 'Pilot Program',
+            phase4desc: 'UAT testing at Moatize site.',
+            phase5: 'Full Deployment',
+            phase5desc: 'Global rollout across all sites.'
+        },
+        techStack: {
+            title: 'Technology Stack',
+            frontendTitle: 'Web Interface',
+            frontend: 'React 19 & Tailwind CSS',
+            backendTitle: 'Data Management',
+            backend: 'Supabase & PostgreSQL',
+            databaseTitle: 'Storage Layer',
+            database: 'Cloud Realtime DB',
+            securityTitle: 'Access Control',
+            security: 'JWT & Multi-tenant RBAC'
+        },
+        financials: {
+            title: 'Project Investment'
+        },
+        roadmap: {
+            title: 'Future Roadmap',
+            auth: 'Enhanced Authentication',
+            authDesc: 'Biometric and SSO integration.',
+            db: 'Scalable Database',
+            dbDesc: 'Sharded data for millions of records.',
+            email: 'Auto-Notifications',
+            emailDesc: 'Predictive expiry alerts via Email/SMS.',
+            hosting: 'Global CDN',
+            hostingDesc: 'Edge computing for low-latency site access.'
+        },
+        aiFeatures: {
+            title: 'AI Enhancements',
+            chatbot: 'Conversational Safety Advisor',
+            reporting: 'Predictive Risk Analysis'
+        },
+        futureUpdates: {
+            title: 'Module Integration',
+            moduleA: 'A - IoT Alcohol Control',
+            moduleB: 'B - Site Gate Integration'
+        },
+        enhancedCaps: {
+            title: 'Enhanced Capabilities',
+            mobileVerify: { desc: 'Instant QR verification for field supervisors.' },
+            autoBooking: { desc: 'Smart algorithms to book sessions before expiry.' },
+            massData: { desc: 'Efficient processing of historical training data.' }
+        },
+        conclusion: {
+            title: 'Conclusion',
+            text: 'Transforming site safety from a manual task to an automated asset.'
+        },
+        thankYou: {
+            title: 'Thank You'
+        }
+    },
+    adminManual: {
+        title: 'System Administrator Manual',
+        subtitle: 'Enterprise Configuration & Governance Guide',
+        slides: {
+            intro: 'Introduction',
+            logic: 'Compliance Logic',
+            dashboard: 'Command Dashboard',
+            workflows: 'Standard Workflows',
+            advanced: 'Advanced Config',
+            robotics: 'Self-Healing System',
+            troubleshoot: 'Troubleshooting',
+            architecture: 'System Architecture'
+        },
+        content: {
+            logic: {
+                title: 'Compliance Matrix Logic',
+                desc: 'The system grants access based on a strict AND conditional set.',
+                active: 'Active Status',
+                aso: 'Valid Medical (ASO)',
+                racs: 'Mandatory RACs Passed',
+                result: 'Access Granted'
+            }
+        }
+    },
+    manuals: {
+        title: 'Documentation Center',
+        subtitle: 'Role-based operation guides',
+        sysAdmin: {
+            title: 'System Admin Guide',
+            subtitle: 'Global infrastructure management',
+            configTitle: 'System Configuration',
+            configDesc: 'Manage global entities and requirements.',
+            rooms: 'Manage training rooms and capacity',
+            trainers: 'Register and authorize evaluators',
+            racs: 'Define RAC validity and rules',
+            dbTitle: 'Database & Registry',
+            dbDesc: 'Master registry for all site personnel.',
+            restrictionWarning: 'Changes to matrix rules affect global compliance rates.',
+            csv: 'Bulk import using standard CSV templates.',
+            active: 'Toggle employee active status for site blocking.'
+        },
+        racAdmin: {
+            title: 'RAC Admin Guide',
+            subtitle: 'Session scheduling and coordination',
+            schedTitle: 'Scheduling Engine',
+            schedDesc: 'Plan and publish evaluation sessions.',
+            create: 'Create recurring slots',
+            lang: 'Select evaluation language (EN/PT)',
+            autoTitle: 'Auto-Booking Coordination',
+            autoDesc: 'Manage system-generated requisitions.',
+            approve: 'Review and confirm auto-bookings',
+            renewTitle: 'Renewal Management',
+            renewDesc: 'Track expiring certifications per site.'
+        },
+        racTrainer: {
+            title: 'RAC Trainer Guide',
+            subtitle: 'Evaluation input and results',
+            inputTitle: 'Result Entry',
+            inputDesc: 'Direct grading and evaluation log.',
+            grading: 'Pass/Fail and Score input',
+            rac02: 'RAC 02 requires Driver License verification.',
+            save: 'Finalize results to update Digital Passports.'
+        },
+        deptAdmin: {
+            title: 'Dept Admin Guide',
+            subtitle: 'Departmental oversight',
+            reqTitle: 'Requisitioning',
+            reqDesc: 'Book training for your department staff.',
+            search: 'Search and filter eligible personnel',
+            print: 'Generate batch cards for shift teams',
+            repTitle: 'Departmental Reports',
+            repDesc: 'Monitor departmental compliance KPIs.'
+        },
+        user: {
+            title: 'General User Guide',
+            subtitle: 'Self-service and status tracking',
+            statusTitle: 'Compliance Status',
+            statusDesc: 'Check your personal site access readiness.',
+            filterAlert: 'Filter by your ID to see evaluated modules.',
+            green: 'Authorization Active (All modules valid)',
+            red: 'Access Blocked (Action required)',
+            qr: 'Download your personal QR for field evaluation.'
+        }
     },
     enterprise: {
-      systemTitle: 'Enterprise Command Center',
-      systemSubtitle: 'Multi-Tenant SaaS Administration',
-      title: 'Enterprise Dashboard',
-      subtitle: 'Global Operations Overview',
-      siteName: 'Site',
-      globalHealth: 'Global Health Score',
-      totalWorkforce: 'Total Workforce',
-      topPerformer: 'Top Performing Site',
-      needsAttention: 'Needs Attention',
-      noData: 'No data available',
-      tenantMatrix: 'Tenant Performance Matrix',
-      systemView: 'System View',
-      siteComparison: 'Site Comparison',
-      riskHeatmap: 'Department Risk Heatmap',
-      selectPrompt: 'Select "All Sites" to view comparison',
-      aiAuditor: 'AI System Auditor',
-      aiDirector: 'AI Safety Director',
-      systemIntelligence: 'Platform-wide Intelligence',
-      companyIntelligence: 'Intelligence for',
-      aiPrompt: 'Generating AI Insights...',
-      aiPromptSystem: 'Analyzing multi-tenant risk vectors.',
-      aiPromptEnterprise: 'Analyzing site compliance.',
-      bottlenecks: 'Training Bottlenecks',
-      failure: 'Fail Rate'
+        title: 'Enterprise Analytics',
+        subtitle: 'Global workforce compliance overview',
+        systemTitle: 'Platform Master Dashboard',
+        systemSubtitle: 'Multi-tenant health monitoring',
+        siteName: 'Operational Site',
+        globalHealth: 'Global Health Score',
+        totalWorkforce: 'Total Workforce',
+        topPerformer: 'Top Performing Site',
+        needsAttention: 'Risk Area (Dept)',
+        noData: 'No Data Available',
+        tenantMatrix: 'Tenant Compliance Matrix',
+        systemView: 'System-Wide Monitoring',
+        siteComparison: 'Site Performance Benchmark',
+        selectPrompt: 'Select a site to view specific analytics',
+        riskHeatmap: 'Departmental Risk Heatmap',
+        aiAuditor: 'AI Compliance Auditor',
+        aiDirector: 'Executive AI Director',
+        systemIntelligence: 'Platform-level analytics engine',
+        companyIntelligence: 'Enterprise analysis for',
+        aiPrompt: 'Select parameters and generate',
+        aiPromptSystem: 'to initiate platform-wide audit.',
+        aiPromptEnterprise: 'to initiate enterprise safety summary.',
+        bottlenecks: 'Critical Training Bottlenecks',
+        failure: 'Failure Rate'
     },
-    racDefs: {
-        RAC01: 'RAC 01 - Working at Height',
-        RAC02: 'RAC 02 - Vehicles and Mobile Equipment',
-        RAC03: 'RAC 03 - Mobile Equipment Lockout',
-        RAC04: 'RAC 04 - Machine Guarding',
-        RAC05: 'RAC 05 - Confined Space',
-        RAC06: 'RAC 06 - Lifting Operations',
-        RAC07: 'RAC 07 - Ground Stability',
-        RAC08: 'RAC 08 - Electricity',
-        RAC09: 'RAC 09 - Explosives',
-        RAC10: 'RAC 10 - Liquid Metal',
-        RAC11: 'RAC 11 - Mine Traffic',
-        PTS: 'PTS - Permissão de Trabalho Seguro',
-        ART: 'ART - Análise de Risco da Tarefa',
-        LIB_OPS: 'LIB-OPS - Liberação Operacional',
-        LIB_MOV: 'LIB-MOV - Liberação de Movimentação'
+    feedback: {
+        title: 'System Feedback',
+        subtitle: 'Report bugs or suggest improvements',
+        adminTitle: 'Feedback Command Center',
+        manage: 'Manage user reports and system improvements',
+        typeLabel: 'Feedback Category',
+        messageLabel: 'Your Message',
+        msgPlaceholder: 'Describe the issue or suggestion in detail...',
+        button: 'Submit Feedback',
+        types: {
+            Bug: 'Technical Bug',
+            Improvement: 'Improvement',
+            General: 'General Inquiry'
+        },
+        status: {
+            New: 'New',
+            InProgress: 'In Progress',
+            Resolved: 'Resolved',
+            Dismissed: 'Dismissed'
+        },
+        actionable: 'Actionable',
+        noSelection: 'Select an entry from the list to view details',
+        workflow: 'Resolution Workflow',
+        priority: 'Strategic Priority',
+        markActionable: 'Mark as Actionable',
+        markedActionable: 'Actionable Item',
+        submittedBy: 'Submitted By',
+        internalNotes: 'Internal Resolution Notes',
+        visibleAdmin: 'Notes are only visible to System Administrators',
+        deleteRecord: 'Delete Feedback Record'
     },
-    notifications: {
-        capacityTitle: 'Capacity Warning',
-        capacityMsg: 'Some bookings were auto-moved to the next available session on'
+    settings: {
+        title: 'System Settings',
+        subtitle: 'Configure core application logic',
+        globalConfig: 'Global Configuration (Enterprise Level)',
+        localConfig: 'Local Site Configuration',
+        saving: 'Saving...',
+        saveAll: 'Save All Changes',
+        tabs: {
+            general: 'General',
+            trainers: 'Trainers',
+            racs: 'RAC Definitions',
+            sites: 'Operational Sites',
+            companies: 'Tenant Companies',
+            branding: 'Branding',
+            integration: 'Data Integration',
+            diagnostics: 'AI Diagnostics'
+        },
+        rooms: {
+            title: 'Evaluation Rooms',
+            name: 'Room Name',
+            capacity: 'Capacity'
+        },
+        trainers: {
+            title: 'Authorized Evaluators',
+            new: 'Register New Trainer'
+        },
+        racs: {
+            title: 'RAC Safety Modules'
+        },
+        branding: {
+            title: 'Corporate Identity',
+            subtitle: 'Personalize the environment for your tenant',
+            brandName: 'Corporate Brand Name',
+            appName: 'Portal Application Title',
+            appNameDesc: 'Visible in Sidebar and Browser Tab',
+            corporateLogo: 'Corporate Identity (Logo)',
+            safetyLogo: 'Safety Branding (Badge)',
+            safetyLogoDesc: 'Visible in the top-left safety shield zone',
+            upload: 'Upload New File',
+            save: 'Update Tenant Identity'
+        },
+        integrationPage: {
+            title: 'Middleware Integration Hub',
+            sourceA: 'Source System A (Internal)',
+            sourceB: 'Source System B (Contractors)',
+            waiting: 'Ready for synchronization...',
+            processing: 'Processing middleware logic...',
+            syncNow: 'Initiate Global Sync'
+        }
+    },
+    logs: {
+        title: 'System Event Logs',
+        levels: {
+            all: 'All Levels',
+            info: 'Info',
+            warn: 'Warning',
+            error: 'Error',
+            audit: 'Audit'
+        },
+        table: {
+            level: 'Level',
+            timestamp: 'Timestamp',
+            user: 'Subject',
+            message: 'Event Description'
+        }
+    },
+    trainer: {
+        title: 'Evaluation Input Matrix',
+        loggedInAs: 'Evaluator Account:',
+        noSessions: 'No pending evaluation sessions found for your account.',
+        selectSession: 'Operational Session Selector',
+        chooseSession: 'Select a published session to start grading...',
+        saveResults: 'Commit Results & Update Passports'
+    },
+    schedule: {
+        title: 'Training Schedule',
+        subtitle: 'Plan and publish evaluation slots',
+        newSession: 'Schedule New Slot',
+        modal: {
+            title: 'Publish Evaluation Session',
+            racType: 'Safety Module',
+            date: 'Date',
+            startTime: 'Start Time',
+            location: 'Room/Venue',
+            capacity: 'Max Students',
+            instructor: 'Lead Evaluator',
+            language: 'Session Language',
+            portuguese: 'Portuguese',
+            english: 'English',
+            saveSession: 'Publish Session'
+        }
+    },
+    users: {
+        title: 'User Access Control',
+        subtitle: 'Manage administrative accounts and permissions',
+        addUser: 'Provision New User',
+        table: {
+            user: 'Personnel',
+            role: 'Access Level',
+            status: 'System Status',
+            actions: 'Management'
+        },
+        modal: {
+            title: 'Create System User',
+            name: 'Full Name',
+            email: 'Corporate Email',
+            createUser: 'Authorize User'
+        }
+    },
+    database: {
+        confirmDelete: 'Confirm Deletion',
+        confirmDeleteMsg: 'This action is irreversible. All associated data will be removed from cloud storage.',
+        importCsv: 'Import Records',
+        importSuccess: 'Data Import Successful',
+        active: 'Active'
+    },
+    communications: {
+        title: 'Communication Logs',
+        subtitle: 'History of automated SMS and Email alerts',
+        clear: 'Clear History',
+        search: 'Search messages...',
+        empty: 'No communication records found.',
+        select: 'Select a message to view the transmission preview.',
+        sms: 'SMS Message',
+        gateway: 'Delivered via DigiSols SMS Gateway',
+        to: 'To',
+        automated: 'This is an automated system notification.'
+    },
+    alcohol: {
+        dashboard: {
+            title: 'Alcohol Control Center',
+            subtitle: 'IoT Breathalyzer Real-time Monitoring',
+            live: 'Live Feed Active',
+            specs: 'View Integration Specs',
+            backToLive: 'Back to Dashboard',
+            online: 'Devices Online',
+            hourlyTrend: 'Hourly Test Volume',
+            dailyTrend: 'Daily Testing History',
+            deviceLoad: 'Tests per Access Point',
+            complianceRatio: 'Workforce Sobriety Rate',
+            liveStream: 'Real-time MQTT Stream',
+            mqtt: 'MQTT Protocol',
+            deviceHealth: 'IoT Node Integrity',
+            kpi: {
+                total: 'Total Tests',
+                violations: 'Positive Violations',
+                health: 'System Health'
+            },
+            alert: {
+                title: 'CRITICAL VIOLATION',
+                desc: 'Positive BAC Detected at Gate',
+                measured: 'Measured BAC'
+            },
+            actions: 'Automated Response Log',
+            actionLog: {
+                locked: 'Turnstile GT-01 Locked Locally',
+                generating: 'Generating incident report...',
+                logged: 'Violation logged to HSE database',
+                contacting: 'Contacting supervisor...',
+                sent: 'Alert sent to HSE Superintendent'
+            },
+            close: 'Acknowledge & Clear'
+        },
+        protocol: {
+            title: 'Safety Interceptor Protocol',
+            positiveTitle: 'Positive BAC Detection',
+            positiveDesc: 'Turnstiles automatically lock. System sends real-time SMS to HSE/Security.',
+            resetTitle: 'Protocol Reset',
+            resetDesc: 'Only an HSE Manager can unlock the user record after disciplinary review.'
+        },
+        features: {
+            title: 'Smart Features',
+            iotTitle: 'IoT Enabled',
+            iotDesc: 'Industrial grade sensors with cloud connectivity.',
+            accessTitle: 'Instant Block',
+            accessDesc: 'Physical access denial in < 500ms.',
+            complianceTitle: 'Compliance Export',
+            complianceDesc: 'Automatic reporting for audit trails.'
+        }
+    },
+    ai: {
+        systemPromptAdvice: "You are a Safety Expert. Provide clear advice on {rac} in {language}.",
+        systemPromptReport: "Analyze the following safety stats and provide an executive summary in {language}."
     }
   },
   pt: {
@@ -856,6 +651,7 @@ export const translations = {
       passed: 'Aprovado',
       failed: 'Reprovado',
       pending: 'Pendente',
+      enterpriseView: 'Visão Enterprise',
       complianceRate: 'Taxa de Conformidade',
       testsProcessed: 'Testes Processados',
       stats: {
@@ -866,24 +662,11 @@ export const translations = {
         totalUsers: 'Total de Usuários',
         active: 'Ativos',
         admins: 'Admins'
-      },
-      operationalMatrix: 'Matriz Operacional',
-      owner: 'Proprietário',
-      sending: 'Enviando...',
-      smsBlast: 'Disparo de SMS',
-      simulateRole: 'Simular Função',
-      superuser: 'Acesso Superusuário',
-      restricted: 'Acesso Restrito',
-      enterpriseView: 'Visão Empresarial',
-      exitFullScreen: 'Sair da Tela Cheia',
-      fullScreen: 'Tela Cheia',
-      notifications: 'Notificações',
-      noNotifications: 'Sem notificações',
-      clearAll: 'Limpar Tudo'
+      }
     },
     nav: {
       dashboard: 'Painel',
-      booking: 'Agendamento',
+      booking: 'Requisições',
       records: 'Registros',
       database: 'Banco de Dados',
       reports: 'Relatórios',
@@ -898,715 +681,126 @@ export const translations = {
       settings: 'Configurações',
       logs: 'Logs',
       manuals: 'Manuais',
-      feedbackAdmin: 'Feedback',
-      adminGuide: 'Guia do Admin',
-      presentation: 'Apresentação',
-      proposal: 'Proposta',
-      integration: 'Conectores'
-    },
-    integrationHub: {
-      title: 'Hub de Integração de Dados',
-      subtitle: 'Conecte bases externas de funcionários (SAP, Excel, SQL)',
-      newConnector: 'Novo Conector',
-      activeConnectors: 'Conectores Ativos',
-      syncHistory: 'Histórico de Sincronização',
-      lastSync: 'Última Sinc.',
-      healthy: 'Saudável',
-      error: 'Erro',
-      idle: 'Inativo',
-      syncNow: 'Sincronizar Agora',
-      dryRun: 'Simulação',
-      validateMapping: 'Validar Mapeamento',
-      scheduler: 'Agendamento',
-      wizard: {
-        step1Title: 'Tipo de Origem',
-        step1Desc: 'Como seus dados estão armazenados.',
-        step2Title: 'Configuração',
-        step2Desc: 'Detalhes de conexão ou arquivo.',
-        step3Title: 'Mapeador Visual',
-        step3Desc: 'Ligue seus campos ao sistema RACS.',
-        step4Title: 'Validação e Prévia',
-        step4Desc: 'Verifique a integridade antes de finalizar.',
-        systemField: 'Campo do Sistema',
-        sourceField: 'Coluna de Origem',
-        mappingSuccess: 'Mapeamento Validado'
-      },
-      types: {
-        excel: 'Excel / CSV',
-        database: 'Banco SQL',
-        api: 'App Customizado / API'
-      },
-      conflicts: {
-        title: 'Resolução de Conflitos',
-        desc: 'Registros duplicados encontrados. Selecione a fonte mestre.',
-        trustSource: 'Hierarquia de Confiança',
-        manualReview: 'Revisar Conflito',
-        resolveAll: 'Auto-Resolver Tudo',
-        keepSource: 'Manter Origem',
-        keepSystem: 'Manter Sistema'
-      }
+      integration: 'Integração'
     },
     dashboard: {
-      title: 'Painel',
-      subtitle: 'Visão Geral',
+      title: 'Centro de Comando de Segurança',
+      subtitle: 'Sistema de Requisição de Atividades Críticas (RACS)',
+      systemStatus: 'Status de Prontidão Global',
+      newRequisition: 'Nova Requisição',
       upcoming: {
-        title: 'Sessões Futuras',
+        title: 'Próximas Sessões',
         viewSchedule: 'Ver Cronograma',
-        date: 'Date',
+        date: 'Data',
         session: 'Sessão',
-        capacity: 'Capacidade',
-        status: 'Status'
+        capacity: 'Capacidade'
       },
       booked: {
-        title: 'Funcionários Agendados',
-        tableEmployee: 'Funcionário',
-        tableRac: 'RAC',
-        tableDate: 'Data',
-        tableRoom: 'Sala',
-        tableTrainer: 'Formador',
-        noData: 'Nenhum agendamento encontrado'
+        title: 'Requisitados Recentemente'
       },
       kpi: {
-        adherence: 'Aderência',
+        adherence: 'Aderência da Força de Trabalho',
         certifications: 'Certificações',
-        pending: 'Pendente',
-        expiring: 'Expirando',
-        scheduled: 'Agendado'
+        pending: 'Requis. Pendentes',
+        expiring: 'Expirando em Breve',
+        scheduled: 'Sessões Agendadas'
       },
       charts: {
-        compliant: 'Conforme',
-        nonCompliant: 'Não Conforme',
-        complianceTitle: 'Visão Geral de Conformidade',
-        complianceSubtitle: 'Por Tipo de RAC',
-        accessTitle: 'Status de Acesso',
+        compliant: 'Autorizado',
+        nonCompliant: 'Bloqueado',
+        complianceTitle: 'Matriz de Conformidade',
+        complianceSubtitle: 'Aderência por Módulo',
+        accessTitle: 'Permissões de Acesso ao Site',
         missing: 'Requisitos Ausentes'
-      },
-      renewal: {
-        title: 'Alertas de Renovação',
-        message: 'funcionários com treinamento expirando em 30 dias.',
-        button: 'Processar Renovações'
-      },
-      autoBooking: {
-        title: 'Auto-Agendamento Acionado',
-        subPart1: 'Funcionários com validade Crítica',
-        subPart2: 'foram agendados automaticamente.'
       }
     },
     booking: {
-      title: 'Novo Agendamento',
-      selfServiceTitle: 'Autoatendimento',
-      selfServiceDesc: 'Agende sua própria sessão de treinamento.',
-      secureMode: 'Modo Seguro Ativo',
-      manageSchedule: 'Gerenciar Cronograma',
-      success: 'Agendamento Enviado com Sucesso',
-      selectSession: 'Selecionar Sessão',
+      title: 'Nova Requisição',
+      selfServiceTitle: 'Auto-Requisição',
+      secureMode: 'Matriz de Segurança Ativa',
+      success: 'Requisição Enviada com Sucesso',
+      selectSession: 'Selecionar Sessão de Treinamento',
       chooseSession: 'Escolha uma sessão...',
-      dlRequired: 'Detalhes da Carta de Condução são obrigatórios para este módulo.',
-      addRow: 'Adicionar Funcionário',
-      submitBooking: 'Enviar Agendamento'
+      addRow: 'Adicionar Pessoal',
+      submitBooking: 'Enviar Requisição'
     },
     results: {
       searchPlaceholder: 'Pesquisar por Nome ou ID...',
       passport: 'Meu Passaporte',
       export: 'Exportar CSV',
       table: {
-        employee: 'Funcionário',
-        session: 'Sessão',
-        date: 'Data',
-        trainer: 'Formador',
+        employee: 'Pessoal',
+        session: 'Requisito',
+        date: 'Data de Avaliação',
+        trainer: 'Avaliador',
         theory: 'Teoria',
-        status: 'Status',
-        expiry: 'Validade'
+        status: 'Autorização',
+        expiry: 'Expiração'
       }
-    },
-    database: {
-      title: 'Banco de Dados',
-      subtitle: 'Registros Mestres',
-      mappingTitle: 'Mapeamento de Importação',
-      mappingSubtitle: 'Mapear colunas CSV para campos do sistema',
-      preview: 'Pré-visualização do Arquivo',
-      coreData: 'Dados Principais',
-      complianceTrain: 'Conformidade e Treinamento',
-      sourceCol: 'Coluna de Origem',
-      processImport: 'Processar Importação',
-      importSuccess: 'Importação Bem-sucedida',
-      active: 'Ativo',
-      granted: 'Concedido',
-      blocked: 'Bloqueado',
-      accessStatus: 'Status de Acesso',
-      aso: 'Validade ASO',
-      opsMatrix: 'Matriz OPS',
-      cardBack: 'Pré-visualização do Verso do Cartão',
-      contactInfo: 'Informações de Contato',
-      cell: 'Celular',
-      dlDetails: 'Detalhes da Carta de Condução',
-      number: 'Número',
-      class: 'Classe',
-      editModal: 'Editar Funcionário',
-      confirmDelete: 'Confirmar Exclusão',
-      confirmDeleteMsg: 'Tem certeza de que deseja excluir este registro? Esta ação não pode ser desfeita.',
-      confirmDeactivate: 'Desativar Usuário',
-      confirmDeactivateMsg: 'Tem certeza de que deseja desativar este usuário? Ele perderá o acesso ao sistema.',
-      massQr: 'Baixar QR em Massa',
-      zipping: 'Compactando...',
-      exportDb: 'Exportar BD',
-      wizard: 'Assistente de Importação',
-      importCsv: 'Importar CSV',
-      ops: {
-          EMI_PTS: 'Emi-PTS',
-          APR_ART: 'Apr-ART',
-          DONO_AREA_PTS: 'Dono-Area',
-          EXEC: 'Exec'
-      },
-      bulkQrMessage: 'Isso irá gerar e baixar {count} códigos QR. Continuar?'
     },
     reports: {
-      title: 'Relatórios e Análises',
-      subtitle: 'Métricas de Desempenho',
-      executiveAnalysis: 'Análise Executiva IA',
-      analyzing: 'Analisando...',
-      generate: 'Gerar Relatório',
-      leaderboard: 'Classificação de Formadores',
-      noShowsTitle: 'Alerta de Ausências',
-      filters: {
-        period: 'Período',
-        startDate: 'Data Início',
-        endDate: 'Data Fim',
-        department: 'Departamento',
-        racType: 'Tipo de RAC'
-      },
-      periods: {
-        weekly: 'Semanal',
-        monthly: 'Mensal',
-        ytd: 'Ano até a Data',
-        custom: 'Intervalo Personalizado'
-      },
-      stats: {
-        totalTrained: 'Total Treinado',
-        passRate: 'Taxa de Aprovação',
-        attendance: 'Taxa de Presença',
-        noShows: 'Ausências'
-      },
-      charts: {
-        performance: 'Desempenho por Módulo',
-        breakdownTitle: 'Aprovação vs Reprovação',
-        distributionTitle: 'Distribuição Geral',
-        distributionSubtitle: 'Razão Global Aprov/Reprov',
-        aiSubtitle: 'Alimentado por Gemini 2.5'
-      },
-      trainerMetrics: {
-        students: 'Alunos',
-        avgTheory: 'Média Teoria'
-      },
-      printReport: 'Imprimir Relatório'
-    },
-    schedule: {
-      title: 'Cronograma de Treinamento',
-      subtitle: 'Gerenciar Sessões',
-      newSession: 'Nova Sessão',
-      modal: {
-        title: 'Agendar Sessão',
-        racType: 'Tipo de RAC',
-        date: 'Data',
-        startTime: 'Hora de Início',
-        location: 'Local',
-        capacity: 'Capacidade',
-        instructor: 'Instrutor',
-        language: 'Idioma',
-        portuguese: 'Português',
-        english: 'Inglês',
-        saveSession: 'Salvar Sessão'
-      }
-    },
-    trainer: {
-      title: 'Input do Formador',
-      loggedInAs: 'Logado como',
-      noSessions: 'Nenhuma sessão pendente encontrada.',
-      selectSession: 'Selecionar Sessão para Avaliar',
-      chooseSession: 'Escolha uma sessão...',
-      saveResults: 'Salvar Resultados'
-    },
-    users: {
-      title: 'Gerenciamento de Usuários',
-      subtitle: 'Gerenciar acesso e funções do sistema',
-      addUser: 'Adicionar Usuário',
-      table: {
-        user: 'Usuário',
-        role: 'Função',
-        status: 'Status',
-        actions: 'Ações'
-      },
-      modal: {
-        title: 'Adicionar Novo Usuário',
-        name: 'Nome Completo',
-        email: 'Endereço de E-mail',
-        createUser: 'Criar Usuário'
-      }
-    },
-    settings: {
-      title: 'Configurações do Sistema',
-      globalConfig: 'Configuração Global',
-      localConfig: 'Configuração Local',
-      feedbackConfig: 'Configuração do Widget de Feedback',
-      tabs: {
-        general: 'Geral',
-        trainers: 'Formadores',
-        racs: 'Definições RAC',
-        sites: 'Locais',
-        companies: 'Empresas',
-        integration: 'Integração',
-        branding: 'Marca',
-        diagnostics: 'Diagnósticos'
-      },
-      rooms: {
-        title: 'Salas de Treinamento',
-        new: 'Nova Sala',
-        name: 'Nome da Sala',
-        capacity: 'Capacidade'
-      },
-      trainers: {
-        title: 'Formadores Qualificados',
-        name: 'Nome do Formador',
-        new: 'Novo Formador'
-      },
-      racs: {
-        title: 'Padrões RAC',
-        code: 'Código',
-        description: 'Descrição'
-      },
-      branding: {
-        title: 'Marca do Locatário',
-        subtitle: 'Atualize a identidade do aplicativo e logotipos de segurança.',
-        save: 'Salvar Marca',
-        brandName: 'Nome da Marca',
-        appName: 'Nome do Aplicativo',
-        appNameDesc: 'Este nome aparece na barra lateral e no cabeçalho principal.',
-        corporateLogo: 'Logotipo Corporativo',
-        safetyLogo: 'Logotipo Safety First',
-        safetyLogoDesc: 'Geralmente um distintivo "Safety First" ou específico de RAC.',
-        upload: 'Carregar Logotipo'
-      },
-      integrationPage: {
-        title: 'Integração de Dados',
-        sourceA: 'Fonte A',
-        sourceB: 'Fonte B',
-        middleware: 'Status do Middleware',
-        processing: 'Processando...',
-        syncNow: 'Sincronizar Agora',
-        waiting: 'Aguardando comando...'
-      },
-      saving: 'Salvando...',
-      saveAll: 'Salvar Alterações'
-    },
-    cards: {
-      title: 'Impressão de Cartões',
-      requestButton: 'Solicitar Cartões',
-      sending: 'Enviando Solicitação...',
-      eligibility: {
-        failedTitle: 'Não Elegível',
-        failedMsg: 'Você não atende aos requisitos.',
-        checkReqs: 'Verificar Requisitos'
-      }
-    },
-    verification: {
-      title: 'Verificação',
-      notFound: 'Registro Não Encontrado',
-      verified: 'VERIFICADO',
-      notVerified: 'NÃO VERIFICADO',
-      scanTime: 'Hora da Leitura',
-      asoStatus: 'Status ASO',
-      dlStatus: 'Status Carta'
-    },
-    manuals: {
-      title: 'Manuais do Usuário',
-      subtitle: 'Documentação do Sistema',
-      sysAdmin: {
-        title: 'Manual Admin do Sistema',
-        subtitle: 'Controle Completo',
-        configTitle: 'Configuração',
-        configDesc: 'Dados fundamentais.',
-        rooms: 'Configurar Salas',
-        trainers: 'Gerenciar Formadores',
-        racs: 'Definiir RACs',
-        dbTitle: 'Gerenciamento BD',
-        dbDesc: 'Registros de funcionários.',
-        restrictionWarning: 'Nota: Restrições de matriz.',
-        csv: 'Importação CSV.',
-        active: 'Garantir status ativo.'
-      },
-      racAdmin: {
-        title: 'Manual Admin RAC',
-        subtitle: 'Operações de Treinamento',
-        schedTitle: 'Agendamento',
-        schedDesc: 'Calendários.',
-        create: 'Criar Sessão',
-        lang: 'Idioma',
-        autoTitle: 'Auto-Agendamento',
-        autoDesc: 'Manuseio.',
-        approve: 'Aprovar ou Rejeitar.',
-        renewTitle: 'Renovações',
-        renewDesc: 'Filas.'
-      },
-      racTrainer: {
-        title: 'Manual do Formador',
-        subtitle: 'Avaliação',
-        inputTitle: 'Resultados',
-        inputDesc: 'Inserção.',
-        grading: 'Presença e notas.',
-        rac02: 'Regra RAC 02.',
-        save: 'Salvar.'
-      },
-      deptAdmin: {
-        title: 'Manual Admin Dept',
-        subtitle: 'Supervisão',
-        reqTitle: 'Cartões',
-        reqDesc: 'Emissão.',
-        search: 'Pesquisar.',
-        print: 'Imprimir.',
-        repTitle: 'Relatórios',
-        repDesc: 'Análises.'
-      },
-      user: {
-        title: 'Manual do Usuário',
-        subtitle: 'Autoatendimento',
-        statusTitle: 'Verificando Status',
-        statusDesc: 'Painel.',
-        filterAlert: 'Filtros.',
-        green: 'Conforme.',
-        red: 'Atenção.',
-        qr: 'QR Digital.'
-      }
-    },
-    feedback: {
-      title: 'Feedback',
-      subtitle: 'Ajude-nos a melhorar',
-      typeLabel: 'Tipo',
-      types: {
-        Bug: 'Erro',
-        Improvement: 'Recurso',
-        General: 'Comentário'
-      },
-      messageLabel: 'Mensagem',
-      msgPlaceholder: 'Descreva...',
-      button: 'Enviar',
-      adminTitle: 'Administração',
-      manage: 'Gerenciar Feedback',
-      status: {
-        New: 'Novo',
-        InProgress: 'Em Progresso',
-        Resolved: 'Resolvido',
-        Dismissed: 'Dispensado'
-      },
-      actionable: 'Acionável',
-      noSelection: 'Nenhum item',
-      selectPrompt: 'Selecione.',
-      submittedBy: 'Enviado Por',
-      internalNotes: 'Notas',
-      visibleAdmin: 'Admins',
-      deleteRecord: 'Excluir',
-      markedActionable: 'Actionable',
-      markActionable: 'Acionável',
-      workflow: 'Status',
-      priority: 'Prioridade'
-    },
-    communications: {
-      title: 'Comunicações',
-      subtitle: 'Log de Mensagens',
-      clear: 'Limpar',
-      search: 'Pesquisar...',
-      empty: 'Vazio',
-      select: 'Selecione.',
-      sms: 'Notificação SMS',
-      gateway: 'Gateway',
-      to: 'Para',
-      automated: 'Automático.'
-    },
-    alcohol: {
-      dashboard: {
-        title: 'Controle de Álcool',
-        subtitle: 'Painel IoT',
-        live: 'AO VIVO',
-        backToLive: 'Voltar ao Vivo',
-        specs: 'Especificações',
-        kpi: {
-          total: 'Total',
-          violations: 'Violações',
-          health: 'Saúde'
+        title: 'Análises de Segurança',
+        subtitle: 'Métricas de Desempenho RACS',
+        generate: 'Gerar Relatório',
+        analyzing: 'Analisando...',
+        executiveAnalysis: 'Resumo Executivo IA',
+        stats: {
+            totalTrained: 'Total de Pessoal',
+            passRate: 'Taxa de Sucesso',
+            attendance: 'Presença',
+            noShows: 'Faltas'
         },
-        online: 'Online',
-        hourlyTrend: 'Tendência Horária',
-        dailyTrend: 'Tendência Diária',
-        deviceLoad: 'Carga',
-        complianceRatio: 'Taxa',
-        liveStream: 'Real-time',
-        mqtt: 'MQTT',
-        deviceHealth: 'Saúde Dispositivo',
-        alert: {
-          title: 'ÁLCOOL',
-          desc: 'Positivo.',
-          measured: 'Medido'
+        filters: {
+            period: 'Período',
+            department: 'Departamento',
+            racType: 'Módulo RAC',
+            startDate: 'Data Início',
+            endDate: 'Data Fim'
         },
-        actions: 'Ações',
-        actionLog: {
-          locked: 'Bloqueado',
-          generating: 'Gerando...',
-          logged: 'Registrado',
-          contacting: 'Contatando...',
-          sent: 'Enviado'
+        periods: {
+            weekly: 'Semanal',
+            monthly: 'Mensal',
+            ytd: 'Ano Corrente',
+            custom: 'Intervalo Personalizado'
         },
-        close: 'Fechar'
-      },
-      protocol: {
-        title: 'Protocolo',
-        positiveTitle: 'Positivo',
-        positiveDesc: 'Bloqueio.',
-        resetTitle: 'Reset',
-        resetDesc: 'Manual.'
-      },
-      features: {
-        title: 'Recursos',
-        iotTitle: 'IoT',
-        iotDesc: 'Conectado.',
-        accessTitle: 'Acesso',
-        accessDesc: 'Barriers.',
-        complianceTitle: 'Conformidade',
-        complianceDesc: 'Regras.'
-      }
-    },
-    logs: {
-      title: 'Logs',
-      levels: {
-        all: 'Todos',
-        info: 'Info',
-        warn: 'Aviso',
-        error: 'Erro',
-        audit: 'Auditoria'
-      },
-      table: {
-        level: 'Nível',
-        timestamp: 'Timestamp',
-        user: 'Usuário',
-        message: 'Mensagem'
-      }
-    },
-    adminManual: {
-      title: 'Manual Admin',
-      subtitle: 'Guia do Sistema',
-      slides: {
-        intro: '1. Introdução',
-        logic: '2. Motor Lógico',
-        dashboard: '3. Painel',
-        workflows: '4. Fluxos',
-        advanced: '5. Config',
-        robotics: '6. Protocolos',
-        troubleshoot: '7. Solução',
-        architecture: '8. Arquitetura'
-      },
-      content: {
-        confidential: 'CONFIDENTIAL',
-        production: 'PRODUÇÃO',
-        logic: {
-          title: 'Conformidade',
-          desc: 'Matriz booleana.',
-          active: 'Ativo',
-          aso: 'ASO',
-          racs: 'RACs',
-          result: 'STATUS'
+        charts: {
+            performance: 'Sucesso do Treinamento',
+            distributionTitle: 'Distribuição de Conformidade',
+            distributionSubtitle: 'Relação Aprovação/Reprovação',
+            aiSubtitle: 'Inteligência de Segurança Contextual',
+            breakdownTitle: 'Resultados de avaliação específicos por módulo'
         },
-        dashboard: {
-          operational: {
-            title: 'Operacional',
-            kpi: 'KPIs',
-            renewal: 'Renovação',
-            auto: 'Auto-Agendamento'
-          },
-          enterprise: {
-            title: 'Empresarial',
-            global: 'Visão Global',
-            risk: 'Mapas de Risco',
-            ai: 'IA'
-          }
+        leaderboard: 'Desempenho do Avaliador',
+        printReport: 'Imprimir Estatísticas',
+        trainerMetrics: {
+            students: 'Alunos',
+            avgTheory: 'Média Teoria'
         },
-        workflows: {
-          a: { title: 'Ingestão', steps: ['Fonte A', 'Fonte B', 'Sync'] },
-          b: { title: 'Processo', steps: ['Normalização', 'Conflitos', 'Status'] },
-          c: { title: 'Análise', steps: ['Taxas', 'Tendências', 'Relatórios IA'] },
-          d: { title: 'Saída', steps: ['KPIs', 'Acesso', 'Alertas'] }
-        },
-        advanced: {
-          gov: { title: 'Governança', desc: 'Regras por local.' },
-          alcohol: { title: 'IoT Álcool', desc: 'Integração catracas.' }
-        },
-        troubleshoot: {
-          0: { issue: 'Login', solution: 'Rede.' },
-          1: { issue: 'Sync', solution: 'Middleware.' },
-          2: { issue: 'Lento', solution: 'Cache.' },
-          3: { issue: 'Mobile', solution: 'Gire.' },
-          4: { issue: 'Outros', solution: 'Suporte.' }
-        },
-        architecture: {
-          ui: '[ UI ]',
-          gate: '[ GATE ]',
-          gateDesc: 'Regras.',
-          logic: '[ ENGINE ]',
-          checkCap: 'Capacidade',
-          checkMatrix: 'Matriz',
-          checkDl: 'Carta',
-          dbState: '[ DB ]',
-          updateRecord: 'Atualiza.',
-          automation: '[ AUTOMAÇÃO ]',
-          emailTrig: '📧 Email/SMS',
-          printTrig: '🖨️ Impressão',
-          aiTrig: '🤖 Análise IA'
-        },
-        robotics: {
-          title: 'Cura Robótica',
-          subtitle: 'Resiliência automática.',
-          crash: {
-            title: 'Recuperação',
-            desc: 'Intercepta falhas.'
-          },
-          diagnostics: {
-            title: 'Ativo',
-            desc: 'Otimização.'
-          }
-        }
-      }
-    },
-    proposal: {
-      aboutMe: {
-        title: 'Sobre',
-        name: 'Pita Domingos',
-        preferred: 'Pita',
-        cert: 'Full Stack',
-        role: 'Arquiteto',
-        bio: 'Experiente em segurança.'
-      },
-      execSummary: {
-        title: 'Resumo',
-        text: 'Solução digital.',
-        quote: '"Segurança é valor."'
-      },
-      objectives: {
-        title: 'Objetivos',
-        problemTitle: 'Problema',
-        problemText: 'Manuais.',
-        solutionTitle: 'Solução',
-        goals: ['Centralizado', 'Automático', 'Real-time']
-      },
-      organogram: {
-        title: 'Técnico',
-        tech1: 'Frontend',
-        tech2: 'Backend'
-      },
-      timeline: {
-        title: 'Cronograma',
-        phase1: 'Fase 1',
-        phase1desc: 'Discovery',
-        phase2: 'Fase 2',
-        phase2desc: 'Build',
-        phase3: 'Fase 3',
-        phase3desc: 'Testes',
-        phase4: 'Fase 4',
-        phase4desc: 'Live',
-        phase5: 'Fase 5',
-        phase5desc: 'Suporte'
-      },
-      techStack: {
-        title: 'Tecnologia',
-        frontendTitle: 'Frontend',
-        frontend: 'React',
-        backendTitle: 'Backend',
-        backend: 'Node.js',
-        databaseTitle: 'BD',
-        database: 'PostgreSQL',
-        securityTitle: 'Segurança',
-        security: 'JWT'
-      },
-      financials: {
-        title: 'Financeiro',
-        items: [
-          { name: 'Initial', type: 'Unico', cost: '$12,000' },
-          { name: 'Setup', type: 'Unico', cost: '$6,000' },
-          { name: 'Cloud', type: 'Mensal', cost: '$2,500' },
-          { name: 'Training', type: 'Unico', cost: '$2,500' },
-          { name: 'Maintenance', type: 'Mensal', cost: '$1,500' }
-        ]
-      },
-      roadmap: {
-        title: 'Estratégico',
-        auth: 'Auth',
-        authDesc: 'SSO',
-        db: 'BD',
-        dbDesc: 'Nuvem',
-        email: 'Alertas',
-        emailDesc: 'Gateway',
-        hosting: 'Nuvem',
-        hostingDesc: 'Nuvem'
-      },
-      aiFeatures: {
-        title: 'Recursos IA',
-        chatbot: 'Chatbot',
-        reporting: 'Insights'
-      },
-      futureUpdates: {
-        title: 'Módulos',
-        moduleA: 'ERP',
-        moduleB: 'IoT'
-      },
-      enhancedCaps: {
-        title: 'Capacidades',
-        mobileVerify: { desc: 'App Verificação' },
-        autoBooking: { desc: 'Auto-Agendamento' },
-        massData: { desc: 'Big Data' }
-      },
-      conclusion: {
-        title: 'Conclusion',
-        text: 'Grande avanço.'
-      },
-      thankYou: {
-        title: 'Obrigado',
-        contact: 'Contato',
-        phone: '+258 84 123 4567'
-      },
-      digitalTrans: 'Iniciativa de Transformação Digital'
-    },
-    ai: {
-      systemPromptAdvice: 'Especialista. Conselhos sobre {rac} em {language}.',
-      systemPromptReport: 'Analista. Relatório em {language}.'
+        noShowsTitle: 'Ausências Não Autorizadas'
     },
     advisor: {
-      button: 'Consultor',
-      title: 'Consultor Gemini',
-      sender: 'Gemini',
-      emptyState: 'Como posso ajudar?',
-      placeholder: 'RACs, procedimentos...'
+        title: 'Consultor de Segurança IA',
+        button: 'Consultar IA',
+        sender: 'Guia IA',
+        placeholder: 'Pergunte sobre segurança...',
+        emptyState: 'Como posso ajudar com sua requisição de segurança hoje?'
     },
-    enterprise: {
-      systemTitle: 'Comando Empresarial',
-      systemSubtitle: 'Multi-Tenant SaaS',
-      title: 'Painel Empresarial',
-      subtitle: 'Operações Globais',
-      siteName: 'Site',
-      globalHealth: 'Saúde Global',
-      totalWorkforce: 'Total Pessoal',
-      topPerformer: 'Melhor Unidade',
-      needsAttention: 'Requer Atenção',
-      noData: 'Vazio',
-      tenantMatrix: 'Matriz de Locatários',
-      systemView: 'Sistema',
-      siteComparison: 'Comparação Sites',
-      riskHeatmap: 'Risco por Depto',
-      selectPrompt: 'Selecione "Todos".',
-      aiAuditor: 'Auditor IA',
-      aiDirector: 'Diretor IA',
-      systemIntelligence: 'Inteligência',
-      companyIntelligence: 'Para',
-      aiPrompt: 'Gerando...',
-      aiPromptSystem: 'Analisando vetores.',
-      aiPromptEnterprise: 'Analisando conformidade.',
-      bottlenecks: 'Gargalos Treinamento',
-      failure: 'Falha'
+    cards: {
+        title: 'Cartões de Certificação',
+        requestButton: 'Solicitar Cartões',
+        sending: 'Enviando Requisição...',
+        eligibility: {
+            failedTitle: 'Erro de Conformidade',
+            failedMsg: 'Você não está autorizado a gerar um cartão. Certifique-se de que todos os RACs obrigatórios e o ASO estão válidos.',
+            checkReqs: 'Verificar Requisitos'
+        }
+    },
+    verification: {
+        title: 'Verificação Digital',
+        verified: 'AUTORIZADO',
+        notVerified: 'ACESSO NEGADO',
+        asoStatus: 'Exame Médico (ASO)',
+        dlStatus: 'Carta de Condução'
     },
     racDefs: {
         RAC01: 'RAC 01 - Trabalho em Altura',
@@ -1619,15 +813,12 @@ export const translations = {
         RAC08: 'RAC 08 - Elétrica',
         RAC09: 'RAC 09 - Explosivos',
         RAC10: 'RAC 10 - Metal',
-        RAC11: 'RAC 11 - Tráfego',
         PTS: 'PTS - Permissão',
-        ART: 'ART - Análise',
-        LIB_OPS: 'LIB-OPS - Operacional',
-        LIB_MOV: 'LIB-MOV - Movimentação'
+        ART: 'ART - Análise'
     },
-    notifications: {
-        capacityTitle: 'Capacidade',
-        capacityMsg: 'Movidos para'
+    ai: {
+        systemPromptAdvice: "Você é um Especialista em Segurança. Forneça conselhos claros sobre {rac} em {language}.",
+        systemPromptReport: "Analise as seguintes estatísticas de segurança e forneça um resumo executivo em {language}."
     }
   }
 };

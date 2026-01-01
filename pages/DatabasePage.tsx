@@ -3,12 +3,13 @@ import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Booking, BookingStatus, EmployeeRequirement, Employee, TrainingSession, RacDef, SystemNotification } from '../types';
 import { COMPANIES, OPS_KEYS, PERMISSION_KEYS, DEPARTMENTS, RAC_KEYS } from '../constants';
-import { Search, CheckCircle, XCircle, Edit, ChevronLeft, ChevronRight, Download, X, Trash2, QrCode, Printer, Phone, AlertTriangle, Loader2, Archive, Filter, Smartphone, FileSpreadsheet, ArrowRight, Settings, Database as DbIcon, ShieldCheck, CreditCard } from 'lucide-react';
+import { Search, CheckCircle, XCircle, Edit, ChevronLeft, ChevronRight, Download, X, Trash2, QrCode, Printer, Phone, AlertTriangle, Loader2, Archive, Filter, Smartphone, FileSpreadsheet, ArrowRight, Settings, Database as DbIcon, ShieldCheck, CreditCard, Cloud, CloudOff } from 'lucide-react';
 import { useLanguage } from '../contexts/LanguageContext';
 import JSZip from 'jszip';
 import ConfirmModal from '../components/ConfirmModal';
 import { v4 as uuidv4 } from 'uuid';
 import { format, addMonths, isValid, parseISO } from 'date-fns';
+import { isSupabaseConfigured } from '../services/supabaseClient';
 
 interface DatabasePageProps {
   bookings: Booking[];
@@ -349,18 +350,6 @@ const DatabasePage: React.FC<DatabasePageProps> = ({ bookings, requirements, upd
     updateRequirements(updated);
   };
   
-  const handleActiveToggle = (empId: string, currentStatus: boolean) => {
-      if (currentStatus === true) {
-          setConfirmState({
-              isOpen: true,
-              title: t.database.confirmDeactivate,
-              message: t.database.confirmDeactivateMsg,
-              onConfirm: () => onDeleteEmployee(empId),
-              isDestructive: true
-          });
-      } 
-  };
-
   const handleSaveEdit = () => {
       if (editingEmployee) {
           onUpdateEmployee(editingEmployee.id, {
@@ -487,47 +476,33 @@ const DatabasePage: React.FC<DatabasePageProps> = ({ bookings, requirements, upd
       const isDlExpired = !!(dlExpiry && dlExpiry <= today) || !dlExpiry;
       const isActive = emp.isActive ?? true;
 
-      // COMPLEX RAC 02 / DRIVING LOGIC
       let allRacsMet = true;
       const mappedRacs = Object.entries(req.requiredRacs).filter(([_, val]) => val === true).map(([k]) => k);
       
       const drivingRacs = ['RAC02', 'RAC11', 'LIB_MOV'];
-      // Multiskilled workers have non-driving RACs mapped.
       const isMultiskilled = mappedRacs.some(k => !drivingRacs.includes(k) && !OPS_KEYS.includes(k));
 
       racDefinitions.forEach(def => {
           const key = def.code;
           if (!req.requiredRacs[key]) return;
-
-          // If it's a driving requirement
           if (drivingRacs.includes(key)) {
-              if (isDlExpired) {
-                  // Only block if they aren't multiskilled (i.e. they are exclusively a driver)
-                  if (!isMultiskilled) {
-                      allRacsMet = false;
-                  }
-              } else {
-                  // Check training standard
+              if (isDlExpired && !isMultiskilled) allRacsMet = false;
+              else {
                   const trainingExpiry = getTrainingStatus(emp.id, key);
                   if (!trainingExpiry || trainingExpiry <= today) allRacsMet = false;
               }
           } else {
-              // Standard RAC checking
               const trainingExpiry = getTrainingStatus(emp.id, key);
               if (!trainingExpiry || trainingExpiry <= today) allRacsMet = false;
           }
       });
 
       let status: 'Granted' | 'Blocked' = 'Granted';
-      if (!isActive) status = 'Blocked';
-      else if (!isAsoValid || !allRacsMet) status = 'Blocked';
+      if (!isActive || !isAsoValid || !allRacsMet) status = 'Blocked';
 
       return { emp, req, status, isAsoValid, isDlExpired, isActive };
     }).filter(item => {
-        if (currentSiteId !== 'all' && item.emp.siteId !== currentSiteId) {
-            const sId = item.emp.siteId || 's1';
-            if (sId !== currentSiteId) return false;
-        }
+        if (currentSiteId !== 'all' && item.emp.siteId !== currentSiteId) return false;
         if (selectedCompany !== 'All' && item.emp.company !== selectedCompany) return false;
         if (selectedDepartment !== 'All' && item.emp.department !== selectedDepartment) return false;
         if (accessStatusFilter !== 'All' && item.status !== accessStatusFilter) return false;
@@ -556,14 +531,22 @@ const DatabasePage: React.FC<DatabasePageProps> = ({ bookings, requirements, upd
     <div className="flex flex-col h-auto md:h-[calc(100vh-6rem)] bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden relative transition-colors">
         
         <div className="shrink-0 p-4 border-b border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-800/50 flex flex-col xl:flex-row justify-between gap-4">
-             <div>
-                 <h2 className="text-lg font-bold text-slate-800 dark:text-white flex items-center gap-2">
-                     {t.database.title}
-                     <span className="text-xs font-normal text-gray-500 bg-gray-200 dark:bg-slate-600 dark:text-gray-300 px-2 py-0.5 rounded-full">
-                         {processedData.length} records
-                     </span>
-                 </h2>
-                 <p className="text-xs text-gray-500 dark:text-gray-400 hidden md:block">{t.database.subtitle}</p>
+             <div className="flex items-center gap-4">
+                 <div>
+                    <h2 className="text-lg font-bold text-slate-800 dark:text-white flex items-center gap-2">
+                        Workforce Registry
+                        <span className="text-xs font-normal text-gray-500 bg-gray-200 dark:bg-slate-600 dark:text-gray-300 px-2 py-0.5 rounded-full">
+                            {processedData.length} records
+                        </span>
+                    </h2>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 hidden md:block">Manage employee authorization matrix and medical records.</p>
+                 </div>
+                 
+                 {/* LIVE BADGE */}
+                 <div className={`px-2 py-1 rounded-md border flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest ${isSupabaseConfigured ? 'bg-emerald-50 text-emerald-700 border-emerald-100 shadow-sm' : 'bg-slate-100 text-slate-400 border-slate-200'}`}>
+                    {isSupabaseConfigured ? <Cloud size={12} className="animate-pulse" /> : <CloudOff size={12} />}
+                    {isSupabaseConfigured ? 'Connected: Cloud Active' : 'Offline Mode'}
+                 </div>
              </div>
              
              <div className="flex flex-wrap items-center gap-2">
@@ -575,18 +558,6 @@ const DatabasePage: React.FC<DatabasePageProps> = ({ bookings, requirements, upd
                      >
                         <option value="All">{t.common.all}</option>
                         {COMPANIES.map(c => <option key={c} value={c}>{c}</option>)}
-                     </select>
-                     <Filter size={12} className="absolute right-2.5 top-2.5 text-gray-400 pointer-events-none" />
-                 </div>
-
-                 <div className="relative group">
-                     <select 
-                        value={selectedDepartment} 
-                        onChange={(e) => { setSelectedDepartment(e.target.value); setCurrentPage(1); }}
-                        className="pl-3 pr-8 py-1.5 border border-gray-300 dark:border-slate-600 dark:bg-slate-700 text-black dark:text-white rounded-md text-xs font-medium outline-none focus:ring-yellow-500 focus:border-yellow-500 cursor-pointer appearance-none hover:bg-white dark:hover:bg-slate-600 transition-colors"
-                     >
-                        <option value="All">{t.common.all}</option>
-                        {DEPARTMENTS.map(d => <option key={d} value={d}>{d}</option>)}
                      </select>
                      <Filter size={12} className="absolute right-2.5 top-2.5 text-gray-400 pointer-events-none" />
                  </div>
@@ -605,9 +576,7 @@ const DatabasePage: React.FC<DatabasePageProps> = ({ bookings, requirements, upd
                  <button 
                     onClick={handleBulkQrDownload}
                     disabled={isZipping || processedData.length === 0}
-                    className={`flex items-center gap-1 bg-purple-600 text-white px-3 py-1.5 rounded-md text-xs font-bold hover:bg-purple-500 shadow-sm transition-all
-                        ${isZipping ? 'opacity-70 cursor-wait' : ''}
-                    `}
+                    className={`flex items-center gap-1 bg-purple-600 text-white px-3 py-1.5 rounded-md text-xs font-bold hover:bg-purple-500 shadow-sm transition-all ${isZipping ? 'opacity-70 cursor-wait' : ''}`}
                 >
                     {isZipping ? <Loader2 size={14} className="animate-spin" /> : <Archive size={14} />}
                     {isZipping ? t.database.zipping : t.database.massQr}
@@ -617,7 +586,7 @@ const DatabasePage: React.FC<DatabasePageProps> = ({ bookings, requirements, upd
                     onClick={() => fileInputRef.current?.click()}
                     className="flex items-center gap-1 bg-blue-600 text-white px-3 py-1.5 rounded-md text-xs font-bold hover:bg-blue-500 shadow-sm"
                 >
-                    <FileSpreadsheet size={14} /> {t.database.wizard}
+                    <FileSpreadsheet size={14} /> Import Data
                 </button>
                 <input type="file" ref={fileInputRef} className="hidden" accept=".csv" onChange={handleFileSelect} />
 
@@ -625,7 +594,7 @@ const DatabasePage: React.FC<DatabasePageProps> = ({ bookings, requirements, upd
                     onClick={handleExportDatabase}
                     className="flex items-center gap-1 bg-emerald-600 text-white px-3 py-1.5 rounded-md text-xs font-bold hover:bg-emerald-500 shadow-sm"
                 >
-                    <Download size={14} /> {t.database.exportDb}
+                    <Download size={14} /> Export CSV
                 </button>
             </div>
         </div>
@@ -655,11 +624,11 @@ const DatabasePage: React.FC<DatabasePageProps> = ({ bookings, requirements, upd
                             <td className="px-4 py-3 whitespace-nowrap">
                                 {status === 'Granted' ? (
                                     <span className="flex items-center gap-1 text-emerald-600 font-bold text-xs">
-                                        <CheckCircle size={14} /> {t.database.granted}
+                                        <CheckCircle size={14} /> Granted
                                     </span>
                                 ) : (
                                     <span className="flex items-center gap-1 text-red-600 font-bold text-xs">
-                                        <XCircle size={14} /> {t.database.blocked}
+                                        <XCircle size={14} /> Blocked
                                     </span>
                                 )}
                             </td>
@@ -755,7 +724,7 @@ const DatabasePage: React.FC<DatabasePageProps> = ({ bookings, requirements, upd
             <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
                 <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-xl w-full max-w-lg overflow-hidden">
                     <div className="p-4 border-b border-gray-200 dark:border-slate-700 flex justify-between items-center bg-gray-50 dark:bg-slate-900/50">
-                        <h3 className="font-bold text-slate-800 dark:text-white">{t.database.editModal}</h3>
+                        <h3 className="font-bold text-slate-800 dark:text-white">Edit Workforce Record</h3>
                         <button onClick={() => setEditingEmployee(null)} className="p-1 hover:bg-gray-200 dark:hover:bg-slate-700 rounded-full transition-colors"><X size={20}/></button>
                     </div>
                     <div className="p-6 space-y-4">
@@ -783,25 +752,10 @@ const DatabasePage: React.FC<DatabasePageProps> = ({ bookings, requirements, upd
                                 </select>
                             </div>
                         </div>
-                        <div className="border-t border-gray-100 dark:border-slate-700 pt-4">
-                            <h4 className="text-xs font-bold text-indigo-600 mb-3 flex items-center gap-2"><Smartphone size={14}/> {t.database.contactInfo}</h4>
-                            <input type="text" placeholder={t.database.cell} value={editingEmployee.phoneNumber || ''} onChange={e => setEditingEmployee({...editingEmployee, phoneNumber: e.target.value})} className="w-full p-2 border border-gray-300 dark:border-slate-600 dark:bg-slate-700 rounded text-sm" />
-                        </div>
-                        <div className="border-t border-gray-100 dark:border-slate-700 pt-4">
-                            <h4 className="text-xs font-bold text-red-600 mb-3 flex items-center gap-2"><CreditCard size={14}/> {t.database.dlDetails}</h4>
-                            <div className="grid grid-cols-3 gap-3">
-                                <input type="text" placeholder={t.database.number} value={editingEmployee.driverLicenseNumber || ''} onChange={e => setEditingEmployee({...editingEmployee, driverLicenseNumber: e.target.value})} className="p-2 border border-gray-300 dark:border-slate-600 dark:bg-slate-700 rounded text-sm" />
-                                <input type="text" placeholder={t.database.class} value={editingEmployee.driverLicenseClass || ''} onChange={e => setEditingEmployee({...editingEmployee, driverLicenseClass: e.target.value})} className="p-2 border border-gray-300 dark:border-slate-600 dark:bg-slate-700 rounded text-sm" />
-                                <input type="date" value={editingEmployee.driverLicenseExpiry || ''} onChange={e => setEditingEmployee({...editingEmployee, driverLicenseExpiry: e.target.value})} className="p-2 border border-gray-300 dark:border-slate-600 dark:bg-slate-700 rounded text-sm" />
-                            </div>
-                        </div>
                     </div>
-                    <div className="p-4 bg-gray-50 dark:bg-slate-900/50 border-t border-gray-200 dark:border-slate-700 flex justify-between items-center">
-                        <button onClick={handleDelete} className="flex items-center gap-1 text-red-600 text-xs font-bold hover:underline"><Trash2 size={14}/> {t.common.delete}</button>
-                        <div className="flex gap-2">
-                            <button onClick={() => setEditingEmployee(null)} className="px-4 py-2 text-sm text-gray-500 font-bold hover:bg-gray-200 rounded">{t.common.cancel}</button>
-                            <button onClick={handleSaveEdit} className="px-6 py-2 bg-blue-600 text-white rounded text-sm font-bold shadow-md hover:bg-blue-500">{t.common.save}</button>
-                        </div>
+                    <div className="p-4 bg-gray-50 dark:bg-slate-900/50 border-t border-gray-200 dark:border-slate-700 flex justify-end gap-2">
+                        <button onClick={() => setEditingEmployee(null)} className="px-4 py-2 text-sm text-gray-500 font-bold hover:bg-gray-200 rounded">Cancel</button>
+                        <button onClick={handleSaveEdit} className="px-6 py-2 bg-blue-600 text-white rounded text-sm font-bold shadow-md hover:bg-blue-500">Save Profile</button>
                     </div>
                 </div>
             </div>
@@ -812,7 +766,7 @@ const DatabasePage: React.FC<DatabasePageProps> = ({ bookings, requirements, upd
                 <div className="bg-white rounded-3xl p-8 max-w-sm w-full flex flex-col items-center shadow-2xl" onClick={e => e.stopPropagation()}>
                     <div className="w-full flex justify-between items-center mb-6">
                         <div className="flex items-center gap-2 text-indigo-600 font-black tracking-tighter">
-                            <ShieldCheck size={20} /> RACS SAFETY
+                            <ShieldCheck size={20} /> CARS REGISTRY
                         </div>
                         <button onClick={() => setQrEmployee(null)} className="p-1 hover:bg-slate-100 rounded-full transition-colors"><X size={20}/></button>
                     </div>
@@ -826,85 +780,10 @@ const DatabasePage: React.FC<DatabasePageProps> = ({ bookings, requirements, upd
 
                     <div className="flex gap-3 w-full">
                         <button onClick={() => handleDownloadQr(qrEmployee.recordId, qrEmployee.name)} className="flex-1 flex items-center justify-center gap-2 bg-slate-900 text-white py-3 rounded-xl font-bold text-sm hover:bg-slate-800 transition-colors shadow-lg">
-                            <Download size={16}/> {t.common.download}
+                            <Download size={16}/> Download
                         </button>
                         <button onClick={() => window.print()} className="p-3 bg-slate-100 rounded-xl hover:bg-slate-200 transition-colors">
                             <Printer size={20} className="text-slate-600"/>
-                        </button>
-                    </div>
-                </div>
-            </div>
-        )}
-
-        {showImportModal && (
-            <div className="fixed inset-0 z-[100] bg-slate-900/90 backdrop-blur-md flex items-center justify-center p-4 animate-fade-in">
-                <div className="bg-white dark:bg-slate-800 rounded-3xl shadow-2xl w-full max-w-4xl max-h-[90vh] flex flex-col overflow-hidden border border-slate-200">
-                    <div className="p-6 border-b bg-gray-50 dark:bg-slate-900/50 flex justify-between items-center">
-                        <div>
-                            <h3 className="text-xl font-black text-slate-800 dark:text-white">{t.database.mappingTitle}</h3>
-                            <p className="text-xs text-gray-500">{t.database.mappingSubtitle}</p>
-                        </div>
-                        <button onClick={() => setShowImportModal(false)}><X/></button>
-                    </div>
-                    <div className="flex-1 overflow-auto p-6 flex flex-col lg:flex-row gap-8">
-                        <div className="flex-1 space-y-6">
-                            <h4 className="font-bold text-xs uppercase tracking-widest text-slate-400 border-b pb-2">{t.database.coreData}</h4>
-                            <div className="grid grid-cols-2 gap-4">
-                                {Object.keys(columnMapping).filter(k => k !== 'racs').map(key => (
-                                    <div key={key}>
-                                        <label className="block text-[10px] font-bold text-gray-500 uppercase mb-1">{key}</label>
-                                        <select 
-                                            value={(columnMapping as any)[key]} 
-                                            onChange={(e) => setColumnMapping({...columnMapping, [key]: e.target.value})}
-                                            className="w-full text-xs p-2 border rounded dark:bg-slate-700 dark:border-slate-600"
-                                        >
-                                            <option value="">-- Skip --</option>
-                                            {csvHeaders.map(h => <option key={h} value={h}>{h}</option>)}
-                                        </select>
-                                    </div>
-                                ))}
-                            </div>
-                            <h4 className="font-bold text-xs uppercase tracking-widest text-slate-400 border-b pb-2 mt-8">{t.database.complianceTrain}</h4>
-                            <div className="grid grid-cols-2 gap-4">
-                                {racDefinitions.map(rac => (
-                                    <div key={rac.id}>
-                                        <label className="block text-[10px] font-bold text-gray-500 uppercase mb-1">{rac.code}</label>
-                                        <select 
-                                            value={columnMapping.racs[rac.code] || ''} 
-                                            onChange={(e) => setColumnMapping({
-                                                ...columnMapping, 
-                                                racs: { ...columnMapping.racs, [rac.code]: e.target.value }
-                                            })}
-                                            className="w-full text-xs p-2 border rounded dark:bg-slate-700 dark:border-slate-600"
-                                        >
-                                            <option value="">-- Skip --</option>
-                                            {csvHeaders.map(h => <option key={h} value={h}>{h}</option>)}
-                                        </select>
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-                        <div className="lg:w-80 bg-slate-50 dark:bg-slate-900 rounded-2xl p-6 border border-slate-100">
-                             <h4 className="font-bold text-xs text-slate-400 mb-4">{t.database.preview}</h4>
-                             <div className="space-y-4">
-                                 {importPreview.map((row, i) => (
-                                     <div key={i} className="text-[9px] font-mono text-slate-500 bg-white p-2 rounded border border-slate-200 truncate">
-                                         {row.join(' | ')}
-                                     </div>
-                                 ))}
-                             </div>
-                             <div className="mt-8 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-xl border border-blue-100">
-                                 <h5 className="font-bold text-blue-800 text-[10px] mb-2">PRO TIP</h5>
-                                 <p className="text-[10px] text-blue-600 leading-relaxed">
-                                     Dates should be in <strong>YYYY-MM-DD</strong> format. If a RAC column contains 'Sim' or 'Yes', it will be marked as passed today.
-                                 </p>
-                             </div>
-                        </div>
-                    </div>
-                    <div className="p-6 bg-gray-50 border-t flex justify-end gap-3">
-                        <button onClick={() => setShowImportModal(false)} className="px-6 py-2 text-sm font-bold text-gray-500 hover:bg-gray-200 rounded">{t.common.cancel}</button>
-                        <button onClick={processImport} className="px-8 py-2 bg-indigo-600 text-white rounded text-sm font-black shadow-lg hover:bg-indigo-50 flex items-center gap-2">
-                             <CheckCircle size={18}/> {t.database.processImport}
                         </button>
                     </div>
                 </div>

@@ -1,15 +1,18 @@
+
 import React, { useState } from 'react';
 import { 
   FileCode, Database, Layers, Code, Terminal, AlertTriangle, 
   Cpu, GitBranch, Shield, Key, FolderOpen, ChevronRight, FileText,
   Rocket, CloudLightning, Wifi, Smartphone, Lock, Server, Radio,
-  Globe, CreditCard, LayoutTemplate, GitMerge, RefreshCw, Bot, Zap, Activity, Sparkles
+  Globe, CreditCard, LayoutTemplate, GitMerge, RefreshCw, Bot, Zap, Activity, Sparkles, Copy, Check
 } from 'lucide-react';
 
 const TechnicalDocs: React.FC = () => {
-  const [activeSection, setActiveSection] = useState('arch');
+  const [activeSection, setActiveSection] = useState('schema');
+  const [copied, setCopied] = useState(false);
 
   const sections = [
+    { id: 'schema', label: 'Database Schema', icon: Database },
     { id: 'arch', label: 'Architecture', icon: Layers },
     { id: 'branding', label: 'Dynamic Branding', icon: Sparkles },
     { id: 'translation', label: 'Resilient Translation', icon: Globe },
@@ -17,6 +20,53 @@ const TechnicalDocs: React.FC = () => {
     { id: 'roadmap', label: 'Future Roadmap', icon: Rocket },
     { id: 'debug', label: 'Debugging', icon: Terminal },
   ];
+
+  const sqlSchema = `-- CARS MANAGER SAAS SCHEMA
+-- Run this in your Supabase SQL Editor to activate user management
+
+-- 1. Companies (Tenants)
+CREATE TABLE IF NOT EXISTS companies (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  name TEXT NOT NULL,
+  app_name TEXT,
+  logo_url TEXT,
+  safety_logo_url TEXT,
+  status TEXT DEFAULT 'Active',
+  features JSONB DEFAULT '{"alcohol": false}'
+);
+
+-- 2. Users (System Staff)
+CREATE TABLE IF NOT EXISTS users (
+  id BIGSERIAL PRIMARY KEY,
+  name TEXT NOT NULL,
+  email TEXT UNIQUE NOT NULL,
+  password TEXT, -- For demo internal auth
+  phone_number TEXT,
+  role TEXT DEFAULT 'User',
+  status TEXT DEFAULT 'Active',
+  company TEXT,
+  job_title TEXT,
+  site_id TEXT
+);
+
+-- 3. Sites (Operational Locations)
+CREATE TABLE IF NOT EXISTS sites (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  company_id UUID REFERENCES companies(id),
+  name TEXT NOT NULL,
+  location TEXT
+);
+
+-- Seed Initial Admin (Requested)
+INSERT INTO users (name, email, password, role, status, company, job_title, site_id)
+VALUES ('Pita Domingos', 'p.domingos@vulcan.com', 'native@13035', 'System Admin', 'Active', 'Vulcan', 'Lead System Architect', 'all')
+ON CONFLICT (email) DO NOTHING;`;
+
+  const handleCopy = () => {
+      navigator.clipboard.writeText(sqlSchema);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+  };
 
   return (
     <div className="space-y-6 pb-24 animate-fade-in-up h-full">
@@ -34,7 +84,7 @@ const TechnicalDocs: React.FC = () => {
       </div>
 
       <div className="flex flex-col lg:flex-row gap-8 min-h-[600px]">
-          <div className="lg:w-64 space-y-2">
+          <div className="lg:w-64 space-y-2 shrink-0">
               {sections.map(s => {
                   const Icon = s.icon;
                   return (
@@ -54,6 +104,36 @@ const TechnicalDocs: React.FC = () => {
 
           <div className="flex-1 bg-white dark:bg-slate-800 rounded-2xl shadow-xl border border-slate-100 dark:border-slate-700 p-8 overflow-y-auto">
               
+              {activeSection === 'schema' && (
+                  <div className="space-y-8 animate-fade-in">
+                      <div className="border-b border-slate-200 dark:border-slate-700 pb-4">
+                          <h3 className="text-2xl font-black text-slate-800 dark:text-white mb-2">Supabase SQL Schema</h3>
+                          <p className="text-slate-500 dark:text-slate-400 text-sm">Required tables for User Management and SaaS Multi-tenancy.</p>
+                      </div>
+                      
+                      <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 p-4 rounded-xl flex gap-3 items-start">
+                          <AlertTriangle className="text-amber-600 shrink-0 mt-1" size={20} />
+                          <div className="text-sm text-amber-800 dark:text-amber-200">
+                              <p className="font-bold mb-1">Implementation Note:</p>
+                              To fix "Table Not Found" errors, you must execute the SQL below in your Supabase project dashboard.
+                          </div>
+                      </div>
+
+                      <div className="relative group">
+                          <div className="absolute top-4 right-4 flex gap-2">
+                              <button 
+                                onClick={handleCopy}
+                                className="bg-slate-800 hover:bg-slate-700 text-white p-2 rounded-lg transition-all flex items-center gap-2 text-xs font-bold"
+                              >
+                                  {copied ? <Check size={14} className="text-green-400" /> : <Copy size={14} />}
+                                  {copied ? 'Copied!' : 'Copy SQL'}
+                              </button>
+                          </div>
+                          <CodeBlock title="Full System Schema" code={sqlSchema} />
+                      </div>
+                  </div>
+              )}
+
               {activeSection === 'branding' && (
                   <div className="space-y-8 animate-fade-in">
                       <div className="border-b border-slate-200 dark:border-slate-700 pb-4">

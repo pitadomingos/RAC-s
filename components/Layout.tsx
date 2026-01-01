@@ -41,11 +41,16 @@ import {
   MessageSquare,
   Send,
   ShieldCheck,
-  GitMerge
+  GitMerge,
+  Cloud,
+  CloudOff,
+  LogOut
 } from 'lucide-react';
 import { UserRole, SystemNotification, Site, Company } from '../types';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useTheme } from '../contexts/ThemeContext';
+import { useAuth } from '../contexts/AuthContext';
+import { isSupabaseConfigured } from '../services/supabaseClient';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -80,14 +85,13 @@ const Layout: React.FC<LayoutProps> = ({
 }) => {
   const [isSidebarOpen, setSidebarOpen] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(false);
-  const [isNotifOpen, setNotifOpen] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [showProfileMenu, setShowProfileMenu] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
   const { t, language, setLanguage } = useLanguage();
   const { theme, setTheme } = useTheme();
-
-  const unreadCount = (notifications || []).filter(n => !n.isRead).length;
+  const { user, logout } = useAuth();
 
   const currentCompany = useMemo(() => {
     return (companies || []).find(c => c.id === 'c1') || companies?.[0];
@@ -106,8 +110,8 @@ const Layout: React.FC<LayoutProps> = ({
       const allowedTitles = ['Manager', 'Supervisor', 'Superintendent', 'Director', 'Head'];
       const allowedDepts = ['HSE', 'Operations', 'Security', 'Medical'];
       
-      const safeTitle = simulatedJobTitle || '';
-      const safeDept = simulatedDept || '';
+      const safeTitle = user?.jobTitle || simulatedJobTitle || '';
+      const safeDept = user?.department || simulatedDept || '';
 
       const hasTitle = allowedTitles.some(title => safeTitle.includes(title));
       const hasDept = allowedDepts.some(dept => safeDept.includes(dept));
@@ -117,32 +121,11 @@ const Layout: React.FC<LayoutProps> = ({
 
   const showAlcoholLink = canViewAlcoholDashboard();
 
-  if (!t || !t.nav) {
-      return (
-          <div className="flex items-center justify-center h-screen bg-slate-900 text-white">
-              <div className="text-center">
-                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-yellow-500 mx-auto mb-4"></div>
-                  <p>Initializing Multi-Language Engine...</p>
-              </div>
-          </div>
-      );
-  }
-
   useEffect(() => {
     const handleFullScreenChange = () => setIsFullscreen(!!document.fullscreenElement);
     document.addEventListener('fullscreenchange', handleFullScreenChange);
     return () => document.removeEventListener('fullscreenchange', handleFullScreenChange);
   }, []);
-
-  const toggleFullScreen = () => {
-    if (!document.fullscreenElement) {
-        document.documentElement.requestFullscreen().catch((e) => console.error(e));
-    } else {
-        if (document.exitFullscreen) document.exitFullscreen();
-    }
-  };
-
-  const toggleLanguage = () => setLanguage(language === 'en' ? 'pt' : 'en');
 
   const cycleTheme = () => {
       if (theme === 'light') setTheme('dark');
@@ -159,7 +142,7 @@ const Layout: React.FC<LayoutProps> = ({
   };
 
   const allNavItems = [
-    { path: '/', label: t.nav.dashboard, icon: LayoutDashboard, visible: userRole !== UserRole.USER && userRole !== UserRole.ENTERPRISE_ADMIN },
+    { path: '/', label: t.nav.dashboard, icon: LayoutDashboard, visible: ![UserRole.USER, UserRole.RAC_TRAINER, UserRole.ENTERPRISE_ADMIN].includes(userRole) },
     { path: '/booking', label: t.nav.booking, icon: CalendarPlus, visible: userRole !== UserRole.RAC_TRAINER && userRole !== UserRole.ENTERPRISE_ADMIN && userRole !== UserRole.SITE_ADMIN },
     { path: '/results', label: t.nav.records, icon: ClipboardList, visible: userRole !== UserRole.RAC_TRAINER && userRole !== UserRole.ENTERPRISE_ADMIN },
     { path: '/database', label: t.nav.database, icon: Database, visible: userRole !== UserRole.USER && userRole !== UserRole.RAC_TRAINER },
@@ -176,11 +159,6 @@ const Layout: React.FC<LayoutProps> = ({
     { path: '/settings', label: t.nav.settings, icon: Settings, visible: [UserRole.SYSTEM_ADMIN, UserRole.ENTERPRISE_ADMIN, UserRole.SITE_ADMIN].includes(userRole) },
     { path: '/logs', label: t.nav.logs, icon: ScrollText, visible: [UserRole.SYSTEM_ADMIN, UserRole.ENTERPRISE_ADMIN].includes(userRole) },
     { path: '/manuals', label: t.nav.manuals, icon: BookOpen, visible: true },
-    { path: '/feedback-admin', label: t.nav.feedbackAdmin, icon: MessageSquare, visible: [UserRole.SYSTEM_ADMIN, UserRole.ENTERPRISE_ADMIN].includes(userRole) },
-    { path: '/admin-manual', label: t.nav.adminGuide, icon: Shield, visible: userRole === UserRole.SYSTEM_ADMIN },
-    { path: '/tech-docs', label: 'Technical Docs', icon: FileCode, visible: userRole === UserRole.SYSTEM_ADMIN },
-    { path: '/presentation', label: t.nav.presentation, icon: Presentation, visible: userRole === UserRole.SYSTEM_ADMIN },
-    { path: '/proposal', label: t.nav.proposal, icon: FileText, visible: userRole === UserRole.SYSTEM_ADMIN },
   ];
 
   const navItems = allNavItems.filter(item => item.visible);
@@ -190,6 +168,11 @@ const Layout: React.FC<LayoutProps> = ({
   if (currentNavItem && currentNavItem.label) {
     pageTitle = String(currentNavItem.label);
   }
+
+  const handleLogout = () => {
+    logout();
+    navigate('/');
+  };
 
   return (
     <div className="flex h-screen bg-gray-100 dark:bg-gray-900 overflow-hidden transition-colors duration-200">
@@ -233,17 +216,22 @@ const Layout: React.FC<LayoutProps> = ({
         </nav>
 
         <div className="w-full p-4 border-t border-slate-700 dark:border-slate-800 bg-slate-900 dark:bg-slate-950">
-          {!isCollapsed && (
-              <select value={userRole} onChange={(e) => setUserRole(e.target.value as UserRole)}
-                className="w-full bg-slate-800 dark:bg-slate-900 text-white text-xs p-2 rounded border border-slate-600 focus:border-yellow-500 outline-none"
-              >
-                <option value={UserRole.SYSTEM_ADMIN}>System Admin</option>
-                <option value={UserRole.ENTERPRISE_ADMIN}>Enterprise Admin</option>
-                <option value={UserRole.SITE_ADMIN}>Site Admin</option>
-                <option value={UserRole.RAC_TRAINER}>RAC Trainer</option>
-                <option value={UserRole.USER}>User</option>
-              </select>
-          )}
+            <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-slate-800 border border-slate-700 flex items-center justify-center text-yellow-500 font-black">
+                    {user?.name.charAt(0) || 'U'}
+                </div>
+                {!isCollapsed && (
+                    <div className="flex-1 overflow-hidden">
+                        <div className="text-sm font-bold text-white truncate">{user?.name || 'Guest User'}</div>
+                        <div className="text-[10px] font-bold text-slate-500 uppercase tracking-widest truncate">{user?.role || 'Guest'}</div>
+                    </div>
+                )}
+                {!isCollapsed && (
+                    <button onClick={handleLogout} className="p-2 hover:bg-red-500/20 text-slate-400 hover:text-red-400 rounded-lg transition-colors">
+                        <LogOut size={18} />
+                    </button>
+                )}
+            </div>
         </div>
       </aside>
 
@@ -255,7 +243,14 @@ const Layout: React.FC<LayoutProps> = ({
                  <button onClick={() => navigate(-1)} className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-slate-700 text-slate-500"><ArrowLeft size={18} /></button>
                  <button onClick={() => navigate(1)} className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-slate-700 text-slate-500"><ArrowRight size={18} /></button>
              </div>
-             <h1 className="text-xl font-bold text-slate-800 dark:text-white truncate">{pageTitle}</h1>
+             <div className="flex items-center gap-3">
+                <h1 className="text-xl font-bold text-slate-800 dark:text-white truncate">{pageTitle}</h1>
+                
+                <div className={`flex items-center gap-1.5 px-2 py-0.5 rounded-full border text-[10px] font-black uppercase tracking-widest ${isSupabaseConfigured ? 'bg-emerald-50 text-emerald-600 border-emerald-200 animate-pulse' : 'bg-orange-50 text-orange-600 border-orange-200'}`}>
+                    {isSupabaseConfigured ? <Cloud size={12} /> : <CloudOff size={12} />}
+                    {isSupabaseConfigured ? 'Live Cloud' : 'Local Mock'}
+                </div>
+             </div>
           </div>
 
           <div className="flex items-center space-x-2 md:space-x-4">
@@ -269,14 +264,30 @@ const Layout: React.FC<LayoutProps> = ({
                     </select>
                 </div>
             )}
-            <button onClick={() => toggleLanguage()} className="p-2 rounded-full text-slate-500 dark:text-slate-400 flex items-center gap-1">
+            <button onClick={() => setLanguage(language === 'en' ? 'pt' : 'en')} className="p-2 rounded-full text-slate-500 dark:text-slate-400 flex items-center gap-1">
                 <Globe size={18} /><span className="text-xs font-bold uppercase">{language}</span>
             </button>
             <button onClick={() => cycleTheme()} className="p-2 rounded-full text-slate-500 dark:text-slate-400">
                 {getThemeIcon()}
             </button>
-            <div className="w-8 h-8 rounded-full bg-yellow-500 flex items-center justify-center text-white font-bold">
-                {userRole === UserRole.SYSTEM_ADMIN ? 'A' : 'U'}
+            <div className="relative">
+                <button 
+                    onClick={() => setShowProfileMenu(!showProfileMenu)}
+                    className="w-8 h-8 rounded-full bg-yellow-500 flex items-center justify-center text-slate-900 font-black shadow-lg hover:scale-110 transition-transform"
+                >
+                    {user?.name.charAt(0) || 'U'}
+                </button>
+                {showProfileMenu && (
+                    <div className="absolute right-0 mt-3 w-48 bg-white dark:bg-slate-800 rounded-2xl shadow-2xl border border-slate-100 dark:border-slate-700 py-2 z-50 animate-fade-in-up">
+                        <div className="px-4 py-2 border-b border-slate-100 dark:border-slate-700">
+                            <div className="text-xs font-black text-slate-400 uppercase tracking-widest mb-1">Authenticated as</div>
+                            <div className="text-sm font-bold text-slate-900 dark:text-white truncate">{user?.name}</div>
+                        </div>
+                        <button onClick={handleLogout} className="w-full text-left px-4 py-3 text-sm font-bold text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 flex items-center gap-2 transition-colors">
+                            <LogOut size={16} /> Sign Out
+                        </button>
+                    </div>
+                )}
             </div>
           </div>
         </header>
