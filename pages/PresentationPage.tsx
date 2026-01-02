@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useLanguage } from '../contexts/LanguageContext';
 import { 
@@ -7,7 +8,9 @@ import {
   Rocket, Code, CheckCircle,
   User, Users, Award, Briefcase, HeartHandshake, Phone, GraduationCap, Activity, CreditCard, Wallet, Wrench, Layers,
   Play, MapPin, GitMerge, Sparkles, TrendingUp, Building2, Server as ServerIcon, Globe, Factory, BrainCircuit,
-  ScanFace
+  ScanFace, AlertTriangle, ArrowRight, History, ShieldAlert, Cpu,
+  CheckSquare, XCircle, Search, Terminal, Binary, FileSpreadsheet, Eye,
+  BarChart3
 } from 'lucide-react';
 import { useNavigate, Navigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
@@ -113,45 +116,99 @@ const PresentationPage: React.FC = () => {
   );
 
   const AboutMeSlide = () => (
-      <div className="flex flex-col justify-center min-h-[70vh] max-w-[1400px] mx-auto px-6 relative z-10 animate-fade-in-up py-12">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
-              <div className="space-y-8">
+      <div className="flex flex-col justify-center min-h-[70vh] max-w-[1500px] mx-auto px-6 relative z-10 animate-fade-in-up py-12">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-16 items-center">
+              
+              {/* Left Column: Pedigree & Identity */}
+              <div className="lg:col-span-5 space-y-8">
                   <div className="flex items-center gap-6">
-                      <div className="p-5 bg-yellow-500/20 rounded-3xl border border-yellow-500/40 text-yellow-500 shadow-lg shadow-yellow-500/20">
+                      <div className="p-5 bg-gradient-to-tr from-yellow-500/30 to-amber-500/30 rounded-3xl border border-yellow-500/40 text-yellow-400 shadow-xl shadow-yellow-500/10">
                           <User size={48} />
                       </div>
                       <div>
-                          <h2 className="text-4xl md:text-5xl font-black text-white">{t.proposal.aboutMe.name}</h2>
-                          <p className="text-xl text-yellow-400 font-serif italic">"{t.proposal.aboutMe.preferred}"</p>
+                          <h2 className="text-4xl md:text-5xl font-black text-white tracking-tight">{t.proposal.aboutMe.name}</h2>
+                          <p className="text-xl text-yellow-500 font-serif italic">"{t.proposal.aboutMe.preferred}"</p>
                       </div>
                   </div>
+
                   <div className="space-y-4">
-                      <div className="p-4 bg-slate-900/60 rounded-2xl border border-slate-700 flex items-center gap-4">
-                          <Award className="text-blue-400" size={24} />
-                          <span className="text-lg font-bold text-slate-200">{t.proposal.aboutMe.cert}</span>
+                      <div className="p-5 bg-blue-500/10 rounded-2xl border border-blue-500/30 flex items-center gap-4 group hover:bg-blue-500/20 transition-all shadow-lg relative overflow-hidden">
+                          <div className="absolute top-0 right-0 p-2 opacity-5"><Shield size={40} /></div>
+                          <Award className="text-blue-400 animate-pulse shrink-0" size={32} />
+                          <span className="text-lg font-black text-blue-100 tracking-tight leading-tight">{t.proposal.aboutMe.cert}</span>
                       </div>
                       <div className="p-4 bg-slate-900/60 rounded-2xl border border-slate-700 flex items-center gap-4">
-                          <Briefcase className="text-emerald-400" size={24} />
-                          <span className="text-lg text-slate-300">{t.proposal.aboutMe.role}</span>
+                          <Briefcase className="text-emerald-400 shrink-0" size={24} />
+                          <span className="text-md text-slate-300 font-bold uppercase tracking-wide">{t.proposal.aboutMe.role}</span>
                       </div>
                   </div>
-                  <p className="text-xl text-slate-400 leading-relaxed font-light">
-                      {t.proposal.aboutMe.bio}
-                  </p>
+                  
+                  {/* Skills Cloud */}
+                  <div className="flex flex-wrap gap-2.5">
+                      {[
+                        { name: 'Python', icon: Binary, color: 'text-blue-400', bg: 'bg-blue-400/10' },
+                        { name: 'React', icon: Code, color: 'text-cyan-400', bg: 'bg-cyan-400/10' },
+                        { name: 'Power BI', icon: BarChart3, color: 'text-yellow-400', bg: 'bg-yellow-400/10' },
+                        { name: 'Excel', icon: FileSpreadsheet, color: 'text-green-400', bg: 'bg-green-400/10' },
+                        { name: 'Pandas', icon: Database, color: 'text-indigo-400', bg: 'bg-indigo-400/10' },
+                        { name: 'Matplotlib', icon: TrendingUp, color: 'text-rose-400', bg: 'bg-rose-400/10' }
+                      ].map((skill, i) => (
+                        <div key={i} className={`flex items-center gap-2 px-3 py-1.5 ${skill.bg} border border-white/5 rounded-full hover:border-white/20 transition-all cursor-default`}>
+                           <skill.icon size={12} className={skill.color} />
+                           <span className="text-[10px] font-black uppercase tracking-widest text-slate-200">{skill.name}</span>
+                        </div>
+                      ))}
+                  </div>
+
+                  <div className="relative">
+                      <div className="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b from-yellow-500 to-transparent opacity-50"></div>
+                      <p className="text-lg text-slate-400 leading-relaxed font-light text-justify pl-6">
+                        {t.proposal.aboutMe.bio}
+                      </p>
+                  </div>
               </div>
-              <div className="grid grid-cols-2 gap-4">
-                  {[
-                      { name: 'EduDesk', sub: 'Education SaaS', icon: GraduationCap, color: 'indigo' },
-                      { name: 'H365', sub: 'Health SaaS', icon: Activity, color: 'rose' },
-                      { name: 'SwiftPOS', sub: 'Retail', icon: CreditCard, color: 'emerald' },
-                      { name: 'MicroFin', sub: 'Finance', icon: Wallet, color: 'amber' },
-                  ].map((item, i) => (
-                      <div key={i} className="p-6 bg-slate-900/40 border border-slate-800 rounded-3xl backdrop-blur-sm group hover:border-indigo-500/50 transition-all">
-                          <item.icon size={28} className={`text-${item.color}-400 mb-3`} />
-                          <div className="font-bold text-white text-lg">{item.name}</div>
-                          <div className="text-xs text-slate-500 uppercase font-black">{item.sub}</div>
+
+              {/* Right Column: Portfolio Ecosystem */}
+              <div className="lg:col-span-7 space-y-6">
+                  <div className="flex items-center gap-3 mb-4">
+                      <Layers className="text-indigo-500" size={24} />
+                      <h4 className="text-xl font-black text-white uppercase tracking-widest">Ecosystem Portfolio</h4>
+                  </div>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {[
+                          { name: 'EduDesk', sub: 'K12 School Management (SaaS)', icon: GraduationCap, color: 'indigo' },
+                          { name: 'H365', sub: 'Health Management (SaaS)', icon: Activity, color: 'rose' },
+                          { name: 'SwiftPOS', sub: 'POS / Finance / Warehouse', icon: CreditCard, color: 'emerald' },
+                          { name: 'MicroFin', sub: 'Microcredit Financial System', icon: Wallet, color: 'amber' },
+                          { name: 'Sentinel', sub: 'AI Home Security App', icon: Eye, color: 'blue' },
+                          { name: 'Data Unification', sub: 'Enterprise Integrity Logic', icon: GitMerge, color: 'purple' },
+                      ].map((item, i) => (
+                          <div key={i} className="group relative p-5 bg-slate-900/40 border border-slate-800 rounded-3xl backdrop-blur-sm hover:border-indigo-500/50 transition-all hover:bg-slate-900/80 shadow-lg">
+                              <div className={`w-12 h-12 rounded-2xl bg-${item.color}-500/10 flex items-center justify-center text-${item.color}-400 mb-3 group-hover:scale-110 transition-transform shadow-inner`}>
+                                  <item.icon size={24} />
+                              </div>
+                              <div className="font-black text-white text-lg tracking-tight">{item.name}</div>
+                              <div className="text-[10px] text-slate-500 uppercase font-black tracking-widest mt-1 group-hover:text-slate-300 transition-colors">{item.sub}</div>
+                              {item.name === 'Data Unification' && (
+                                  <div className="absolute top-4 right-4 animate-pulse">
+                                      <Sparkles size={16} className="text-yellow-500" />
+                                  </div>
+                              )}
+                          </div>
+                      ))}
+                  </div>
+
+                  <div className="bg-gradient-to-r from-slate-900 to-indigo-950 p-6 rounded-3xl border border-indigo-500/20 shadow-inner relative overflow-hidden">
+                      <div className="absolute top-0 right-0 p-4 opacity-5"><Zap size={100} /></div>
+                      <div className="flex items-center gap-4">
+                          <BrainCircuit size={32} className="text-indigo-400" />
+                          <div>
+                              <div className="text-[10px] font-black text-indigo-400 uppercase tracking-[0.2em] mb-1">Architecture Philosophy</div>
+                              <div className="text-lg font-bold text-white leading-tight">Unified Data Integrity is the foundation of modern safety.</div>
+                          </div>
                       </div>
-                  ))}
+                  </div>
               </div>
           </div>
       </div>
@@ -293,26 +350,47 @@ const PresentationPage: React.FC = () => {
   );
 
   const TimelineSlide = () => (
-      <div className="flex flex-col justify-center min-h-[70vh] max-w-6xl mx-auto px-6 relative z-10 animate-fade-in-up py-12">
+      <div className="flex flex-col justify-center min-h-[70vh] max-w-[1600px] mx-auto px-12 relative z-10 animate-fade-in-up py-12">
           <h2 className="text-4xl md:text-6xl font-black text-white mb-16 text-center tracking-tight">{t.proposal.timeline.title}</h2>
+          
           <div className="relative">
-              <div className="absolute left-6 top-0 bottom-0 w-1 bg-slate-800 rounded-full"></div>
-              <div className="space-y-8 relative">
+              {/* Animated Path SVG */}
+              <svg className="absolute top-1/2 left-0 w-full h-32 -translate-y-1/2 pointer-events-none hidden lg:block" style={{ zIndex: 1 }}>
+                  <path 
+                      d="M 50 64 C 300 64, 500 128, 750 64 S 1200 0, 1500 64" 
+                      stroke="url(#grad)" 
+                      strokeWidth="4" 
+                      fill="transparent" 
+                      strokeDasharray="12 12"
+                      className="animate-[shimmer_10s_infinite_linear]"
+                  />
+                  <defs>
+                      <linearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="0%">
+                          <stop offset="0%" stopColor="#3b82f6" />
+                          <stop offset="50%" stopColor="#8b5cf6" />
+                          <stop offset="100%" stopColor="#f59e0b" />
+                      </linearGradient>
+                  </defs>
+              </svg>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-6 relative z-10">
                   {[
-                      { title: t.proposal.timeline.phase1, desc: t.proposal.timeline.phase1desc, color: 'bg-blue-500' },
-                      { title: t.proposal.timeline.phase2, desc: t.proposal.timeline.phase2desc, color: 'bg-indigo-500' },
-                      { title: t.proposal.timeline.phase3, desc: t.proposal.timeline.phase3desc, color: 'bg-purple-500' },
-                      { title: t.proposal.timeline.phase4, desc: t.proposal.timeline.phase4desc, color: 'bg-emerald-500' },
-                      { title: t.proposal.timeline.phase5, desc: t.proposal.timeline.phase5desc, color: 'bg-orange-500' },
+                      { title: t.proposal.timeline.phase1, desc: t.proposal.timeline.phase1desc, color: 'from-blue-600 to-blue-400', icon: Cpu },
+                      { title: t.proposal.timeline.phase2, desc: t.proposal.timeline.phase2desc, color: 'from-indigo-600 to-indigo-400', icon: GitMerge },
+                      { title: t.proposal.timeline.phase3, desc: t.proposal.timeline.phase3desc, color: 'from-purple-600 to-purple-400', icon: CheckSquare },
+                      { title: t.proposal.timeline.phase4, desc: t.proposal.timeline.phase4desc, color: 'from-emerald-600 to-emerald-400', icon: Rocket },
+                      { title: t.proposal.timeline.phase5, desc: t.proposal.timeline.phase5desc, color: 'from-orange-600 to-orange-400', icon: Wrench },
                   ].map((phase, i) => (
-                      <div key={i} className="flex gap-10 items-center group">
-                          <div className={`w-12 h-12 rounded-full ${phase.color} flex items-center justify-center text-white font-black text-xl shrink-0 shadow-lg z-10 group-hover:scale-125 transition-transform`}>
-                              {i + 1}
+                      <div 
+                          key={i} 
+                          className="group relative flex flex-col bg-slate-900/60 backdrop-blur-xl p-8 rounded-[2rem] border border-slate-800 hover:border-slate-500 transition-all duration-500 hover:-translate-y-4"
+                      >
+                          <div className={`w-14 h-14 rounded-2xl bg-gradient-to-br ${phase.color} flex items-center justify-center text-white font-black text-2xl shadow-xl mb-6 group-hover:scale-110 transition-transform`}>
+                              <phase.icon size={28} />
                           </div>
-                          <div className="flex-1 bg-slate-900/60 p-6 rounded-3xl border border-slate-800 group-hover:border-slate-600 transition-all backdrop-blur-sm">
-                              <h4 className="text-2xl font-black text-white mb-1">{phase.title}</h4>
-                              <p className="text-slate-400 font-medium">{phase.desc}</p>
-                          </div>
+                          <div className="text-[10px] uppercase font-black tracking-widest text-slate-500 mb-2">Phase 0{i + 1}</div>
+                          <h4 className="text-xl font-black text-white mb-3 tracking-tight group-hover:text-yellow-500 transition-colors">{phase.title}</h4>
+                          <p className="text-slate-400 text-sm leading-relaxed font-medium">{phase.desc}</p>
                       </div>
                   ))}
               </div>
@@ -495,26 +573,85 @@ const PresentationPage: React.FC = () => {
   );
 
   const ScenarioSlide = () => (
-      <div className="flex flex-col justify-center min-h-[70vh] max-w-6xl mx-auto px-6 relative z-10 animate-fade-in-up py-12">
-          <h2 className="text-4xl md:text-6xl font-black text-white mb-16 text-center tracking-tight">{t.proposal.scenario.title}</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
-              <div className="bg-slate-900 p-10 rounded-[3rem] border border-red-500/30 relative">
-                  <div className="flex items-center gap-4 mb-6">
-                      <div className="p-3 bg-red-500/20 rounded-2xl text-red-500"><TrendingUp size={32} className="rotate-180" /></div>
-                      <h3 className="text-2xl font-bold text-white">{t.proposal.scenario.challenge}</h3>
+      <div className="flex flex-col justify-center min-h-[70vh] max-w-[1400px] mx-auto px-12 relative z-10 animate-fade-in-up py-12">
+          <h2 className="text-4xl md:text-6xl font-black text-white mb-16 text-center tracking-tight">The Data Integrity Lifecycle</h2>
+          
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-stretch">
+              {/* Legacy Block */}
+              <div className="group relative bg-slate-950 border border-red-500/20 p-10 rounded-[3rem] shadow-2xl flex flex-col">
+                  <div className="absolute top-0 right-0 p-8 opacity-5 text-red-500"><History size={120} /></div>
+                  <div className="flex items-center gap-4 mb-8">
+                      <div className="p-4 bg-red-500/10 rounded-2xl text-red-500 border border-red-500/30 shadow-[0_0_20px_rgba(239,68,68,0.2)]">
+                          <ShieldAlert size={32} />
+                      </div>
+                      <div>
+                          <h3 className="text-2xl font-black text-white uppercase tracking-tighter">Legacy Fragmentation</h3>
+                          <span className="text-xs font-black text-red-500 uppercase tracking-widest">Reactive Risk Model</span>
+                      </div>
                   </div>
-                  <p className="text-lg text-slate-300 leading-relaxed font-light italic">
-                      "{t.proposal.scenario.challengeText}"
-                  </p>
+                  
+                  <div className="flex-1 space-y-6">
+                      <div className="bg-white/5 p-5 rounded-2xl border border-white/5">
+                          <p className="text-lg text-slate-400 italic leading-relaxed">
+                            "Manual spreadsheets create compliance gaps. Paulo Manjate's RAC 02 expires in <span className="text-red-500 font-bold">3 days</span>, but no one knows."
+                          </p>
+                      </div>
+                      <ul className="space-y-3">
+                          <li className="flex items-center gap-3 text-slate-500 text-sm font-bold">
+                              <XCircle size={16} className="text-red-600" />
+                              Production Downtime (Gate Lockout)
+                          </li>
+                          <li className="flex items-center gap-3 text-slate-500 text-sm font-bold">
+                              <XCircle size={16} className="text-red-600" />
+                              Unmitigated HSE Risk Exposures
+                          </li>
+                          <li className="flex items-center gap-3 text-slate-500 text-sm font-bold">
+                              <XCircle size={16} className="text-red-600" />
+                              Delayed Audit Response Times
+                          </li>
+                      </ul>
+                  </div>
               </div>
-              <div className="bg-slate-900 p-10 rounded-[3rem] border border-emerald-500/30 relative">
-                  <div className="flex items-center gap-4 mb-6">
-                      <div className="p-3 bg-emerald-500/20 rounded-2xl text-emerald-500"><Zap size={32} /></div>
-                      <h3 className="text-2xl font-bold text-white">{t.proposal.scenario.automation}</h3>
+
+              {/* Integrated Block */}
+              <div className="group relative bg-indigo-950/20 border border-emerald-500/30 p-10 rounded-[3rem] shadow-2xl flex flex-col overflow-hidden">
+                  <div className="absolute -inset-1 bg-gradient-to-br from-emerald-500/10 to-indigo-500/10 opacity-50 blur-3xl"></div>
+                  <div className="absolute top-0 right-0 p-8 opacity-5 text-emerald-500"><Zap size={120} /></div>
+                  
+                  <div className="relative z-10">
+                      <div className="flex items-center gap-4 mb-8">
+                          <div className="p-4 bg-emerald-500/10 rounded-2xl text-emerald-500 border border-emerald-500/30 shadow-[0_0_20px_rgba(16,185,129,0.2)]">
+                              <Sparkles size={32} />
+                          </div>
+                          <div>
+                              <h3 className="text-2xl font-black text-white uppercase tracking-tighter">CARS Digital Ecosystem</h3>
+                              <span className="text-xs font-black text-emerald-500 uppercase tracking-widest">Proactive Resilience</span>
+                          </div>
+                      </div>
+
+                      <div className="space-y-6">
+                          <div className="flex gap-4 items-start bg-emerald-900/20 p-5 rounded-2xl border border-emerald-500/20">
+                              <div className="mt-1 p-1 bg-emerald-500 rounded text-black"><Search size={14} /></div>
+                              <p className="text-sm md:text-base text-slate-200 leading-relaxed">
+                                <strong>Predictive Sync:</strong> System identifies expiry <span className="text-emerald-400">14 days</span> in advance via SuccessFactors API.
+                              </p>
+                          </div>
+                          
+                          <div className="flex gap-4 items-start bg-indigo-900/20 p-5 rounded-2xl border border-indigo-500/20 translate-x-4">
+                              <div className="mt-1 p-1 bg-indigo-500 rounded text-white"><CalendarClock size={14} /></div>
+                              <p className="text-sm md:text-base text-slate-200 leading-relaxed">
+                                <strong>Automated Mitigation:</strong> Paulo is <span className="text-indigo-400 underline font-bold">Auto-Booked</span> for the next session. SMS alert sent instantly.
+                              </p>
+                          </div>
+
+                          <div className="flex gap-4 items-start bg-blue-900/20 p-5 rounded-2xl border border-blue-500/20 translate-x-8">
+                              <div className="mt-1 p-1 bg-blue-500 rounded text-white"><ArrowRight size={14} /></div>
+                              <p className="text-sm md:text-base text-slate-200 leading-relaxed font-bold">
+                                Outcome: Zero site lockout. Zero production delay. 100% Compliance Integrity.
+                              </p>
+                          </div>
+                      </div>
                   </div>
-                  <p className="text-lg text-slate-300 leading-relaxed font-light">
-                      {t.proposal.scenario.automationText}
-                  </p>
               </div>
           </div>
       </div>

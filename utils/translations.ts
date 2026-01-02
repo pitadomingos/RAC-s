@@ -1,3 +1,4 @@
+
 export type Language = 'en' | 'pt';
 
 export const formatDate = (dateString: string | undefined): string => {
@@ -417,26 +418,36 @@ export const translations = {
         aboutMe: {
             title: 'Architect Profile',
             name: 'Pita Domingos',
-            preferred: 'DigiSols Lead',
-            cert: 'Senior Fullstack Architect',
-            role: 'Product Strategy',
-            bio: 'Expert in designing multi-tenant infrastructure for heavy industry. Specializing in digital transformation and automated safety compliance.'
+            preferred: 'Lead Solution Architect',
+            cert: 'IBM Certified Full Stack Data Scientist Professional',
+            role: 'Contract Manager (Jachris) • Ex-Vale Specialist',
+            bio: 'Expert architect specializing in the digital transformation of heavy industry. Previously optimized large-scale operations at Vale before moving to Jachris. Advanced proficiency in Python, React, Microsoft Power BI, Excel, Pandas, and Matplotlib to drive automated, data-unified safety compliance.',
+            skills: ['Python', 'React', 'Power BI', 'Excel', 'Pandas', 'Matplotlib'],
+            history: 'Vale (Specialist) → Jachris (Contract Manager)',
+            portfolio: {
+                edudesk: 'EduDesk: K12 School Management (SaaS)',
+                h365: 'H365: Health Management System (SaaS)',
+                swiftpos: 'SwiftPOS: POS, Finance & Warehouse Management',
+                microfin: 'MicroFin: Microcredit Financial System',
+                sentinel: 'Sentinel: AI-Powered Home Security App'
+            }
         },
         objectives: {
             title: 'Strategic Goals',
-            problemTitle: 'Core Challenges',
-            problemText: 'Manual data entry and fragmented safety silos lead to production delays and unmitigated risks.',
-            solutionTitle: 'The Solution',
+            problemTitle: 'Current Operational Challenges',
+            problemText: 'Currently, RAC training data management involves disparate Excel spreadsheets, with individual roles maintaining isolated records. The RAC Admin is forced to manually consolidate this fragmented data, a process that is laborious, difficult to manage, and highly prone to human error and data inconsistency.',
+            solutionTitle: 'Proposed Solution',
             goals: [
-                'Automated Site Entry Validation',
-                'Unified "Source of Truth"',
-                'Real-time Risk Dashboards'
+                'Centralization: Consolidate disparate spreadsheets into a single, secure master database.',
+                'Automation: Eliminate manual consolidation by automating the data flow from Trainer Input to Admin Dashboards.',
+                'Integrity: Ensure "One Version of Truth" for all safety records across the mine.',
+                'Efficiency: Reduce administrative time spent on reporting and consolidation by 80%.'
             ]
         },
         execSummary: {
             title: 'Executive Summary',
-            text: 'Transitioning from manual requisitions to an autonomous logic engine that ensures zero downtime for compliant staff.',
-            quote: 'Safety through automation.'
+            text: 'The RACS Manager is a specialized corporate application designed to optimize the safety training lifecycle for Critical Activity Requisitions. By migrating from manual spreadsheets to a centralized digital platform, it aims to eliminate compliance gaps, automate validity management, and enforce strict access control protocols.',
+            quote: 'An intelligent safety mechanism that not only tracks training but actively manages compliance through automated scheduling intervention and smart access logic.'
         },
         integration: {
             title: 'Unified Data Architecture',
@@ -452,7 +463,7 @@ export const translations = {
             liveMatrix: 'Live Compliance Matrices'
         },
         scenario: {
-            title: 'Real-World Logic Flow',
+            title: 'Process Integrity Lifecycle',
             challenge: 'The Challenge',
             challengeText: 'Staff member Paulo Manjate has an expiring RAC 02 certification. Human error in manual scheduling leads to site access lockout and production delay.',
             automation: 'The Automation',
@@ -504,7 +515,7 @@ export const translations = {
             authDesc: 'Azure AD link',
             db: 'Scalability',
             dbDesc: 'Distributed nodes',
-            email: 'Alerts',
+            email: 'Alertas',
             emailDesc: 'Direct notification',
             hosting: 'Mobile',
             hostingDesc: 'Progressive Web App'
@@ -777,7 +788,7 @@ export const translations = {
       upcoming: {
         title: 'Próximas Requisições Agendadas',
         viewSchedule: 'Ver Cronograma',
-        date: 'Date',
+        date: 'Data',
         session: 'Sessão',
         capacity: 'Capacidade'
       },
@@ -1019,26 +1030,36 @@ export const translations = {
         aboutMe: {
             title: 'Perfil do Arquiteto',
             name: 'Pita Domingos',
-            preferred: 'Líder DigiSols',
-            cert: 'Arquiteto Sénior Fullstack',
-            role: 'Estratégia de Produto',
-            bio: 'Especialista em design de infraestrutura multi-tenant para indústria pesada. Especializado em transformação digital e conformidade de segurança automatizada.'
+            preferred: 'Arquiteto Líder de Soluções',
+            cert: 'Profissional Cientista de Dados Full Stack Certificado pela IBM',
+            role: 'Gestor de Contratos (Jachris) • Ex-Especialista Vale',
+            bio: 'Arquiteto especialista na transformação digital da indústria pesada. Anteriormente optimizou operações de larga escala na Vale antes da transição para a Jachris. Proficiência avançada em Python, React, Microsoft Power BI, Excel, Pandas e Matplotlib para impulsionar a conformidade de segurança automatizada e unificada por dados.',
+            skills: ['Python', 'React', 'Power BI', 'Excel', 'Pandas', 'Matplotlib'],
+            history: 'Vale (Especialista) → Jachris (Gestor de Contratos)',
+            portfolio: {
+                edudesk: 'EduDesk: Gestão Escolar K12 (SaaS)',
+                h365: 'H365: Sistema de Gestão de Saúde (SaaS)',
+                swiftpos: 'SwiftPOS: POS, Finanças e Gestão de Armazém',
+                microfin: 'MicroFin: Sistema Financeiro de Microcrédito',
+                sentinel: 'Sentinel: App de Segurança Doméstica com IA'
+            }
         },
         objectives: {
-            title: 'Objetivos Estratégicos',
-            problemTitle: 'Desafios Centrais',
-            problemText: 'A entrada manual de dados e os silos de segurança fragmentados levam a atrasos na produção e riscos não mitigados.',
-            solutionTitle: 'A Solução',
+            title: 'Metas Estratégicas',
+            problemTitle: 'Desafios Operacionais Atuais',
+            problemText: 'Atualmente, a gestão de dados de treinamento RAC envolve planilhas de Excel díspares, com funções individuais mantendo registros isolados. O Admin de RACs é obrigado a consolidar manualmente esses dados fragmentados, um processo que é trabalhoso, difícil de gerenciar e altamente propenso a erro humano e inconsistência de dados.',
+            solutionTitle: 'Solução Proposta',
             goals: [
-                'Validação Automática de Entrada no Site',
-                'Fonte Única de Verdade Unificada',
-                'Painéis de Risco em Tempo Real'
+                'Centralização: Consolidar planilhas díspares em uma base de dados mestre única e segura.',
+                'Automação: Eliminar a consolidação manual automatizando o fluxo de dados da Entrada do Instrutor para os Painéis Administrativos.',
+                'Integrity: Garantir "Uma Versão da Verdade" para todos os registros de segurança em toda a mina.',
+                'Eficiência: Reduzir o tempo administrativo gasto em relatórios e consolidação em 80%.'
             ]
         },
         execSummary: {
             title: 'Resumo Executivo',
-            text: 'Transição de requisições manuais para um motor de lógica autónomo que garante tempo de inatividade zero para pessoal em conformidade.',
-            quote: 'Segurança através da automação.'
+            text: 'O gestor de RACS é um aplicativo corporativo especializado projetado para otimizar o ciclo de vida do treinamento de segurança para Requisições de Atividade Crítica. Ao migrar de planilhas manuais para uma plataforma digital centralizada, visa eliminar lacunas de conformidade, automatizar a gestão de validade e impor protocolos rígidos de controle de acesso.',
+            quote: 'Um mecanismo de segurança inteligente que não apenas rastreia o treinamento, mas gerencia ativamente a conformidade por meio de intervenção automatizada de agendamento e lógica de acesso inteligente.'
         },
         integration: {
             title: 'Arquitectura de Dados Unificada',
@@ -1054,7 +1075,7 @@ export const translations = {
             liveMatrix: 'Matrizes de Conformidade em Tempo Real'
         },
         scenario: {
-            title: 'Fluxo de Lógica do Mundo Real',
+            title: 'Ciclo de Integridade de Processos',
             challenge: 'O Desafio',
             challengeText: 'O funcionário Paulo Manjate tem uma certificação RAC 02 a expirar. O erro humano no agendamento manual leva ao bloqueio do acesso ao site e ao atraso na produção.',
             automation: 'A Automação',
@@ -1073,8 +1094,8 @@ export const translations = {
             phase2desc: 'Implementação de APIs',
             phase3: 'UAT',
             phase3desc: 'Fase de testes',
-            phase4: 'Produção',
-            phase4desc: 'Lançamento ao vivo',
+            phase4: 'Production',
+            phase4desc: 'Live rollout',
             phase5: 'Serviços Geridos',
             phase5desc: 'Manutenção'
         },
@@ -1083,7 +1104,7 @@ export const translations = {
           frontendTitle: 'Camada Frontend',
           frontend: 'React 19 com Tailwind CSS para uma interface responsiva de alta performance.',
           backendTitle: 'Camada de Dados',
-          backend: 'Supabase Realtime para armazenamento seguro em nuvem distribuída.',
+          backend: 'Supabase Realtime for secure, distributed cloud storage.',
           databaseTitle: 'Inteligência',
           database: 'Google Gemini 2.0 para diagnósticos de segurança automatizados.',
           securityTitle: 'Identidade',
@@ -1104,7 +1125,7 @@ export const translations = {
             title: 'Roteiro de Funcionalidades',
             auth: 'Identidade',
             authDesc: 'Link Azure AD',
-            db: 'Escalabilidade',
+            db: 'Scalability',
             dbDesc: 'Nós distribuídos',
             email: 'Alertas',
             emailDesc: 'Notificação direta',

@@ -20,25 +20,26 @@ interface State {
  * Catches runtime errors and triggers autonomous repair visuals.
  * Inherits from React.Component to provide error boundary lifecycle methods.
  */
-// Fix: Use explicit Component inheritance to ensure React-specific properties (state, setState, props) are recognized by the compiler.
+// Fix: Explicitly use Component from react to ensure proper inheritance in all environments.
 export class ErrorBoundary extends Component<Props, State> {
   private simulationInterval: any = null;
 
-  // Fix: Explicitly define the state property to ensure the compiler recognizes it as part of the class instance.
-  public state: State = {
-    hasError: false,
-    error: null,
-    aiDiagnosis: null,
-    repairProgress: 0,
-    repairStep: 'Initializing Diagnostics...',
-    isRepaired: false
-  };
-
   constructor(props: Props) {
     super(props);
+    // Fix: Initialize state in constructor to avoid potential shadowing issues or missing members in strict TypeScript environments.
+    this.state = {
+      hasError: false,
+      error: null,
+      aiDiagnosis: null,
+      repairProgress: 0,
+      repairStep: 'Initializing Diagnostics...',
+      isRepaired: false
+    };
   }
 
-  // Fix: Static method to update state when an error is caught. Returns a Partial<State> to indicate changes.
+  /**
+   * Static method to update state when an error is caught.
+   */
   public static getDerivedStateFromError(error: Error): Partial<State> {
     return { 
         hasError: true, 
@@ -50,7 +51,9 @@ export class ErrorBoundary extends Component<Props, State> {
     };
   }
 
-  // Fix: Use ErrorInfo type explicitly to resolve matching issues for the error info parameter.
+  /**
+   * Captures the error and initiates diagnostics.
+   */
   public componentDidCatch(error: Error, errorInfo: ErrorInfo) {
     const errorMessage = error.message || error.toString();
     const isManualCrash = errorMessage.includes("MANUAL SYSTEM CRASH");
@@ -72,7 +75,9 @@ export class ErrorBoundary extends Component<Props, State> {
       if (this.simulationInterval) clearInterval(this.simulationInterval);
   }
 
-  // Fix: Arrow function ensures 'this' context remains bound to the class for setState access.
+  /**
+   * Visual simulation of system "repair" progress.
+   */
   private startRepairSimulation = () => {
       const steps = [
           "Scanning Neural Pathways...",
@@ -87,12 +92,12 @@ export class ErrorBoundary extends Component<Props, State> {
       let stepIndex = 0;
 
       this.simulationInterval = setInterval(() => {
-          // Fix: Access setState from correctly typed class instance inherited from Component.
+          // Fix: Call setState from the Component base class. Using this.setState within an arrow function correctly binds 'this'.
           this.setState((prevState) => {
               const canFinish = !!prevState.aiDiagnosis;
               
               if (prevState.repairProgress >= 90 && !canFinish) {
-                  return { ...prevState, repairStep: "Finalizing Analysis..." };
+                  return { repairStep: "Finalizing Analysis..." } as any;
               }
 
               const nextProgress = prevState.repairProgress + (Math.random() * 8); 
@@ -104,15 +109,16 @@ export class ErrorBoundary extends Component<Props, State> {
               }
 
               return {
-                  ...prevState,
                   repairProgress: Math.min(nextProgress, 100),
                   repairStep: nextStep
-              };
+              } as any;
           });
       }, 200);
   }
 
-  // Fix: Asynchronous diagnosis correctly updates state upon completion using class methods.
+  /**
+   * Sends error details to Gemini for analysis.
+   */
   private runSilentDiagnosis = async (errorMessage: string, errorInfo: ErrorInfo) => {
       try {
           const stack = errorInfo.componentStack || '';
@@ -129,7 +135,9 @@ export class ErrorBoundary extends Component<Props, State> {
       }
   }
 
-  // Fix: Finalize the repair sequence and update state using inherited Component methods.
+  /**
+   * Finalizes the autonomous repair sequence.
+   */
   private completeRepair = (diagnosis: { rootCause: string, fix: string }) => {
       if (this.simulationInterval) clearInterval(this.simulationInterval);
 
@@ -137,7 +145,7 @@ export class ErrorBoundary extends Component<Props, State> {
           sessionStorage.clear();
       } catch(e) { /* ignore */ }
 
-      // Fix: Update state via recognized setState method from the base class.
+      // Fix: Use setState from the React component instance.
       this.setState({ 
           aiDiagnosis: diagnosis,
           repairProgress: 100,
@@ -170,7 +178,6 @@ export class ErrorBoundary extends Component<Props, State> {
   };
 
   public render() {
-    // Fix: Access state and props from correctly inherited class instance.
     if (this.state.hasError) {
       return (
         <div className="fixed inset-0 z-[99999] bg-slate-950 flex flex-col items-center justify-center p-6 font-mono overflow-hidden text-white animate-fade-in">
@@ -259,7 +266,7 @@ export class ErrorBoundary extends Component<Props, State> {
       );
     }
 
-    // Fix: Access props from the correctly inherited Component class.
+    // Fix: Access props from the React component instance.
     return this.props.children || null;
   }
 }
