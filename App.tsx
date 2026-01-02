@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useMemo } from 'react';
 import { HashRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import Layout from './components/Layout';
@@ -23,7 +24,6 @@ import ResultsPage from './pages/ResultsPage';
 import SettingsPage from './pages/SettingsPage';
 import AlcoholIntegration from './pages/AlcoholIntegration';
 import EnterpriseDashboard from './pages/EnterpriseDashboard';
-// Fix: Added missing import for GeminiAdvisor component
 import GeminiAdvisor from './components/GeminiAdvisor';
 import { AdvisorProvider } from './contexts/AdvisorContext';
 import { MessageProvider } from './contexts/MessageContext';
@@ -111,10 +111,7 @@ const AppContent: React.FC = () => {
   const handleUpdateCompanies = async (updatedCompanies: Company[]) => {
       try {
           for (const comp of updatedCompanies) {
-              const original = companies.find(c => c.id === comp.id);
-              if (JSON.stringify(original) !== JSON.stringify(comp)) {
-                  await db.saveCompany(comp);
-              }
+              await db.saveCompany(comp);
           }
           setCompanies(updatedCompanies);
           await db.addLog('AUDIT', 'UPDATE_TENANT_CONFIG', user?.name || 'Admin', { count: updatedCompanies.length });
@@ -125,6 +122,14 @@ const AppContent: React.FC = () => {
 
   const handleUpdateRacs = async (updatedRacs: RacDef[]) => {
       try {
+          // Identify removed
+          // Fixed: Explicitly typed Sets to string to avoid 'unknown' inference issues
+          const originalIds = new Set<string>(racDefinitions.map(r => r.id));
+          const updatedIds = new Set<string>(updatedRacs.map(r => r.id));
+          for (const id of originalIds) {
+              if (!updatedIds.has(id)) await db.deleteRacDefinition(id);
+          }
+          // Upsert current
           for (const rac of updatedRacs) {
               await db.saveRacDefinition(rac);
           }
@@ -133,6 +138,51 @@ const AppContent: React.FC = () => {
       } catch (err) {
           console.error("Error saving dynamic modules:", err);
       }
+  };
+
+  const handleUpdateRooms = async (updatedRooms: Room[]) => {
+    try {
+        // Fixed: Explicitly typed Sets to string to avoid 'unknown' inference issues
+        const originalIds = new Set<string>(rooms.map(r => r.id));
+        const updatedIds = new Set<string>(updatedRooms.map(r => r.id));
+        for (const id of originalIds) {
+            if (!updatedIds.has(id)) await db.deleteRoom(id);
+        }
+        for (const room of updatedRooms) {
+            await db.saveRoom(room);
+        }
+        setRooms(updatedRooms);
+    } catch (err) { console.error(err); }
+  };
+
+  const handleUpdateTrainers = async (updatedTrainers: Trainer[]) => {
+    try {
+        // Fixed: Explicitly typed Sets to string to avoid 'unknown' inference issues
+        const originalIds = new Set<string>(trainers.map(t => t.id));
+        const updatedIds = new Set<string>(updatedTrainers.map(t => t.id));
+        for (const id of originalIds) {
+            if (!updatedIds.has(id)) await db.deleteTrainer(id);
+        }
+        for (const trainer of updatedTrainers) {
+            await db.saveTrainer(trainer);
+        }
+        setTrainers(updatedTrainers);
+    } catch (err) { console.error(err); }
+  };
+
+  const handleUpdateSites = async (updatedSites: Site[]) => {
+    try {
+        // Fixed: Explicitly typed Sets to string to avoid 'unknown' inference issues
+        const originalIds = new Set<string>(sites.map(s => s.id));
+        const updatedIds = new Set<string>(updatedSites.map(s => s.id));
+        for (const id of originalIds) {
+            if (!updatedIds.has(id)) await db.deleteSite(id);
+        }
+        for (const site of updatedSites) {
+            await db.saveSite(site);
+        }
+        setSites(updatedSites);
+    } catch (err) { console.error(err); }
   };
 
   const handleAddBookings = async (newBookings: Booking[]) => {
@@ -243,7 +293,7 @@ const AppContent: React.FC = () => {
                   <Route path="/booking" element={<BookingForm addBookings={handleAddBookings} sessions={sessions} userRole={user?.role || UserRole.USER} existingBookings={bookings} addNotification={addNotification} racDefinitions={racDefinitions} companies={companies} />} />
                   <Route path="/results" element={<ResultsPage bookings={bookings} updateBookingStatus={handleUpdateBookingStatus} importBookings={handleImportBookings} userRole={user?.role || UserRole.USER} sessions={sessions} racDefinitions={racDefinitions} addNotification={addNotification} currentSiteId={currentSiteId} />} />
                   <Route path="/users" element={<UserManagement users={users} onUpdateUser={handleUpdateUser} onDeleteUser={() => {}} addNotification={addNotification} sites={sites} currentSiteId={currentSiteId} companies={companies} />} />
-                  <Route path="/settings" element={<SettingsPage racDefinitions={racDefinitions} onUpdateRacs={handleUpdateRacs} rooms={rooms} onUpdateRooms={setRooms} trainers={trainers} onUpdateTrainers={setTrainers} sites={sites} onUpdateSites={setSites} companies={companies} onUpdateCompanies={handleUpdateCompanies} userRole={user?.role} addNotification={addNotification} />} />
+                  <Route path="/settings" element={<SettingsPage racDefinitions={racDefinitions} onUpdateRacs={handleUpdateRacs} rooms={rooms} onUpdateRooms={handleUpdateRooms} trainers={trainers} onUpdateTrainers={handleUpdateTrainers} sites={sites} onUpdateSites={handleUpdateSites} companies={companies} onUpdateCompanies={handleUpdateCompanies} userRole={user?.role} addNotification={addNotification} currentSiteId={currentSiteId} />} />
                   <Route path="/schedule" element={<ScheduleTraining sessions={sessions} setSessions={setSessions} rooms={rooms} trainers={trainers} racDefinitions={racDefinitions} addNotification={addNotification} currentSiteId={currentSiteId} />} />
                   <Route path="/trainer-input" element={<TrainerInputPage bookings={bookings} updateBookings={handleTrainerUpdateBookings} sessions={sessions} userRole={user?.role} currentUserName={user?.name} racDefinitions={racDefinitions} />} />
                   <Route path="/manuals" element={<UserManualsPage userRole={user?.role || UserRole.USER} />} />

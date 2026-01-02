@@ -1,3 +1,4 @@
+
 import { supabase, isSupabaseConfigured } from './supabaseClient';
 import { Booking, Employee, TrainingSession, EmployeeRequirement, Site, Company, BookingStatus, User, UserRole, RacDef, Room, Trainer, Feedback, SystemNotification } from '../types';
 import { MOCK_EMPLOYEES, MOCK_BOOKINGS, MOCK_SESSIONS, MOCK_REQUIREMENTS } from '../constants';
@@ -94,8 +95,8 @@ export const db = {
             id: c.id,
             name: c.name,
             appName: c.app_name,
-            logoUrl: c.logo_url,
-            safetyLogoUrl: c.safety_logo_url,
+            logo_url: c.logo_url,
+            safety_logo_url: c.safety_logo_url,
             status: c.status || 'Active',
             defaultLanguage: c.default_language || 'en',
             features: c.features || { alcohol: false }
@@ -121,7 +122,14 @@ export const db = {
     async getSessions(): Promise<TrainingSession[]> {
         const raw = await this.safeQuery('training_sessions', supabase?.from('training_sessions').select('*').order('date', { ascending: true }), []);
         if (raw.length === 0 && !isSupabaseConfigured) return MOCK_SESSIONS;
-        return raw.map(s => this.mapSessionFromDb(s));
+        return raw.map(s => ({
+            ...s,
+            id: s.id,
+            racType: s.rac_type,
+            startTime: s.start_time,
+            sessionLanguage: s.session_language,
+            siteId: s.site_id
+        }));
     },
 
     async getBookings(): Promise<Booking[]> {
@@ -141,7 +149,7 @@ export const db = {
         return raw.map(r => ({
             ...r,
             employeeId: r.employee_id,
-            asoExpiryDate: r.aso_expiry_date,
+            aso_expiry_date: r.aso_expiry_date,
             requiredRacs: r.required_racs
         }));
     },
@@ -156,7 +164,12 @@ export const db = {
 
     async getTrainers(): Promise<Trainer[]> {
         const raw = await this.safeQuery('trainers', supabase?.from('trainers').select('*'), []);
-        return raw.map((t: any) => ({ ...t, racs: t.authorized_racs || [] }));
+        return raw.map((t: any) => ({ 
+            id: t.id,
+            name: t.name,
+            racs: t.authorized_racs || [], // Maps text[] column
+            siteId: t.site_id // Maps uuid column
+        }));
     },
 
     async getFeedback(): Promise<Feedback[]> {
@@ -198,6 +211,63 @@ export const db = {
         const { data, error } = await supabase.from('rac_definitions').upsert(payload).select();
         if (error) throw error;
         return data[0];
+    },
+
+    async deleteRacDefinition(id: string) {
+        if (!isSupabaseConfigured || !supabase) return;
+        await supabase.from('rac_definitions').delete().eq('id', id);
+    },
+
+    async saveSite(site: Site) {
+        if (!isSupabaseConfigured || !supabase) return site;
+        const { data, error } = await supabase.from('sites').upsert({
+            id: site.id,
+            company_id: site.companyId,
+            name: site.name,
+            location: site.location,
+            mandatory_racs: site.mandatoryRacs
+        }).select();
+        if (error) throw error;
+        return data[0];
+    },
+
+    async deleteSite(id: string) {
+        if (!isSupabaseConfigured || !supabase) return;
+        await supabase.from('sites').delete().eq('id', id);
+    },
+
+    async saveRoom(room: Room) {
+        if (!isSupabaseConfigured || !supabase) return room;
+        const { data, error } = await supabase.from('rooms').upsert({
+            id: room.id,
+            name: room.name,
+            capacity: room.capacity,
+            site_id: room.siteId
+        }).select();
+        if (error) throw error;
+        return data[0];
+    },
+
+    async deleteRoom(id: string) {
+        if (!isSupabaseConfigured || !supabase) return;
+        await supabase.from('rooms').delete().eq('id', id);
+    },
+
+    async saveTrainer(trainer: Trainer) {
+        if (!isSupabaseConfigured || !supabase) return trainer;
+        const { data, error } = await supabase.from('trainers').upsert({
+            id: trainer.id,
+            name: trainer.name,
+            authorized_racs: trainer.racs, // Maps to text[]
+            site_id: trainer.siteId // Maps to uuid
+        }).select();
+        if (error) throw error;
+        return data[0];
+    },
+
+    async deleteTrainer(id: string) {
+        if (!isSupabaseConfigured || !supabase) return;
+        await supabase.from('trainers').delete().eq('id', id);
     },
 
     async upsertUser(user: Partial<User>) {
@@ -270,5 +340,34 @@ export const db = {
             timestamp: l.timestamp,
             aiFix: l.metadata?.aiFix || null
         }));
+    },
+
+    mapBookingFromDb(data: any): Booking {
+        const { employee_id, session_id, result_date, expiry_date, theory_score, practical_score, driver_license_verified, is_auto_booked, employee, ...rest } = data;
+        return {
+            ...rest,
+            sessionId: session_id,
+            employee: this.mapEmployeeFromDb(employee),
+            resultDate: result_date,
+            expiryDate: expiry_date,
+            theoryScore: theory_score,
+            practicalScore: practical_score,
+            driverLicenseVerified: driver_license_verified,
+            isAutoBooked: is_auto_booked
+        };
+    },
+
+    mapSessionFromDb(data: any): TrainingSession {
+        return {
+            id: data.id,
+            racType: data.rac_type,
+            date: data.date,
+            startTime: data.start_time,
+            location: data.location,
+            instructor: data.instructor,
+            capacity: data.capacity,
+            sessionLanguage: data.session_language,
+            siteId: data.site_id
+        };
     }
 };

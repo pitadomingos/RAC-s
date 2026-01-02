@@ -41,6 +41,7 @@ export interface Trainer {
   id: string;
   name: string;
   racs: string[];
+  siteId?: string; // Added to match Supabase site_id column
 }
 
 export enum UserRole {
