@@ -9,7 +9,7 @@ import {
   User, Users, Award, Briefcase, HeartHandshake, Phone, GraduationCap, Activity, CreditCard, Wallet, Wrench, Layers,
   Play, MapPin, GitMerge, Sparkles, TrendingUp, Building2, Server as ServerIcon, Globe, Factory, BrainCircuit,
   ScanFace, AlertTriangle, ArrowRight, History, ShieldAlert, Cpu,
-  CheckSquare, XCircle, Search, Terminal, Binary, FileSpreadsheet, Eye,
+  CheckSquare, XCircle, Search, Terminal, Binary, FileSpreadsheet, Eye, EyeOff,
   BarChart3, Cloud, ShieldCheck, Timer
 } from 'lucide-react';
 import { useNavigate, Navigate } from 'react-router-dom';
@@ -17,11 +17,12 @@ import { useAuth } from '../contexts/AuthContext';
 import { UserRole } from '../types';
 
 const PresentationPage: React.FC = () => {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const { user, isAuthenticated } = useAuth();
   const navigate = useNavigate();
   const [currentSlide, setCurrentSlide] = useState(0);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [skipFinancials, setSkipFinancials] = useState(false);
 
   // Security Guard: Presentation is for System Admin eyes only.
   if (!isAuthenticated || user?.role !== UserRole.SYSTEM_ADMIN) {
@@ -50,9 +51,9 @@ const PresentationPage: React.FC = () => {
     { id: 'integration', type: 'integration', title: t.proposal.integration.title },
     { id: 'organogram', type: 'organogram', title: t.proposal.organogram.title },
     { id: 'timeline', type: 'timeline', title: t.proposal.timeline.title },
-    { id: 'tech', type: 'tech', title: t.proposal.techStack.title },
-    { id: 'financials', type: 'financials', title: t.proposal.financials.title },
-    { id: 'roadmap', type: 'roadmap', title: t.proposal.roadmap.title },
+    { id: 'tech', type: 'tech', title: t.proposal.techStack.title }, // Index 8 (Slide 9)
+    { id: 'financials', type: 'financials', title: t.proposal.financials.title }, // Index 9 (Slide 10)
+    { id: 'roadmap', type: 'roadmap', title: t.proposal.roadmap.title }, // Index 10 (Slide 11)
     { id: 'alcohol', type: 'alcohol', title: t.proposal.futureUpdates.title },
     { id: 'enhanced', type: 'enhanced', title: t.proposal.enhancedCaps.title },
     { id: 'conclusion', type: 'conclusion', title: t.proposal.conclusion.title },
@@ -81,13 +82,23 @@ const PresentationPage: React.FC = () => {
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [currentSlide]);
+  }, [currentSlide, skipFinancials]);
 
   const nextSlide = () => {
+      // If we are on Slide 9 (Index 8) and skip is active, jump to Slide 11 (Index 10)
+      if (currentSlide === 8 && skipFinancials) {
+          setCurrentSlide(10);
+          return;
+      }
       if (currentSlide < slides.length - 1) setCurrentSlide(curr => curr + 1);
   };
 
   const prevSlide = () => {
+      // If we are on Slide 11 (Index 10) and skip is active, jump back to Slide 9 (Index 8)
+      if (currentSlide === 10 && skipFinancials) {
+          setCurrentSlide(8);
+          return;
+      }
       if (currentSlide > 0) setCurrentSlide(curr => curr - 1);
   };
 
@@ -172,17 +183,17 @@ const PresentationPage: React.FC = () => {
               <div className="lg:col-span-7 space-y-6">
                   <div className="flex items-center gap-3 mb-4">
                       <Layers className="text-indigo-500" size={24} />
-                      <h4 className="text-xl font-black text-white uppercase tracking-widest">Ecosystem Portfolio</h4>
+                      <h4 className="text-xl font-black text-white uppercase tracking-widest">{t.proposal.aboutMe.portfolioTitle}</h4>
                   </div>
                   
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       {[
-                          { name: 'EduDesk', sub: 'K12 School Management (SaaS)', icon: GraduationCap, color: 'indigo' },
-                          { name: 'H365', sub: 'Health Management (SaaS)', icon: Activity, color: 'rose' },
-                          { name: 'SwiftPOS', sub: 'POS / Finance / Warehouse', icon: CreditCard, color: 'emerald' },
-                          { name: 'MicroFin', sub: 'Microcredit Financial System', icon: Wallet, color: 'amber' },
-                          { name: 'Sentinel', sub: 'AI Home Security App', icon: Eye, color: 'blue' },
-                          { name: 'Data Unification', sub: 'Enterprise Integrity Logic', icon: GitMerge, color: 'purple' },
+                          { name: 'EduDesk', sub: t.proposal.aboutMe.portfolio.edudesk, icon: GraduationCap, color: 'indigo' },
+                          { name: 'H365', sub: t.proposal.aboutMe.portfolio.h365, icon: Activity, color: 'rose' },
+                          { name: 'SwiftPOS', sub: t.proposal.aboutMe.portfolio.swiftpos, icon: CreditCard, color: 'emerald' },
+                          { name: 'MicroFin', sub: t.proposal.aboutMe.portfolio.microfin, icon: Wallet, color: 'amber' },
+                          { name: 'Sentinel', sub: t.proposal.aboutMe.portfolio.sentinel, icon: Eye, color: 'blue' },
+                          { name: 'Data Unification', sub: t.proposal.aboutMe.portfolio.dataUnif, icon: GitMerge, color: 'purple' },
                       ].map((item, i) => (
                           <div key={i} className="group relative p-5 bg-slate-900/40 border border-slate-800 rounded-3xl backdrop-blur-sm hover:border-indigo-500/50 transition-all hover:bg-slate-900/80 shadow-lg">
                               <div className={`w-12 h-12 rounded-2xl bg-${item.color}-500/10 flex items-center justify-center text-${item.color}-400 mb-3 group-hover:scale-110 transition-transform shadow-inner`}>
@@ -204,8 +215,8 @@ const PresentationPage: React.FC = () => {
                       <div className="flex items-center gap-4">
                           <BrainCircuit size={32} className="text-indigo-400" />
                           <div>
-                              <div className="text-[10px] font-black text-indigo-400 uppercase tracking-[0.2em] mb-1">Architecture Philosophy</div>
-                              <div className="text-lg font-bold text-white leading-tight">Unified Data Integrity is the foundation of modern safety.</div>
+                              <div className="text-[10px] font-black text-indigo-400 uppercase tracking-[0.2em] mb-1">{t.proposal.aboutMe.archPhil}</div>
+                              <div className="text-lg font-bold text-white leading-tight">{t.proposal.aboutMe.archPhilText}</div>
                           </div>
                       </div>
                   </div>
@@ -432,6 +443,11 @@ const PresentationPage: React.FC = () => {
           <h2 className="text-4xl md:text-6xl font-black text-white mb-12 text-center tracking-tight">{t.proposal.financials.title}</h2>
           <div className="bg-slate-900/60 rounded-[3rem] border border-slate-700 overflow-hidden shadow-2xl backdrop-blur-3xl">
               <div className="divide-y divide-slate-800">
+                  <div className="grid grid-cols-12 p-4 bg-slate-800/80 text-xs font-bold text-slate-400 uppercase tracking-wider">
+                      <div className="col-span-1 text-center font-mono">#</div>
+                      <div className="col-span-8">{t.proposal.financials.headers.desc}</div>
+                      <div className="col-span-3 text-right pr-4">{t.proposal.financials.headers.cost}</div>
+                  </div>
                   {[
                       { name: t.proposal.financials.items.item1, cost: '$12,000.00' },
                       { name: t.proposal.financials.items.item2, cost: '$6,000.00' },
@@ -562,11 +578,11 @@ const PresentationPage: React.FC = () => {
           <div className="flex flex-col md:flex-row gap-6 mt-6">
               <div className="bg-slate-900/60 backdrop-blur-xl border border-slate-800 px-10 py-6 rounded-3xl flex items-center gap-4 hover:border-blue-500/50 transition-all group">
                   <Mail size={28} className="text-blue-400 group-hover:scale-110 transition-transform"/>
-                  <span className="text-lg md:text-xl font-bold text-slate-200">p.domingos@vulcan.com</span>
+                  <span className="text-lg md:text-xl font-bold text-slate-200">{t.proposal.thankYou.email}</span>
               </div>
               <div className="bg-slate-900/60 backdrop-blur-xl border border-slate-800 px-10 py-6 rounded-3xl flex items-center gap-4 hover:border-green-500/50 transition-all group">
                   <Phone size={28} className="text-green-400 group-hover:scale-110 transition-transform"/>
-                  <span className="text-lg md:text-xl font-bold text-slate-200">+258 84 5479 481</span>
+                  <span className="text-lg md:text-xl font-bold text-slate-200">{t.proposal.thankYou.phone}</span>
               </div>
           </div>
       </div>
@@ -574,7 +590,7 @@ const PresentationPage: React.FC = () => {
 
   const ScenarioSlide = () => (
       <div className="flex flex-col justify-center min-h-[70vh] max-w-[1400px] mx-auto px-12 relative z-10 animate-fade-in-up py-12">
-          <h2 className="text-4xl md:text-6xl font-black text-white mb-16 text-center tracking-tight">The Data Integrity Lifecycle</h2>
+          <h2 className="text-4xl md:text-6xl font-black text-white mb-16 text-center tracking-tight">{t.proposal.scenario.title}</h2>
           
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-stretch">
               {/* Legacy Block */}
@@ -585,29 +601,29 @@ const PresentationPage: React.FC = () => {
                           <ShieldAlert size={32} />
                       </div>
                       <div>
-                          <h3 className="text-2xl font-black text-white uppercase tracking-tighter">Legacy Fragmentation</h3>
-                          <span className="text-xs font-black text-red-500 uppercase tracking-widest">Reactive Risk Model</span>
+                          <h3 className="text-2xl font-black text-white uppercase tracking-tighter">{t.proposal.scenario.challenge}</h3>
+                          <span className="text-xs font-black text-red-500 uppercase tracking-widest">{t.proposal.scenario.challengeSub}</span>
                       </div>
                   </div>
                   
                   <div className="flex-1 space-y-6">
                       <div className="bg-white/5 p-5 rounded-2xl border border-white/5">
                           <p className="text-lg text-slate-400 italic leading-relaxed">
-                            "Manual spreadsheets create compliance gaps. Paulo Manjate's RAC 02 expires in <span className="text-red-500 font-bold">3 days</span>, but no one knows."
+                            "{t.proposal.scenario.challengeText.replace('{days}', '3')}"
                           </p>
                       </div>
                       <ul className="space-y-3">
                           <li className="flex items-center gap-3 text-slate-500 text-sm font-bold">
                               <XCircle size={16} className="text-red-600" />
-                              Production Downtime (Gate Lockout)
+                              {language === 'en' ? 'Production Downtime (Gate Lockout)' : 'Tempo de Inatividade (Bloqueio de Portaria)'}
                           </li>
                           <li className="flex items-center gap-3 text-slate-500 text-sm font-bold">
                               <XCircle size={16} className="text-red-600" />
-                              Unmitigated HSE Risk Exposures
+                              {language === 'en' ? 'Unmitigated HSE Risk Exposures' : 'Exposições a Riscos HSE Não Mitigados'}
                           </li>
                           <li className="flex items-center gap-3 text-slate-500 text-sm font-bold">
                               <XCircle size={16} className="text-red-600" />
-                              Delayed Audit Response Times
+                              {language === 'en' ? 'Delayed Audit Response Times' : 'Atrasos nos Tempos de Resposta de Auditoria'}
                           </li>
                       </ul>
                   </div>
@@ -624,8 +640,8 @@ const PresentationPage: React.FC = () => {
                               <Sparkles size={32} />
                           </div>
                           <div>
-                              <h3 className="text-2xl font-black text-white uppercase tracking-tighter">CARS Digital Ecosystem</h3>
-                              <span className="text-xs font-black text-emerald-500 uppercase tracking-widest">Proactive Resilience</span>
+                              <h3 className="text-2xl font-black text-white uppercase tracking-tighter">{t.proposal.scenario.automation}</h3>
+                              <span className="text-xs font-black text-emerald-500 uppercase tracking-widest">{t.proposal.scenario.automationSub}</span>
                           </div>
                       </div>
 
@@ -633,21 +649,21 @@ const PresentationPage: React.FC = () => {
                           <div className="flex gap-4 items-start bg-emerald-900/20 p-5 rounded-2xl border border-emerald-500/20">
                               <div className="mt-1 p-1 bg-emerald-500 rounded text-black"><Search size={14} /></div>
                               <p className="text-sm md:text-base text-slate-200 leading-relaxed">
-                                <strong>Predictive Sync:</strong> System identifies expiry <span className="text-emerald-400">14 days</span> in advance via SuccessFactors API.
+                                <strong>{language === 'en' ? 'Predictive Sync:' : 'Sincronização Preditiva:'}</strong> {t.proposal.scenario.automationText1.split(':')[1].replace('{days}', '14')}
                               </p>
                           </div>
                           
                           <div className="flex gap-4 items-start bg-indigo-900/20 p-5 rounded-2xl border border-indigo-500/20 translate-x-4">
                               <div className="mt-1 p-1 bg-indigo-500 rounded text-white"><CalendarClock size={14} /></div>
                               <p className="text-sm md:text-base text-slate-200 leading-relaxed">
-                                <strong>Automated Mitigation:</strong> Paulo is <span className="text-indigo-400 underline font-bold">Auto-Booked</span> for the next session. SMS alert sent instantly.
+                                <strong>{language === 'en' ? 'Automated Mitigation:' : 'Mitigação Automatizada:'}</strong> {t.proposal.scenario.automationText2.split(':')[1]}
                               </p>
                           </div>
 
                           <div className="flex gap-4 items-start bg-blue-900/20 p-5 rounded-2xl border border-blue-500/20 translate-x-8">
                               <div className="mt-1 p-1 bg-blue-500 rounded text-white"><ArrowRight size={14} /></div>
                               <p className="text-sm md:text-base text-slate-200 leading-relaxed font-bold">
-                                Outcome: Zero site lockout. Zero production delay. 100% Compliance Integrity.
+                                {t.proposal.scenario.automationOutcome}
                               </p>
                           </div>
                       </div>
@@ -717,9 +733,19 @@ const PresentationPage: React.FC = () => {
                 <ChevronRight size={32} />
             </button>
             <div className="w-px h-10 bg-white/10 mx-4 hidden md:block"></div>
+            
+            {/* Skip Financials Toggle */}
+            <button 
+                onClick={() => setSkipFinancials(!skipFinancials)} 
+                className={`w-12 h-12 rounded-full flex items-center justify-center transition-all ${skipFinancials ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/30' : 'hover:bg-white/10 text-slate-400'}`}
+                title={skipFinancials ? "Showing Audience Mode (Privacy ON)" : "Showing Enterprise Mode (Privacy OFF)"}
+            >
+                {skipFinancials ? <EyeOff size={24} /> : <Eye size={24} />}
+            </button>
+
             <button 
                 onClick={toggleFullScreen} 
-                className="w-12 h-12 rounded-full flex items-center justify-center hover:bg-white/10 text-slate-400 hover:text-white transition-all"
+                className="w-12 h-12 rounded-full flex items-center justify-center hover:bg-white/10 text-slate-400 hover:text-white transition-all ml-2"
             >
                 {isFullscreen ? <Minimize size={24} /> : <Maximize size={24} />}
             </button>

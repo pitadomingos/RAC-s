@@ -415,6 +415,7 @@ export const translations = {
         noShowsTitle: 'Unauthorized Absences'
     },
     proposal: {
+        digitalTrans: 'Digital Transformation Proposal',
         aboutMe: {
             title: 'Architect Profile',
             name: 'Pita Domingos',
@@ -424,13 +425,18 @@ export const translations = {
             bio: 'Expert architect specializing in the digital transformation of heavy industry. Expert in architecting "Source of Truth" ecosystems using Python, React, and Supabase Cloud. Previously optimized large-scale operations at Vale before moving to Jachris. Advanced proficiency in Power BI and AI Diagnostics to drive automated, data-unified safety compliance.',
             skills: ['Python', 'React', 'Power BI', 'Excel', 'Pandas', 'Matplotlib'],
             history: 'Vale (Specialist) → Jachris (Contract Manager)',
+            portfolioTitle: 'Ecosystem Portfolio',
             portfolio: {
                 edudesk: 'EduDesk: K12 School Management (SaaS)',
                 h365: 'H365: Health Management System (SaaS)',
                 swiftpos: 'SwiftPOS: POS, Finance & Warehouse Management',
                 microfin: 'MicroFin: Microcredit Financial System',
-                sentinel: 'Sentinel: AI-Powered Home Security App'
-            }
+                sentinel: 'Sentinel: AI-Powered Home Security App',
+                dataUnif: 'Data Unification: Enterprise Integrity Logic'
+            },
+            stackTitle: 'Full Stack Proficiency',
+            archPhil: 'Architecture Philosophy',
+            archPhilText: 'Unified Data Integrity is the foundation of modern safety.'
         },
         objectives: {
             title: 'Strategic Goals',
@@ -463,11 +469,15 @@ export const translations = {
             liveMatrix: 'Live Site Access Logic'
         },
         scenario: {
-            title: 'Process Integrity Lifecycle',
-            challenge: 'The Challenge',
-            challengeText: 'Staff member Paulo Manjate has an expiring RAC 02 certification. Human error in manual scheduling leads to site access lockout and production delay.',
-            automation: 'The Automation',
-            automationText: 'CARS detects the upcoming expiry < 7 days. It automatically reserves a seat for Paulo in the next training session and notifies him via SMS. No production delay occurs.'
+            title: 'The Data Integrity Lifecycle',
+            challenge: 'Legacy Fragmentation',
+            challengeSub: 'Reactive Risk Model',
+            challengeText: 'Manual spreadsheets create compliance gaps. Paulo Manjates RAC 02 expires in {days} days, but no one knows.',
+            automation: 'CARS Digital Ecosystem',
+            automationSub: 'Proactive Resilience',
+            automationText1: 'Predictive Sync: System identifies expiry {days} days in advance via SuccessFactors API.',
+            automationText2: 'Automated Mitigation: Paulo is Auto-Booked for the next session. SMS alert sent instantly.',
+            automationOutcome: 'Outcome: Zero site lockout. Zero production delay. 100% Compliance Integrity.'
         },
         organogram: {
             title: 'Project Structure',
@@ -502,6 +512,11 @@ export const translations = {
           title: 'Investment Model',
           initialInvest: 'Total Initial Investment',
           recurring: 'Monthly Recurring Services',
+          headers: {
+            desc: 'Item Description',
+            type: 'Type',
+            cost: 'Cost'
+          },
           items: {
               item1: 'Core Architecture & Initial Development',
               item2: 'System Setup & API Integration Layer',
@@ -515,8 +530,8 @@ export const translations = {
             authDesc: 'Azure AD link',
             db: 'Scalability',
             dbDesc: 'Distributed nodes',
-            email: 'Alertas',
-            emailDesc: 'Direct notification',
+            email: 'Alerts',
+            emailDesc: 'Notification directly',
             hosting: 'Mobile',
             hostingDesc: 'Progressive Web App'
         },
@@ -544,9 +559,10 @@ export const translations = {
         },
         thankYou: {
             title: 'Muito Obrigado',
-            subtitle: "Let's build a safer, more automated future for our workforce together."
-        },
-        digitalTrans: 'Digital Transformation Proposal'
+            subtitle: "Let's build a safer, more automated future for our workforce together.",
+            email: 'pita.domingos@zd044.onmicrosoft.com',
+            phone: '+258 84 5479 481'
+        }
     },
     adminManual: {
         title: 'Admin Manual',
@@ -1027,6 +1043,7 @@ export const translations = {
         noShowsTitle: 'Ausências Não Autorizadas'
     },
     proposal: {
+        digitalTrans: 'Proposta de Transformação Digital',
         aboutMe: {
             title: 'Perfil do Arquiteto',
             name: 'Pita Domingos',
@@ -1036,13 +1053,18 @@ export const translations = {
             bio: 'Arquiteto especialista na transformação digital da indústria pesada. Especialista em projetar ecossistemas de "Fonte Única de Verdade" usando Python, React e Supabase Cloud. Anteriormente optimizou operações de larga escala na Vale antes da transição para a Jachris. Proficiência avançada em Power BI e diagnósticos de IA para impulsionar a conformidade de segurança automatizada e unificada por dados.',
             skills: ['Python', 'React', 'Power BI', 'Excel', 'Pandas', 'Matplotlib'],
             history: 'Vale (Especialista) → Jachris (Gestor de Contratos)',
+            portfolioTitle: 'Portfólio de Ecossistemas',
             portfolio: {
                 edudesk: 'EduDesk: Gestão Escolar K12 (SaaS)',
                 h365: 'H365: Sistema de Gestão de Saúde (SaaS)',
                 swiftpos: 'SwiftPOS: POS, Finanças e Gestão de Armazém',
                 microfin: 'MicroFin: Sistema Financeiro de Microcrédito',
-                sentinel: 'Sentinel: App de Segurança Doméstica com IA'
-            }
+                sentinel: 'Sentinel: App de Segurança Doméstica com IA',
+                dataUnif: 'Unificação de Dados: Lógica de Integridade Enterprise'
+            },
+            stackTitle: 'Proficiência Full Stack',
+            archPhil: 'Filosofia de Arquitectura',
+            archPhilText: 'A Integridade de Dados Unificada é a base da segurança moderna.'
         },
         objectives: {
             title: 'Metas Estratégicas',
@@ -1075,11 +1097,15 @@ export const translations = {
             liveMatrix: 'Lógica de Acesso ao Site em Tempo Real'
         },
         scenario: {
-            title: 'Ciclo de Integridade de Processos',
-            challenge: 'O Desafio',
-            challengeText: 'O funcionário Paulo Manjate tem uma certificação RAC 02 a expirar. O erro humano no agendamento manual leva ao bloqueio do acesso ao site e ao atraso na produção.',
-            automation: 'A Automação',
-            automationText: 'O CARS detecta a expiração iminente em < 7 dias. Reserva automaticamente um lugar para o Paulo na próxima sessão de treinamento e notifica-o via SMS. Não ocorre qualquer atraso na produção.'
+            title: 'Ciclo de Vida da Integridade de Dados',
+            challenge: 'Fragmentação Legada',
+            challengeSub: 'Modelo de Risco Reactivo',
+            challengeText: 'Planilhas manuais criam lacunas de conformidade. A certificação RAC 02 do Paulo Manjate expira em {days} dias, mas ninguém sabe.',
+            automation: 'Ecossistema Digital CARS',
+            automationSub: 'Resiliência Proativa',
+            automationText1: 'Sincronização Preditiva: O sistema identifica a expiração com {days} dias de antecedência via API SuccessFactors.',
+            automationText2: 'Mitigação Automatizada: O Paulo é agendado automaticamente para a próxima sessão. Alerta SMS enviado instantaneamente.',
+            automationOutcome: 'Resultado: Zero bloqueio de site. Zero atraso na produção. 100% integridade de conformidade.'
         },
         organogram: {
             title: 'Estrutura do Projeto',
@@ -1114,6 +1140,11 @@ export const translations = {
           title: 'Modelo de Investimento',
           initialInvest: 'Total Investimento Inicial',
           recurring: 'Serviços Mensais Recorrentes',
+          headers: {
+            desc: 'Descrição do Item',
+            type: 'Tipo',
+            cost: 'Custo'
+          },
           items: {
               item1: 'Arquitectura Core e Desenvolvimento Inicial',
               item2: 'Configuração do Sistema e Camada de Integração API',
@@ -1156,10 +1187,11 @@ export const translations = {
         },
         thankYou: {
             title: 'Muito Obrigado',
-            subtitle: 'Vamos construir juntos um futuro mais seguro e automatizado para a nossa força de trabalho.'
-        },
-        digitalTrans: 'Proposta de Transformação Digital'
-    },
+            subtitle: 'Vamos construir juntos um futuro mais seguro e automatizado para a nossa força de trabalho.',
+            email: 'pita.domingos@zd044.onmicrosoft.com',
+            phone: '+258 84 5479 481'
+        }
+      },
     adminManual: {
         title: 'Manual do Administrador',
         subtitle: 'Operações Mestras do Sistema',
