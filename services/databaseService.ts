@@ -23,14 +23,18 @@ export const db = {
             const { data, error } = await query;
             if (error) {
                 if (error.code === '42P01') {
-                    console.warn(`[Supabase] Table "${tableName}" not found. Falling back to mock data.`);
+                    console.warn(`[Supabase] Table "${tableName}" not found. Using fallbacks.`);
                     return fallback;
                 }
                 throw error;
             }
             return (data as T) || fallback;
         } catch (e: any) {
-            console.error(`[Supabase] Error fetching ${tableName}:`, e?.message || e);
+            // Check specifically for network failures to reduce console noise in offline mode
+            const isNetworkError = e instanceof TypeError && e.message === 'Failed to fetch';
+            if (!isNetworkError) {
+                console.error(`[Supabase] Error fetching ${tableName}:`, e?.message || e);
+            }
             return fallback;
         }
     },
