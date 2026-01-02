@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useMemo, useEffect } from 'react';
 import { 
     Settings, Box, Save, Plus, Trash2, Activity, Cpu, Zap, 
@@ -81,18 +80,8 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
   useEffect(() => { if (myCompany) setBrandDraft(myCompany); }, [myCompany]);
 
   // --- ACTIONS ---
-  const handleSaveBranding = async () => {
-      if (!onUpdateCompanies || !myCompany) return;
-      setIsSaving(true);
-      const updated = companies.map(c => c.id === myCompany.id ? { ...c, ...brandDraft } as Company : c);
-      await onUpdateCompanies(updated);
-      setTimeout(() => {
-          setIsSaving(false);
-          addNotification({ id: uuidv4(), type: 'success', title: 'Branding Saved', message: 'Visual identity updated across nodes.', timestamp: new Date(), isRead: false });
-      }, 800);
-  };
-
-  // Fix: Added handleLogoUpload function to fix "Cannot find name" errors on lines 294 and 311
+  
+  // Fix: Move handleLogoUpload function definition up to ensure it's defined before use in the JSX.
   const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>, type: 'corporate' | 'safety') => {
       const file = e.target.files?.[0];
       if (!file) return;
@@ -105,6 +94,17 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
           }));
       };
       reader.readAsDataURL(file);
+  };
+
+  const handleSaveBranding = async () => {
+      if (!onUpdateCompanies || !myCompany) return;
+      setIsSaving(true);
+      const updated = companies.map(c => c.id === myCompany.id ? { ...c, ...brandDraft } as Company : c);
+      await onUpdateCompanies(updated);
+      setTimeout(() => {
+          setIsSaving(false);
+          addNotification({ id: uuidv4(), type: 'success', title: 'Branding Saved', message: 'Visual identity updated across nodes.', timestamp: new Date(), isRead: false });
+      }, 800);
   };
 
   const handleAddSite = () => { 

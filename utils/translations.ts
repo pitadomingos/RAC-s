@@ -421,7 +421,7 @@ export const translations = {
             preferred: 'Lead Solution Architect',
             cert: 'IBM Certified Full Stack Data Scientist Professional',
             role: 'Contract Manager (Jachris) • Ex-Vale Specialist',
-            bio: 'Expert architect specializing in the digital transformation of heavy industry. Previously optimized large-scale operations at Vale before moving to Jachris. Advanced proficiency in Python, React, Microsoft Power BI, Excel, Pandas, and Matplotlib to drive automated, data-unified safety compliance.',
+            bio: 'Expert architect specializing in the digital transformation of heavy industry. Expert in architecting "Source of Truth" ecosystems using Python, React, and Supabase Cloud. Previously optimized large-scale operations at Vale before moving to Jachris. Advanced proficiency in Power BI and AI Diagnostics to drive automated, data-unified safety compliance.',
             skills: ['Python', 'React', 'Power BI', 'Excel', 'Pandas', 'Matplotlib'],
             history: 'Vale (Specialist) → Jachris (Contract Manager)',
             portfolio: {
@@ -446,21 +446,21 @@ export const translations = {
         },
         execSummary: {
             title: 'Executive Summary',
-            text: 'The RACS Manager is a specialized corporate application designed to optimize the safety training lifecycle for Critical Activity Requisitions. By migrating from manual spreadsheets to a centralized digital platform, it aims to eliminate compliance gaps, automate validity management, and enforce strict access control protocols.',
+            text: 'The RACS Manager is an Enterprise Safety Integrity Ecosystem designed to optimize the safety training lifecycle. By migrating from manual spreadsheets to a centralized Supabase Cloud platform, it eliminates compliance gaps, automates validity management, and enforces strict access control protocols.',
             quote: 'An intelligent safety mechanism that not only tracks training but actively manages compliance through automated scheduling intervention and smart access logic.'
         },
         integration: {
-            title: 'Unified Data Architecture',
+            title: 'Unified Data Ecosystem',
             staff: 'Permanent Staff (SuccessFactors)',
             staffSource: 'HR Database',
             contractor: 'Contractor Management DB',
             contractorSource: 'Célula de Contracto',
-            middlewareTitle: 'CARS Middleware',
-            middlewareDesc: 'Nightly synchronization engine utilizing Read-Only APIs to merge & normalize datasets.',
-            sourceTitle: 'Source of Truth',
+            middlewareTitle: 'Cloud Core Middleware',
+            middlewareDesc: 'Nightly synchronization engine utilizing Read-Only APIs to merge & normalize datasets into Supabase Realtime.',
+            sourceTitle: 'Immutable Ledger of Safety',
             noManual: 'ZERO Manual Entry',
-            isolation: 'Site-Level Data Isolation',
-            liveMatrix: 'Live Compliance Matrices'
+            isolation: 'Multi-Tenant Data Isolation',
+            liveMatrix: 'Live Site Access Logic'
         },
         scenario: {
             title: 'Process Integrity Lifecycle',
@@ -489,14 +489,14 @@ export const translations = {
         },
         techStack: {
           title: 'Technological Blueprint',
-          frontendTitle: 'Frontend Tier',
-          frontend: 'React 19 with Tailwind CSS for high-performance responsive UI.',
-          backendTitle: 'Data Layer',
-          backend: 'Supabase Realtime for secure, distributed cloud storage.',
-          databaseTitle: 'Intelligence',
-          database: 'Google Gemini 2.0 for automated safety diagnostics.',
-          securityTitle: 'Identity',
-          security: 'Encrypted Master Key protocols with session persistence.'
+          frontendTitle: 'Tactical Frontend',
+          frontend: 'React 19 high-performance UI with 300s Tactical Inactivity Session Guard.',
+          backendTitle: 'Supabase Realtime',
+          backend: 'Enterprise Cloud Core for secure, distributed storage and Row-Level Security (RLS).',
+          databaseTitle: 'RoboTech Intelligence',
+          database: 'Gemini 3.0 for automated self-healing and proactive safety diagnostics.',
+          securityTitle: 'Military Grade Identity',
+          security: 'Encrypted Master Key protocols and automated access denial logic.'
         },
         financials: {
           title: 'Investment Model',
@@ -768,7 +768,7 @@ export const translations = {
       logs: 'Logs',
       manuals: 'Manuais',
       integration: 'Integração',
-      presentation: 'Apresentação da Proposta',
+      presentation: 'Proposta de Projecto',
       techDocs: 'Docs Técnicos'
     },
     dashboard: {
@@ -788,7 +788,7 @@ export const translations = {
       upcoming: {
         title: 'Próximas Requisições Agendadas',
         viewSchedule: 'Ver Cronograma',
-        date: 'Data',
+        date: 'Date',
         session: 'Sessão',
         capacity: 'Capacidade'
       },
@@ -868,7 +868,7 @@ export const translations = {
         modal: {
             title: 'Agendar Sessão',
             racType: 'Tipo RAC',
-            date: 'Data',
+            date: 'Date',
             startTime: 'Hora Início',
             location: 'Local',
             capacity: 'Capacidade',
@@ -931,7 +931,7 @@ export const translations = {
         actionable: 'Acionável',
         noSelection: 'Selecione uma entrada para inspecionar',
         workflow: 'Fluxo de Trabalho',
-        priority: 'Prioridade',
+        priority: 'Priority',
         markActionable: 'Marcar como Acionável',
         markedActionable: 'Acionável Definido',
         submittedBy: 'Enviado por',
@@ -1033,7 +1033,7 @@ export const translations = {
             preferred: 'Arquiteto Líder de Soluções',
             cert: 'Profissional Cientista de Dados Full Stack Certificado pela IBM',
             role: 'Gestor de Contratos (Jachris) • Ex-Especialista Vale',
-            bio: 'Arquiteto especialista na transformação digital da indústria pesada. Anteriormente optimizou operações de larga escala na Vale antes da transição para a Jachris. Proficiência avançada em Python, React, Microsoft Power BI, Excel, Pandas e Matplotlib para impulsionar a conformidade de segurança automatizada e unificada por dados.',
+            bio: 'Arquiteto especialista na transformação digital da indústria pesada. Especialista em projetar ecossistemas de "Fonte Única de Verdade" usando Python, React e Supabase Cloud. Anteriormente optimizou operações de larga escala na Vale antes da transição para a Jachris. Proficiência avançada em Power BI e diagnósticos de IA para impulsionar a conformidade de segurança automatizada e unificada por dados.',
             skills: ['Python', 'React', 'Power BI', 'Excel', 'Pandas', 'Matplotlib'],
             history: 'Vale (Especialista) → Jachris (Gestor de Contratos)',
             portfolio: {
@@ -1058,21 +1058,21 @@ export const translations = {
         },
         execSummary: {
             title: 'Resumo Executivo',
-            text: 'O gestor de RACS é um aplicativo corporativo especializado projetado para otimizar o ciclo de vida do treinamento de segurança para Requisições de Atividade Crítica. Ao migrar de planilhas manuais para uma plataforma digital centralizada, visa eliminar lacunas de conformidade, automatizar a gestão de validade e impor protocolos rígidos de controle de acesso.',
+            text: 'O gestor de RACS é um Ecossistema de Integridade de Segurança Enterprise projetado para otimizar o ciclo de vida do treinamento. Ao migrar de planilhas manuais para uma plataforma centralizada Supabase Cloud, visa eliminar lacunas de conformidade, automatizar a gestão de validade e impor protocolos rígidos de controle de acesso.',
             quote: 'Um mecanismo de segurança inteligente que não apenas rastreia o treinamento, mas gerencia ativamente a conformidade por meio de intervenção automatizada de agendamento e lógica de acesso inteligente.'
         },
         integration: {
-            title: 'Arquitectura de Dados Unificada',
+            title: 'Ecossistema de Dados Unificado',
             staff: 'Pessoal Permanente (SuccessFactors)',
             staffSource: 'Base de Dados RH',
             contractor: 'Base de Gestão de Contratados',
             contractorSource: 'Célula de Contracto',
-            middlewareTitle: 'CARS Middleware',
-            middlewareDesc: 'Motor de sincronização nocturna utilizando APIs Read-Only para fundir e normalizar conjuntos de dados.',
-            sourceTitle: 'Fonte Única de Verdade',
+            middlewareTitle: 'Middleware Cloud Core',
+            middlewareDesc: 'Motor de sincronização nocturna utilizando APIs Read-Only para fundir e normalizar conjuntos de dados no Supabase Realtime.',
+            sourceTitle: 'Livro de Registro de Segurança Imutável',
             noManual: 'ZERO Entrada Manual',
-            isolation: 'Isolamento de Dados a Nível de Site',
-            liveMatrix: 'Matrizes de Conformidade em Tempo Real'
+            isolation: 'Isolamento Multi-Tenant',
+            liveMatrix: 'Lógica de Acesso ao Site em Tempo Real'
         },
         scenario: {
             title: 'Ciclo de Integridade de Processos',
@@ -1101,14 +1101,14 @@ export const translations = {
         },
         techStack: {
           title: 'Projecto Tecnológico',
-          frontendTitle: 'Camada Frontend',
-          frontend: 'React 19 com Tailwind CSS para uma interface responsiva de alta performance.',
-          backendTitle: 'Camada de Dados',
-          backend: 'Supabase Realtime for secure, distributed cloud storage.',
-          databaseTitle: 'Inteligência',
-          database: 'Google Gemini 2.0 para diagnósticos de segurança automatizados.',
-          securityTitle: 'Identidade',
-          security: 'Protocolos de Chave Mestra encriptados com persistência de sessão.'
+          frontendTitle: 'Frontend Tático',
+          frontend: 'React 19 para UI de alta performance com Guarda de Sessão de Inatividade de 300s.',
+          backendTitle: 'Supabase Realtime',
+          backend: 'Core Cloud Enterprise para armazenamento seguro e sincronizado com segurança RLS.',
+          databaseTitle: 'Inteligência RoboTech',
+          database: 'Gemini 3.0 para Auto-Cura automatizada e diagnósticos proativos de segurança.',
+          securityTitle: 'Identidade de Grau Militar',
+          security: 'Protocolos de Chave Mestra encriptados e lógica de negação de acesso automatizada.'
         },
         financials: {
           title: 'Modelo de Investimento',
@@ -1198,7 +1198,7 @@ export const translations = {
           dbTitle: 'Gestão de Base de Dados',
           dbDesc: 'O RACS opera como um repositório unificado para todo o pessoal.',
           restrictionWarning: 'Nota: Os filtros de base de dados restringem os dados pelo site operacional selecionado.',
-          csv: 'Use o assistente de Importação CSV para sincronizar com sistemas de RH externos.',
+          csv: 'Use the CSV Import wizard to sync with external HR systems.',
           active: 'Alterne o status "Ativo" para bloquear o acesso de funcionários desligados.'
       },
       racAdmin: {
@@ -1219,7 +1219,7 @@ export const translations = {
           subtitle: 'Graduação e registo',
           inputTitle: 'Entrada de Resultados',
           inputDesc: 'Inserção de pontuações de avaliação teórica e prática.',
-          grading: 'A aprovação requer >= 70% em ambos os componentes.',
+          grading: 'A aprovação requer >= 70% in both components.',
           rac02: 'O RAC 02 requer uma verificação de validade da Carta de Condução.',
           save: 'Clique em "Salvar Resultados" para acionar atualizações de certificados digitais.'
       },

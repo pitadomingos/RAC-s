@@ -9,7 +9,7 @@ import {
   Map as MapIcon, Filter, Sparkles, FileText, Briefcase, Zap,
   Server
 } from 'lucide-react';
-/* Fix: Removed COMPANIES from import as it is not exported from constants.ts */
+// Fix: Removed non-existent COMPANIES member from import.
 import { DEPARTMENTS } from '../constants';
 import { generateSafetyReport } from '../services/geminiService';
 import { useLanguage } from '../contexts/LanguageContext';

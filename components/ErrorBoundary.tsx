@@ -18,24 +18,21 @@ interface State {
 
 /**
  * Catches runtime errors and triggers autonomous repair visuals.
- * Inherits from React.Component to provide error boundary lifecycle methods.
+ * Inherits from Component to provide error boundary lifecycle methods.
  */
-// Fix: Explicitly use Component from react to ensure proper inheritance in all environments.
+/* Fix: Explicitly import and inherit from Component to ensure setState and props are recognized by the TypeScript compiler */
 export class ErrorBoundary extends Component<Props, State> {
   private simulationInterval: any = null;
 
-  constructor(props: Props) {
-    super(props);
-    // Fix: Initialize state in constructor to avoid potential shadowing issues or missing members in strict TypeScript environments.
-    this.state = {
-      hasError: false,
-      error: null,
-      aiDiagnosis: null,
-      repairProgress: 0,
-      repairStep: 'Initializing Diagnostics...',
-      isRepaired: false
-    };
-  }
+  /* Fix: Maintain state as a class property with explicit Type */
+  public state: State = {
+    hasError: false,
+    error: null,
+    aiDiagnosis: null,
+    repairProgress: 0,
+    repairStep: 'Initializing Diagnostics...',
+    isRepaired: false
+  };
 
   /**
    * Static method to update state when an error is caught.
@@ -92,12 +89,12 @@ export class ErrorBoundary extends Component<Props, State> {
       let stepIndex = 0;
 
       this.simulationInterval = setInterval(() => {
-          // Fix: Call setState from the Component base class. Using this.setState within an arrow function correctly binds 'this'.
+          /* Fix: Access setState from the component instance */
           this.setState((prevState) => {
               const canFinish = !!prevState.aiDiagnosis;
               
               if (prevState.repairProgress >= 90 && !canFinish) {
-                  return { repairStep: "Finalizing Analysis..." } as any;
+                  return { repairStep: "Finalizing Analysis..." };
               }
 
               const nextProgress = prevState.repairProgress + (Math.random() * 8); 
@@ -111,7 +108,7 @@ export class ErrorBoundary extends Component<Props, State> {
               return {
                   repairProgress: Math.min(nextProgress, 100),
                   repairStep: nextStep
-              } as any;
+              };
           });
       }, 200);
   }
@@ -145,7 +142,7 @@ export class ErrorBoundary extends Component<Props, State> {
           sessionStorage.clear();
       } catch(e) { /* ignore */ }
 
-      // Fix: Use setState from the React component instance.
+      /* Fix: Access setState from the component instance */
       this.setState({ 
           aiDiagnosis: diagnosis,
           repairProgress: 100,
@@ -266,7 +263,7 @@ export class ErrorBoundary extends Component<Props, State> {
       );
     }
 
-    // Fix: Access props from the React component instance.
+    /* Fix: Access props from the component instance */
     return this.props.children || null;
   }
 }

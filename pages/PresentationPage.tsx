@@ -10,7 +10,7 @@ import {
   Play, MapPin, GitMerge, Sparkles, TrendingUp, Building2, Server as ServerIcon, Globe, Factory, BrainCircuit,
   ScanFace, AlertTriangle, ArrowRight, History, ShieldAlert, Cpu,
   CheckSquare, XCircle, Search, Terminal, Binary, FileSpreadsheet, Eye,
-  BarChart3
+  BarChart3, Cloud, ShieldCheck, Timer
 } from 'lucide-react';
 import { useNavigate, Navigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
@@ -286,10 +286,10 @@ const PresentationPage: React.FC = () => {
               </div>
               <div className="flex flex-col items-center">
                   <div className="bg-slate-800 p-8 rounded-full border-4 border-slate-700 shadow-[0_0_50px_rgba(99,102,241,0.2)] relative z-10">
-                      <GitMerge size={50} className="text-indigo-400 animate-pulse" />
+                      <Cloud size={50} className="text-blue-400 animate-pulse" />
                   </div>
                   <div className="mt-6 text-center">
-                      <h3 className="text-xl font-black text-indigo-300 uppercase tracking-widest">{t.proposal.integration.middlewareTitle}</h3>
+                      <h3 className="text-xl font-black text-blue-300 uppercase tracking-widest">{t.proposal.integration.middlewareTitle}</h3>
                       <p className="text-slate-500 text-xs mt-2 max-w-xs mx-auto leading-relaxed">
                           {t.proposal.integration.middlewareDesc}
                       </p>
@@ -312,7 +312,7 @@ const PresentationPage: React.FC = () => {
                               <span>{t.proposal.integration.isolation}</span>
                           </li>
                           <li className="flex items-center justify-center gap-3 bg-white/5 py-2 rounded-xl">
-                              <CheckCircle size={14} className="text-green-400" />
+                              <ShieldCheck size={14} className="text-emerald-400" />
                               <span>{t.proposal.integration.liveMatrix}</span>
                           </li>
                       </ul>
@@ -403,9 +403,9 @@ const PresentationPage: React.FC = () => {
           <h2 className="text-4xl md:text-6xl font-black text-white mb-16 text-center tracking-tight">{t.proposal.techStack.title}</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
               <TechCard icon={Monitor} title={t.proposal.techStack.frontendTitle} desc={t.proposal.techStack.frontend} color="blue" />
-              <TechCard icon={ServerIcon} title={t.proposal.techStack.backendTitle} desc={t.proposal.techStack.backend} color="emerald" />
-              <TechCard icon={Database} title={t.proposal.techStack.databaseTitle} desc={t.proposal.techStack.database} color="amber" />
-              <TechCard icon={Lock} title={t.proposal.techStack.securityTitle} desc={t.proposal.techStack.security} color="rose" />
+              <TechCard icon={Cloud} title={t.proposal.techStack.backendTitle} desc={t.proposal.techStack.backend} color="emerald" />
+              <TechCard icon={BrainCircuit} title={t.proposal.techStack.databaseTitle} desc={t.proposal.techStack.database} color="amber" />
+              <TechCard icon={ShieldCheck} title={t.proposal.techStack.securityTitle} desc={t.proposal.techStack.security} color="rose" />
           </div>
       </div>
   );
@@ -478,7 +478,7 @@ const PresentationPage: React.FC = () => {
                   <h4 className="text-xl font-bold text-white mb-2">{t.proposal.roadmap.email}</h4>
                   <p className="text-slate-400 text-sm leading-relaxed">{t.proposal.roadmap.emailDesc}</p>
               </div>
-              <div className="bg-slate-900/80 p-8 rounded-3xl border border-slate-800 shadow-xl group hover:border-green-500 transition-all">
+              <div className="bg-slate-900/80 p-8 rounded-3xl border border-green-500 transition-all">
                   <Smartphone size={40} className="text-green-500 mb-6 group-hover:scale-110 transition-transform" />
                   <h4 className="text-xl font-bold text-white mb-2">{t.proposal.roadmap.hosting}</h4>
                   <p className="text-slate-400 text-sm leading-relaxed">{t.proposal.roadmap.hostingDesc}</p>
@@ -566,7 +566,7 @@ const PresentationPage: React.FC = () => {
               </div>
               <div className="bg-slate-900/60 backdrop-blur-xl border border-slate-800 px-10 py-6 rounded-3xl flex items-center gap-4 hover:border-green-500/50 transition-all group">
                   <Phone size={28} className="text-green-400 group-hover:scale-110 transition-transform"/>
-                  <span className="text-lg md:text-xl font-bold text-slate-200">+258 84 123 4567</span>
+                  <span className="text-lg md:text-xl font-bold text-slate-200">+258 84 5479 481</span>
               </div>
           </div>
       </div>
