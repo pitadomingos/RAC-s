@@ -1,5 +1,5 @@
 
-import React, { Component, ErrorInfo, ReactNode } from 'react';
+import React, { ErrorInfo, ReactNode } from 'react';
 import { Cpu, Terminal, CheckCircle2, Power } from 'lucide-react';
 import { analyzeRuntimeError } from '../services/geminiService';
 
@@ -18,10 +18,10 @@ interface State {
 
 /**
  * Catches runtime errors and triggers autonomous repair visuals.
- * Inherits from Component to provide error boundary lifecycle methods.
+ * Inherits from React.Component to provide error boundary lifecycle methods.
  */
-// Fix: Explicitly import and use Component from react to ensure types for setState and props are correctly inherited and recognized by the compiler.
-export class ErrorBoundary extends Component<Props, State> {
+/* Fix: Explicitly extend React.Component to ensure types for setState and props are correctly inherited and recognized by the compiler. */
+export class ErrorBoundary extends React.Component<Props, State> {
   private simulationInterval: any = null;
 
   /* State initialization aligned with React Component life-cycle standards. */
@@ -87,7 +87,7 @@ export class ErrorBoundary extends Component<Props, State> {
       let stepIndex = 0;
 
       this.simulationInterval = setInterval(() => {
-          // Fix: setState is a member of Component and is now correctly mapped.
+          /* Fix: setState is a member of React.Component and is now correctly recognized by the compiler. */
           this.setState((prevState) => {
               // Stop progressing if we are waiting for AI but hit 90%
               const canFinish = !!prevState.aiDiagnosis;
@@ -138,7 +138,7 @@ export class ErrorBoundary extends Component<Props, State> {
           sessionStorage.clear();
       } catch(e) { /* ignore */ }
 
-      // Fix: setState is a member of Component and is now correctly mapped.
+      /* Fix: setState is a member of React.Component and is now correctly recognized by the compiler. */
       this.setState({ 
           aiDiagnosis: diagnosis,
           repairProgress: 100,
@@ -172,7 +172,7 @@ export class ErrorBoundary extends Component<Props, State> {
   };
 
   public render() {
-    // Fix: Using this.state which is correctly inherited from Component.
+    /* Fix: Using this.state which is correctly inherited from React.Component. */
     if (this.state.hasError) {
       return (
         <div className="fixed inset-0 z-[99999] bg-slate-950 flex flex-col items-center justify-center p-6 font-mono overflow-hidden text-white animate-fade-in">
@@ -267,7 +267,7 @@ export class ErrorBoundary extends Component<Props, State> {
       );
     }
 
-    // Fix: Using this.props which is correctly inherited from Component.
+    /* Fix: Using this.props which is correctly inherited from React.Component. */
     return (this.props.children as ReactNode) || null;
   }
 }
