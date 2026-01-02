@@ -37,13 +37,11 @@ const BookingForm: React.FC<BookingFormProps> = ({ addBookings, sessions, userRo
   const location = useLocation();
   const { t } = useLanguage();
   const { user } = useAuth();
-  const [selectedSession] = useState('');
   const [activeSessionId, setActiveSessionId] = useState('');
   
   const [targetRac, setTargetRac] = useState<string>('');
   const [renewalQueue, setRenewalQueue] = useState<RenewalBatch[]>([]);
   
-  const canManageSessions = userRole === UserRole.SYSTEM_ADMIN || userRole === UserRole.RAC_ADMIN;
   const isSelfService = userRole === UserRole.USER;
 
   const defaultCompany = useMemo(() => companies[0]?.name || 'Internal', [companies]);
@@ -63,7 +61,6 @@ const BookingForm: React.FC<BookingFormProps> = ({ addBookings, sessions, userRo
   const [rows, setRows] = useState(initialRows);
   const [submitted, setSubmitted] = useState(false);
 
-  // Filter available sessions
   const availableSessions = useMemo(() => {
       const sorted = [...sessions].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
       if (isSelfService && currentEmployeeId) {
@@ -83,7 +80,6 @@ const BookingForm: React.FC<BookingFormProps> = ({ addBookings, sessions, userRo
         if (state.prefill) setRows(state.prefill.map(e => ({ ...e, id: uuidv4() })));
         if (state.targetRac) {
             setTargetRac(state.targetRac);
-            // Auto-select first session matching target if available
             const match = availableSessions.find(s => s.racType.includes(state.targetRac!));
             if (match) setActiveSessionId(match.id);
         }
@@ -132,7 +128,9 @@ const BookingForm: React.FC<BookingFormProps> = ({ addBookings, sessions, userRo
         sessionId: activeSessionId,
         employee: { ...row },
         status: BookingStatus.PENDING,
-        isAutoBooked: false
+        isAutoBooked: false,
+        // CAPTURE ASSIGNED TRAINER HERE
+        trainerName: session?.instructor || 'TBD'
     }));
 
     addBookings(newBookings);

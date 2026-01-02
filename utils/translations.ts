@@ -438,6 +438,26 @@ export const translations = {
             text: 'Transitioning from manual requisitions to an autonomous logic engine that ensures zero downtime for compliant staff.',
             quote: 'Safety through automation.'
         },
+        integration: {
+            title: 'Unified Data Architecture',
+            staff: 'Permanent Staff (SuccessFactors)',
+            staffSource: 'HR Database',
+            contractor: 'Contractor Management DB',
+            contractorSource: 'Célula de Contracto',
+            middlewareTitle: 'CARS Middleware',
+            middlewareDesc: 'Nightly synchronization engine utilizing Read-Only APIs to merge & normalize datasets.',
+            sourceTitle: 'Source of Truth',
+            noManual: 'ZERO Manual Entry',
+            isolation: 'Site-Level Data Isolation',
+            liveMatrix: 'Live Compliance Matrices'
+        },
+        scenario: {
+            title: 'Real-World Logic Flow',
+            challenge: 'The Challenge',
+            challengeText: 'Staff member Paulo Manjate has an expiring RAC 02 certification. Human error in manual scheduling leads to site access lockout and production delay.',
+            automation: 'The Automation',
+            automationText: 'CARS detects the upcoming expiry < 7 days. It automatically reserves a seat for Paulo in the next training session and notifies him via SMS. No production delay occurs.'
+        },
         organogram: {
             title: 'Project Structure',
             tech1: 'Backend / Security',
@@ -468,7 +488,15 @@ export const translations = {
           security: 'Encrypted Master Key protocols with session persistence.'
         },
         financials: {
-          title: 'Investment Model'
+          title: 'Investment Model',
+          initialInvest: 'Total Initial Investment',
+          recurring: 'Monthly Recurring Services',
+          items: {
+              item1: 'Core Architecture & Initial Development',
+              item2: 'System Setup & API Integration Layer',
+              item3: 'Cloud Infrastructure & Managed SaaS Hosting',
+              item4: 'Ongoing Maintenance & Robotic Engine Support'
+          }
         },
         roadmap: {
             title: 'Feature Roadmap',
@@ -489,20 +517,23 @@ export const translations = {
         futureUpdates: {
             title: 'Advanced Modules',
             moduleA: 'A - IoT Hub',
-            moduleB: 'B - Hardware Sync'
+            moduleB: 'B - Hardware Sync',
+            moduleADesc: 'Integrated software logic that connects your digital safety matrices directly to physical access points.',
+            moduleBDesc: 'Hardware synchronization layer involving turnstiles, breathalyzers, and facial recognition infrastructure.'
         },
         enhancedCaps: {
             title: 'Enhanced Capabilities',
-            mobileVerify: { desc: 'Instant QR scanning.' },
-            autoBooking: { desc: 'Smart reservation.' },
-            massData: { desc: 'Mass CSV import.' }
+            mobileVerify: { title: 'Mobile Verification', desc: 'Instant QR scanning.' },
+            autoBooking: { title: 'Auto-Booking', desc: 'Smart reservation.' },
+            massData: { title: 'Mass Data Sync', desc: 'Mass CSV import.' }
         },
         conclusion: {
             title: 'The Future of HSE',
             text: 'Standardizing safety through architecture.'
         },
         thankYou: {
-            title: 'Q&A Session'
+            title: 'Muito Obrigado',
+            subtitle: "Let's build a safer, more automated future for our workforce together."
         },
         digitalTrans: 'Digital Transformation Proposal'
     },
@@ -512,8 +543,8 @@ export const translations = {
         slides: {
             intro: 'Introduction',
             logic: 'Core Logic',
-            dashboard: 'Dashboards',
-            workflows: 'Workflows',
+            dashboard: 'Painéis',
+            workflows: 'Fluxos de Trabalho',
             advanced: 'Advanced Tools',
             robotics: 'RoboTech Self-Healing',
             troubleshoot: 'Troubleshooting',
@@ -554,7 +585,7 @@ export const translations = {
             schedDesc: 'Planning training cohorts based on room availability.',
             create: 'Create new sessions by selecting RAC Type and Date.',
             lang: 'Select session language (English/Portuguese) for instruction.',
-            autoTitle: 'Auto-Booking Logic',
+            autoTitle: 'Lógica de Auto-Agendamento',
             autoDesc: 'System automatically books staff expiring in < 7 days.',
             approve: 'Admins must review and confirm auto-booked candidates.',
             renewTitle: 'Renewal Tracking',
@@ -692,7 +723,7 @@ export const translations = {
       passwordLabel: 'Chave Mestra',
       usernamePlaceholder: 'ex: Pita Domingos',
       passwordPlaceholder: 'Deixe vazio no primeiro acesso',
-      establishing: 'Autorizando...',
+      establishing: 'Authorizando...',
       submitBtn: 'Estabelecer Ligação',
       version: 'Arquitetura v2.5 • Encriptado',
       welcome: 'Bem-vindo, {name}!',
@@ -746,9 +777,9 @@ export const translations = {
       upcoming: {
         title: 'Próximas Requisições Agendadas',
         viewSchedule: 'Ver Cronograma',
-        date: 'Data',
+        date: 'Date',
         session: 'Sessão',
-        capacity: 'Capacity'
+        capacity: 'Capacidade'
       },
       booked: {
         title: 'Requisitados Recentemente'
@@ -889,7 +920,7 @@ export const translations = {
         actionable: 'Acionável',
         noSelection: 'Selecione uma entrada para inspecionar',
         workflow: 'Fluxo de Trabalho',
-        priority: 'Priority',
+        priority: 'Prioridade',
         markActionable: 'Marcar como Acionável',
         markedActionable: 'Acionável Definido',
         submittedBy: 'Enviado por',
@@ -1009,16 +1040,36 @@ export const translations = {
             text: 'Transição de requisições manuais para um motor de lógica autónomo que garante tempo de inatividade zero para pessoal em conformidade.',
             quote: 'Segurança através da automação.'
         },
+        integration: {
+            title: 'Arquitectura de Dados Unificada',
+            staff: 'Pessoal Permanente (SuccessFactors)',
+            staffSource: 'Base de Dados RH',
+            contractor: 'Base de Gestão de Contratados',
+            contractorSource: 'Célula de Contracto',
+            middlewareTitle: 'CARS Middleware',
+            middlewareDesc: 'Motor de sincronização nocturna utilizando APIs Read-Only para fundir e normalizar conjuntos de dados.',
+            sourceTitle: 'Fonte Única de Verdade',
+            noManual: 'ZERO Entrada Manual',
+            isolation: 'Isolamento de Dados a Nível de Site',
+            liveMatrix: 'Matrizes de Conformidade em Tempo Real'
+        },
+        scenario: {
+            title: 'Fluxo de Lógica do Mundo Real',
+            challenge: 'O Desafio',
+            challengeText: 'O funcionário Paulo Manjate tem uma certificação RAC 02 a expirar. O erro humano no agendamento manual leva ao bloqueio do acesso ao site e ao atraso na produção.',
+            automation: 'A Automação',
+            automationText: 'O CARS detecta a expiração iminente em < 7 dias. Reserva automaticamente um lugar para o Paulo na próxima sessão de treinamento e notifica-o via SMS. Não ocorre qualquer atraso na produção.'
+        },
         organogram: {
             title: 'Estrutura do Projeto',
             tech1: 'Backend / Segurança',
-            tech2: 'Cloud / UI-UX'
+            tech2: 'Nuvem / UI-UX'
         },
         timeline: {
             title: 'Cronograma de Implementação',
             phase1: 'Arquitetura',
             phase1desc: 'Configuração da infraestrutura',
-            phase2: 'Integration',
+            phase2: 'Integração',
             phase2desc: 'Implementação de APIs',
             phase3: 'UAT',
             phase3desc: 'Fase de testes',
@@ -1028,7 +1079,7 @@ export const translations = {
             phase5desc: 'Manutenção'
         },
         techStack: {
-          title: 'Projeto Tecnológico',
+          title: 'Projecto Tecnológico',
           frontendTitle: 'Camada Frontend',
           frontend: 'React 19 com Tailwind CSS para uma interface responsiva de alta performance.',
           backendTitle: 'Camada de Dados',
@@ -1039,13 +1090,21 @@ export const translations = {
           security: 'Protocolos de Chave Mestra encriptados com persistência de sessão.'
         },
         financials: {
-          title: 'Modelo de Investimento'
+          title: 'Modelo de Investimento',
+          initialInvest: 'Total Investimento Inicial',
+          recurring: 'Serviços Mensais Recorrentes',
+          items: {
+              item1: 'Arquitectura Core e Desenvolvimento Inicial',
+              item2: 'Configuração do Sistema e Camada de Integração API',
+              item3: 'Infraestrutura Cloud e Alojamento SaaS Gerido',
+              item4: 'Manutenção Contínua e Suporte ao Motor Robótico'
+          }
         },
         roadmap: {
             title: 'Roteiro de Funcionalidades',
             auth: 'Identidade',
             authDesc: 'Link Azure AD',
-            db: 'Scalability',
+            db: 'Escalabilidade',
             dbDesc: 'Nós distribuídos',
             email: 'Alertas',
             emailDesc: 'Notificação direta',
@@ -1060,20 +1119,23 @@ export const translations = {
         futureUpdates: {
             title: 'Módulos Avançados',
             moduleA: 'A - IoT Hub',
-            moduleB: 'B - Sync de Hardware'
+            moduleB: 'B - Sincronização de Hardware',
+            moduleADesc: 'Lógica de software integrada que liga as suas matrizes de segurança digital directamente aos pontos de acesso físico.',
+            moduleBDesc: 'Camada de sincronização de hardware envolvendo catracas, bafómetros e infraestrutura de reconhecimento facial.'
         },
         enhancedCaps: {
             title: 'Capacidades Aprimoradas',
-            mobileVerify: { desc: 'Digitalização instantânea de QR.' },
-            autoBooking: { desc: 'Reserva inteligente.' },
-            massData: { desc: 'Importação em massa de CSV.' }
+            mobileVerify: { title: 'Verificação Móvel', desc: 'Digitalização instantânea de QR.' },
+            autoBooking: { title: 'Auto-Agendamento', desc: 'Reserva inteligente.' },
+            massData: { title: 'Sincronização de Massa', desc: 'Importação em massa de CSV.' }
         },
         conclusion: {
             title: 'O Futuro do HSE',
-            text: 'Standardizando a segurança através da arquitetura.'
+            text: 'Normalizar a segurança através da arquitectura.'
         },
         thankYou: {
-            title: 'Sessão de P&R'
+            title: 'Muito Obrigado',
+            subtitle: 'Vamos construir juntos um futuro mais seguro e automatizado para a nossa força de trabalho.'
         },
         digitalTrans: 'Proposta de Transformação Digital'
     },
@@ -1088,7 +1150,7 @@ export const translations = {
             advanced: 'Ferramentas Avançadas',
             robotics: 'Auto-Cura RoboTech',
             troubleshoot: 'Resolução de Problemas',
-            architecture: 'Arquitetura da Plataforma'
+            architecture: 'Arquitectura da Plataforma'
         },
         content: {
             logic: {

@@ -30,10 +30,13 @@ export const db = {
             }
             return (data as T) || fallback;
         } catch (e: any) {
-            // Check specifically for network failures to reduce console noise in offline mode
-            const isNetworkError = e instanceof TypeError && e.message === 'Failed to fetch';
+            const isNetworkError = (e instanceof TypeError && e.message === 'Failed to fetch') || 
+                                 (e?.message && e.message.includes('Failed to fetch'));
+            
             if (!isNetworkError) {
                 console.error(`[Supabase] Error fetching ${tableName}:`, e?.message || e);
+            } else {
+                console.warn(`[Supabase] Network unreachable for ${tableName}. Serving cached/mock data.`);
             }
             return fallback;
         }
@@ -99,8 +102,8 @@ export const db = {
             id: c.id,
             name: c.name,
             appName: c.app_name,
-            logo_url: c.logo_url,
-            safety_logo_url: c.safety_logo_url,
+            logoUrl: c.logo_url,
+            safetyLogoUrl: c.safety_logo_url,
             status: c.status || 'Active',
             defaultLanguage: c.default_language || 'en',
             features: c.features || { alcohol: false }
@@ -171,8 +174,8 @@ export const db = {
         return raw.map((t: any) => ({ 
             id: t.id,
             name: t.name,
-            racs: t.authorized_racs || [], // Maps text[] column
-            siteId: t.site_id // Maps uuid column
+            racs: t.authorized_racs || [], 
+            siteId: t.site_id 
         }));
     },
 
@@ -262,8 +265,8 @@ export const db = {
         const { data, error } = await supabase.from('trainers').upsert({
             id: trainer.id,
             name: trainer.name,
-            authorized_racs: trainer.racs, // Maps to text[]
-            site_id: trainer.siteId // Maps to uuid
+            authorized_racs: trainer.racs, 
+            site_id: trainer.siteId 
         }).select();
         if (error) throw error;
         return data[0];
@@ -301,7 +304,25 @@ export const db = {
         const payload: any = { ...booking };
         if (booking.employee) payload.employee_id = booking.employee.id;
         delete payload.employee;
-        const { data, error } = await supabase.from('bookings').upsert(payload).select();
+        
+        // Map camelCase to snake_case for the database
+        const dbPayload = {
+            id: payload.id,
+            session_id: payload.sessionId,
+            employee_id: payload.employee_id,
+            status: payload.status,
+            result_date: payload.resultDate,
+            expiry_date: payload.expiryDate,
+            theory_score: payload.theoryScore,
+            practical_score: payload.practicalScore,
+            attendance: payload.attendance,
+            driver_license_verified: payload.driverLicenseVerified,
+            is_auto_booked: payload.isAutoBooked,
+            comments: payload.comments,
+            trainer_name: payload.trainerName
+        };
+
+        const { data, error } = await supabase.from('bookings').upsert(dbPayload).select();
         if (error) throw error;
         return data[0];
     },
@@ -347,7 +368,7 @@ export const db = {
     },
 
     mapBookingFromDb(data: any): Booking {
-        const { employee_id, session_id, result_date, expiry_date, theory_score, practical_score, driver_license_verified, is_auto_booked, employee, ...rest } = data;
+        const { employee_id, session_id, result_date, expiry_date, theory_score, practical_score, driver_license_verified, is_auto_booked, employee, trainer_name, ...rest } = data;
         return {
             ...rest,
             sessionId: session_id,
@@ -357,7 +378,8 @@ export const db = {
             theoryScore: theory_score,
             practicalScore: practical_score,
             driverLicenseVerified: driver_license_verified,
-            isAutoBooked: is_auto_booked
+            isAutoBooked: is_auto_booked,
+            trainerName: trainer_name
         };
     },
 

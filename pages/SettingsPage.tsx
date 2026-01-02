@@ -6,13 +6,16 @@ import {
     Upload, ShieldCheck, X, Edit, Info, UserPlus, Home, 
     CheckCircle2, AlertTriangle, Users, BookOpen, Layers,
     Clock, CheckSquare, Square, ShieldAlert, ChevronRight,
-    Users2, LayoutList, Search, Filter, Shield, ToggleLeft, ToggleRight
+    Users2, LayoutList, Search, Filter, Shield, ToggleLeft, ToggleRight,
+    ChevronLeft, CreditCard, Rocket, Check
 } from 'lucide-react';
 import { RacDef, Room, Trainer, Site, Company, UserRole, SystemNotification } from '../types';
 import { v4 as uuidv4 } from 'uuid';
 import { useLanguage } from '../contexts/LanguageContext';
 import ConfirmModal from '../components/ConfirmModal';
 import RacIcon from '../components/RacIcon';
+import { db } from '../services/databaseService';
+import { useAuth } from '../contexts/AuthContext';
 
 interface SettingsPageProps {
     racDefinitions: RacDef[];
@@ -41,11 +44,22 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
     currentSiteId
 }) => {
   const { t } = useLanguage();
+  const { user } = useAuth();
   const [activeTab, setActiveTab] = useState<'General' | 'Trainers' | 'Rooms' | 'RACs' | 'Sites' | 'Companies' | 'Branding'>('General');
   const [isSaving, setIsSaving] = useState(false);
-  
-  // Local Search for directory tabs
   const [searchQuery, setSearchQuery] = useState('');
+
+  // --- TENANT WIZARD STATE ---
+  const [isTenantModalOpen, setIsTenantModalOpen] = useState(false);
+  const [wizardStep, setWizardStep] = useState(1);
+  const [isTenantSubmitting, setIsTenantSubmitting] = useState(false);
+  const [newTenant, setNewTenant] = useState<Partial<Company>>({
+      name: '',
+      appName: '',
+      status: 'Active',
+      defaultLanguage: 'en',
+      features: { alcohol: false }
+  });
 
   const isSystemAdmin = userRole === UserRole.SYSTEM_ADMIN;
   const isEnterpriseAdmin = userRole === UserRole.ENTERPRISE_ADMIN;
@@ -73,7 +87,6 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
     isDestructive: false
   });
 
-  // Entity Forms State
   const [newSite, setNewSite] = useState({ name: '', location: '' });
   const [newRoom, setNewRoom] = useState({ name: '', capacity: '20' });
   const [newTrainer, setNewTrainer] = useState<{name: string, racs: string[], siteId: string}>({ 
@@ -83,13 +96,10 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
   });
   const [newRac, setNewRac] = useState({ code: '', name: '', validityMonths: 24, requiresDriverLicense: false, requiresPractical: true });
   
-  // Branding State
   const myCompany = useMemo(() => companies.find(c => c.id === 'c1') || companies[0], [companies]);
   const [brandDraft, setBrandDraft] = useState<Partial<Company>>(myCompany || {});
 
   useEffect(() => { if (myCompany) setBrandDraft(myCompany); }, [myCompany]);
-
-  // --- ACTIONS WITH FEEDBACK ---
 
   const handleSaveBranding = async () => {
       if (!onUpdateCompanies || !myCompany) return;
@@ -100,6 +110,48 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
           setIsSaving(false);
           addNotification({ id: uuidv4(), type: 'success', title: 'Identity Updated', message: 'Branding standards applied to all nodes.', timestamp: new Date(), isRead: false });
       }, 800);
+  };
+
+  const handleCreateTenant = async () => {
+      if (!newTenant.name || !onUpdateCompanies) return;
+      setIsTenantSubmitting(true);
+      
+      const tenantToAdd: Company = {
+          id: uuidv4(),
+          name: newTenant.name,
+          appName: newTenant.appName || newTenant.name,
+          status: newTenant.status as 'Active' | 'Inactive',
+          defaultLanguage: newTenant.defaultLanguage as 'en' | 'pt',
+          features: { 
+            alcohol: !!newTenant.features?.alcohol 
+          }
+      };
+
+      try {
+          await onUpdateCompanies([...companies, tenantToAdd]);
+          await db.addLog('AUDIT', `TENANT_PROVISIONED: ${tenantToAdd.name}`, user?.name || 'System', { 
+            tenantId: tenantToAdd.id,
+            features: tenantToAdd.features
+          });
+          
+          setTimeout(() => {
+              setIsTenantSubmitting(false);
+              setIsTenantModalOpen(false);
+              setWizardStep(1);
+              setNewTenant({ name: '', appName: '', status: 'Active', defaultLanguage: 'en', features: { alcohol: false } });
+              addNotification({ 
+                  id: uuidv4(), 
+                  type: 'success', 
+                  title: 'Tenant Provisioned', 
+                  message: `${tenantToAdd.name} has been added to the platform.`, 
+                  timestamp: new Date(), 
+                  isRead: false 
+              });
+          }, 1000);
+      } catch (e) {
+          console.error(e);
+          setIsTenantSubmitting(false);
+      }
   };
 
   const handleAddSite = () => { 
@@ -157,8 +209,6 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
       addNotification({ id: uuidv4(), type: 'success', title: 'Module Deployed', message: `${newRac.code} logic is now live.`, timestamp: new Date(), isRead: false });
   };
 
-  // --- DELETE WRAPPERS ---
-
   const deleteSite = (id: string, name: string) => {
       setConfirmState({
           isOpen: true,
@@ -185,6 +235,20 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
       });
   };
 
+  const deleteTenant = (id: string, name: string) => {
+      if (!onUpdateCompanies) return;
+      setConfirmState({
+          isOpen: true,
+          title: 'Decommission Tenant?',
+          message: `Are you sure you want to remove ${name}? This will revoke access for ALL users in this enterprise node.`,
+          isDestructive: true,
+          onConfirm: () => {
+              onUpdateCompanies(companies.filter(c => c.id !== id));
+              addNotification({ id: uuidv4(), type: 'alert', title: 'Tenant Deleted', message: `${name} has been purged.`, timestamp: new Date(), isRead: false });
+          }
+      });
+  };
+
   const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>, type: 'corporate' | 'safety') => {
       const file = e.target.files?.[0];
       if (file) {
@@ -198,7 +262,6 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
       }
   };
 
-  // Tab Filtering
   const activeTabs = useMemo(() => {
       const tabs = ['General', 'Trainers', 'Rooms'];
       if (canAccessRacs) tabs.push('RACs');
@@ -222,7 +285,7 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
   };
 
   return (
-    <div className="h-full flex flex-col space-y-6 pb-6 overflow-hidden">
+    <div className="h-[calc(100vh-6rem)] flex flex-col space-y-6 pb-6 overflow-hidden animate-fade-in-up">
         {/* --- HEADER --- */}
         <div className="bg-slate-900 rounded-3xl shadow-xl p-8 text-white relative overflow-hidden border border-slate-800 shrink-0">
             <div className="absolute top-0 right-0 p-10 opacity-5 pointer-events-none"><Settings size={200} /></div>
@@ -238,16 +301,27 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
                         {canEditGlobalDefinitions ? "Global Enterprise Control" : "Local Site Governance"}
                     </p>
                 </div>
-                {activeTab === 'Branding' && (
-                    <button 
-                        onClick={handleSaveBranding} 
-                        disabled={isSaving} 
-                        className="flex items-center gap-2 px-8 py-3 rounded-2xl font-black bg-emerald-600 hover:bg-emerald-500 text-white shadow-xl transition-all transform hover:-translate-y-1 disabled:opacity-50"
-                    >
-                        {isSaving ? <RefreshCw size={20} className="animate-spin" /> : <Save size={20} />}
-                        <span>APPLY IDENTITY</span>
-                    </button>
-                )}
+                <div className="flex gap-3">
+                    {activeTab === 'Branding' && (
+                        <button 
+                            onClick={handleSaveBranding} 
+                            disabled={isSaving} 
+                            className="flex items-center gap-2 px-8 py-3 rounded-2xl font-black bg-emerald-600 hover:bg-emerald-500 text-white shadow-xl transition-all transform hover:-translate-y-1 disabled:opacity-50"
+                        >
+                            {isSaving ? <RefreshCw size={20} className="animate-spin" /> : <Save size={20} />}
+                            <span>APPLY IDENTITY</span>
+                        </button>
+                    )}
+                    {activeTab === 'Companies' && isSystemAdmin && (
+                        <button 
+                            onClick={() => { setIsTenantModalOpen(true); setWizardStep(1); }}
+                            className="flex items-center gap-2 px-8 py-3 rounded-2xl font-black bg-blue-600 hover:bg-blue-500 text-white shadow-xl transition-all transform hover:-translate-y-1"
+                        >
+                            <Plus size={20} />
+                            <span>PROVISION TENANT</span>
+                        </button>
+                    )}
+                </div>
             </div>
         </div>
 
@@ -326,11 +400,11 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
                                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 items-end">
                                     <div className="space-y-1">
                                         <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Identity</label>
-                                        <input className="w-full p-4 rounded-2xl border-2 border-slate-200 dark:border-slate-600 dark:bg-slate-800 font-bold" placeholder="Jacinto Zacarias" value={newTrainer.name} onChange={e => setNewTrainer({...newTrainer, name: e.target.value})} />
+                                        <input className="w-full p-4 rounded-2xl border-2 border-slate-200 dark:border-slate-600 dark:bg-slate-800 font-bold text-slate-900 dark:text-white" placeholder="Jacinto Zacarias" value={newTrainer.name} onChange={e => setNewTrainer({...newTrainer, name: e.target.value})} />
                                     </div>
                                     <div className="space-y-1">
                                         <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Operational Site</label>
-                                        <select className="w-full p-4 rounded-2xl border-2 border-slate-200 dark:border-slate-600 dark:bg-slate-800 font-bold appearance-none cursor-pointer" value={newTrainer.siteId} onChange={e => setNewTrainer({...newTrainer, siteId: e.target.value})}>
+                                        <select className="w-full p-4 rounded-2xl border-2 border-slate-200 dark:border-slate-600 dark:bg-slate-800 font-bold appearance-none cursor-pointer text-slate-900 dark:text-white" value={newTrainer.siteId} onChange={e => setNewTrainer({...newTrainer, siteId: e.target.value})}>
                                             <option value="">Choose Site...</option>
                                             {sites.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
                                         </select>
@@ -356,7 +430,7 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
                                     <h4 className="text-lg font-black text-slate-800 dark:text-white uppercase tracking-tight flex items-center gap-2"><LayoutList size={20}/> Authorized Faculty</h4>
                                     <div className="relative w-72">
                                         <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
-                                        <input type="text" placeholder="Search instructors..." className="w-full pl-11 pr-4 py-2.5 bg-slate-100 dark:bg-slate-700 border-none rounded-xl text-sm font-bold outline-none focus:ring-2 focus:ring-blue-500" value={searchQuery} onChange={e => setSearchQuery(e.target.value)} />
+                                        <input type="text" placeholder="Search instructors..." className="w-full pl-11 pr-4 py-2.5 bg-slate-100 dark:bg-slate-700 border-none rounded-xl text-sm font-bold outline-none focus:ring-2 focus:ring-blue-500 text-slate-900 dark:text-white" value={searchQuery} onChange={e => setSearchQuery(e.target.value)} />
                                     </div>
                                 </div>
                                 <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
@@ -392,15 +466,15 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
                                 <div className="grid grid-cols-2 md:grid-cols-4 gap-6 items-end">
                                     <div className="space-y-1">
                                         <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Module Code</label>
-                                        <input className="w-full p-4 rounded-2xl border-2 border-slate-200 dark:border-slate-600 dark:bg-slate-800 font-black uppercase" placeholder="RAC11" value={newRac.code} onChange={e => setNewRac({...newRac, code: e.target.value.toUpperCase()})} />
+                                        <input className="w-full p-4 rounded-2xl border-2 border-slate-200 dark:border-slate-600 dark:bg-slate-800 font-black uppercase text-slate-900 dark:text-white" placeholder="RAC11" value={newRac.code} onChange={e => setNewRac({...newRac, code: e.target.value.toUpperCase()})} />
                                     </div>
                                     <div className="space-y-1">
                                         <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Display Title</label>
-                                        <input className="w-full p-4 rounded-2xl border-2 border-slate-200 dark:border-slate-600 dark:bg-slate-800 font-bold" placeholder="Height Safety" value={newRac.name} onChange={e => setNewRac({...newRac, name: e.target.value})} />
+                                        <input className="w-full p-4 rounded-2xl border-2 border-slate-200 dark:border-slate-600 dark:bg-slate-800 font-bold text-slate-900 dark:text-white" placeholder="Height Safety" value={newRac.name} onChange={e => setNewRac({...newRac, name: e.target.value})} />
                                     </div>
                                     <div className="space-y-1">
                                         <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Validity (M)</label>
-                                        <input type="number" className="w-full p-4 rounded-2xl border-2 border-slate-200 dark:border-slate-600 dark:bg-slate-800 font-bold text-center" value={newRac.validityMonths} onChange={e => setNewRac({...newRac, validityMonths: parseInt(e.target.value) || 24})} />
+                                        <input type="number" className="w-full p-4 rounded-2xl border-2 border-slate-200 dark:border-slate-600 dark:bg-slate-800 font-bold text-center text-slate-900 dark:text-white" value={newRac.validityMonths} onChange={e => setNewRac({...newRac, validityMonths: parseInt(e.target.value) || 24})} />
                                     </div>
                                     <button onClick={handleAddRac} className="bg-indigo-600 hover:bg-indigo-500 text-white h-[58px] rounded-2xl font-black shadow-xl shadow-indigo-500/30 transition-all flex items-center justify-center gap-2 transform active:scale-95">
                                         <Plus size={20} /> DEPLOY
@@ -439,11 +513,11 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
                                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-end">
                                     <div className="space-y-1">
                                         <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Site Title</label>
-                                        <input className="w-full p-4 rounded-2xl border-2 border-slate-200 dark:border-slate-600 dark:bg-slate-800 font-bold" placeholder="Port of Maputo" value={newSite.name} onChange={e => setNewSite({...newSite, name: e.target.value})} />
+                                        <input className="w-full p-4 rounded-2xl border-2 border-slate-200 dark:border-slate-600 dark:bg-slate-800 font-bold text-slate-900 dark:text-white" placeholder="Port of Maputo" value={newSite.name} onChange={e => setNewSite({...newSite, name: e.target.value})} />
                                     </div>
                                     <div className="space-y-1">
                                         <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Region / Location</label>
-                                        <input className="w-full p-4 rounded-2xl border-2 border-slate-200 dark:border-slate-600 dark:bg-slate-800 font-bold" placeholder="Mozambique" value={newSite.location} onChange={e => setNewSite({...newSite, location: e.target.value})} />
+                                        <input className="w-full p-4 rounded-2xl border-2 border-slate-200 dark:border-slate-600 dark:bg-slate-800 font-bold text-slate-900 dark:text-white" placeholder="Mozambique" value={newSite.location} onChange={e => setNewSite({...newSite, location: e.target.value})} />
                                     </div>
                                     <button onClick={handleAddSite} className="bg-emerald-600 hover:bg-emerald-500 text-white h-[58px] rounded-2xl font-black shadow-xl shadow-emerald-500/20 transition-all flex items-center justify-center gap-2 transform active:scale-95">
                                         <Plus size={20} /> REGISTER
@@ -478,11 +552,11 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
                                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-end">
                                     <div className="space-y-1">
                                         <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Room Name</label>
-                                        <input className="w-full p-4 rounded-2xl border-2 border-slate-200 dark:border-slate-600 dark:bg-slate-800 font-bold" placeholder="Simulator Hub A" value={newRoom.name} onChange={e => setNewRoom({...newRoom, name: e.target.value})} />
+                                        <input className="w-full p-4 rounded-2xl border-2 border-slate-200 dark:border-slate-600 dark:bg-slate-800 font-bold text-slate-900 dark:text-white" placeholder="Simulator Hub A" value={newRoom.name} onChange={e => setNewRoom({...newRoom, name: e.target.value})} />
                                     </div>
                                     <div className="space-y-1">
                                         <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Capacity</label>
-                                        <input type="number" className="w-full p-4 rounded-2xl border-2 border-slate-200 dark:border-slate-600 dark:bg-slate-800 font-black text-center" value={newRoom.capacity} onChange={e => setNewRoom({...newRoom, capacity: e.target.value})} />
+                                        <input type="number" className="w-full p-4 rounded-2xl border-2 border-slate-200 dark:border-slate-600 dark:bg-slate-800 font-black text-center text-slate-900 dark:text-white" value={newRoom.capacity} onChange={e => setNewRoom({...newRoom, capacity: e.target.value})} />
                                     </div>
                                     <button onClick={handleAddRoom} className="bg-orange-600 hover:bg-orange-500 text-white h-[58px] rounded-2xl font-black shadow-xl shadow-orange-500/20 transition-all flex items-center justify-center gap-2 transform active:scale-95">
                                         <Plus size={20} /> ADD VENUE
@@ -565,11 +639,217 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
                         </div>
                     )}
 
+                    {/* COMPANIES TAB (SYSTEM ADMIN ONLY) */}
+                    {activeTab === 'Companies' && isSystemAdmin && (
+                        <div className="max-w-4xl space-y-10 animate-fade-in">
+                            <div>
+                                <h3 className="text-2xl font-black text-slate-800 dark:text-white mb-2">Platform Tenants</h3>
+                                <p className="text-slate-500 text-sm font-medium">Manage enterprise clients and isolated operational nodes.</p>
+                            </div>
+                            <div className="grid grid-cols-1 gap-4">
+                                {companies.map(c => (
+                                    <div key={c.id} className="p-6 bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-[2rem] flex justify-between items-center group hover:shadow-lg transition-all">
+                                        <div className="flex gap-6 items-center">
+                                            <div className="w-16 h-16 rounded-2xl bg-slate-50 dark:bg-slate-900 flex items-center justify-center overflow-hidden border border-slate-100 dark:border-slate-700 shadow-inner p-2">
+                                                {c.logoUrl ? <img src={c.logoUrl} className="w-full h-full object-contain" /> : <Building2 className="text-slate-300" size={32} />}
+                                            </div>
+                                            <div>
+                                                <div className="flex items-center gap-3">
+                                                    <h4 className="font-black text-lg text-slate-900 dark:text-white tracking-tight">{c.name}</h4>
+                                                    <span className={`px-2 py-0.5 rounded text-[8px] font-black uppercase border ${c.status === 'Active' ? 'bg-green-50 text-green-600 border-green-200' : 'bg-red-50 text-red-600 border-red-200'}`}>{c.status}</span>
+                                                </div>
+                                                <div className="flex items-center gap-4 mt-2 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">
+                                                    <span className="flex items-center gap-1.5"><Globe size={10}/> {c.defaultLanguage?.toUpperCase()}</span>
+                                                    <span className={`flex items-center gap-1.5 ${c.features?.alcohol ? 'text-indigo-500 font-bold' : 'text-slate-300'}`}><Wine size={10}/> Alcohol Link: {c.features?.alcohol ? 'Active' : 'Off'}</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                            <button className="p-3 bg-slate-50 dark:bg-slate-700 rounded-xl text-slate-400 hover:text-blue-500 transition-colors"><Edit size={16}/></button>
+                                            <button onClick={() => deleteTenant(c.id, c.name)} className="p-3 bg-slate-50 dark:bg-slate-700 rounded-xl text-slate-400 hover:text-red-500 transition-colors"><Trash2 size={16}/></button>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+
                 </div>
             </div>
         </div>
 
-        {/* --- OVERLAYS --- */}
+        {/* --- TENANT ONBOARDING WIZARD MODAL --- */}
+        {isTenantModalOpen && (
+            <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-md z-50 flex items-center justify-center p-4 animate-fade-in">
+                <div className="bg-white dark:bg-slate-800 rounded-[2.5rem] shadow-2xl w-full max-w-2xl overflow-hidden transform transition-all border border-slate-200 dark:border-slate-700 flex flex-col max-h-[90vh]">
+                    
+                    {/* Header with Progress */}
+                    <div className="p-8 bg-slate-50 dark:bg-slate-900/50 border-b border-slate-100 dark:border-slate-700">
+                        <div className="flex justify-between items-center mb-8">
+                            <div className="flex items-center gap-4">
+                                <div className="p-3 bg-blue-600 rounded-2xl text-white shadow-lg"><Rocket size={24}/></div>
+                                <div>
+                                    <h3 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">Provisioning Wizard</h3>
+                                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 uppercase font-bold tracking-widest">Step {wizardStep} of 4</p>
+                                </div>
+                            </div>
+                            <button onClick={() => setIsTenantModalOpen(false)} className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-2 rounded-full hover:bg-white dark:hover:bg-slate-700 transition-colors"><X size={20} /></button>
+                        </div>
+                        
+                        <div className="flex gap-2">
+                            {[1, 2, 3, 4].map(s => (
+                                <div key={s} className={`h-1.5 flex-1 rounded-full transition-all duration-500 ${wizardStep >= s ? 'bg-blue-600 shadow-[0_0_10px_rgba(37,99,235,0.4)]' : 'bg-slate-200 dark:bg-slate-700'}`}></div>
+                            ))}
+                        </div>
+                    </div>
+                    
+                    <div className="flex-1 overflow-y-auto p-10">
+                        {/* STEP 1: IDENTITY */}
+                        {wizardStep === 1 && (
+                            <div className="space-y-8 animate-slide-in-right">
+                                <div className="space-y-2">
+                                    <h4 className="text-lg font-black text-slate-800 dark:text-white uppercase tracking-tight">Tenant Identity</h4>
+                                    <p className="text-sm text-slate-500">Enter the primary legal name and application alias.</p>
+                                </div>
+                                <div className="space-y-6">
+                                    <div className="space-y-2">
+                                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Enterprise Full Name</label>
+                                        <div className="relative">
+                                            <input className="w-full bg-white dark:bg-slate-700 border-2 border-slate-100 dark:border-slate-600 rounded-2xl p-4 text-sm font-bold text-slate-900 dark:text-white outline-none focus:border-blue-500 transition-all" placeholder="e.g. Montepuez Ruby Mining" value={newTenant.name} onChange={e => setNewTenant({...newTenant, name: e.target.value})} />
+                                            <Building2 size={18} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-300" />
+                                        </div>
+                                    </div>
+                                    <div className="space-y-2">
+                                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">App Display Alias (Sidebar Title)</label>
+                                        <div className="relative">
+                                            <input className="w-full bg-white dark:bg-slate-700 border-2 border-slate-100 dark:border-slate-600 rounded-2xl p-4 text-sm font-bold text-slate-900 dark:text-white outline-none focus:border-blue-500 transition-all" placeholder="e.g. MRM SAFEWORK" value={newTenant.appName} onChange={e => setNewTenant({...newTenant, appName: e.target.value})} />
+                                            <LayoutList size={18} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-300" />
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* STEP 2: LOCALIZATION */}
+                        {wizardStep === 2 && (
+                            <div className="space-y-8 animate-slide-in-right">
+                                <div className="space-y-2">
+                                    <h4 className="text-lg font-black text-slate-800 dark:text-white uppercase tracking-tight">Localization & Status</h4>
+                                    <p className="text-sm text-slate-500">Define default language and operational lifecycle.</p>
+                                </div>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                    <div className="space-y-2">
+                                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Default Interface</label>
+                                        <div className="grid grid-cols-2 gap-2">
+                                            <button onClick={() => setNewTenant({...newTenant, defaultLanguage: 'en'})} className={`p-4 rounded-2xl border-2 font-bold text-sm transition-all ${newTenant.defaultLanguage === 'en' ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20 text-blue-600' : 'border-slate-100 dark:border-slate-700 text-slate-400'}`}>English</button>
+                                            <button onClick={() => setNewTenant({...newTenant, defaultLanguage: 'pt'})} className={`p-4 rounded-2xl border-2 font-bold text-sm transition-all ${newTenant.defaultLanguage === 'pt' ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20 text-blue-600' : 'border-slate-100 dark:border-slate-700 text-slate-400'}`}>Português</button>
+                                        </div>
+                                    </div>
+                                    <div className="space-y-2">
+                                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Initial Lifecycle</label>
+                                        <select className="w-full bg-white dark:bg-slate-700 border-2 border-slate-100 dark:border-slate-600 rounded-2xl p-4 text-sm font-bold text-slate-900 dark:text-white appearance-none cursor-pointer outline-none focus:border-blue-500" value={newTenant.status} onChange={e => setNewTenant({...newTenant, status: e.target.value as any})}>
+                                            <option value="Active">Active Production</option>
+                                            <option value="Inactive">Staging (Sandbox)</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* STEP 3: ADVANCED MODULES */}
+                        {wizardStep === 3 && (
+                            <div className="space-y-8 animate-slide-in-right">
+                                <div className="space-y-2">
+                                    <h4 className="text-lg font-black text-slate-800 dark:text-white uppercase tracking-tight">Feature Gating</h4>
+                                    <p className="text-sm text-slate-500">Enable advanced modules and IoT integration capabilities.</p>
+                                </div>
+                                <div className="space-y-4">
+                                    <div className={`p-6 rounded-3xl border-2 transition-all flex items-center justify-between ${newTenant.features?.alcohol ? 'border-indigo-500 bg-indigo-50 dark:bg-indigo-900/20' : 'border-slate-100 dark:border-slate-700 opacity-60'}`} onClick={() => setNewTenant({...newTenant, features: { ...newTenant.features, alcohol: !newTenant.features?.alcohol }})}>
+                                        <div className="flex items-center gap-5">
+                                            <div className={`p-4 rounded-2xl ${newTenant.features?.alcohol ? 'bg-indigo-600 text-white' : 'bg-slate-100 dark:bg-slate-800 text-slate-400'}`}><Wine size={28}/></div>
+                                            <div>
+                                                <div className={`font-black uppercase tracking-tight ${newTenant.features?.alcohol ? 'text-indigo-900 dark:text-white' : 'text-slate-500'}`}>Alcohol IoT Gateway</div>
+                                                <p className="text-xs text-slate-500 font-medium">Real-time breathalyzer sync & turnstile lockout protocol.</p>
+                                            </div>
+                                        </div>
+                                        <div className={`transition-all duration-500 ${newTenant.features?.alcohol ? 'text-indigo-600 scale-110' : 'text-slate-300'}`}>
+                                            {newTenant.features?.alcohol ? <ToggleRight size={56} /> : <ToggleLeft size={56} />}
+                                        </div>
+                                    </div>
+                                    
+                                    <div className="p-6 rounded-3xl border-2 border-slate-100 dark:border-slate-700 opacity-40 flex items-center justify-between cursor-not-allowed">
+                                        <div className="flex items-center gap-5">
+                                            <div className="p-4 rounded-2xl bg-slate-100 dark:bg-slate-800 text-slate-400"><CreditCard size={28}/></div>
+                                            <div>
+                                                <div className="font-black uppercase tracking-tight text-slate-500">Billing & ERP Link</div>
+                                                <p className="text-xs text-slate-500 font-medium">Automatic invoicing for contractor certifications.</p>
+                                            </div>
+                                        </div>
+                                        <span className="text-[8px] font-black bg-slate-200 dark:bg-slate-700 px-2 py-1 rounded text-slate-500">COMING SOON</span>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* STEP 4: REVIEW */}
+                        {wizardStep === 4 && (
+                            <div className="space-y-8 animate-slide-in-right">
+                                <div className="text-center space-y-4">
+                                    <div className="w-20 h-20 bg-blue-100 dark:bg-blue-900/30 text-blue-600 rounded-full flex items-center justify-center mx-auto shadow-inner"><CheckCircle2 size={48} /></div>
+                                    <h4 className="text-2xl font-black text-slate-800 dark:text-white tracking-tight">Ready to Initialize?</h4>
+                                    <p className="text-sm text-slate-500 max-w-sm mx-auto">Confirm the following parameters before provisioning the enterprise node.</p>
+                                </div>
+                                <div className="bg-slate-50 dark:bg-slate-900/50 p-8 rounded-[2.5rem] border border-slate-100 dark:border-slate-700 space-y-4">
+                                    <div className="flex justify-between items-center border-b border-slate-200 dark:border-slate-800 pb-3">
+                                        <span className="text-xs font-black text-slate-400 uppercase tracking-widest">Enterprise Name</span>
+                                        <span className="font-bold text-slate-900 dark:text-white">{newTenant.name}</span>
+                                    </div>
+                                    <div className="flex justify-between items-center border-b border-slate-200 dark:border-slate-800 pb-3">
+                                        <span className="text-xs font-black text-slate-400 uppercase tracking-widest">Logic Localization</span>
+                                        <span className="font-bold text-slate-900 dark:text-white">{newTenant.defaultLanguage === 'en' ? 'English (Global)' : 'Português (Local)'}</span>
+                                    </div>
+                                    <div className="flex justify-between items-center">
+                                        <span className="text-xs font-black text-slate-400 uppercase tracking-widest">Advanced Modules</span>
+                                        <span className="font-bold text-indigo-500">{newTenant.features?.alcohol ? 'Alcohol IoT Enabled' : 'Core Features Only'}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+
+                    <div className="p-8 bg-slate-50 dark:bg-slate-900/50 border-t border-slate-100 dark:border-slate-700 flex justify-between items-center">
+                        <button 
+                            onClick={() => wizardStep > 1 ? setWizardStep(wizardStep - 1) : setIsTenantModalOpen(false)}
+                            className="px-6 py-3 text-sm text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-2xl font-bold transition-colors flex items-center gap-2"
+                        >
+                            <ChevronLeft size={18}/> {wizardStep === 1 ? 'Cancel' : 'Back'}
+                        </button>
+                        
+                        {wizardStep < 4 ? (
+                            <button 
+                                onClick={() => setWizardStep(wizardStep + 1)}
+                                disabled={wizardStep === 1 && !newTenant.name}
+                                className="px-10 py-4 bg-blue-600 hover:bg-blue-500 text-white rounded-2xl font-black shadow-xl shadow-blue-500/30 transition-all flex items-center gap-2 transform active:scale-95 disabled:opacity-50"
+                            >
+                                <span>NEXT STEP</span>
+                                <ChevronRight size={18} />
+                            </button>
+                        ) : (
+                            <button 
+                                onClick={handleCreateTenant}
+                                disabled={isTenantSubmitting}
+                                className="px-12 py-4 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white rounded-2xl font-black shadow-2xl shadow-blue-500/40 transition-all flex items-center gap-3 transform active:scale-95 disabled:opacity-50"
+                            >
+                                {isTenantSubmitting ? <RefreshCw size={20} className="animate-spin" /> : <Shield size={20} />}
+                                <span>PROVISION NODE</span>
+                            </button>
+                        )}
+                    </div>
+                </div>
+            </div>
+        )}
+
+        {/* Confirmation Modal Overlay */}
         <ConfirmModal 
             isOpen={confirmState.isOpen} 
             title={confirmState.title} 

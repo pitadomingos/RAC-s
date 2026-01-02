@@ -16,14 +16,13 @@ import { RAC_KEYS, OPS_KEYS } from '../constants';
 interface ResultsPageProps {
   bookings: Booking[];
   updateBookingStatus: (id: string, status: BookingStatus) => void;
-  // Updated signature to accept full Employee object in side effects
   importBookings?: (newBookings: Booking[], sideEffects?: { employee: Employee, aso: string, ops: Record<string, boolean> }[]) => void;
   userRole: UserRole;
   sessions: TrainingSession[];
   currentEmployeeId?: string;
   racDefinitions: RacDef[];
   addNotification: (notif: SystemNotification) => void;
-  currentSiteId: string; // Added to enable Global Site Filter
+  currentSiteId: string;
 }
 
 const ResultsPage: React.FC<ResultsPageProps> = ({ bookings, updateBookingStatus, importBookings, userRole, sessions, currentEmployeeId, racDefinitions, addNotification, currentSiteId }) => {
@@ -40,7 +39,6 @@ const ResultsPage: React.FC<ResultsPageProps> = ({ bookings, updateBookingStatus
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { t } = useLanguage();
   
-  // QR State for User
   const [showQrModal, setShowQrModal] = useState(false);
 
   useEffect(() => {
@@ -52,7 +50,6 @@ const ResultsPage: React.FC<ResultsPageProps> = ({ bookings, updateBookingStatus
       setCurrentPage(1);
   }, [filter, statusFilter, trainerFilter, dateFilter, racFilter]);
 
-  // -- Esc Key for Modal --
   useEffect(() => {
     const handleEsc = (e: KeyboardEvent) => {
         if (e.key === 'Escape') {
@@ -67,20 +64,18 @@ const ResultsPage: React.FC<ResultsPageProps> = ({ bookings, updateBookingStatus
 
   const uniqueTrainers = useMemo(() => {
       const trainers = new Set<string>();
-      sessions.forEach(s => {
-          if (s.instructor && s.instructor !== 'TBD') trainers.add(s.instructor);
+      bookings.forEach(b => {
+          if (b.trainerName) trainers.add(b.trainerName);
       });
       return Array.from(trainers).sort();
-  }, [sessions]);
+  }, [bookings]);
 
-  // --- Translation Helper ---
   const getTranslatedRacName = (rawInput: string) => {
       if (!rawInput) return '';
       
       let code = rawInput;
       let isImport = false;
 
-      // Extract Code
       if (code.includes(' - ')) {
           code = code.split(' - ')[0];
       } else if (code.includes('|')) {
@@ -88,38 +83,31 @@ const ResultsPage: React.FC<ResultsPageProps> = ({ bookings, updateBookingStatus
           isImport = true;
       }
       
-      // Normalize: "RAC 01" -> "RAC01"
       const cleanCode = code.replace(/\s+/g, '').toUpperCase().replace('(IMP)', '').replace('(IMP)', '');
       
-      // 1. Try Translation Source of Truth
       // @ts-ignore
       const translated = t.racDefs?.[cleanCode];
       if (translated) return translated;
 
-      // 2. Try Dynamic Global Definitions
       const def = racDefinitions.find(r => r.code.replace(/\s+/g, '').toUpperCase() === cleanCode);
       if (def) return def.name;
 
-      // 3. Fallback to clean code
       return isImport ? cleanCode : rawInput;
   };
 
   const filteredBookings = useMemo(() => {
     return bookings.filter(b => {
-      // Global Site Filter
       const siteId = b.employee.siteId || 's1';
       if (currentSiteId !== 'all' && siteId !== currentSiteId) return false;
 
       if (userRole === UserRole.USER && currentEmployeeId) {
           if (b.employee.id !== currentEmployeeId) return false;
       }
+      
       const session = sessions.find(s => s.id === b.sessionId);
       const bookingDate = session ? session.date : (b.resultDate || '');
-      let bookingTrainer = session ? session.instructor : '';
-      if (!bookingTrainer && b.sessionId.includes('|')) {
-          const parts = b.sessionId.split('|');
-          if (parts.length >= 3) bookingTrainer = parts[2];
-      }
+      const bookingTrainer = b.trainerName || (session ? session.instructor : 'TBD');
+      
       let bookingRacCode = '';
       if (session) bookingRacCode = session.racType.split(' - ')[0].replace(' ', '');
       else if (b.sessionId.includes('RAC')) bookingRacCode = b.sessionId.split(' - ')[0].replace(' ', '');
@@ -162,11 +150,11 @@ const ResultsPage: React.FC<ResultsPageProps> = ({ bookings, updateBookingStatus
           'ID', 'Name', 'Company', 'Department', 'Role', 
           'Training', 'Date', 'Trainer', 'Status', 'Theory Score', 'Practical Score', 'Expiry'
       ];
-      const rows = filteredBookings.map(b => {
+      const csvRows = filteredBookings.map(b => {
           const session = sessions.find(s => s.id === b.sessionId);
           const rac = session ? session.racType : b.sessionId;
           const date = session ? session.date : (b.resultDate || '');
-          const trainer = session ? session.instructor : 'Unknown';
+          const trainer = b.trainerName || (session ? session.instructor : 'TBD');
           return [
               b.employee.recordId,
               `"${b.employee.name}"`, 
@@ -182,7 +170,7 @@ const ResultsPage: React.FC<ResultsPageProps> = ({ bookings, updateBookingStatus
               b.expiryDate || ''
           ];
       });
-      const csvContent = "data:text/csv;charset=utf-8," + [headers.join(','), ...rows.map(r => r.join(','))].join("\n");
+      const csvContent = "data:text/csv;charset=utf-8," + [headers.join(','), ...csvRows.map(r => r.join(','))].join("\n");
       const encodedUri = encodeURI(csvContent);
       const link = document.createElement("a");
       link.setAttribute("href", encodedUri);
@@ -193,7 +181,6 @@ const ResultsPage: React.FC<ResultsPageProps> = ({ bookings, updateBookingStatus
   };
 
   const handleDownloadTemplate = () => {
-    // Specific headers requested by user
     const headers = [
       'Record ID', 'Full Name', 'Company', 'Department', 'Job Title', 
       'RAC Code (e.g. RAC01)', 'Date (YYYY-MM-DD)', 'Trainer', 'Room', 
@@ -227,9 +214,6 @@ const ResultsPage: React.FC<ResultsPageProps> = ({ bookings, updateBookingStatus
               const separator = lines[0].includes(';') ? ';' : ',';
               const headers = lines[0].split(separator).map(h => h.trim().toLowerCase().replace(/^"|"$/g, ''));
               
-              // --- CRITICAL FIX: MAP EXISTING IDs ---
-              // Build a map of RecordID -> UUID to ensure we update existing profiles 
-              // instead of creating duplicates which causes the 'Not Found' / 'Old Data' bug.
               const existingIdMap = new Map<string, string>();
               bookings.forEach(b => {
                   if (b.employee && b.employee.recordId) {
@@ -240,7 +224,6 @@ const ResultsPage: React.FC<ResultsPageProps> = ({ bookings, updateBookingStatus
               const newBookings: Booking[] = [];
               const sideEffects: { employee: Employee, aso: string, ops: Record<string, boolean> }[] = [];
               
-              // Helper to find index using multiple possible keywords
               const getIdx = (keys: string[]) => headers.findIndex(h => keys.some(k => h === k.toLowerCase() || h.includes(k.toLowerCase())));
               
               const idxId = getIdx(['record id', 'record_id', 'matricula']);
@@ -248,7 +231,6 @@ const ResultsPage: React.FC<ResultsPageProps> = ({ bookings, updateBookingStatus
               const idxComp = getIdx(['company', 'empresa']);
               const idxDept = getIdx(['department', 'departamento']);
               const idxJob = getIdx(['job title', 'job', 'funcao']);
-              
               const idxRac = getIdx(['rac code', 'code', 'training']);
               const idxDate = getIdx(['date', 'data']);
               const idxTrainer = getIdx(['trainer', 'formador']);
@@ -256,28 +238,18 @@ const ResultsPage: React.FC<ResultsPageProps> = ({ bookings, updateBookingStatus
               const idxStatus = getIdx(['status', 'resultado']);
               const idxTheory = getIdx(['theory score', 'theory']);
               const idxPrac = getIdx(['practical score', 'practical']);
-              
               const idxDlNum = getIdx(['dl number', 'dl_number', 'carta']);
               const idxDlClass = getIdx(['dl class', 'dl_class', 'classe']);
               const idxDlExp = getIdx(['dl expiry', 'dl_expiry', 'validade carta']);
               const idxAsoExp = getIdx(['aso expiry', 'aso', 'medico']);
 
-              // Map OPS keys dynamically
               const opsIndices: Record<string, number> = {};
               OPS_KEYS.forEach(key => {
-                  // handle special case formatting if needed
                   opsIndices[key] = getIdx([key.toLowerCase(), key.replace('_', ' ').toLowerCase(), key.replace('_', '').toLowerCase()]);
               });
 
               if (idxId === -1 || idxRac === -1) {
-                  addNotification({
-                      id: uuidv4(),
-                      type: 'warning',
-                      title: 'Invalid Format',
-                      message: 'CSV must contain "Record ID" and "RAC Code" columns.',
-                      timestamp: new Date(),
-                      isRead: false
-                  });
+                  addNotification({ id: uuidv4(), type: 'warning', title: 'Invalid Format', message: 'CSV must contain "Record ID" and "RAC Code" columns.', timestamp: new Date(), isRead: false });
                   return;
               }
 
@@ -285,61 +257,42 @@ const ResultsPage: React.FC<ResultsPageProps> = ({ bookings, updateBookingStatus
               lines.slice(1).forEach(line => {
                   if (!line.trim()) return;
                   const cols = line.split(separator).map(c => c.trim().replace(/^"|"$/g, ''));
-                  
                   const recordId = cols[idxId];
                   if (!recordId) return;
 
                   const normRecordId = recordId.trim().toLowerCase();
-                  
-                  // RESOLVE ID: Use existing UUID if available, else generate new
                   let empUuid = existingIdMap.get(normRecordId);
                   if (!empUuid) {
                       empUuid = uuidv4();
-                      existingIdMap.set(normRecordId, empUuid); // Add to map for subsequent rows in this file
+                      existingIdMap.set(normRecordId, empUuid);
                   }
 
                   const name = idxName !== -1 ? cols[idxName] : 'Imported Employee';
                   const rac = cols[idxRac];
                   const date = idxDate !== -1 ? cols[idxDate] : new Date().toISOString().split('T')[0];
-                  
-                  // Scores
                   const scoreT = idxTheory !== -1 ? parseInt(cols[idxTheory]) || 0 : 0;
                   const scoreP = idxPrac !== -1 ? parseInt(cols[idxPrac]) || 0 : 0;
-                  
-                  // Status
                   const statusRaw = idxStatus !== -1 ? cols[idxStatus].toLowerCase() : 'passed';
                   const status = statusRaw.includes('fail') ? BookingStatus.FAILED : BookingStatus.PASSED;
-
-                  // Metadata for Session
                   const trainer = idxTrainer !== -1 ? cols[idxTrainer] : 'TBD';
-                  const room = idxRoom !== -1 ? cols[idxRoom] : 'TBD';
-                  
-                  // DL Details
                   const dlNum = idxDlNum !== -1 ? cols[idxDlNum] : '';
                   const dlClass = idxDlClass !== -1 ? cols[idxDlClass] : '';
                   const dlExp = idxDlExp !== -1 ? cols[idxDlExp] : '';
-
-                  // ASO - Optional
                   const asoDate = idxAsoExp !== -1 ? cols[idxAsoExp] : '';
 
-                  // OPS Matrix - Extract Trues
                   const ops: Record<string, boolean> = {};
                   OPS_KEYS.forEach(key => {
                       const idx = opsIndices[key];
                       if (idx !== -1) {
                           const val = cols[idx]?.toLowerCase() || '';
-                          if (['true', 'yes', '1', 'sim', 'ok', 'y'].includes(val)) {
-                              ops[key] = true;
-                          }
+                          if (['true', 'yes', '1', 'sim', 'ok', 'y'].includes(val)) ops[key] = true;
                       }
                   });
 
                   if (rac) {
-                      // Construct ID specifically to allow session linking if needed
-                      const sessionId = `${rac}|${date}|${trainer}|${room}`;
-                      
+                      const sessionId = `${rac}|${date}|${trainer}|${cols[idxRoom] || 'TBD'}`;
                       const employeeObj: Employee = {
-                          id: empUuid, // USE RESOLVED ID
+                          id: empUuid,
                           recordId: recordId,
                           name: name,
                           company: idxComp !== -1 ? cols[idxComp] : 'Imported',
@@ -349,87 +302,46 @@ const ResultsPage: React.FC<ResultsPageProps> = ({ bookings, updateBookingStatus
                           driverLicenseNumber: dlNum,
                           driverLicenseClass: dlClass,
                           driverLicenseExpiry: dlExp,
-                          siteId: currentSiteId !== 'all' ? currentSiteId : 's1' // Tag with current site or default
+                          siteId: currentSiteId !== 'all' ? currentSiteId : 's1'
                       };
 
                       newBookings.push({
                           id: uuidv4(),
-                          sessionId: sessionId, // Store metadata in ID string for imported records
+                          sessionId: sessionId,
                           employee: employeeObj,
                           status: status,
                           resultDate: date,
                           expiryDate: status === BookingStatus.PASSED && date ? format(addMonths(new Date(date), 24), 'yyyy-MM-dd') : '',
                           attendance: true,
                           theoryScore: scoreT,
-                          practicalScore: scoreP
+                          practicalScore: scoreP,
+                          trainerName: trainer
                       });
 
-                      // Collect side effects (DL updates, OPS updates)
-                      sideEffects.push({
-                          employee: employeeObj,
-                          aso: asoDate,
-                          ops: ops
-                      });
-
+                      sideEffects.push({ employee: employeeObj, aso: asoDate, ops: ops });
                       count++;
                   }
               });
 
               if (importBookings && newBookings.length > 0) {
                   importBookings(newBookings, sideEffects);
-                  addNotification({
-                      id: uuidv4(),
-                      type: 'success',
-                      title: 'Import Successful',
-                      message: `Imported ${count} training records and updated DB.`,
-                      timestamp: new Date(),
-                      isRead: false
-                  });
-              } else {
-                   addNotification({
-                      id: uuidv4(),
-                      type: 'warning',
-                      title: 'Import Failed',
-                      message: 'No valid records found.',
-                      timestamp: new Date(),
-                      isRead: false
-                  });
+                  addNotification({ id: uuidv4(), type: 'success', title: 'Import Successful', message: `Imported ${count} training records and updated DB.`, timestamp: new Date(), isRead: false });
               }
           } catch (error) {
-              console.error(error);
-              addNotification({
-                  id: uuidv4(),
-                  type: 'alert',
-                  title: 'Import Error',
-                  message: 'Failed to process file. Check format.',
-                  timestamp: new Date(),
-                  isRead: false
-              });
+              addNotification({ id: uuidv4(), type: 'alert', title: 'Import Error', message: 'Failed to process file. Check format.', timestamp: new Date(), isRead: false });
           }
       };
       reader.readAsText(file);
       if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
-  // Determine current user's record ID for the "My Digital Passport" feature
-  const currentUserRecordId = useMemo(() => {
-      if (userRole === UserRole.USER && currentEmployeeId) {
-          const booking = bookings.find(b => b.employee.id === currentEmployeeId);
-          return booking?.employee.recordId;
-      }
-      return null;
-  }, [userRole, currentEmployeeId, bookings]);
-
-  // Helper to check if practical is required for a RAC code
   const isPracticalRequired = (racCode: string) => {
-      const def = racDefinitions.find(r => r.code.replace(/\s/g, '') === racCode || r.name.includes(racCode));
-      return def ? !!def.requiresPractical : true; // Default to true if not found for safety
+      const def = racDefinitions.find(r => r.code.replace(/\s+/g, '') === racCode || r.name.includes(racCode));
+      return def ? !!def.requiresPractical : true;
   };
 
   return (
     <div className="space-y-6 pb-24 animate-fade-in-up h-full flex flex-col">
-        
-        {/* Header Stats */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
             <div className="bg-white dark:bg-slate-800 p-4 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700">
                 <p className="text-xs font-bold text-slate-500 uppercase">{t.common.stats.totalRecords}</p>
@@ -449,7 +361,6 @@ const ResultsPage: React.FC<ResultsPageProps> = ({ bookings, updateBookingStatus
             </div>
         </div>
 
-        {/* Filters */}
         <div className="bg-white dark:bg-slate-800 p-4 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 flex flex-wrap gap-4 items-center justify-between sticky top-0 z-10">
             <div className="flex flex-wrap items-center gap-3">
                 <div className="relative">
@@ -503,43 +414,22 @@ const ResultsPage: React.FC<ResultsPageProps> = ({ bookings, updateBookingStatus
             </div>
 
             <div className="flex items-center gap-2">
-                {/* --- Add Passport Button for User Role --- */}
-                {userRole === UserRole.USER && currentUserRecordId && (
-                    <button 
-                        onClick={() => navigate(`/verify/${currentUserRecordId}`)}
-                        className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2 rounded-lg text-xs font-bold transition-all shadow-sm"
-                        title={t.results.passport}
-                    >
-                        <QrCode size={16} /> {t.results.passport}
-                    </button>
-                )}
-
                 <button 
                     onClick={handleDownloadTemplate}
                     className="flex items-center gap-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-600 dark:text-slate-300 px-4 py-2 rounded-lg text-xs font-bold transition-all shadow-sm"
-                    title="Download Comprehensive CSV Template"
                 >
                     <FileSpreadsheet size={16} /> Template
                 </button>
-                <button 
-                    onClick={() => fileInputRef.current?.click()}
-                    className="flex items-center gap-2 bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-lg text-xs font-bold transition-all shadow-sm"
-                    title={t.common.import}
-                >
+                <button onClick={() => fileInputRef.current?.click()} className="flex items-center gap-2 bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-lg text-xs font-bold transition-all shadow-sm">
                     <Upload size={16} /> {t.common.import}
                 </button>
                 <input type="file" ref={fileInputRef} className="hidden" accept=".csv" onChange={handleFileUpload} />
-                
-                <button 
-                    onClick={handleExportData}
-                    className="flex items-center gap-2 bg-green-600 hover:bg-green-500 text-white px-4 py-2 rounded-lg text-xs font-bold transition-all shadow-sm"
-                >
+                <button onClick={handleExportData} className="flex items-center gap-2 bg-green-600 hover:bg-green-500 text-white px-4 py-2 rounded-lg text-xs font-bold transition-all shadow-sm">
                     <Download size={16} /> {t.results.export}
                 </button>
             </div>
         </div>
 
-        {/* Table */}
         <div className="flex-1 bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden flex flex-col">
             <div className="flex-1 overflow-auto">
                 <table className="min-w-full divide-y divide-slate-200 dark:divide-slate-700">
@@ -560,8 +450,7 @@ const ResultsPage: React.FC<ResultsPageProps> = ({ bookings, updateBookingStatus
                             const session = sessions.find(s => s.id === booking.sessionId);
                             const racCode = session ? session.racType.split(' - ')[0].replace(' ', '') : booking.sessionId.split('|')[0];
                             const racName = getTranslatedRacName(session ? session.racType : booking.sessionId);
-                            const trainerName = session ? session.instructor : (booking.sessionId.includes('|') ? booking.sessionId.split('|')[2] : 'TBD');
-                            
+                            const trainerName = booking.trainerName || (session ? session.instructor : 'TBD');
                             const needsPractical = isPracticalRequired(racCode);
 
                             return (
@@ -578,8 +467,13 @@ const ResultsPage: React.FC<ResultsPageProps> = ({ bookings, updateBookingStatus
                                     <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-600 dark:text-slate-400">
                                         {session ? session.date : (booking.resultDate || '-')}
                                     </td>
-                                    <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-600 dark:text-slate-400">
-                                        {trainerName}
+                                    <td className="px-4 py-3 whitespace-nowrap">
+                                        <div className="flex items-center gap-2">
+                                            <div className="w-6 h-6 rounded-full bg-slate-100 dark:bg-slate-700 flex items-center justify-center text-[10px] font-black text-slate-500">
+                                                {trainerName.charAt(0)}
+                                            </div>
+                                            <span className="text-sm text-slate-600 dark:text-slate-400">{trainerName}</span>
+                                        </div>
                                     </td>
                                     <td className="px-4 py-3 whitespace-nowrap text-center text-sm font-bold text-slate-700 dark:text-slate-300">
                                         {booking.theoryScore || '-'}
@@ -603,36 +497,21 @@ const ResultsPage: React.FC<ResultsPageProps> = ({ bookings, updateBookingStatus
                                 </tr>
                             );
                         })}
-                        
-                        {filteredBookings.length === 0 && (
-                            <tr>
-                                <td colSpan={8} className="px-6 py-12 text-center text-slate-400 text-sm">
-                                    No records found matching filters.
-                                </td>
-                            </tr>
-                        )}
                     </tbody>
                 </table>
             </div>
 
-            {/* Pagination Footer */}
             <div className="p-4 border-t border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 flex justify-between items-center">
                 <div className="flex items-center gap-2">
                     <span className="text-xs text-slate-500 uppercase font-bold tracking-wider">{t.common.rowsPerPage}</span>
-                    <select 
-                        value={itemsPerPage}
-                        onChange={handlePageSizeChange}
-                        className="text-xs border border-slate-300 dark:border-slate-600 rounded bg-white dark:bg-slate-700 text-slate-800 dark:text-white px-2 py-1 outline-none"
-                    >
+                    <select value={itemsPerPage} onChange={handlePageSizeChange} className="text-xs border border-slate-300 dark:border-slate-600 rounded bg-white dark:bg-slate-700 text-slate-800 dark:text-white px-2 py-1 outline-none">
                         <option value={10}>10</option>
                         <option value={20}>20</option>
                         <option value={50}>50</option>
                     </select>
                 </div>
                 <div className="flex items-center gap-4">
-                    <span className="text-xs text-slate-500 font-medium">
-                        Page {currentPage} of {Math.max(1, totalPages)}
-                    </span>
+                    <span className="text-xs text-slate-500 font-medium">Page {currentPage} of {Math.max(1, totalPages)}</span>
                     <div className="flex gap-1">
                         <button onClick={() => setCurrentPage(p => Math.max(1, p - 1))} disabled={currentPage === 1} className="p-1 rounded hover:bg-slate-200 dark:hover:bg-slate-700 disabled:opacity-30"><ChevronLeft size={16} /></button>
                         <button onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))} disabled={currentPage === totalPages} className="p-1 rounded hover:bg-slate-200 dark:hover:bg-slate-700 disabled:opacity-30"><ChevronRight size={16} /></button>

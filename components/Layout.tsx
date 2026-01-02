@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useMemo } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { 
@@ -95,29 +96,35 @@ const Layout: React.FC<LayoutProps> = ({
   const { user, logout } = useAuth();
 
   const currentCompany = useMemo(() => {
-    return (companies || []).find(c => c.id === 'c1') || companies?.[0];
-  }, [companies]);
+    if (!companies || companies.length === 0) return null;
+    const match = companies.find(c => c.name === user?.company || c.id === user?.company);
+    return match || companies.find(c => c.id === 'c1') || companies[0];
+  }, [companies, user]);
 
   const dynamicAppName = useMemo(() => {
       return currentCompany?.appName || t?.common?.vulcan || 'CARS';
   }, [currentCompany, t]);
 
   const canViewAlcoholDashboard = (): boolean => {
-      if (!currentCompany?.features?.alcohol) return false;
-      if (userRole === UserRole.USER) return false;
-      if (userRole === UserRole.RAC_TRAINER) return false;
-      if (userRole === UserRole.SYSTEM_ADMIN || userRole === UserRole.ENTERPRISE_ADMIN) return true;
+      // 1. SYSTEM_ADMIN always has a bypass to see the link (essential for management)
+      if (userRole === UserRole.SYSTEM_ADMIN) return true;
+      
+      // 2. REACTIVE FEATURE FLAG: Check the active company's feature register
+      // Defensive check for missing features object
+      const isFeatureEnabled = !!currentCompany?.features?.alcohol;
+      if (!isFeatureEnabled) return false;
+
+      // 3. ROLE PERMISSIONS (If feature is ON)
+      if (userRole === UserRole.ENTERPRISE_ADMIN) return true;
       
       const allowedTitles = ['Manager', 'Supervisor', 'Superintendent', 'Director', 'Head'];
       const allowedDepts = ['HSE', 'Operations', 'Security', 'Medical'];
       
       const safeTitle = user?.jobTitle || simulatedJobTitle || '';
       const safeDept = user?.department || simulatedDept || '';
-
-      const hasTitle = allowedTitles.some(title => safeTitle.includes(title));
-      const hasDept = allowedDepts.some(dept => safeDept.includes(dept));
       
-      return hasTitle && hasDept;
+      return allowedTitles.some(title => safeTitle.includes(title)) && 
+             allowedDepts.some(dept => safeDept.includes(dept));
   };
 
   const showAlcoholLink = canViewAlcoholDashboard();
@@ -191,16 +198,10 @@ const Layout: React.FC<LayoutProps> = ({
                   <ShieldCheck size={24} className="text-yellow-500" />
               )}
             </div>
-            {!isCollapsed && (
-              <span className="text-xl font-black tracking-tighter bg-clip-text text-transparent bg-gradient-to-r from-white to-slate-400">
-                {dynamicAppName}
-              </span>
-            )}
+            {!isCollapsed && <span className="text-xl font-black tracking-tighter bg-clip-text text-transparent bg-gradient-to-r from-white to-slate-400">{dynamicAppName}</span>}
           </div>
           <button onClick={() => setSidebarOpen(false)} className="md:hidden text-gray-400 hover:text-white"><X size={24} /></button>
-          <button onClick={() => setIsCollapsed(!isCollapsed)} className="hidden md:flex bg-slate-800 dark:bg-slate-900 text-gray-400 hover:text-white rounded p-1">
-             {isCollapsed ? <ChevronRight size={16}/> : <ChevronLeft size={16}/>}
-          </button>
+          <button onClick={() => setIsCollapsed(!isCollapsed)} className="hidden md:flex bg-slate-800 dark:bg-slate-900 text-gray-400 hover:text-white rounded p-1">{isCollapsed ? <ChevronRight size={16}/> : <ChevronLeft size={16}/>}</button>
         </div>
 
         <nav className="p-4 space-y-2 flex-1 overflow-y-auto">
@@ -220,20 +221,14 @@ const Layout: React.FC<LayoutProps> = ({
 
         <div className="w-full p-4 border-t border-slate-700 dark:border-slate-800 bg-slate-900 dark:bg-slate-950">
             <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-slate-800 border border-slate-700 flex items-center justify-center text-yellow-500 font-black">
-                    {user?.name.charAt(0) || 'U'}
-                </div>
+                <div className="w-10 h-10 rounded-xl bg-slate-800 border border-slate-700 flex items-center justify-center text-yellow-500 font-black">{user?.name.charAt(0) || 'U'}</div>
                 {!isCollapsed && (
                     <div className="flex-1 overflow-hidden">
                         <div className="text-sm font-bold text-white truncate">{user?.name || 'Guest User'}</div>
                         <div className="text-[10px] font-bold text-slate-500 uppercase tracking-widest truncate">{user?.role || 'Guest'}</div>
                     </div>
                 )}
-                {!isCollapsed && (
-                    <button onClick={handleLogout} className="p-2 hover:bg-red-500/20 text-slate-400 hover:text-red-400 rounded-lg transition-colors">
-                        <LogOut size={18} />
-                    </button>
-                )}
+                {!isCollapsed && <button onClick={handleLogout} className="p-2 hover:bg-red-500/20 text-slate-400 hover:text-red-400 rounded-lg transition-colors"><LogOut size={18} /></button>}
             </div>
         </div>
       </aside>
@@ -248,7 +243,6 @@ const Layout: React.FC<LayoutProps> = ({
              </div>
              <div className="flex items-center gap-3">
                 <h1 className="text-xl font-bold text-slate-800 dark:text-white truncate">{pageTitle}</h1>
-                
                 <div className={`flex items-center gap-1.5 px-2 py-0.5 rounded-full border text-[10px] font-black uppercase tracking-widest ${isSupabaseConfigured ? 'bg-emerald-50 text-emerald-600 border-emerald-200 animate-pulse' : 'bg-orange-50 text-orange-600 border-orange-200'}`}>
                     {isSupabaseConfigured ? <Cloud size={12} /> : <CloudOff size={12} />}
                     {isSupabaseConfigured ? 'Live Cloud' : 'Local Mock'}
@@ -267,36 +261,23 @@ const Layout: React.FC<LayoutProps> = ({
                     </select>
                 </div>
             )}
-            <button onClick={() => setLanguage(language === 'en' ? 'pt' : 'en')} className="p-2 rounded-full text-slate-500 dark:text-slate-400 flex items-center gap-1">
-                <Globe size={18} /><span className="text-xs font-bold uppercase">{language}</span>
-            </button>
-            <button onClick={() => cycleTheme()} className="p-2 rounded-full text-slate-500 dark:text-slate-400">
-                {getThemeIcon()}
-            </button>
+            <button onClick={() => setLanguage(language === 'en' ? 'pt' : 'en')} className="p-2 rounded-full text-slate-500 dark:text-slate-400 flex items-center gap-1"><Globe size={18} /><span className="text-xs font-bold uppercase">{language}</span></button>
+            <button onClick={() => cycleTheme()} className="p-2 rounded-full text-slate-500 dark:text-slate-400">{getThemeIcon()}</button>
             <div className="relative">
-                <button 
-                    onClick={() => setShowProfileMenu(!showProfileMenu)}
-                    className="w-8 h-8 rounded-full bg-yellow-500 flex items-center justify-center text-slate-900 font-black shadow-lg hover:scale-110 transition-transform"
-                >
-                    {user?.name.charAt(0) || 'U'}
-                </button>
+                <button onClick={() => setShowProfileMenu(!showProfileMenu)} className="w-8 h-8 rounded-full bg-yellow-500 flex items-center justify-center text-slate-900 font-black shadow-lg hover:scale-110 transition-transform">{user?.name.charAt(0) || 'U'}</button>
                 {showProfileMenu && (
                     <div className="absolute right-0 mt-3 w-48 bg-white dark:bg-slate-800 rounded-2xl shadow-2xl border border-slate-100 dark:border-slate-700 py-2 z-50 animate-fade-in-up">
                         <div className="px-4 py-2 border-b border-slate-100 dark:border-slate-700">
                             <div className="text-xs font-black text-slate-400 uppercase tracking-widest mb-1">Authenticated as</div>
                             <div className="text-sm font-bold text-slate-900 dark:text-white truncate">{user?.name}</div>
                         </div>
-                        <button onClick={handleLogout} className="w-full text-left px-4 py-3 text-sm font-bold text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 flex items-center gap-2 transition-colors">
-                            <LogOut size={16} /> Sign Out
-                        </button>
+                        <button onClick={handleLogout} className="w-full text-left px-4 py-3 text-sm font-bold text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 flex items-center gap-2 transition-colors"><LogOut size={16} /> Sign Out</button>
                     </div>
                 )}
             </div>
           </div>
         </header>
-        <main className="flex-1 overflow-y-auto p-4 md:p-6 bg-gray-100 dark:bg-gray-900 relative">
-           {children}
-        </main>
+        <main className="flex-1 overflow-y-auto p-4 md:p-6 bg-gray-100 dark:bg-gray-900 relative">{children}</main>
       </div>
     </div>
   );

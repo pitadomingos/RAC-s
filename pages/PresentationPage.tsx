@@ -7,7 +7,6 @@ import {
   Rocket, Code, CheckCircle,
   User, Users, Award, Briefcase, HeartHandshake, Phone, GraduationCap, Activity, CreditCard, Wallet, Wrench, Layers,
   Play, MapPin, GitMerge, Sparkles, TrendingUp, Building2, Server as ServerIcon, Globe, Factory, BrainCircuit,
-  // Fix: Added missing ScanFace import from lucide-react
   ScanFace
 } from 'lucide-react';
 import { useNavigate, Navigate } from 'react-router-dom';
@@ -42,10 +41,10 @@ const PresentationPage: React.FC = () => {
   const slides = [
     { id: 'title', type: 'title' },
     { id: 'aboutMe', type: 'aboutMe', title: t.proposal.aboutMe.title },
-    { id: 'scenario', type: 'scenario', title: 'Real World Scenario' },
+    { id: 'scenario', type: 'scenario', title: t.proposal.scenario.title },
     { id: 'summary', type: 'content', title: t.proposal.execSummary.title },
     { id: 'objectives', type: 'objectives', title: t.proposal.objectives.title },
-    { id: 'integration', type: 'integration', title: 'Unified Data Integration' },
+    { id: 'integration', type: 'integration', title: t.proposal.integration.title },
     { id: 'organogram', type: 'organogram', title: t.proposal.organogram.title },
     { id: 'timeline', type: 'timeline', title: t.proposal.timeline.title },
     { id: 'tech', type: 'tech', title: t.proposal.techStack.title },
@@ -106,7 +105,7 @@ const PresentationPage: React.FC = () => {
               {t.proposal.digitalTrans}
           </h2>
           <div className="mt-12 flex items-center gap-4 px-8 py-3.5 rounded-full bg-white/5 border border-white/10 backdrop-blur-md hover:bg-white/10 transition-colors shadow-2xl">
-              <span className="text-sm md:text-base font-bold text-slate-300 uppercase tracking-widest">Pita Domingos</span>
+              <span className="text-sm md:text-base font-bold text-slate-300 uppercase tracking-widest">{t.proposal.aboutMe.name}</span>
               <span className="w-1.5 h-1.5 rounded-full bg-yellow-500 shadow-[0_0_10px_#eab308]"></span>
               <span className="text-sm md:text-base font-mono text-yellow-500 tracking-widest uppercase">DigiSols Architecture</span>
           </div>
@@ -210,21 +209,21 @@ const PresentationPage: React.FC = () => {
 
   const IntegrationSlide = () => (
       <div className="flex flex-col justify-center min-h-[70vh] max-w-7xl mx-auto px-6 relative z-10 animate-fade-in-up py-12">
-          <h2 className="text-4xl md:text-6xl font-black text-white mb-16 text-center tracking-tight">Unified Data Architecture</h2>
+          <h2 className="text-4xl md:text-6xl font-black text-white mb-16 text-center tracking-tight">{t.proposal.integration.title}</h2>
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-center">
               <div className="space-y-6">
                   <div className="bg-slate-900/80 p-6 rounded-3xl border border-blue-500/20 flex items-center gap-4 hover:border-blue-500/50 transition-all">
                       <div className="p-3 bg-blue-900/40 rounded-2xl"><Users size={24} className="text-blue-400"/></div>
                       <div>
-                          <h4 className="font-bold text-white text-lg tracking-tight">HR Database</h4>
-                          <p className="text-slate-400 text-xs uppercase font-black tracking-widest">SuccessFactors API</p>
+                          <h4 className="font-bold text-white text-lg tracking-tight">{t.proposal.integration.staffSource}</h4>
+                          <p className="text-slate-400 text-xs uppercase font-black tracking-widest">{t.proposal.integration.staff}</p>
                       </div>
                   </div>
                   <div className="bg-slate-900/80 p-6 rounded-3xl border border-orange-500/20 flex items-center gap-4 hover:border-orange-500/50 transition-all">
                       <div className="p-3 bg-orange-900/40 rounded-2xl"><HardHat size={24} className="text-orange-400"/></div>
                       <div>
-                          <h4 className="font-bold text-white text-lg tracking-tight">Célula de Contracto</h4>
-                          <p className="text-slate-400 text-xs uppercase font-black tracking-widest">Contractor Management</p>
+                          <h4 className="font-bold text-white text-lg tracking-tight">{t.proposal.integration.contractorSource}</h4>
+                          <p className="text-slate-400 text-xs uppercase font-black tracking-widest">{t.proposal.integration.contractor}</p>
                       </div>
                   </div>
               </div>
@@ -233,9 +232,9 @@ const PresentationPage: React.FC = () => {
                       <GitMerge size={50} className="text-indigo-400 animate-pulse" />
                   </div>
                   <div className="mt-6 text-center">
-                      <h3 className="text-xl font-black text-indigo-300 uppercase tracking-widest">CARS Middleware</h3>
+                      <h3 className="text-xl font-black text-indigo-300 uppercase tracking-widest">{t.proposal.integration.middlewareTitle}</h3>
                       <p className="text-slate-500 text-xs mt-2 max-w-xs mx-auto leading-relaxed">
-                          Nightly synchronization engine utilizing Read-Only APIs to merge & normalize datasets across all sites.
+                          {t.proposal.integration.middlewareDesc}
                       </p>
                   </div>
               </div>
@@ -244,20 +243,20 @@ const PresentationPage: React.FC = () => {
                   <div className="relative z-10 text-center">
                       <div className="flex items-center justify-center gap-3 mb-6">
                           <div className="p-3 bg-indigo-600 rounded-2xl text-white shadow-lg"><Shield size={28} /></div>
-                          <h3 className="text-2xl font-black text-white tracking-tight">Source of Truth</h3>
+                          <h3 className="text-2xl font-black text-white tracking-tight">{t.proposal.integration.sourceTitle}</h3>
                       </div>
                       <ul className="space-y-4 text-sm font-bold text-slate-300">
                           <li className="flex items-center justify-center gap-3 bg-white/5 py-2 rounded-xl">
                               <CheckCircle size={14} className="text-green-400" />
-                              <span>ZERO Manual Entry</span>
+                              <span>{t.proposal.integration.noManual}</span>
                           </li>
                           <li className="flex items-center justify-center gap-3 bg-white/5 py-2 rounded-xl">
                               <CheckCircle size={14} className="text-green-400" />
-                              <span>Site-Level Data Isolation</span>
+                              <span>{t.proposal.integration.isolation}</span>
                           </li>
                           <li className="flex items-center justify-center gap-3 bg-white/5 py-2 rounded-xl">
                               <CheckCircle size={14} className="text-green-400" />
-                              <span>Live Compliance Matrices</span>
+                              <span>{t.proposal.integration.liveMatrix}</span>
                           </li>
                       </ul>
                   </div>
@@ -272,7 +271,7 @@ const PresentationPage: React.FC = () => {
           <div className="flex flex-col items-center gap-12">
               <div className="p-8 bg-slate-900 border-2 border-indigo-500 rounded-3xl w-72 text-center shadow-2xl shadow-indigo-500/20 relative">
                   <div className="absolute -top-6 left-1/2 -translate-x-1/2 p-4 bg-indigo-500 rounded-2xl text-white"><User size={32} /></div>
-                  <div className="mt-8 font-black text-white text-xl">Pita Domingos</div>
+                  <div className="mt-8 font-black text-white text-xl">{t.proposal.aboutMe.name}</div>
                   <div className="text-indigo-400 text-sm font-bold uppercase tracking-widest mt-1">Lead Architect</div>
               </div>
               <div className="h-16 w-0.5 bg-gradient-to-b from-indigo-500 to-slate-700"></div>
@@ -356,10 +355,10 @@ const PresentationPage: React.FC = () => {
           <div className="bg-slate-900/60 rounded-[3rem] border border-slate-700 overflow-hidden shadow-2xl backdrop-blur-3xl">
               <div className="divide-y divide-slate-800">
                   {[
-                      { name: 'Architecture & Initial Development', cost: '$12,000.00' },
-                      { name: 'Core Setup & Integration Layer', cost: '$6,000.00' },
-                      { name: 'Monthly Enterprise License (Cloud/SaaS)', cost: '$2,500.00' },
-                      { name: 'Ongoing Maintenance & Robotic Updates', cost: '$1,500.00' }
+                      { name: t.proposal.financials.items.item1, cost: '$12,000.00' },
+                      { name: t.proposal.financials.items.item2, cost: '$6,000.00' },
+                      { name: t.proposal.financials.items.item3, cost: '$2,500.00' },
+                      { name: t.proposal.financials.items.item4, cost: '$1,500.00' }
                   ].map((item, i) => (
                       <div key={i} className="grid grid-cols-12 p-6 hover:bg-white/5 transition-all items-center">
                           <div className="col-span-1 text-center font-mono text-slate-600 text-sm">{i+1}</div>
@@ -370,11 +369,11 @@ const PresentationPage: React.FC = () => {
               </div>
               <div className="bg-gradient-to-r from-slate-950 to-indigo-950 p-10 flex flex-col md:flex-row justify-between items-stretch text-white relative overflow-hidden gap-6 border-t border-slate-700">
                   <div className="flex-1 bg-slate-900/80 p-5 rounded-2xl border border-emerald-500/30 relative">
-                      <div className="text-[10px] uppercase font-black text-emerald-500 mb-1 tracking-widest">Initial Investment</div>
+                      <div className="text-[10px] uppercase font-black text-emerald-500 mb-1 tracking-widest">{t.proposal.financials.initialInvest}</div>
                       <div className="text-3xl font-black font-mono text-white">$18,000.00</div>
                   </div>
                   <div className="flex-1 bg-slate-900/80 p-5 rounded-2xl border border-blue-500/30 relative">
-                      <div className="text-[10px] uppercase font-black text-blue-500 mb-1 tracking-widest">Monthly Recurring</div>
+                      <div className="text-[10px] uppercase font-black text-blue-500 mb-1 tracking-widest">{t.proposal.financials.recurring}</div>
                       <div className="text-3xl font-black font-mono text-white">$4,000.00</div>
                   </div>
               </div>
@@ -428,12 +427,12 @@ const PresentationPage: React.FC = () => {
               <div className="bg-slate-900 p-10 rounded-[3rem] border-2 border-indigo-500/30 shadow-2xl relative overflow-hidden group">
                   <div className="absolute top-0 right-0 p-6 opacity-5 group-hover:scale-125 transition-transform"><Code size={120} /></div>
                   <h3 className="text-3xl font-black text-white mb-4">{t.proposal.futureUpdates.moduleA}</h3>
-                  <p className="text-lg text-slate-400 leading-relaxed">Integrated software logic that connects your digital safety matrices directly to physical access points.</p>
+                  <p className="text-lg text-slate-400 leading-relaxed">{t.proposal.futureUpdates.moduleADesc}</p>
               </div>
               <div className="bg-slate-900 p-10 rounded-[3rem] border-2 border-orange-500/30 shadow-2xl relative overflow-hidden group">
                   <div className="absolute top-0 right-0 p-6 opacity-5 group-hover:scale-125 transition-transform"><Factory size={120} /></div>
                   <h3 className="text-3xl font-black text-white mb-4">{t.proposal.futureUpdates.moduleB}</h3>
-                  <p className="text-lg text-slate-400 leading-relaxed">Hardware synchronization layer involving turnstiles, breathalyzers, and facial recognition infrastructure.</p>
+                  <p className="text-lg text-slate-400 leading-relaxed">{t.proposal.futureUpdates.moduleBDesc}</p>
               </div>
           </div>
       </div>
@@ -444,9 +443,9 @@ const PresentationPage: React.FC = () => {
           <h2 className="text-4xl md:text-6xl font-black text-white mb-16 text-center tracking-tight">{t.proposal.enhancedCaps.title}</h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
               {[
-                  { icon: ScanFace, title: 'Mobile Verification', desc: t.proposal.enhancedCaps.mobileVerify.desc, color: 'blue' },
-                  { icon: CalendarClock, title: 'Auto-Booking', desc: t.proposal.enhancedCaps.autoBooking.desc, color: 'emerald' },
-                  { icon: Database, title: 'Mass Data Sync', desc: t.proposal.enhancedCaps.massData.desc, color: 'indigo' },
+                  { icon: ScanFace, title: t.proposal.enhancedCaps.mobileVerify.title, desc: t.proposal.enhancedCaps.mobileVerify.desc, color: 'blue' },
+                  { icon: CalendarClock, title: t.proposal.enhancedCaps.autoBooking.title, desc: t.proposal.enhancedCaps.autoBooking.desc, color: 'emerald' },
+                  { icon: Database, title: t.proposal.enhancedCaps.massData.title, desc: t.proposal.enhancedCaps.massData.desc, color: 'indigo' },
               ].map((cap, i) => (
                   <div key={i} className="bg-slate-900/80 p-8 rounded-3xl border border-slate-800 shadow-xl group hover:border-slate-600 transition-all text-center">
                       <div className={`w-20 h-20 rounded-2xl bg-${cap.color}-500/10 flex items-center justify-center text-${cap.color}-500 mx-auto mb-6 group-hover:scale-110 transition-transform`}>
@@ -479,8 +478,8 @@ const PresentationPage: React.FC = () => {
               <div className="inline-block p-10 bg-slate-900 border border-slate-800 rounded-full mb-10 shadow-2xl animate-pulse">
                   <HeartHandshake size={90} className="text-yellow-500" />
               </div>
-              <h2 className="text-6xl md:text-9xl font-black text-white mb-6 tracking-tighter">Muito Obrigado</h2>
-              <p className="text-xl md:text-3xl text-slate-400 font-light max-w-2xl mx-auto">Let's build a safer, more automated future for our workforce together.</p>
+              <h2 className="text-6xl md:text-9xl font-black text-white mb-6 tracking-tighter">{t.proposal.thankYou.title}</h2>
+              <p className="text-xl md:text-3xl text-slate-400 font-light max-w-2xl mx-auto">{t.proposal.thankYou.subtitle}</p>
           </div>
           <div className="flex flex-col md:flex-row gap-6 mt-6">
               <div className="bg-slate-900/60 backdrop-blur-xl border border-slate-800 px-10 py-6 rounded-3xl flex items-center gap-4 hover:border-blue-500/50 transition-all group">
@@ -497,24 +496,24 @@ const PresentationPage: React.FC = () => {
 
   const ScenarioSlide = () => (
       <div className="flex flex-col justify-center min-h-[70vh] max-w-6xl mx-auto px-6 relative z-10 animate-fade-in-up py-12">
-          <h2 className="text-4xl md:text-6xl font-black text-white mb-16 text-center tracking-tight">Real-World Logic Flow</h2>
+          <h2 className="text-4xl md:text-6xl font-black text-white mb-16 text-center tracking-tight">{t.proposal.scenario.title}</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
               <div className="bg-slate-900 p-10 rounded-[3rem] border border-red-500/30 relative">
                   <div className="flex items-center gap-4 mb-6">
                       <div className="p-3 bg-red-500/20 rounded-2xl text-red-500"><TrendingUp size={32} className="rotate-180" /></div>
-                      <h3 className="text-2xl font-bold text-white">The Challenge</h3>
+                      <h3 className="text-2xl font-bold text-white">{t.proposal.scenario.challenge}</h3>
                   </div>
                   <p className="text-lg text-slate-300 leading-relaxed font-light italic">
-                      "Staff member Paulo Manjate has an expiring RAC 02 certification. Human error in manual scheduling leads to site access lockout and production delay."
+                      "{t.proposal.scenario.challengeText}"
                   </p>
               </div>
               <div className="bg-slate-900 p-10 rounded-[3rem] border border-emerald-500/30 relative">
                   <div className="flex items-center gap-4 mb-6">
                       <div className="p-3 bg-emerald-500/20 rounded-2xl text-emerald-500"><Zap size={32} /></div>
-                      <h3 className="text-2xl font-bold text-white">The Automation</h3>
+                      <h3 className="text-2xl font-bold text-white">{t.proposal.scenario.automation}</h3>
                   </div>
                   <p className="text-lg text-slate-300 leading-relaxed font-light">
-                      CARS detects the upcoming expiry &lt; 7 days. It automatically reserves a seat for Paulo in the next training session and notifies him via SMS. No production delay occurs.
+                      {t.proposal.scenario.automationText}
                   </p>
               </div>
           </div>

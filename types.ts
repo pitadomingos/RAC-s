@@ -115,6 +115,7 @@ export interface Booking {
   driverLicenseVerified?: boolean;
   isAutoBooked?: boolean;
   comments?: string;
+  trainerName?: string;
 }
 
 export interface EmployeeRequirement {
