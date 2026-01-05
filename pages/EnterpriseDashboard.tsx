@@ -9,7 +9,7 @@ import {
   Map as MapIcon, Filter, Sparkles, FileText, Briefcase, Zap,
   Server
 } from 'lucide-react';
-// Fix: Removed non-existent COMPANIES member from import.
+// Fix: Removed non-existent COMPANIES member from import to avoid reference error.
 import { DEPARTMENTS } from '../constants';
 import { generateSafetyReport } from '../services/geminiService';
 import { useLanguage } from '../contexts/LanguageContext';
@@ -33,7 +33,7 @@ const EnterpriseDashboard: React.FC<EnterpriseDashboardProps> = ({ sites, bookin
   const [isGenerating, setIsGenerating] = useState(false);
   const [aiReport, setAiReport] = useState<string | null>(null);
 
-  /* Fix: Compute available companies dynamically from the bookings data instead of using a missing constant. */
+  // Fix: Compute available companies dynamically from the actual data since constant is missing
   const availableCompanies = useMemo(() => {
       const comps = new Set<string>();
       bookings.forEach(b => {

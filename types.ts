@@ -1,4 +1,3 @@
-
 export interface RacDef {
   id: string;
   companyId?: string;
@@ -17,6 +16,8 @@ export interface Company {
   safetyLogoUrl?: string;
   status: 'Active' | 'Inactive';
   defaultLanguage?: 'en' | 'pt';
+  parentId?: string; // Reference to Main Contractor
+  tier?: 'Prime' | 'Sub'; 
   features?: {
       alcohol?: boolean;
   };
@@ -41,7 +42,7 @@ export interface Trainer {
   id: string;
   name: string;
   racs: string[];
-  siteId?: string; // Added to match Supabase site_id column
+  siteId?: string;
 }
 
 export enum UserRole {
@@ -170,21 +171,34 @@ export interface Feedback {
   adminNotes?: string;
 }
 
-export type ConnectorType = 'Excel' | 'Database' | 'API';
+export type ConnectorType = 'Excel' | 'Database' | 'API' | 'Webhook' | 'Consumer';
 
 export interface DataConnector {
   id: string;
   name: string;
   type: ConnectorType;
   lastSync?: string;
-  status: 'Healthy' | 'Error' | 'Idle';
+  status: 'Healthy' | 'Error' | 'Idle' | 'Authorized';
+  color: string;
+  source: string;
   config: {
-    url?: string;
+    baseUrl?: string;
     apiKey?: string;
-    filePath?: string;
-    dbType?: string;
+    authHeader?: string;
+    syncFrequency?: 'Hourly' | 'Daily' | 'Weekly';
   };
   mapping: Record<string, string>; 
+  moduleMapping?: Record<string, string>;
+}
+
+export interface AppGateway {
+    id: string;
+    name: string;
+    type: string;
+    lastActive: string;
+    status: 'Authorized' | 'Revoked' | 'Pending';
+    key: string;
+    description: string;
 }
 
 export interface SyncResult {

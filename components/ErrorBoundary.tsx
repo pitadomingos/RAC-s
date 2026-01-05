@@ -1,4 +1,3 @@
-
 import React, { ErrorInfo, ReactNode } from 'react';
 import { Cpu, Terminal, CheckCircle2, Power } from 'lucide-react';
 import { analyzeRuntimeError } from '../services/geminiService';
@@ -18,13 +17,13 @@ interface State {
 
 /**
  * Catches runtime errors and triggers autonomous repair visuals.
- * Correctly inherits from React.Component to provide error boundary lifecycle methods.
+ * Inherits from the standard React.Component class to provide error boundary lifecycle methods.
  */
-// Fix: Use React.Component directly to ensure proper generic class inheritance and recognition of setState and props in TypeScript.
+// Fix: Explicitly use React.Component to ensure setState and props are recognized by the TypeScript compiler.
 export class ErrorBoundary extends React.Component<Props, State> {
   private simulationInterval: any = null;
 
-  // Fix: Explicitly initialize state property adhering to the State interface.
+  // Initialize state as a class property for better type inference
   public state: State = {
     hasError: false,
     error: null,
@@ -34,15 +33,10 @@ export class ErrorBoundary extends React.Component<Props, State> {
     isRepaired: false
   };
 
-  constructor(props: Props) {
-    super(props);
-  }
-
   /**
    * Static method to update state when an error is caught.
    */
-  // Fix: Corrected return type to full State to comply with React's getDerivedStateFromError signature and ensure type safety.
-  public static getDerivedStateFromError(error: Error): State {
+  public static getDerivedStateFromError(error: Error): Partial<State> {
     return { 
         hasError: true, 
         error, 
@@ -80,7 +74,8 @@ export class ErrorBoundary extends React.Component<Props, State> {
   /**
    * Visual simulation of system "repair" progress.
    */
-  private startRepairSimulation() {
+  // Fix: Use arrow function to ensure 'this' context is preserved for setState.
+  private startRepairSimulation = () => {
       const steps = [
           "Scanning Neural Pathways...",
           "Isolating Corrupt Segments...",
@@ -94,12 +89,12 @@ export class ErrorBoundary extends React.Component<Props, State> {
       let stepIndex = 0;
 
       this.simulationInterval = setInterval(() => {
-          // Fix: setState is now correctly recognized as inherited from the React.Component class.
-          this.setState((prevState) => {
+          // Fix: Access setState from the inherited React.Component class.
+          this.setState((prevState: State): Partial<State> | null => {
               const canFinish = !!prevState.aiDiagnosis;
               
               if (prevState.repairProgress >= 90 && !canFinish) {
-                  return { repairStep: "Finalizing Analysis..." } as any;
+                  return { repairStep: "Finalizing Analysis..." };
               }
 
               const nextProgress = prevState.repairProgress + (Math.random() * 8); 
@@ -113,7 +108,7 @@ export class ErrorBoundary extends React.Component<Props, State> {
               return {
                   repairProgress: Math.min(nextProgress, 100),
                   repairStep: nextStep
-              } as any;
+              };
           });
       }, 200);
   }
@@ -140,20 +135,21 @@ export class ErrorBoundary extends React.Component<Props, State> {
   /**
    * Finalizes the autonomous repair sequence.
    */
-  private completeRepair(diagnosis: { rootCause: string, fix: string }) {
+  // Fix: Use arrow function to ensure 'this' context is preserved for setState.
+  private completeRepair = (diagnosis: { rootCause: string, fix: string }) => {
       if (this.simulationInterval) clearInterval(this.simulationInterval);
 
       try {
           sessionStorage.clear();
       } catch(e) { /* ignore */ }
 
-      // Fix: setState is now correctly recognized as inherited from the React.Component class.
+      // Fix: Access setState from the inherited React.Component class to transition to the repaired state.
       this.setState({ 
           aiDiagnosis: diagnosis,
           repairProgress: 100,
           repairStep: "SYSTEM RESTORED",
           isRepaired: true
-      } as any);
+      });
 
       try {
           const newLogEntry = {
@@ -268,7 +264,7 @@ export class ErrorBoundary extends React.Component<Props, State> {
       );
     }
 
-    // Fix: props is now correctly recognized as inherited from the React.Component class.
+    // Fix: Access props correctly from the React.Component base class.
     return this.props.children || null;
   }
 }

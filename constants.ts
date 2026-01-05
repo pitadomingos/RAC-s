@@ -5,23 +5,23 @@ export const DEPARTMENTS = ['Mine Operations', 'Plant Maintenance', 'HSE', 'Logi
 export const ROLES = ['Operator', 'Technician', 'Engineer', 'Supervisor', 'General Helper', 'Driver', 'Mechanic', 'Electrician'];
 
 // --- INTEGRATION SIMULATION DATA ---
-
+// Added aso_expiry and rac_flags for simulation of training module sync
 export const RAW_HR_SOURCE = [
-    { id: '8901', name: 'Jessica Bata', dept: 'HSE', role: 'Safety Officer', email: 'jessica@vulcan.com' },
-    { id: '8902', name: 'Kelven Ubisse', dept: 'Mine Operations', role: 'Mining Engineer', email: 'kelven@vulcan.com' },
-    { id: '8903', name: 'Latifa Uetela', dept: 'Administration', role: 'HR Specialist', email: 'latifa@vulcan.com' }
+    { id: '8901', name: 'Jessica Bata', dept: 'HSE', role: 'Safety Officer', email: 'jessica@vulcan.com', aso_expiry: '2025-12-01', rac_flags: ['RAC01', 'RAC05'] },
+    { id: '8902', name: 'Kelven Ubisse', dept: 'Mine Operations', role: 'Mining Engineer', email: 'kelven@vulcan.com', aso_expiry: '2025-08-15', rac_flags: ['RAC01', 'RAC02', 'RAC11'] },
+    { id: '8903', name: 'Latifa Uetela', dept: 'Administration', role: 'HR Specialist', email: 'latifa@vulcan.com', aso_expiry: '2026-01-20', rac_flags: ['RAC01'] }
 ];
 
 export const RAW_CONTRACTOR_SOURCE = [
-    { id: '9001', name: 'Manuel Xadreque', company: 'Jachris', dept: 'Administration', role: 'Catering Supervisor' },
-    { id: '9002', name: 'Nuno Zaqueu', company: 'Jachris', dept: 'Logistics', role: 'General Helper' },
-    { id: '9003', name: 'Orlando Yacub', company: 'Mota-Engil', dept: 'Mine Operations', role: 'Excavator Operator' },
-    { id: '9004', name: 'Paulo Vombe', company: 'Mota-Engil', dept: 'Mine Operations', role: 'Civil Technician' },
-    { id: '9005', name: 'Quim Wate', company: 'Belabel', dept: 'Logistics', role: 'Driver' },
-    { id: '9006', name: 'Rui Vilanculos', company: 'Belabel', dept: 'Logistics', role: 'Driver' },
-    { id: '9007', name: 'Sara Tamele', company: 'Belabel', dept: 'Logistics', role: 'Driver' },
-    { id: '9008', name: 'Telma Sambo', company: 'Escopil', dept: 'Plant Maintenance', role: 'Mechanic' },
-    { id: '9009', name: 'Ursio Raposo', company: 'Escopil', dept: 'Plant Maintenance', role: 'Electrician' }
+    { id: '9001', name: 'Manuel Xadreque', company: 'Jachris', dept: 'Administration', role: 'Catering Supervisor', aso_expiry: '2025-05-10', rac_flags: ['RAC05'] },
+    { id: '9002', name: 'Nuno Zaqueu', company: 'Jachris', dept: 'Logistics', role: 'General Helper', aso_expiry: '2025-06-12', rac_flags: ['RAC01'] },
+    { id: '9003', name: 'Orlando Yacub', company: 'Mota-Engil', dept: 'Mine Operations', role: 'Excavator Operator', aso_expiry: '2025-11-30', rac_flags: ['RAC01', 'RAC02', 'RAC06'] },
+    { id: '9004', name: 'Paulo Vombe', company: 'Mota-Engil', dept: 'Mine Operations', role: 'Civil Technician', aso_expiry: '2025-09-01', rac_flags: ['RAC01', 'RAC03'] },
+    { id: '9005', name: 'Quim Wate', company: 'Belabel', dept: 'Logistics', role: 'Driver', aso_expiry: '2025-07-22', rac_flags: ['RAC02', 'RAC11'] },
+    { id: '9006', name: 'Rui Vilanculos', company: 'Belabel', dept: 'Logistics', role: 'Driver', aso_expiry: '2025-04-15', rac_flags: ['RAC02', 'RAC11'] },
+    { id: '9007', name: 'Sara Tamele', company: 'Belabel', dept: 'Logistics', role: 'Driver', aso_expiry: '2025-12-10', rac_flags: ['RAC02', 'RAC11'] },
+    { id: '9008', name: 'Telma Sambo', company: 'Escopil', dept: 'Plant Maintenance', role: 'Mechanic', aso_expiry: '2025-10-05', rac_flags: ['RAC01', 'RAC03', 'RAC08'] },
+    { id: '9009', name: 'Ursio Raposo', company: 'Escopil', dept: 'Plant Maintenance', role: 'Electrician', aso_expiry: '2025-11-20', rac_flags: ['RAC01', 'RAC08'] }
 ];
 
 export const OPS_KEYS = [
@@ -33,10 +33,8 @@ export const OPS_KEYS = [
 
 export const PERMISSION_KEYS = ['EMI_PTS', 'APR_ART', 'DONO_AREA_PTS', 'EXEC'];
 
-// Exporting RAC_KEYS for components that still rely on hardcoded keys for logic
 export const RAC_KEYS = ['RAC01', 'RAC02', 'RAC03', 'RAC04', 'RAC05', 'RAC06', 'RAC07', 'RAC08', 'RAC09', 'RAC10', 'RAC11', 'PTS', 'ART'];
 
-// Exporting INITIAL_RAC_DEFINITIONS as a fallback for components requiring local defaults
 export const INITIAL_RAC_DEFINITIONS: RacDef[] = [
     { id: 'rac1', code: 'RAC01', name: 'RAC 01 - Working at Height', validityMonths: 24, requiresPractical: true },
     { id: 'rac2', code: 'RAC02', name: 'RAC 02 - Vehicles and Mobile Equipment', validityMonths: 24, requiresDriverLicense: true, requiresPractical: true },

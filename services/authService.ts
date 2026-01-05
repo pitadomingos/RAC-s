@@ -1,4 +1,3 @@
-
 import { User, UserRole } from '../types';
 import { supabase, isSupabaseConfigured } from './supabaseClient';
 import { db } from './databaseService';
@@ -12,7 +11,6 @@ export interface AuthResponse {
 export const authService = {
   /**
    * Authenticates user against the public.users table manually.
-   * Reverted from Supabase Auth service to previous logic.
    */
   async authenticate(username: string, password?: string): Promise<AuthResponse> {
     // 1. HARDCODED SYSTEM ADMIN CHECK
@@ -44,7 +42,7 @@ export const authService = {
             if (error) throw error;
             if (!data) return { user: null, status: 'invalid' };
 
-            // Standard check (plaintext comparison as per previous logic)
+            // Standard comparison
             if (data.password === password) {
                 return {
                     user: db.mapUserFromDb(data),
@@ -60,6 +58,6 @@ export const authService = {
   },
 
   async signOut() {
-      // No Supabase session to clear in manual mode, just handled by Context
+      // Logic handled by App Context
   }
 };

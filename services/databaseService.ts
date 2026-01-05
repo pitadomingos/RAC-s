@@ -1,7 +1,8 @@
 
 import { supabase, isSupabaseConfigured } from './supabaseClient';
-import { Booking, Employee, TrainingSession, EmployeeRequirement, Site, Company, BookingStatus, User, UserRole, RacDef, Room, Trainer, Feedback, SystemNotification } from '../types';
+import { Booking, Employee, TrainingSession, EmployeeRequirement, Site, Company, BookingStatus, User, UserRole, RacDef, Room, Trainer, Feedback, SystemNotification, DataConnector } from '../types';
 import { MOCK_EMPLOYEES, MOCK_BOOKINGS, MOCK_SESSIONS, MOCK_REQUIREMENTS } from '../constants';
+import { v4 as uuidv4 } from 'uuid';
 
 const FALLBACK_USERS: User[] = [
     {
@@ -16,28 +17,34 @@ const FALLBACK_USERS: User[] = [
     }
 ];
 
+// Helper to validate UUID format to prevent Supabase database crashes
+// Standard UUID is 8-4-4-4-12 (36 chars with hyphens)
+export const isUUID = (str: string | undefined): boolean => {
+    if (!str) return false;
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    return uuidRegex.test(str);
+};
+
 export const db = {
     async safeQuery<T>(tableName: string, query: any, fallback: T): Promise<T> {
         if (!isSupabaseConfigured || !supabase) return fallback;
         try {
             const { data, error } = await query;
             if (error) {
-                if (error.code === '42P01') {
-                    console.warn(`[Supabase] Table "${tableName}" not found. Using fallbacks.`);
+                const errorMsg = error.message || '';
+                const isSchemaError = error.code === '42P01' || 
+                                     error.code === '42703' ||
+                                     errorMsg.includes('schema cache') || 
+                                     errorMsg.includes('does not exist') ||
+                                     error.code === 'PGRST116';
+                
+                if (isSchemaError) {
                     return fallback;
                 }
                 throw error;
             }
             return (data as T) || fallback;
         } catch (e: any) {
-            const isNetworkError = (e instanceof TypeError && e.message === 'Failed to fetch') || 
-                                 (e?.message && e.message.includes('Failed to fetch'));
-            
-            if (!isNetworkError) {
-                console.error(`[Supabase] Error fetching ${tableName}:`, e?.message || e);
-            } else {
-                console.warn(`[Supabase] Network unreachable for ${tableName}. Serving cached/mock data.`);
-            }
             return fallback;
         }
     },
@@ -64,7 +71,24 @@ export const db = {
         if (user.jobTitle !== undefined) payload.job_title = user.jobTitle;
         if (user.phoneNumber !== undefined) payload.phone_number = user.phoneNumber;
         if (user.siteId !== undefined) payload.site_id = user.siteId;
+        // @ts-ignore
+        if (user.password !== undefined) payload.password = user.password;
         return payload;
+    },
+
+    mapCompanyFromDb(c: any): Company {
+        return {
+            id: c.id,
+            name: c.name,
+            appName: c.app_name,
+            logoUrl: c.logo_url,
+            safetyLogoUrl: c.safety_logo_url,
+            status: (c.status as 'Active' | 'Inactive') || 'Active',
+            defaultLanguage: (c.default_language as 'en' | 'pt') || 'en',
+            parentId: c.parent_id || undefined, 
+            tier: (c.tier as 'Prime' | 'Sub') || 'Prime',
+            features: c.features || { alcohol: false }
+        };
     },
 
     mapEmployeeFromDb(data: any): Employee {
@@ -84,30 +108,24 @@ export const db = {
 
     mapEmployeeToDb(emp: Partial<Employee>): any {
         const payload: any = {};
-        if (emp.id !== undefined) payload.id = emp.id;
+        if (emp.id !== undefined) payload.id = isUUID(emp.id) ? emp.id : uuidv4();
         if (emp.name !== undefined) payload.name = emp.name;
         if (emp.recordId !== undefined) payload.record_id = emp.recordId;
-        if (emp.siteId !== undefined) payload.site_id = emp.siteId;
+        if (emp.siteId !== undefined) payload.site_id = isUUID(emp.siteId) ? emp.siteId : null;
         if (emp.phoneNumber !== undefined) payload.phone_number = emp.phoneNumber;
         if (emp.driverLicenseNumber !== undefined) payload.driver_license_number = emp.driverLicenseNumber;
         if (emp.driverLicenseClass !== undefined) payload.driver_license_class = emp.driverLicenseClass;
         if (emp.driverLicenseExpiry !== undefined) payload.driver_license_expiry = emp.driverLicenseExpiry;
         if (emp.isActive !== undefined) payload.is_active = emp.isActive;
+        if (emp.company !== undefined) payload.company = emp.company;
+        if (emp.department !== undefined) payload.department = emp.department;
+        if (emp.role !== undefined) payload.role = emp.role;
         return payload;
     },
 
     async getCompanies(): Promise<Company[]> {
         const raw = await this.safeQuery('companies', supabase?.from('companies').select('*'), []);
-        return raw.map((c: any) => ({
-            id: c.id,
-            name: c.name,
-            appName: c.app_name,
-            logoUrl: c.logo_url,
-            safetyLogoUrl: c.safety_logo_url,
-            status: c.status || 'Active',
-            defaultLanguage: c.default_language || 'en',
-            features: c.features || { alcohol: false }
-        }));
+        return raw.map((c: any) => this.mapCompanyFromDb(c));
     },
 
     async getSites(): Promise<Site[]> {
@@ -142,9 +160,8 @@ export const db = {
     async getBookings(): Promise<Booking[]> {
         if (!isSupabaseConfigured || !supabase) return MOCK_BOOKINGS;
         try {
-            // Unified view: Fetch from both Confirmed Bookings and Waiting List
             const [confirmed, queued] = await Promise.all([
-                supabase.from('bookings').select(`*, employee:employees(*)`),
+                supabase.from('records').select(`*, employee:employees(*)`),
                 supabase.from('waiting_list').select(`*, employee:employees(*)`)
             ]);
 
@@ -167,18 +184,144 @@ export const db = {
         }
     },
 
+    async bulkUpsertEmployees(employees: Partial<Employee>[]) {
+        if (!isSupabaseConfigured || !supabase) return [];
+        const payload = employees.map(e => this.mapEmployeeToDb(e));
+        const { data, error } = await supabase.from('employees').upsert(payload, { onConflict: 'record_id' }).select('id, record_id');
+        if (error) throw error;
+        return data || [];
+    },
+
+    async bulkUpsertBookings(bookings: Partial<Booking>[]) {
+        if (!isSupabaseConfigured || !supabase) return;
+        const payload = bookings.map(b => ({
+            id: b.id,
+            session_id: isUUID(b.sessionId) ? b.sessionId : null,
+            employee_id: b.employee?.id,
+            status: b.status,
+            result_date: b.resultDate,
+            expiry_date: b.expiryDate,
+            theory_score: b.theoryScore,
+            practical_score: b.practicalScore,
+            attendance: b.attendance,
+            trainer_name: b.trainerName,
+            comments: b.comments || (!isUUID(b.sessionId) ? `Imported Classroom: ${b.sessionId}` : null)
+        }));
+        const { error } = await supabase.from('records').upsert(payload);
+        if (error) throw error;
+    },
+
+    async bulkUpsertRequirements(reqs: EmployeeRequirement[]) {
+        if (!isSupabaseConfigured || !supabase) return;
+        const payload = reqs.map(r => ({
+            employee_id: r.employeeId,
+            aso_expiry_date: r.asoExpiryDate,
+            required_racs: r.requiredRacs
+        }));
+        const { error } = await supabase.from('employee_requirements').upsert(payload);
+        if (error) throw error;
+    },
+
+    async getConnectors(): Promise<DataConnector[]> {
+        const raw = await this.safeQuery('data_connectors', supabase?.from('data_connectors').select('*'), []);
+        return raw.map((c: any) => ({
+            id: c.id,
+            name: c.name,
+            type: c.type,
+            lastSync: c.last_sync,
+            status: c.status,
+            color: c.color,
+            source: c.source,
+            config: c.config || {},
+            mapping: c.mapping || {},
+            module_mapping: c.module_mapping || {}
+        }));
+    },
+
+    async saveConnector(connector: DataConnector): Promise<void> {
+        if (!isSupabaseConfigured || !supabase) return;
+        const payload = {
+            id: connector.id,
+            name: connector.name,
+            type: connector.type,
+            last_sync: connector.lastSync,
+            status: connector.status,
+            color: connector.color,
+            source: connector.source,
+            config: connector.config,
+            mapping: connector.mapping,
+            module_mapping: connector.moduleMapping
+        };
+        await supabase.from('data_connectors').upsert(payload);
+    },
+
+    async syncExternalData(connectorId: string, rawData: any[], includeModules: boolean = false): Promise<{ added: number, updated: number }> {
+        if (!isSupabaseConfigured || !supabase) {
+            return { added: rawData.length, updated: 0 };
+        }
+
+        let added = 0;
+        let updated = 0;
+
+        for (const item of rawData) {
+            const normalizedEmp: Partial<Employee> = {
+                id: uuidv4(),
+                recordId: item.id,
+                name: item.name,
+                company: item.company || (connectorId === 'sf-hr' ? 'Vulcan' : 'Unknown'),
+                department: item.dept || 'Operations',
+                role: item.role || 'Personnel',
+                isActive: true,
+                siteId: 's1'
+            };
+
+            const { data: existing } = await supabase
+                .from('employees')
+                .select('id')
+                .eq('record_id', normalizedEmp.recordId)
+                .maybeSingle();
+
+            let targetEmployeeId = '';
+
+            if (existing) {
+                targetEmployeeId = existing.id;
+                const { error } = await supabase.from('employees').update(this.mapEmployeeToDb(normalizedEmp)).eq('id', existing.id);
+                if (!error) updated++;
+            } else {
+                const { data: created, error } = await supabase.from('employees').insert(this.mapEmployeeToDb(normalizedEmp)).select('id').single();
+                if (!error && created) {
+                    targetEmployeeId = created.id;
+                    added++;
+                }
+            }
+
+            if (includeModules && targetEmployeeId && item.aso_expiry) {
+                const racMatrix: Record<string, boolean> = {};
+                if (Array.isArray(item.rac_flags)) {
+                    item.rac_flags.forEach((f: string) => racMatrix[f] = true);
+                }
+
+                const requirementPayload = {
+                    employee_id: targetEmployeeId,
+                    aso_expiry_date: item.aso_expiry,
+                    required_racs: racMatrix
+                };
+
+                await supabase.from('employee_requirements').upsert(requirementPayload);
+            }
+        }
+
+        return { added, updated };
+    },
+
     async promoteFromWaitlist(entryId: string, sessionId: string, employeeId: string) {
         if (!isSupabaseConfigured || !supabase) return;
-        
-        // Step 1: Create Confirmed Booking
-        const { error: insertErr } = await supabase.from('bookings').insert({
+        const { error: insertErr } = await supabase.from('records').insert({
             session_id: sessionId,
             employee_id: employeeId,
             status: BookingStatus.PENDING
         });
         if (insertErr) throw insertErr;
-
-        // Step 2: Remove from Waitlist
         const { error: deleteErr } = await supabase.from('waiting_list').delete().eq('id', entryId);
         if (deleteErr) throw deleteErr;
     },
@@ -226,10 +369,14 @@ export const db = {
         }));
     },
 
-    async saveCompany(company: Company) {
+    async saveCompany(company: Company): Promise<Company> {
         if (!isSupabaseConfigured || !supabase) return company;
-        const payload = {
-            id: company.id,
+        
+        // Ensure ID is a valid UUID. If it's a mock ID like 'c1', generate a new one.
+        const targetId = isUUID(company.id) ? company.id : uuidv4();
+
+        const payload: any = {
+            id: targetId,
             name: company.name,
             app_name: company.appName,
             logo_url: company.logoUrl,
@@ -238,16 +385,26 @@ export const db = {
             default_language: company.defaultLanguage,
             features: company.features
         };
+        
+        // Ensure parent_id is valid UUID
+        if (company.parentId && isUUID(company.parentId)) {
+            payload.parent_id = company.parentId;
+        } else {
+            payload.parent_id = null;
+        }
+
+        if (company.tier) payload.tier = company.tier;
+
         const { data, error } = await supabase.from('companies').upsert(payload).select();
         if (error) throw error;
-        return data[0];
+        return this.mapCompanyFromDb(data[0]);
     },
 
     async saveRacDefinition(rac: RacDef) {
         if (!isSupabaseConfigured || !supabase) return rac;
         const payload = {
-            id: rac.id,
-            company_id: rac.companyId,
+            id: isUUID(rac.id) ? rac.id : uuidv4(),
+            company_id: (rac.companyId && isUUID(rac.companyId)) ? rac.companyId : null,
             code: rac.code,
             name: rac.name,
             validity_months: rac.validityMonths,
@@ -267,8 +424,8 @@ export const db = {
     async saveSite(site: Site) {
         if (!isSupabaseConfigured || !supabase) return site;
         const { data, error } = await supabase.from('sites').upsert({
-            id: site.id,
-            company_id: site.companyId,
+            id: isUUID(site.id) ? site.id : uuidv4(),
+            company_id: isUUID(site.companyId) ? site.companyId : null,
             name: site.name,
             location: site.location,
             mandatory_racs: site.mandatoryRacs
@@ -285,10 +442,10 @@ export const db = {
     async saveRoom(room: Room) {
         if (!isSupabaseConfigured || !supabase) return room;
         const { data, error } = await supabase.from('rooms').upsert({
-            id: room.id,
+            id: isUUID(room.id) ? room.id : uuidv4(),
             name: room.name,
             capacity: room.capacity,
-            site_id: room.siteId
+            site_id: isUUID(room.siteId) ? room.siteId : null
         }).select();
         if (error) throw error;
         return data[0];
@@ -302,10 +459,10 @@ export const db = {
     async saveTrainer(trainer: Trainer) {
         if (!isSupabaseConfigured || !supabase) return trainer;
         const { data, error } = await supabase.from('trainers').upsert({
-            id: trainer.id,
+            id: isUUID(trainer.id) ? trainer.id : uuidv4(),
             name: trainer.name,
             authorized_racs: trainer.racs, 
-            site_id: trainer.siteId 
+            site_id: isUUID(trainer.siteId) ? trainer.siteId : null 
         }).select();
         if (error) throw error;
         return data[0];
@@ -333,7 +490,7 @@ export const db = {
     async upsertEmployee(emp: Partial<Employee>) {
         if (!isSupabaseConfigured || !supabase) return emp;
         const payload = this.mapEmployeeToDb(emp);
-        const { data, error } = await supabase.from('employees').upsert(payload, { onConflict: 'record_id' }).select();
+        const { data, error } = await supabase.from('users').upsert(payload, { onConflict: 'record_id' }).select();
         if (error) throw error;
         return this.mapEmployeeFromDb(data[0]);
     },
@@ -341,7 +498,6 @@ export const db = {
     async saveBooking(booking: Partial<Booking>) {
         if (!isSupabaseConfigured || !supabase) return booking;
         
-        // Handle routing to the new table if status is Waitlisted
         if (booking.status === BookingStatus.WAITLISTED) {
             await this.saveWaitlistEntry(booking.sessionId!, booking.employee!.id);
             return booking;
@@ -352,8 +508,8 @@ export const db = {
         delete payload.employee;
         
         const dbPayload = {
-            id: payload.id,
-            session_id: payload.sessionId,
+            id: isUUID(payload.id) ? payload.id : uuidv4(),
+            session_id: isUUID(payload.sessionId) ? payload.sessionId : null,
             employee_id: payload.employee_id,
             status: payload.status,
             result_date: payload.resultDate,
@@ -361,20 +517,24 @@ export const db = {
             theory_score: payload.theoryScore,
             practical_score: payload.practicalScore,
             attendance: payload.attendance,
-            driver_license_verified: payload.driverLicenseVerified,
+            driver_license_verified: payload.driver_license_verified,
             is_auto_booked: payload.isAutoBooked,
-            comments: payload.comments,
+            comments: payload.comments || (!isUUID(payload.sessionId) ? `Virtual Session: ${payload.sessionId}` : null),
             trainer_name: payload.trainerName
         };
 
-        const { data, error } = await supabase.from('bookings').upsert(dbPayload).select();
+        const { data, error } = await supabase.from('records').upsert(dbPayload).select();
         if (error) throw error;
         return data[0];
     },
 
     async updateRequirement(req: EmployeeRequirement) {
         if (!isSupabaseConfigured || !supabase) return;
-        const payload = { employee_id: req.employeeId, aso_expiry_date: req.asoExpiryDate, required_racs: req.requiredRacs };
+        const payload = { 
+            employee_id: req.employeeId, 
+            aso_expiry_date: req.asoExpiryDate, 
+            required_racs: req.requiredRacs 
+        };
         await supabase.from('employee_requirements').upsert(payload);
     },
 

@@ -1,4 +1,3 @@
-
 export type Language = 'en' | 'pt';
 
 export const formatDate = (dateString: string | undefined): string => {
@@ -54,6 +53,9 @@ export const translations = {
       complianceRate: 'Compliance Rate',
       testsProcessed: 'Tests Processed',
       active: 'Active',
+      parentCompany: 'Main Contractor',
+      subcontractor: 'Subcontractor',
+      tier: 'Hierarchy Tier',
       stats: {
         totalRecords: 'Total Records',
         passRate: 'Pass Rate',
@@ -106,7 +108,70 @@ export const translations = {
       manuals: 'Manuals',
       integration: 'Integration',
       presentation: 'Proposal Presentation',
-      techDocs: 'Technical Docs'
+      techDocs: 'Technical Docs',
+      blueprint: 'System Blueprint'
+    },
+    technicalManual: {
+      header: {
+        title: 'System Architecture Blueprint',
+        confidential: 'Confidential / Internal Use Only',
+        status: 'Document Status',
+        statusValue: 'Production Ready',
+        specTitle: 'Technical Specification',
+        specSubtitle: 'Autonomous Safety & Compliance Infrastructure',
+        printBtn: 'Print to PDF'
+      },
+      index: {
+        title: 'Blueprints Index',
+        s1: '1. Multi-Tenant Onboarding',
+        s2: '2. Data Sync & Normalization',
+        s3: '3. Compliance Logic Matrix',
+        s4: '4. Zero-Touch Scheduling',
+        s5: '5. RLS & Encryption Layers',
+        s6: '6. IoT Gateway & Gate Control'
+      },
+      onboarding: {
+        title: '1. Multi-Tenant Provisioning',
+        text: 'The system utilizes a multi-tenant architecture where each Company (Enterprise Node) acts as a logical data partition.',
+        step1: 'Node Creation',
+        step1desc: 'Database entry in public.companies defining the UUID and app alias.',
+        step2: 'Site Mapping',
+        step2desc: 'Recursive site allocation under the company parent for physical location isolation.',
+        step3: 'Identity Inject',
+        step3desc: 'Provisioning of local Enterprise Admins via the User Management gateway.'
+      },
+      sync: {
+        title: '2. Data Normalization Flow',
+        text: 'The sync engine executes nightly batch updates. It compares the local employees table against the restful response from SuccessFactors. If a Record ID is found, the system performs a partial patch on non-critical metadata. If not found, a new profile is provisioned.',
+        middleware: 'CARS Engine',
+        logic: 'SYNC_LOGIC: Map [VUL_ID] and [CONTRACTOR_ID] -> Global [RECORD_ID]'
+      },
+      logic: {
+        title: '3. The Compliance Logic Formula',
+        step1: 'Identity Check',
+        step1desc: 'IF employee.is_active IS FALSE -> RETURN BLOCKED',
+        step2: 'Medical (ASO) Validation',
+        step2desc: 'IF current_date > req.aso_expiry_date -> RETURN BLOCKED',
+        step3: 'RAC Proficiency Array',
+        step3desc: 'FOR EACH key IN req.required_racs: IF bookings.filter(passed, !expired).length == 0 -> RETURN BLOCKED'
+      },
+      iot: {
+        title: '4. IoT Gateway & Gate Control Integration',
+        text: 'CARS provides a REST API Layer specifically for turnstile hardware and breathalyzer integration. Integration is handled via Consumer API Keys with System-to-System (S2S) scope.',
+        handshake: 'Handshake Protocol',
+        p1: 'Polling Mode: Device sends Record ID to /api/v1/verify/{id}.',
+        p2: 'Push Mode: IoT Hub posts positive BAC results to /api/v1/alcohol/log.',
+        p3: 'Security: All hardware calls must present x-api-key in the request header.'
+      },
+      scheduling: {
+        title: '5. Zero-Touch Scheduling Engine',
+        text: 'The autonomous engine eliminates manual booking by monitoring the Expiry Vector. When a certification enters the RED ZONE (Expiry < 14 Days):',
+        log: 'ENGINE scanning employee_requirements table... FOUND: [Paulo Manjate, RAC02, Expiry: D+12]'
+      },
+      footer: {
+        line1: 'CARS Core Documentation',
+        line2: 'Proprietary Logic • Version 2.5.0'
+      }
     },
     dashboard: {
       title: 'Safety Command Center',
@@ -323,10 +388,37 @@ export const translations = {
         aiPromptEnterprise: 'Generate enterprise report',
         bottlenecks: 'Training Bottlenecks',
         failure: 'Failure Rate',
-        siteName: 'Site'
+        siteName: 'Site',
+        supplyChain: 'Supply Chain Compliance',
+        primeVendor: 'Prime Vendor'
     },
     proposal: {
         digitalTrans: 'Digital Safety Transformation',
+        autoScheduling: {
+            title: 'Zero-Touch Autonomous Scheduling',
+            subtitle: 'Predictive Resource Optimization',
+            triggerTitle: 'Continuous Listening',
+            triggerDesc: 'System monitors 4 key operational risk signals 24/7.',
+            brainTitle: 'AI Decision Logic',
+            brainDesc: 'Autonomous capacity matching, instructor balancing, and venue routing.',
+            outputTitle: 'Zero-Touch Delivery',
+            outputDesc: 'Calendar events, SMS invites, and room bookings created without human input.',
+            outcomeNote: 'From Manual Entry to Autonomous Reliability',
+            triggers: {
+                new: 'New Hires (Blocked)',
+                expired: 'Expiries < 14 Days',
+                failed: 'Retake Queues',
+                absent: 'Attendance Recall'
+            },
+            features: {
+                creation: 'Auto-Session Creation',
+                creationDesc: 'System generates new RAC sessions based on waitlist pressure.',
+                invites: 'Closed-Loop Invites',
+                invitesDesc: 'Automated SMS/Email coordination with trainees.',
+                resolution: 'Constraint Resolution',
+                resolutionDesc: 'Ensures no double-booking of rooms or instructors.'
+            }
+        },
         scenario: {
             title: 'Operational Readiness Scenario',
             challenge: 'The Legacy Challenge',
@@ -340,8 +432,8 @@ export const translations = {
         },
         execSummary: {
             title: 'Executive Summary',
-            text: 'A unified digital infrastructure for managing critical activity requisitions (CARS) across the entire enterprise. Eliminating manual data entry, reducing audit friction, and ensuring 100% operational readiness.',
-            quote: 'Converting reactive safety into predictive operational resilience.'
+            text: 'CARS v2.5 is an autonomous digital safety ecosystem that transforms Critical Activity Requisitions (RAC 01-11) from manual tracking into a predictive operational pilot. By merging real-time IoT hardware telemetry with a zero-touch scheduling engine and Gemini AI intelligence, the platform ensures that 100% of the workforce is medically fit, certified, and physically authorized before they ever reach the risk zone.',
+            quote: 'Converting reactive safety into autonomous operational resilience.'
         },
         objectives: {
             title: 'Primary Objectives',
@@ -349,10 +441,10 @@ export const translations = {
             problemText: 'Fragmented contractor data, manual certification tracking, and lack of real-time visibility into site-wide compliance levels.',
             solutionTitle: 'The Future State',
             goals: [
-                'Automated HR & Contractor Data Merging',
-                'Predictive Renewal Management & Waitlisting',
-                'Digital Safety Passport for Every Worker',
-                'Executive HSE Analytics & AI Reporting'
+                'Automated HR & Contractor Data Normalization',
+                'Autonomous Zero-Touch Predictive Scheduling',
+                'IoT Physical Access & Alcohol Control Link',
+                'AI-Driven HSE Forecasting & Risk Analytics'
             ]
         },
         integration: {
@@ -363,7 +455,7 @@ export const translations = {
             contractor: 'Third-Party Vendors',
             middlewareTitle: 'Integration Hub',
             middlewareDesc: 'Restful API layer merging contractor and permanent datasets.',
-            sourceTitle: 'CARS Single Source of Truth',
+            sourceTitle: 'CARS: Source of Truth',
             noManual: 'No Manual Onboarding',
             isolation: 'Logical Data Isolation',
             liveMatrix: 'Live Compliance Matrix'
@@ -389,7 +481,7 @@ export const translations = {
         techStack: {
             title: 'Modern Architecture',
             frontendTitle: 'User Experience',
-            frontend: 'React 18 • TypeScript • Tailwind',
+            frontend: 'React 19 • TypeScript • Tailwind',
             backendTitle: 'System Logic',
             backend: 'Node.js • Cloud Functions • Supabase',
             databaseTitle: 'Data Persistence',
@@ -451,12 +543,12 @@ export const translations = {
         waitlist: {
             title: 'Queue Intelligence',
             subtitle: 'Proactive Demand Management',
-            capacityTitle: 'Room Capacity Guard',
+            capacityTitle: 'Capacity Guard',
             capacityDesc: 'Automatic redirection of overflow personnel to a FIFO waiting list.',
             demandTitle: 'Admin Notifications',
-            demandDesc: 'Threshold-based alerts (e.g. 5+ waitlisted) to trigger new session scheduling.',
-            outcome: '100% Enrollment Visibility',
-            outcomeDesc: 'Never lose a requisition in an email chain.'
+            demandDesc: 'Threshold-based alerts (e.g. 5+ waiting) to schedule new sessions.',
+            outcome: 'Full Visibility',
+            outcomeDesc: 'Never lose a requisition in email threads.'
         },
         workflow: {
             title: 'System Workflow Diagram',
@@ -577,7 +669,7 @@ export const translations = {
         title: 'Safety Analytics',
         subtitle: 'RACS Performance Metrics',
         generate: 'Generate Report',
-        analyzing: 'Analyzing...',
+        analyzing: 'Analisando...',
         executiveAnalysis: 'AI Executive Summary',
         stats: {
             totalTrained: 'Total Personnel',
@@ -683,6 +775,9 @@ export const translations = {
       complianceRate: 'Taxa de Conformidade',
       testsProcessed: 'Testes Processados',
       active: 'Ativo',
+      parentCompany: 'Empreiteiro Principal',
+      subcontractor: 'Subempreiteiro',
+      tier: 'Nível de Hierarquia',
       stats: {
         totalRecords: 'Total de Registos',
         passRate: 'Taxa de Aprovação',
@@ -734,8 +829,71 @@ export const translations = {
       logs: 'Logs',
       manuals: 'Manuais',
       integration: 'Integração',
-      presentation: 'Apresentação',
-      techDocs: 'Docs Técnicos'
+      presentation: 'Apresentação da Proposta',
+      techDocs: 'Docs Técnicos',
+      blueprint: 'Esquema do Sistema'
+    },
+    technicalManual: {
+      header: {
+        title: 'Esquema de Arquitetura do Sistema',
+        confidential: 'Confidencial / Apenas para Uso Interno',
+        status: 'Estado do Documento',
+        statusValue: 'Pronto para Produção',
+        specTitle: 'Especificação Técnica',
+        specSubtitle: 'Infraestrutura Autónoma de Segurança e Conformidade',
+        printBtn: 'Imprimir para PDF'
+      },
+      index: {
+        title: 'Índice de Esquemas',
+        s1: '1. Integração Multi-Cliente',
+        s2: '2. Sincronização e Normalização',
+        s3: '3. Matriz de Lógica de Conformidade',
+        s4: '4. Agendamento Autónomo',
+        s5: '5. Camadas de RLS e Encriptação',
+        s6: '6. Gateway IoT e Controlo de Portaria'
+      },
+      onboarding: {
+        title: '1. Aprovisionamento de Múltiplos Clientes',
+        text: 'O sistema utiliza uma arquitetura multi-cliente onde cada Empresa (Nó Corporativo) atua como uma partição lógica de dados.',
+        step1: 'Criação de Nó',
+        step1desc: 'Entrada na base de dados em public.companies definindo o UUID e o pseudónimo da aplicação.',
+        step2: 'Mapeamento de Sites',
+        step2desc: 'Alocação recursiva de sites sob o nó pai da empresa para isolamento de localização física.',
+        step3: 'Injeção de Identidade',
+        step3desc: 'Provisionamento de Admins Corporativos locais através do gateway de Gestão de Utilizadores.'
+      },
+      sync: {
+        title: '2. Fluxo de Normalização de Dados',
+        text: 'O motor de sincronização executa atualizações em lote noturnas. Compara a tabela local de funcionários com a resposta restful do SuccessFactors. Se for encontrado um ID de Registo, o sistema executa um patch parcial nos metadados não críticos. Caso contrário, um novo perfil é aprovisionado.',
+        middleware: 'Motor CARS',
+        logic: 'LÓGICA_SYNC: Mapear [VUL_ID] e [CONTRACTOR_ID] -> Global [RECORD_ID]'
+      },
+      logic: {
+        title: '3. A Fórmula da Lógica de Conformidade',
+        step1: 'Verificação de Identidade',
+        step1desc: 'SE colaborador.is_active FOR FALSO -> RETORNAR BLOQUEADO',
+        step2: 'Validação Médica (ASO)',
+        step2desc: 'SE data_atual > data_expiracao_aso -> RETORNAR BLOQUEADO',
+        step3: 'Matriz de Proficiência RAC',
+        step3desc: 'PARA CADA chave EM req.racs_obrigatorios: SE total_aprovados_nao_expirados == 0 -> RETORNAR BLOQUEADO'
+      },
+      iot: {
+        title: '4. Integração de Gateway IoT e Controlo de Portaria',
+        text: 'O CARS fornece uma Camada de API REST especificamente para hardware de catracas e integração de bafômetros. A integração é gerida através de Chaves de API de Consumidor com escopo Sistema-para-Sistema (S2S).',
+        handshake: 'Protocolo de Handshake',
+        p1: 'Modo de Consulta: O dispositivo envia o ID para /api/v1/verify/{id}.',
+        p2: 'Modo Push: O Hub IoT publica resultados positivos de TAS para /api/v1/alcohol/log.',
+        p3: 'Segurança: Todas as chamadas de hardware devem apresentar x-api-key no cabeçalho.'
+      },
+      scheduling: {
+        title: '5. Motor de Agendamento Sem Intervenção',
+        text: 'O motor autónomo elimina a reserva manual monitorizando o Vector de Expiração. Quando uma certificação entra na ZONA VERMELHA (Expiração < 14 Dias):',
+        log: 'MOTOR a analisar tabela de requisitos... ENCONTRADO: [Paulo Manjate, RAC02, Exp: D+12]'
+      },
+      footer: {
+        line1: 'Documentação Principal CARS',
+        line2: 'Lógica Proprietária • Versão 2.5.0'
+      }
     },
     dashboard: {
       title: 'Centro de Comando de Segurança',
@@ -908,7 +1066,7 @@ export const translations = {
                 logged: 'Registado no perfil do colaborador',
                 generating: 'A gerar relatório de risco IA...',
                 contacting: 'A contactar segurança local...',
-                sent: 'Alerta enviado'
+                sent: 'Alert enviado'
             }
         },
         protocol: {
@@ -952,10 +1110,37 @@ export const translations = {
         aiPromptEnterprise: 'Gerar relatório corporativo',
         bottlenecks: 'Gargalos de Treino',
         failure: 'Taxa de Falha',
-        siteName: 'Site'
+        siteName: 'Site',
+        supplyChain: 'Conformidade da Cadeia de Suprimentos',
+        primeVendor: 'Vendedor Principal'
     },
     proposal: {
         digitalTrans: 'Transformação Digital de Segurança',
+        autoScheduling: {
+            title: 'Agendamento Autónomo (Zero-Touch)',
+            subtitle: 'Otimização Preditiva de Recursos',
+            triggerTitle: 'Escuta Contínua',
+            triggerDesc: 'O sistema monitoriza 4 sinais de risco operacional 24h por dia.',
+            brainTitle: 'Cérebro de Decisão IA',
+            brainDesc: 'Correspondência autónoma de capacidade, balanceamento de instrutores e rotas de locais.',
+            outputTitle: 'Entrega Sem Intervenção',
+            outputDesc: 'Convites e reservas de salas criados sem intervenção humana.',
+            outcomeNote: 'Da Entrada Manual à Fiabilidade Autónoma',
+            triggers: {
+                new: 'Novos Colaboradores (Bloqueados)',
+                expired: 'Expirações < 14 Dias',
+                failed: 'Filas de Reprovação',
+                absent: 'Recall de Assiduidade'
+            },
+            features: {
+                creation: 'Criação Auto de Sessão',
+                creationDesc: 'Sistema gera novas sessões RAC baseadas na pressão da lista de espera.',
+                invites: 'Convites em Ciclo Fechado',
+                invitesDesc: 'Coordenação automatizada por SMS/Email com os formandos.',
+                resolution: 'Resolução de Conflitos',
+                resolutionDesc: 'Garante que não haja marcações duplicadas de salas ou instrutores.'
+            }
+        },
         scenario: {
             title: 'Cenário de Prontidão Operacional',
             challenge: 'O Desafio Legado',
@@ -969,8 +1154,8 @@ export const translations = {
         },
         execSummary: {
             title: 'Resumo Executivo',
-            text: 'Uma infraestrutura digital unificada para gestão de requisições de atividades críticas (CARS) em toda a empresa. Eliminando a entrada manual de dados, reduzindo o atrito de auditoria e garantindo 100% de prontidão operacional.',
-            quote: 'Convertendo segurança reativa em resiliência operacional preditiva.'
+            text: 'O CARS v2.5 é um ecossistema digital autónomo de segurança que transforma as Requisições de Atividades Críticas (RAC 01-11) de uma gestão manual num piloto operacional preditivo. Ao fundir a telemetria de hardware IoT em tempo real com um motor de agendamento zero-touch e a inteligência IA Gemini, a plataforma garante que 100% da força de trabalho esteja clinicamente apta, certificada e fisicamente autorizada antes mesmo de chegar à zona de risco.',
+            quote: 'Convertendo segurança reativa em resiliência operacional autónoma.'
         },
         objectives: {
             title: 'Objetivos Primários',
@@ -978,10 +1163,10 @@ export const translations = {
             problemText: 'Dados de empreiteiros fragmentados, rastreio manual de certificações e falta de visibilidade em tempo real sobre os níveis de conformidade.',
             solutionTitle: 'Estado Futuro',
             goals: [
-                'Fusão Automática de Dados de RH e Empreiteiros',
-                'Gestão Preditiva de Renovações e Filas de Espera',
-                'Passaporte de Segurança Digital para Cada Trabalhador',
-                'Analítica Executiva HSE e Relatórios IA'
+                'Normalização Automática de Dados de RH e Empreiteiros',
+                'Motor de Agendamento Preditivo Autónomo Zero-Touch',
+                'Link IoT de Controlo de Acesso Físico e Alcoolemia',
+                'Analítica de Risco e Previsão HSE Baseada em IA'
             ]
         },
         integration: {
@@ -1018,7 +1203,7 @@ export const translations = {
         techStack: {
             title: 'Arquitetura Moderna',
             frontendTitle: 'Experiência do Utilizador',
-            frontend: 'React 18 • TypeScript • Tailwind',
+            frontend: 'React 19 • TypeScript • Tailwind',
             backendTitle: 'Lógica do Sistema',
             backend: 'Node.js • Cloud Functions • Supabase',
             databaseTitle: 'Persistência de Dados',
@@ -1121,7 +1306,7 @@ export const translations = {
             preferred: 'Engenheiro de Software e Arquiteto de Segurança',
             bio: 'Mais de 8 anos de experiência na construção de sistemas empresariais de missão crítica. Especializado na integração de dados operacionais complexos em arquiteturas web simplificadas e de alto desempenho, priorizando a segurança do utilizador e a integridade dos dados.',
             cert: 'Arquiteto de Soluções Cloud Certificado',
-            role: 'Fundador e Engenheiro Chefe na DigiSols',
+            role: 'Founder e Engenheiro Chefe na DigiSols',
             portfolioTitle: 'Portfólio Corporativo',
             portfolio: {
                 edudesk: 'Gestão de Ensino Superior',
@@ -1219,7 +1404,7 @@ export const translations = {
             department: 'Departamento',
             racType: 'Módulo RAC',
             startDate: 'Data Início',
-            endDate: 'Data Fim'
+            endDate: 'End Date'
         },
         periods: {
             weekly: 'Semanal',

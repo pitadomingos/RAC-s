@@ -6,11 +6,12 @@ import {
   Target, Zap, HardHat, Smartphone, CalendarClock,
   Database, Monitor, Lock, Server, Key, Mail,
   Rocket, Code, CheckCircle, CheckCircle2,
-  User, Users, Award, Briefcase, HeartHandshake, Phone, GraduationCap, Activity, CreditCard, Wallet, Wrench, Layers,
+  User, Users, UserPlus, Award, Briefcase, HeartHandshake, Phone, GraduationCap, Activity, CreditCard, Wallet, Wrench, Layers,
   Play, MapPin, GitMerge, Sparkles, TrendingUp, Building2, Server as ServerIcon, Globe, Factory, BrainCircuit,
   ScanFace, AlertTriangle, ArrowRight, History, ShieldAlert, Cpu,
   CheckSquare, XCircle, Search, Terminal, Binary, FileSpreadsheet, Eye, EyeOff,
-  BarChart3, Cloud, ShieldCheck, Timer, ListFilter, Bell, ArrowDown, QrCode
+  BarChart3, Cloud, ShieldCheck, Timer, ListFilter, Bell, ArrowDown, QrCode,
+  Network, Share2, RefreshCw, Radio, UserX, Clock
 } from 'lucide-react';
 import { useNavigate, Navigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
@@ -51,6 +52,7 @@ const PresentationPage: React.FC = () => {
     { id: 'workflow', type: 'workflow', title: t.proposal.workflow.title },
     { id: 'integration', type: 'integration', title: t.proposal.integration.title },
     { id: 'waitlist', type: 'waitlist', title: t.proposal.waitlist.title },
+    { id: 'autoScheduling', type: 'autoScheduling', title: t.proposal.autoScheduling.title },
     { id: 'organogram', type: 'organogram', title: t.proposal.organogram.title },
     { id: 'timeline', type: 'timeline', title: t.proposal.timeline.title },
     { id: 'tech', type: 'tech', title: t.proposal.techStack.title }, 
@@ -87,16 +89,16 @@ const PresentationPage: React.FC = () => {
   }, [currentSlide, skipFinancials]);
 
   const nextSlide = () => {
-      if (currentSlide === 10 && skipFinancials) {
-          setCurrentSlide(12);
+      if (currentSlide === 11 && skipFinancials) { // If on Tech, and skip financials, go to Roadmap
+          setCurrentSlide(13);
           return;
       }
       if (currentSlide < slides.length - 1) setCurrentSlide(curr => curr + 1);
   };
 
   const prevSlide = () => {
-      if (currentSlide === 12 && skipFinancials) {
-          setCurrentSlide(10);
+      if (currentSlide === 13 && skipFinancials) { // If on Roadmap, and skip financials, go back to Tech
+          setCurrentSlide(11);
           return;
       }
       if (currentSlide > 0) setCurrentSlide(curr => curr - 1);
@@ -124,6 +126,83 @@ const PresentationPage: React.FC = () => {
               <span className="text-sm md:text-base font-mono text-yellow-500 tracking-widest uppercase">DigiSols Architecture</span>
           </div>
       </div>
+  );
+
+  const AutoSchedulingSlide = () => (
+    <div className="flex flex-col justify-center min-h-[70vh] max-w-[1600px] mx-auto px-6 relative z-10 animate-fade-in-up py-12">
+        <div className="text-center mb-16">
+            <h2 className="text-4xl md:text-6xl font-black text-white tracking-tight">{t.proposal.autoScheduling.title}</h2>
+            <p className="text-xl text-indigo-400 font-bold mt-2 uppercase tracking-widest">{t.proposal.autoScheduling.subtitle}</p>
+        </div>
+
+        <div className="flex flex-col lg:flex-row items-center justify-between gap-12 relative">
+            
+            {/* TRIGGERS */}
+            <div className="w-full lg:w-1/3 space-y-4">
+                <h4 className="text-sm font-black text-slate-500 uppercase tracking-widest mb-6 flex items-center gap-2"><Radio className="text-indigo-500 animate-pulse" size={16}/> {t.proposal.autoScheduling.triggerTitle}</h4>
+                {[
+                    { label: t.proposal.autoScheduling.triggers.new, icon: UserPlus, color: 'bg-blue-600' },
+                    { label: t.proposal.autoScheduling.triggers.expired, icon: Clock, color: 'bg-amber-600' },
+                    { label: t.proposal.autoScheduling.triggers.failed, icon: AlertTriangle, color: 'bg-red-600' },
+                    { label: t.proposal.autoScheduling.triggers.absent, icon: UserX, color: 'bg-rose-600' }
+                ].map((trigger, i) => (
+                    <div key={i} className="flex items-center gap-4 p-4 bg-slate-900/60 border border-slate-800 rounded-2xl group hover:border-indigo-500/50 transition-all">
+                        <div className={`p-3 rounded-xl ${trigger.color} text-white shadow-lg`}><trigger.icon size={20}/></div>
+                        <span className="font-bold text-slate-200">{trigger.label}</span>
+                    </div>
+                ))}
+            </div>
+
+            {/* PROCESSOR (BRAIN) */}
+            <div className="relative w-full lg:w-1/3 flex flex-col items-center">
+                <div className="absolute inset-0 bg-indigo-500 blur-[100px] opacity-10 animate-pulse"></div>
+                <div className="relative z-10 w-48 h-48 md:w-64 md:h-64 rounded-full bg-slate-900 border-4 border-indigo-500/50 flex flex-col items-center justify-center text-center shadow-[0_0_60px_rgba(99,102,241,0.2)] p-8">
+                    <BrainCircuit size={80} className="text-indigo-400 mb-4 animate-float" />
+                    <h3 className="text-lg font-black text-white leading-tight uppercase tracking-tighter">{t.proposal.autoScheduling.brainTitle}</h3>
+                </div>
+                <div className="mt-8 text-center max-w-xs px-4">
+                    <p className="text-xs text-slate-400 leading-relaxed italic">{t.proposal.autoScheduling.brainDesc}</p>
+                </div>
+            </div>
+
+            {/* OUTPUTS */}
+            <div className="w-full lg:w-1/3 space-y-4">
+                <h4 className="text-sm font-black text-slate-500 uppercase tracking-widest mb-6 text-right flex items-center justify-end gap-2">{t.proposal.autoScheduling.outputTitle} <Zap className="text-indigo-500" size={16}/></h4>
+                <div className="bg-gradient-to-br from-indigo-900 to-slate-900 p-8 rounded-[3rem] border border-indigo-500/30 shadow-2xl relative overflow-hidden">
+                    <div className="absolute top-0 right-0 p-8 opacity-5"><RefreshCw size={100} /></div>
+                    <ul className="space-y-6">
+                        <li className="flex items-start gap-4">
+                            <CheckCircle2 size={24} className="text-emerald-500 shrink-0" />
+                            <div>
+                                <h5 className="font-black text-white text-md">{t.proposal.autoScheduling.features.creation}</h5>
+                                <p className="text-xs text-slate-400">{t.proposal.autoScheduling.features.creationDesc}</p>
+                            </div>
+                        </li>
+                        <li className="flex items-start gap-4">
+                            <CheckCircle2 size={24} className="text-emerald-500 shrink-0" />
+                            <div>
+                                <h5 className="font-black text-white text-md">{t.proposal.autoScheduling.features.invites}</h5>
+                                <p className="text-xs text-slate-400">{t.proposal.autoScheduling.features.invitesDesc}</p>
+                            </div>
+                        </li>
+                        <li className="flex items-start gap-4">
+                            <CheckCircle2 size={24} className="text-emerald-500 shrink-0" />
+                            <div>
+                                <h5 className="font-black text-white text-md">{t.proposal.autoScheduling.features.resolution}</h5>
+                                <p className="text-xs text-slate-400">{t.proposal.autoScheduling.features.resolutionDesc}</p>
+                            </div>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div className="mt-16 flex justify-center">
+            <div className="bg-indigo-500/10 px-8 py-3 rounded-full border border-indigo-500/30 text-indigo-400 font-black text-xs uppercase tracking-widest flex items-center gap-3">
+                <ShieldCheck size={16}/> {t.proposal.autoScheduling.outcomeNote}
+            </div>
+        </div>
+    </div>
   );
 
   const AboutMeSlide = () => (
@@ -220,11 +299,6 @@ const PresentationPage: React.FC = () => {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-y-16 gap-x-8 relative">
-              {/* Animated Connection Paths (Visible on Desktop) */}
-              <svg className="absolute top-1/4 left-0 w-full h-1/2 pointer-events-none hidden md:block opacity-20" overflow="visible">
-                  <path d="M 250,80 L 550,80 M 850,80 L 1150,80 M 1150,300 L 850,300 M 550,300 L 250,300" stroke="white" strokeWidth="2" fill="none" strokeDasharray="10 10" className="animate-dash" />
-              </svg>
-
               {[
                   { id: 1, title: t.proposal.workflow.step1, sub: t.proposal.workflow.step1sub, icon: FileSpreadsheet, color: 'bg-blue-600', actor: t.proposal.workflow.step1actor, text: t.proposal.workflow.step1desc },
                   { id: 2, title: t.proposal.workflow.step2, sub: t.proposal.workflow.step2sub, icon: CalendarClock, color: 'bg-indigo-600', actor: t.proposal.workflow.step2actor, text: t.proposal.workflow.step2desc },
@@ -257,131 +331,6 @@ const PresentationPage: React.FC = () => {
               <p className="text-xs font-black text-indigo-400 uppercase tracking-[0.2em] flex items-center justify-center gap-3">
                   <ShieldCheck size={16} /> 100% Data Traceability • Unified Compliance Lifecycle
               </p>
-          </div>
-      </div>
-  );
-
-  const IntegrationSlide = () => (
-      <div className="flex flex-col justify-center min-h-[70vh] max-w-7xl mx-auto px-6 relative z-10 animate-fade-in-up">
-          <h2 className="text-4xl md:text-6xl font-black text-white mb-16 text-center tracking-tight">Unified Data Architecture</h2>
-          
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-center">
-              
-              {/* Source Systems */}
-              <div className="space-y-6">
-                  <div className="bg-slate-900/80 p-6 rounded-2xl border border-blue-500/30 flex items-center gap-4">
-                      <div className="p-3 bg-blue-900/50 rounded-xl"><Users size={24} className="text-blue-400"/></div>
-                      <div>
-                          <h4 className="font-bold text-white text-lg">HR Database</h4>
-                          <p className="text-slate-400 text-sm">Permanent Staff (SuccessFactors)</p>
-                      </div>
-                  </div>
-                  <div className="bg-slate-900/80 p-6 rounded-2xl border border-orange-500/30 flex items-center gap-4">
-                      <div className="p-3 bg-orange-900/50 rounded-xl"><HardHat size={24} className="text-orange-400"/></div>
-                      <div>
-                          <h4 className="font-bold text-white text-lg">Célula de Contracto</h4>
-                          <p className="text-slate-400 text-sm">Contractor Management DB</p>
-                      </div>
-                  </div>
-              </div>
-
-              {/* Middleware Engine */}
-              <div className="flex flex-col items-center">
-                  <div className="h-10 w-0.5 bg-gradient-to-b from-transparent via-slate-500 to-slate-500 lg:hidden"></div>
-                  <div className="hidden lg:flex items-center gap-2 mb-4 animate-pulse">
-                      <span className="h-0.5 w-16 bg-slate-500"></span>
-                      <ChevronRight size={24} className="text-slate-500"/>
-                  </div>
-
-                  <div className="bg-slate-800 p-8 rounded-full border-4 border-slate-700 shadow-[0_0_50px_rgba(99,102,241,0.3)] relative z-10">
-                      <GitMerge size={64} className="text-indigo-400" />
-                  </div>
-                  <div className="mt-6 text-center">
-                      <h3 className="text-2xl font-black text-indigo-300">CARS Middleware</h3>
-                      <p className="text-slate-400 text-sm mt-2 max-w-xs mx-auto">
-                          Nightly synchronization engine utilizing Read-Only APIs to merge & normalize datasets.
-                      </p>
-                  </div>
-
-                  <div className="hidden lg:flex items-center gap-2 mt-4 animate-pulse">
-                      <ChevronRight size={24} className="text-slate-500"/>
-                      <span className="h-0.5 w-16 bg-slate-500"></span>
-                  </div>
-                  <div className="h-10 w-0.5 bg-gradient-to-b from-slate-500 to-transparent lg:hidden"></div>
-              </div>
-
-              {/* CARS Application */}
-              <div className="bg-gradient-to-br from-indigo-900 to-slate-900 p-8 rounded-[2.5rem] border border-indigo-500/50 shadow-2xl relative overflow-hidden group">
-                  <div className="absolute top-0 right-0 p-8 opacity-10 group-hover:opacity-20 transition-opacity">
-                      <Database size={100} />
-                  </div>
-                  <div className="relative z-10">
-                      <div className="flex items-center gap-4 mb-6">
-                          <div className="p-3 bg-indigo-500 rounded-xl text-white shadow-lg">
-                              <Shield size={32} />
-                          </div>
-                          <h3 className="text-3xl font-black text-white">CARS Manager</h3>
-                      </div>
-                      <p className="text-lg text-slate-300 leading-relaxed mb-6">
-                          A single, unified "Source of Truth" for site safety.
-                      </p>
-                      <ul className="space-y-3">
-                          <li className="flex items-center gap-3 text-slate-300">
-                              <CheckCircle size={18} className="text-green-400" />
-                              <span>Auto-Updates (No manual entry)</span>
-                          </li>
-                          <li className="flex items-center gap-3 text-slate-300">
-                              <CheckCircle size={18} className="text-green-400" />
-                              <span>Conflict Resolution (VUL vs CON)</span>
-                          </li>
-                          <li className="flex items-center gap-3 text-slate-300">
-                              <CheckCircle size={18} className="text-green-400" />
-                              <span>Live Status Calculation</span>
-                          </li>
-                      </ul>
-                  </div>
-              </div>
-
-          </div>
-      </div>
-  );
-
-  const WaitlistSlide = () => (
-      <div className="flex flex-col justify-center min-h-[70vh] max-w-7xl mx-auto px-6 relative z-10 animate-fade-in-up py-12">
-          <div className="text-center mb-16">
-              <h2 className="text-4xl md:text-6xl font-black text-white tracking-tight">{t.proposal.waitlist.title}</h2>
-              <p className="text-xl text-amber-500 font-bold mt-2">{t.proposal.waitlist.subtitle}</p>
-          </div>
-          
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
-              <div className="bg-slate-900/60 p-8 rounded-[3rem] border border-amber-500/30 backdrop-blur-md relative overflow-hidden group hover:border-amber-500/60 transition-all">
-                  <div className="absolute top-0 right-0 p-8 opacity-5 group-hover:scale-110 transition-transform"><ListFilter size={120} /></div>
-                  <div className="flex items-center gap-4 mb-6">
-                      <div className="p-4 bg-amber-500/20 rounded-2xl text-amber-500"><Timer size={32} /></div>
-                      <h3 className="text-2xl font-black text-white uppercase tracking-tighter">{t.proposal.waitlist.capacityTitle}</h3>
-                  </div>
-                  <p className="text-lg text-slate-300 leading-relaxed font-light">{t.proposal.waitlist.capacityDesc}</p>
-                  <div className="mt-8 flex items-center gap-2 text-xs font-black text-amber-500 uppercase tracking-widest">
-                      <CheckCircle size={14} /> FIFO Logic Active
-                  </div>
-              </div>
-
-              <div className="bg-slate-900/60 p-8 rounded-[3rem] border border-blue-500/30 backdrop-blur-md relative overflow-hidden group hover:border-blue-500/60 transition-all">
-                  <div className="absolute top-0 right-0 p-8 opacity-5 group-hover:scale-110 transition-transform"><Bell size={120} /></div>
-                  <div className="flex items-center gap-4 mb-6">
-                      <div className="p-4 bg-blue-500/20 rounded-2xl text-blue-500"><Zap size={32} /></div>
-                      <h3 className="text-2xl font-black text-white uppercase tracking-tighter">{t.proposal.waitlist.demandTitle}</h3>
-                  </div>
-                  <p className="text-lg text-slate-300 leading-relaxed font-light">{t.proposal.waitlist.demandDesc}</p>
-                  <div className="mt-8 flex items-center gap-2 text-xs font-black text-blue-500 uppercase tracking-widest">
-                      <ShieldCheck size={14} /> High Pressure Alert Trigger
-                  </div>
-              </div>
-          </div>
-
-          <div className="mt-12 bg-white/5 p-8 rounded-3xl border border-white/10 text-center">
-              <h4 className="text-2xl font-black text-emerald-400 mb-2">{t.proposal.waitlist.outcome}</h4>
-              <p className="text-slate-400 font-medium">{t.proposal.waitlist.outcomeDesc}</p>
           </div>
       </div>
   );
@@ -459,6 +408,82 @@ const PresentationPage: React.FC = () => {
       </div>
   );
 
+  const IntegrationSlide = () => (
+      <div className="flex flex-col justify-center min-h-[70vh] max-w-7xl mx-auto px-6 relative z-10 animate-fade-in-up">
+          <h2 className="text-4xl md:text-6xl font-black text-white mb-16 text-center tracking-tight">Unified Data Architecture</h2>
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-center">
+              <div className="space-y-6">
+                  <div className="bg-slate-900/80 p-6 rounded-2xl border border-blue-500/30 flex items-center gap-4">
+                      <div className="p-3 bg-blue-900/50 rounded-xl"><Users size={24} className="text-blue-400"/></div>
+                      <div>
+                          <h4 className="font-bold text-white text-lg">HR Database</h4>
+                          <p className="text-slate-400 text-sm">Permanent Staff (SuccessFactors)</p>
+                      </div>
+                  </div>
+                  <div className="bg-slate-900/80 p-6 rounded-2xl border border-orange-500/30 flex items-center gap-4">
+                      <div className="p-3 bg-orange-900/50 rounded-xl"><HardHat size={24} className="text-orange-400"/></div>
+                      <div>
+                          <h4 className="font-bold text-white text-lg">Célula de Contracto</h4>
+                          <p className="text-slate-400 text-sm">Contractor Management DB</p>
+                      </div>
+                  </div>
+              </div>
+              <div className="flex flex-col items-center">
+                  <div className="h-10 w-0.5 bg-gradient-to-b from-transparent via-slate-500 to-slate-500 lg:hidden"></div>
+                  <div className="hidden lg:flex items-center gap-2 mb-4 animate-pulse"><span className="h-0.5 w-16 bg-slate-500"></span><ChevronRight size={24} className="text-slate-500"/></div>
+                  <div className="bg-slate-800 p-8 rounded-full border-4 border-slate-700 shadow-[0_0_50px_rgba(99,102,241,0.3)] relative z-10"><GitMerge size={64} className="text-indigo-400" /></div>
+                  <div className="mt-6 text-center">
+                      <h3 className="text-2xl font-black text-indigo-300">CARS Middleware</h3>
+                      <p className="text-slate-400 text-sm mt-2 max-w-xs mx-auto">Nightly synchronization engine utilizing Read-Only APIs to merge & normalize datasets.</p>
+                  </div>
+                  <div className="hidden lg:flex items-center gap-2 mt-4 animate-pulse"><ChevronRight size={24} className="text-slate-500"/><span className="h-0.5 w-16 bg-slate-500"></span></div>
+              </div>
+              <div className="bg-gradient-to-br from-indigo-900 to-slate-900 p-8 rounded-[2.5rem] border border-indigo-500/50 shadow-2xl relative overflow-hidden group">
+                  <div className="absolute top-0 right-0 p-8 opacity-10 group-hover:opacity-20 transition-opacity"><Database size={100} /></div>
+                  <div className="relative z-10">
+                      <div className="flex items-center gap-4 mb-6">
+                          <div className="p-3 bg-indigo-500 rounded-xl text-white shadow-lg"><Shield size={32} /></div>
+                          <h3 className="text-3xl font-black text-white">CARS Manager</h3>
+                      </div>
+                      <p className="text-lg text-slate-300 leading-relaxed mb-6">A single, unified "Source of Truth" for site safety.</p>
+                      <ul className="space-y-3">
+                          <li className="flex items-center gap-3 text-slate-300"><CheckCircle size={18} className="text-green-400" /><span>Auto-Updates (No manual entry)</span></li>
+                          <li className="flex items-center gap-3 text-slate-300"><CheckCircle size={18} className="text-green-400" /><span>Conflict Resolution (VUL vs CON)</span></li>
+                          <li className="flex items-center gap-3 text-slate-300"><CheckCircle size={18} className="text-green-400" /><span>Live Status Calculation</span></li>
+                      </ul>
+                  </div>
+              </div>
+          </div>
+      </div>
+  );
+
+  const WaitlistSlide = () => (
+      <div className="flex flex-col justify-center min-h-[70vh] max-w-7xl mx-auto px-6 relative z-10 animate-fade-in-up py-12">
+          <div className="text-center mb-16">
+              <h2 className="text-4xl md:text-6xl font-black text-white tracking-tight">{t.proposal.waitlist.title}</h2>
+              <p className="text-xl text-amber-500 font-bold mt-2">{t.proposal.waitlist.subtitle}</p>
+          </div>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
+              <div className="bg-slate-900/60 p-8 rounded-[3rem] border border-amber-500/30 backdrop-blur-md relative overflow-hidden group hover:border-amber-500/60 transition-all">
+                  <div className="absolute top-0 right-0 p-8 opacity-5 group-hover:scale-110 transition-transform"><ListFilter size={120} /></div>
+                  <div className="flex items-center gap-4 mb-6">
+                      <div className="p-4 bg-amber-500/20 rounded-2xl text-amber-500"><Timer size={32} /></div>
+                      <h3 className="text-2xl font-black text-white uppercase tracking-tighter">{t.proposal.waitlist.capacityTitle}</h3>
+                  </div>
+                  <p className="text-lg text-slate-300 leading-relaxed font-light">{t.proposal.waitlist.capacityDesc}</p>
+              </div>
+              <div className="bg-slate-900/60 p-8 rounded-[3rem] border border-blue-500/30 backdrop-blur-md relative overflow-hidden group hover:border-blue-500/60 transition-all">
+                  <div className="absolute top-0 right-0 p-8 opacity-5 group-hover:scale-110 transition-transform"><Bell size={120} /></div>
+                  <div className="flex items-center gap-4 mb-6">
+                      <div className="p-4 bg-blue-500/20 rounded-2xl text-blue-500"><Zap size={32} /></div>
+                      <h3 className="text-2xl font-black text-white uppercase tracking-tighter">{t.proposal.waitlist.demandTitle}</h3>
+                  </div>
+                  <p className="text-lg text-slate-300 leading-relaxed font-light">{t.proposal.waitlist.demandDesc}</p>
+              </div>
+          </div>
+      </div>
+  );
+
   const FinancialsSlide = () => (
       <div className="flex flex-col justify-center min-h-[70vh] max-w-5xl mx-auto px-4 relative z-10 animate-fade-in-up py-12">
           <h2 className="text-4xl md:text-6xl font-black text-white mb-12 text-center tracking-tight">{t.proposal.financials.title}</h2>
@@ -505,6 +530,194 @@ const PresentationPage: React.FC = () => {
       </div>
   );
 
+  const renderSlide = () => {
+      switch(slides[currentSlide].id) {
+          case 'title': return <TitleSlide />;
+          case 'aboutMe': return <AboutMeSlide />;
+          case 'scenario': return <ScenarioSlide />;
+          case 'summary': return <SummarySlide />;
+          case 'objectives': return <ObjectivesSlide />;
+          case 'workflow': return <WorkflowSlide />;
+          case 'integration': return <IntegrationSlide />;
+          case 'waitlist': return <WaitlistSlide />;
+          case 'autoScheduling': return <AutoSchedulingSlide />;
+          case 'organogram': return <OrganogramSlide />;
+          case 'timeline': return <TimelineSlide />;
+          case 'tech': return <TechSlide />;
+          case 'financials': return <FinancialsSlide />;
+          case 'roadmap': return <RoadmapSlide />;
+          case 'alcohol': return <AlcoholSlide />;
+          case 'enhanced': return <EnhancedSlide />;
+          case 'conclusion': return <ConclusionSlide />;
+          case 'thankYou': return <ThankYouSlide />;
+          default: return <div className="flex items-center justify-center min-h-[70vh] text-slate-500 italic">Documentation Slide {currentSlide + 1} Content alignment check...</div>;
+      }
+  };
+
+  const TechCard = ({ icon: Icon, title, desc, color }: any) => (
+    <div className="flex items-center gap-6 p-8 bg-slate-900/60 rounded-3xl border border-slate-800 backdrop-blur-sm hover:border-slate-600 transition-all group">
+        <div className={`w-20 h-20 rounded-2xl flex items-center justify-center shadow-[0_0_30px_rgba(0,0,0,0.3)] group-hover:scale-110 transition-transform ${
+            color === 'blue' ? 'bg-blue-500/10 text-blue-500' :
+            color === 'emerald' ? 'bg-emerald-500/10 text-emerald-500' :
+            color === 'amber' ? 'bg-amber-500/10 text-amber-500' :
+            'bg-rose-500/10 text-rose-500'
+        }`}>
+            <Icon size={40} />
+        </div>
+        <div>
+            <h3 className="text-2xl font-bold text-white mb-2 tracking-tight">{title}</h3>
+            <p className="text-slate-400 font-mono text-sm leading-relaxed">{desc}</p>
+        </div>
+    </div>
+  );
+
+  const OrganogramSlide = () => (
+      <div className="flex flex-col justify-center min-h-[70vh] max-w-5xl mx-auto px-4 relative z-10 animate-fade-in-up">
+          <h2 className="text-4xl md:text-6xl font-black text-white mb-16 text-center">{t.proposal.organogram.title}</h2>
+          <div className="flex flex-col items-center gap-8">
+              <div className="p-6 bg-slate-800 border border-blue-500 rounded-2xl w-64 text-center shadow-lg shadow-blue-500/20">
+                  <User size={32} className="mx-auto mb-2 text-blue-400" />
+                  <div className="font-bold text-white">Pita Domingos</div>
+                  <div className="text-blue-300 text-sm">Lead Architect</div>
+              </div>
+              <div className="h-8 w-0.5 bg-slate-600"></div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-16">
+                  <div className="p-6 bg-slate-800/50 border border-slate-600 rounded-2xl w-64 text-center">
+                      <Code size={24} className="mx-auto mb-2 text-purple-400" />
+                      <div className="font-bold text-white">{t.proposal.organogram.tech1}</div>
+                  </div>
+                  <div className="p-6 bg-slate-800/50 border border-slate-600 rounded-2xl w-64 text-center">
+                      <ServerIcon size={24} className="mx-auto mb-2 text-green-400" />
+                      <div className="font-bold text-white">{t.proposal.organogram.tech2}</div>
+                  </div>
+              </div>
+          </div>
+      </div>
+  );
+
+  const TimelineSlide = () => (
+      <div className="flex flex-col justify-center min-h-[70vh] max-w-5xl mx-auto px-4 relative z-10 animate-fade-in-up">
+          <h2 className="text-4xl md:text-6xl font-black text-white mb-16 text-center">{t.proposal.timeline.title}</h2>
+          <div className="space-y-6">
+              {[
+                  { title: t.proposal.timeline.phase1, desc: t.proposal.timeline.phase1desc, color: 'bg-blue-500' },
+                  { title: t.proposal.timeline.phase2, desc: t.proposal.timeline.phase2desc, color: 'bg-indigo-500' },
+                  { title: t.proposal.timeline.phase3, desc: t.proposal.timeline.phase3desc, color: 'bg-purple-500' },
+                  { title: t.proposal.timeline.phase4, desc: t.proposal.timeline.phase4desc, color: 'bg-emerald-500' },
+                  { title: t.proposal.timeline.phase5, desc: t.proposal.timeline.phase5desc, color: 'bg-orange-500' },
+              ].map((phase, i) => (
+                  <div key={i} className="flex gap-6 items-center bg-slate-900/50 p-4 rounded-xl border border-slate-800 hover:bg-slate-800 transition-colors">
+                      <div className={`w-12 h-12 rounded-full ${phase.color} flex items-center justify-center text-white font-bold text-lg shrink-0 shadow-lg`}>
+                          {i + 1}
+                      </div>
+                      <div>
+                          <h4 className="text-xl font-bold text-white mb-1">{phase.title}</h4>
+                          <p className="text-slate-400 text-sm">{phase.desc}</p>
+                      </div>
+                  </div>
+              ))}
+          </div>
+      </div>
+  );
+
+  const TechSlide = () => (
+      <div className="flex flex-col justify-center min-h-[70vh] max-w-7xl mx-auto px-4 relative z-10 animate-fade-in-up">
+          <h2 className="text-4xl md:text-6xl font-black text-white mb-16">{t.proposal.techStack.title}</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              <TechCard icon={Monitor} title={t.proposal.techStack.frontendTitle} desc={t.proposal.techStack.frontend} color="blue" />
+              <TechCard icon={ServerIcon} title={t.proposal.techStack.backendTitle} desc={t.proposal.techStack.backend} color="emerald" />
+              <TechCard icon={Database} title={t.proposal.techStack.databaseTitle} desc={t.proposal.techStack.database} color="amber" />
+              <TechCard icon={Lock} title={t.proposal.techStack.securityTitle} desc={t.proposal.techStack.security} color="rose" />
+          </div>
+      </div>
+  );
+
+  const RoadmapSlide = () => (
+      <div className="flex flex-col justify-center min-h-[70vh] max-w-7xl mx-auto px-4 relative z-10 animate-fade-in-up">
+          <h2 className="text-4xl md:text-6xl font-black text-white mb-12 text-center">{t.proposal.roadmap.title}</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
+              <div className="bg-slate-800/60 p-6 rounded-2xl border border-slate-700 hover:border-blue-500/50 transition-all">
+                  <Key size={32} className="text-blue-400 mb-4" />
+                  <h4 className="text-xl font-bold text-white mb-2">{t.proposal.roadmap.auth}</h4>
+                  <p className="text-slate-400 text-sm leading-relaxed">{t.proposal.roadmap.authDesc}</p>
+              </div>
+              <div className="bg-slate-800/60 p-6 rounded-2xl border border-slate-700 hover:border-cyan-500/50 transition-all">
+                  <Rocket size={32} className="text-cyan-400 mb-4" />
+                  <h4 className="text-xl font-bold text-white mb-2">{t.proposal.roadmap.db}</h4>
+                  <p className="text-slate-400 text-sm leading-relaxed">{t.proposal.roadmap.dbDesc}</p>
+              </div>
+              <div className="bg-slate-800/60 p-6 rounded-2xl border border-slate-700 hover:border-pink-500/50 transition-all">
+                  <Mail size={32} className="text-pink-400 mb-4" />
+                  <h4 className="text-xl font-bold text-white mb-2">{t.proposal.roadmap.email}</h4>
+                  <p className="text-slate-400 text-sm leading-relaxed">{t.proposal.roadmap.emailDesc}</p>
+              </div>
+              <div className="bg-slate-800/60 p-6 rounded-2xl border border-slate-700 hover:border-green-500/50 transition-all">
+                  <Smartphone size={32} className="text-green-400 mb-4" />
+                  <h4 className="text-xl font-bold text-white mb-2">{t.proposal.roadmap.hosting}</h4>
+                  <p className="text-slate-400 text-sm leading-relaxed">{t.proposal.roadmap.hostingDesc}</p>
+              </div>
+          </div>
+          <div className="bg-gradient-to-r from-indigo-900 to-blue-900 p-8 rounded-3xl border border-indigo-700 relative overflow-hidden">
+              <div className="absolute right-0 top-0 opacity-10"><BrainCircuit size={150} /></div>
+              <div className="relative z-10 flex items-center gap-4 mb-4">
+                  <Sparkles className="text-yellow-400" size={32} />
+                  <h3 className="text-2xl font-bold text-white">{t.proposal.aiFeatures.title}</h3>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8 relative z-10">
+                  <p className="text-slate-200">{t.proposal.aiFeatures.chatbot}</p>
+                  <p className="text-slate-200">{t.proposal.aiFeatures.reporting}</p>
+              </div>
+          </div>
+      </div>
+  );
+
+  const AlcoholSlide = () => (
+      <div className="flex flex-col justify-center min-h-[70vh] max-w-6xl mx-auto px-4 relative z-10 animate-fade-in-up">
+          <h2 className="text-4xl md:text-6xl font-black text-white mb-16 text-center">{t.proposal.futureUpdates.title}</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
+              <div className="bg-amber-500/10 border border-amber-500/30 p-10 rounded-[3rem] backdrop-blur-sm group hover:bg-amber-500/20 transition-all">
+                  <div className="flex items-center gap-4 mb-6">
+                      <Code size={40} className="text-amber-500" />
+                      <h3 className="text-3xl font-black text-white uppercase tracking-tighter">Module A</h3>
+                  </div>
+                  <h4 className="text-xl text-amber-200 mb-4 font-bold">Software Integration</h4>
+                  <p className="text-lg text-slate-300 leading-relaxed font-light">{t.proposal.futureUpdates.moduleADesc}</p>
+              </div>
+              <div className="bg-slate-800/50 border border-slate-600 p-10 rounded-[3rem] backdrop-blur-sm group hover:bg-slate-800/80 transition-all">
+                  <div className="flex items-center gap-4 mb-6">
+                      <HardHat size={40} className="text-slate-400" />
+                      <h3 className="text-3xl font-black text-white uppercase tracking-tighter">Module B</h3>
+                  </div>
+                  <h4 className="text-xl text-slate-300 mb-4 font-bold">Physical Infrastructure</h4>
+                  <p className="text-lg text-slate-300 leading-relaxed font-light">{t.proposal.futureUpdates.moduleBDesc}</p>
+              </div>
+          </div>
+      </div>
+  );
+
+  const EnhancedSlide = () => (
+      <div className="flex flex-col justify-center min-h-[70vh] max-w-7xl mx-auto px-4 relative z-10 animate-fade-in-up">
+          <h2 className="text-4xl md:text-6xl font-black text-white mb-16 text-center">{t.proposal.enhancedCaps.title}</h2>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="bg-slate-900/80 p-8 rounded-3xl border border-slate-700 hover:border-blue-500 transition-colors">
+                  <ScanFace size={48} className="text-blue-500 mb-6" />
+                  <h4 className="text-xl font-bold text-white mb-3">{t.proposal.enhancedCaps.mobileVerify.title}</h4>
+                  <p className="text-slate-400 leading-relaxed">{t.proposal.enhancedCaps.mobileVerify.desc}</p>
+              </div>
+              <div className="bg-slate-900/80 p-8 rounded-3xl border border-slate-700 hover:border-green-500 transition-colors">
+                  <CalendarClock size={48} className="text-green-500 mb-6" />
+                  <h4 className="text-xl font-bold text-white mb-3">{t.proposal.enhancedCaps.autoBooking.title}</h4>
+                  <p className="text-slate-400 leading-relaxed">{t.proposal.enhancedCaps.autoBooking.desc}</p>
+              </div>
+              <div className="bg-slate-900/80 p-8 rounded-3xl border border-purple-500/50 transition-colors">
+                  <Database size={48} className="text-purple-500 mb-6" />
+                  <h4 className="text-xl font-bold text-white mb-3">{t.proposal.enhancedCaps.massData.title}</h4>
+                  <p className="text-slate-400 leading-relaxed">{t.proposal.enhancedCaps.massData.desc}</p>
+              </div>
+          </div>
+      </div>
+  );
+
   const ThankYouSlide = () => (
       <div className="flex flex-col items-center justify-center min-h-[70vh] text-center px-4 relative z-10 animate-fade-in-up">
           <div className="mb-12">
@@ -524,29 +737,6 @@ const PresentationPage: React.FC = () => {
           </div>
       </div>
   );
-
-  const renderSlide = () => {
-      switch(slides[currentSlide].id) {
-          case 'title': return <TitleSlide />;
-          case 'aboutMe': return <AboutMeSlide />;
-          case 'scenario': return <ScenarioSlide />;
-          case 'summary': return <SummarySlide />;
-          case 'objectives': return <ObjectivesSlide />;
-          case 'workflow': return <WorkflowSlide />;
-          case 'integration': return <IntegrationSlide />;
-          case 'waitlist': return <WaitlistSlide />;
-          case 'organogram': return <OrganogramSlide />;
-          case 'timeline': return <TimelineSlide />;
-          case 'tech': return <TechSlide />;
-          case 'financials': return <FinancialsSlide />;
-          case 'roadmap': return <RoadmapSlide />;
-          case 'alcohol': return <AlcoholSlide />;
-          case 'enhanced': return <EnhancedSlide />;
-          case 'conclusion': return <ConclusionSlide />;
-          case 'thankYou': return <ThankYouSlide />;
-          default: return <div className="flex items-center justify-center min-h-[70vh] text-slate-500 italic">Documentation Slide {currentSlide + 1} Content alignment check...</div>;
-      }
-  };
 
   return (
     <div className="fixed inset-0 z-[100] bg-slate-950 text-white overflow-hidden font-sans select-none flex flex-col">
@@ -573,192 +763,6 @@ const PresentationPage: React.FC = () => {
         <div className="fixed top-0 left-0 h-1.5 bg-gradient-to-r from-yellow-500 via-orange-500 to-red-500 transition-all duration-700 ease-in-out z-[110] shadow-[0_0_15px_rgba(245,158,11,0.4)]" style={{ width: `${((currentSlide + 1) / slides.length) * 100}%` }}></div>
     </div>
   );
-};
-
-const TechCard = ({ icon: Icon, title, desc, color }: any) => (
-    <div className="flex items-center gap-6 p-8 bg-slate-900/60 rounded-3xl border border-slate-800 backdrop-blur-sm hover:border-slate-600 transition-all group">
-        <div className={`w-20 h-20 rounded-2xl flex items-center justify-center shadow-[0_0_30px_rgba(0,0,0,0.3)] group-hover:scale-110 transition-transform ${
-            color === 'blue' ? 'bg-blue-500/10 text-blue-500' :
-            color === 'emerald' ? 'bg-emerald-500/10 text-emerald-500' :
-            color === 'amber' ? 'bg-amber-500/10 text-amber-500' :
-            'bg-rose-500/10 text-rose-500'
-        }`}>
-            <Icon size={40} />
-        </div>
-        <div>
-            <h3 className="text-2xl font-bold text-white mb-2 tracking-tight">{title}</h3>
-            <p className="text-slate-400 font-mono text-sm leading-relaxed">{desc}</p>
-        </div>
-    </div>
-);
-
-const OrganogramSlide = () => {
-    const { t } = useLanguage();
-    return (
-      <div className="flex flex-col justify-center min-h-[70vh] max-w-5xl mx-auto px-4 relative z-10 animate-fade-in-up">
-          <h2 className="text-4xl md:text-6xl font-black text-white mb-16 text-center">{t.proposal.organogram.title}</h2>
-          <div className="flex flex-col items-center gap-8">
-              <div className="p-6 bg-slate-800 border border-blue-500 rounded-2xl w-64 text-center shadow-lg shadow-blue-500/20">
-                  <User size={32} className="mx-auto mb-2 text-blue-400" />
-                  <div className="font-bold text-white">Pita Domingos</div>
-                  <div className="text-blue-300 text-sm">Lead Architect</div>
-              </div>
-              <div className="h-8 w-0.5 bg-slate-600"></div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-16">
-                  <div className="p-6 bg-slate-800/50 border border-slate-600 rounded-2xl w-64 text-center">
-                      <Code size={24} className="mx-auto mb-2 text-purple-400" />
-                      <div className="font-bold text-white">{t.proposal.organogram.tech1}</div>
-                  </div>
-                  <div className="p-6 bg-slate-800/50 border border-slate-600 rounded-2xl w-64 text-center">
-                      <ServerIcon size={24} className="mx-auto mb-2 text-green-400" />
-                      <div className="font-bold text-white">{t.proposal.organogram.tech2}</div>
-                  </div>
-              </div>
-          </div>
-      </div>
-    );
-};
-
-const TimelineSlide = () => {
-    const { t } = useLanguage();
-    return (
-      <div className="flex flex-col justify-center min-h-[70vh] max-w-5xl mx-auto px-4 relative z-10 animate-fade-in-up">
-          <h2 className="text-4xl md:text-6xl font-black text-white mb-16 text-center">{t.proposal.timeline.title}</h2>
-          <div className="space-y-6">
-              {[
-                  { title: t.proposal.timeline.phase1, desc: t.proposal.timeline.phase1desc, color: 'bg-blue-500' },
-                  { title: t.proposal.timeline.phase2, desc: t.proposal.timeline.phase2desc, color: 'bg-indigo-500' },
-                  { title: t.proposal.timeline.phase3, desc: t.proposal.timeline.phase3desc, color: 'bg-purple-500' },
-                  { title: t.proposal.timeline.phase4, desc: t.proposal.timeline.phase4desc, color: 'bg-emerald-500' },
-                  { title: t.proposal.timeline.phase5, desc: t.proposal.timeline.phase5desc, color: 'bg-orange-500' },
-              ].map((phase, i) => (
-                  <div key={i} className="flex gap-6 items-center bg-slate-900/50 p-4 rounded-xl border border-slate-800 hover:bg-slate-800 transition-colors">
-                      <div className={`w-12 h-12 rounded-full ${phase.color} flex items-center justify-center text-white font-bold text-lg shrink-0 shadow-lg`}>
-                          {i + 1}
-                      </div>
-                      <div>
-                          <h4 className="text-xl font-bold text-white mb-1">{phase.title}</h4>
-                          <p className="text-slate-400 text-sm">{phase.desc}</p>
-                      </div>
-                  </div>
-              ))}
-          </div>
-      </div>
-    );
-};
-
-const TechSlide = () => {
-    const { t } = useLanguage();
-    return (
-      <div className="flex flex-col justify-center min-h-[70vh] max-w-7xl mx-auto px-4 relative z-10 animate-fade-in-up">
-          <h2 className="text-4xl md:text-6xl font-black text-white mb-16">{t.proposal.techStack.title}</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-              <TechCard icon={Monitor} title={t.proposal.techStack.frontendTitle} desc={t.proposal.techStack.frontend} color="blue" />
-              <TechCard icon={ServerIcon} title={t.proposal.techStack.backendTitle} desc={t.proposal.techStack.backend} color="emerald" />
-              <TechCard icon={Database} title={t.proposal.techStack.databaseTitle} desc={t.proposal.techStack.database} color="amber" />
-              <TechCard icon={Lock} title={t.proposal.techStack.securityTitle} desc={t.proposal.techStack.security} color="rose" />
-          </div>
-      </div>
-    );
-};
-
-const RoadmapSlide = () => {
-    const { t } = useLanguage();
-    return (
-      <div className="flex flex-col justify-center min-h-[70vh] max-w-7xl mx-auto px-4 relative z-10 animate-fade-in-up">
-          <h2 className="text-4xl md:text-6xl font-black text-white mb-12 text-center">{t.proposal.roadmap.title}</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
-              <div className="bg-slate-800/60 p-6 rounded-2xl border border-slate-700">
-                  <Key size={32} className="text-blue-400 mb-4" />
-                  <h4 className="text-xl font-bold text-white mb-2">{t.proposal.roadmap.auth}</h4>
-                  <p className="text-slate-400">{t.proposal.roadmap.auth}</p>
-              </div>
-              <div className="bg-slate-800/60 p-6 rounded-2xl border border-slate-700">
-                  <Rocket size={32} className="text-cyan-400 mb-4" />
-                  <h4 className="text-xl font-bold text-white mb-2">{t.proposal.roadmap.db}</h4>
-                  <p className="text-slate-400">{t.proposal.roadmap.dbDesc}</p>
-              </div>
-              <div className="bg-slate-800/60 p-6 rounded-2xl border border-slate-700">
-                  <Mail size={32} className="text-pink-400 mb-4" />
-                  <h4 className="text-xl font-bold text-white mb-2">{t.proposal.roadmap.email}</h4>
-                  <p className="text-slate-400">{t.proposal.roadmap.emailDesc}</p>
-              </div>
-              <div className="bg-slate-800/60 p-6 rounded-2xl border border-slate-700">
-                  <Smartphone size={32} className="text-green-400 mb-4" />
-                  <h4 className="text-xl font-bold text-white mb-2">{t.proposal.roadmap.hosting}</h4>
-                  <p className="text-slate-400">{t.proposal.roadmap.hostingDesc}</p>
-              </div>
-          </div>
-          <div className="bg-gradient-to-r from-indigo-900 to-blue-900 p-8 rounded-3xl border border-indigo-700 relative overflow-hidden">
-              <div className="absolute right-0 top-0 opacity-10"><BrainCircuit size={150} /></div>
-              <div className="relative z-10 flex items-center gap-4 mb-4">
-                  <Sparkles className="text-yellow-400" size={32} />
-                  <h3 className="text-2xl font-bold text-white">{t.proposal.aiFeatures.title}</h3>
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-8 relative z-10">
-                  <p className="text-slate-200">{t.proposal.aiFeatures.chatbot}</p>
-                  <p className="text-slate-200">{t.proposal.aiFeatures.reporting}</p>
-              </div>
-          </div>
-      </div>
-    );
-};
-
-const AlcoholSlide = () => {
-    const { t } = useLanguage();
-    return (
-      <div className="flex flex-col justify-center min-h-[70vh] max-w-6xl mx-auto px-4 relative z-10 animate-fade-in-up">
-          <h2 className="text-4xl md:text-6xl font-black text-white mb-16 text-center">{t.proposal.futureUpdates.title}</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
-              <div className="bg-amber-500/10 border border-amber-500/30 p-10 rounded-[3rem] backdrop-blur-sm">
-                  <div className="flex items-center gap-4 mb-6">
-                      <Code size={40} className="text-amber-500" />
-                      <h3 className="text-3xl font-bold text-white">Module A</h3>
-                  </div>
-                  <h4 className="text-xl text-amber-200 mb-4 font-bold">Software Integration</h4>
-                  <p className="text-lg text-slate-300 leading-relaxed">
-                      {t.proposal.futureUpdates.moduleA.split('-')[1] || t.proposal.futureUpdates.moduleADesc}
-                  </p>
-              </div>
-              <div className="bg-slate-800/50 border border-slate-600 p-10 rounded-[3rem] backdrop-blur-sm">
-                  <div className="flex items-center gap-4 mb-6">
-                      <HardHat size={40} className="text-slate-400" />
-                      <h3 className="text-3xl font-bold text-white">Module B</h3>
-                  </div>
-                  <h4 className="text-xl text-slate-300 mb-4 font-bold">Physical Infrastructure</h4>
-                  <p className="text-lg text-slate-300 leading-relaxed">
-                      {t.proposal.futureUpdates.moduleB.split('-')[1] || t.proposal.futureUpdates.moduleBDesc}
-                  </p>
-              </div>
-          </div>
-      </div>
-    );
-};
-
-const EnhancedSlide = () => {
-    const { t } = useLanguage();
-    return (
-      <div className="flex flex-col justify-center min-h-[70vh] max-w-7xl mx-auto px-4 relative z-10 animate-fade-in-up">
-          <h2 className="text-4xl md:text-6xl font-black text-white mb-16 text-center">{t.proposal.enhancedCaps.title}</h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div className="bg-slate-900/80 p-8 rounded-3xl border border-slate-700 hover:border-blue-500 transition-colors">
-                  <ScanFace size={48} className="text-blue-500 mb-6" />
-                  <h4 className="text-xl font-bold text-white mb-3">{t.proposal.enhancedCaps.mobileVerify.title}</h4>
-                  <p className="text-slate-400 leading-relaxed">{t.proposal.enhancedCaps.mobileVerify.desc}</p>
-              </div>
-              <div className="bg-slate-900/80 p-8 rounded-3xl border border-slate-700 hover:border-green-500 transition-colors">
-                  <CalendarClock size={48} className="text-green-500 mb-6" />
-                  <h4 className="text-xl font-bold text-white mb-3">{t.proposal.enhancedCaps.autoBooking.title}</h4>
-                  <p className="text-slate-400 leading-relaxed">{t.proposal.enhancedCaps.autoBooking.desc}</p>
-              </div>
-              <div className="bg-slate-900/80 p-8 rounded-3xl border border-slate-700 hover:border-purple-500 transition-colors">
-                  <Database size={48} className="text-purple-500 mb-6" />
-                  <h4 className="text-xl font-bold text-white mb-3">{t.proposal.enhancedCaps.massData.title}</h4>
-                  <p className="text-slate-400 leading-relaxed">{t.proposal.enhancedCaps.massData.desc}</p>
-              </div>
-          </div>
-      </div>
-    );
 };
 
 export default PresentationPage;

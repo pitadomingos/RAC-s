@@ -46,7 +46,8 @@ import {
   CloudOff,
   LogOut,
   Rocket,
-  Code
+  Code,
+  Compass
 } from 'lucide-react';
 import { UserRole, SystemNotification, Site, Company } from '../types';
 import { useLanguage } from '../contexts/LanguageContext';
@@ -106,23 +107,14 @@ const Layout: React.FC<LayoutProps> = ({
   }, [currentCompany, t]);
 
   const canViewAlcoholDashboard = (): boolean => {
-      // 1. SYSTEM_ADMIN always has a bypass to see the link (essential for management)
       if (userRole === UserRole.SYSTEM_ADMIN) return true;
-      
-      // 2. REACTIVE FEATURE FLAG: Check the active company's feature register
-      // Defensive check for missing features object
       const isFeatureEnabled = !!currentCompany?.features?.alcohol;
       if (!isFeatureEnabled) return false;
-
-      // 3. ROLE PERMISSIONS (If feature is ON)
       if (userRole === UserRole.ENTERPRISE_ADMIN) return true;
-      
       const allowedTitles = ['Manager', 'Supervisor', 'Superintendent', 'Director', 'Head'];
       const allowedDepts = ['HSE', 'Operations', 'Security', 'Medical'];
-      
       const safeTitle = user?.jobTitle || simulatedJobTitle || '';
       const safeDept = user?.department || simulatedDept || '';
-      
       return allowedTitles.some(title => safeTitle.includes(title)) && 
              allowedDepts.some(dept => safeDept.includes(dept));
   };
@@ -151,7 +143,8 @@ const Layout: React.FC<LayoutProps> = ({
 
   const allNavItems = [
     { path: '/presentation', label: t.nav.presentation, icon: Rocket, visible: userRole === UserRole.SYSTEM_ADMIN },
-    { path: '/', label: t.nav.dashboard, icon: LayoutDashboard, visible: ![UserRole.USER, UserRole.RAC_TRAINER, UserRole.ENTERPRISE_ADMIN].includes(userRole) },
+    { path: '/system-blueprint', label: 'System Blueprint', icon: Compass, visible: userRole === UserRole.SYSTEM_ADMIN },
+    { path: '/', label: t.nav.dashboard, icon: LayoutDashboard, visible: ![UserRole.USER, UserRole.RAC_TRAINER].includes(userRole) },
     { path: '/booking', label: t.nav.booking, icon: CalendarPlus, visible: userRole !== UserRole.RAC_TRAINER && userRole !== UserRole.ENTERPRISE_ADMIN && userRole !== UserRole.SITE_ADMIN },
     { path: '/results', label: t.nav.records, icon: ClipboardList, visible: userRole !== UserRole.RAC_TRAINER && userRole !== UserRole.ENTERPRISE_ADMIN },
     { path: '/database', label: t.nav.database, icon: Database, visible: userRole !== UserRole.USER && userRole !== UserRole.RAC_TRAINER },
@@ -237,10 +230,25 @@ const Layout: React.FC<LayoutProps> = ({
         <header className="no-print h-16 bg-white dark:bg-slate-800 shadow-sm flex items-center justify-between px-4 md:px-6 z-10 border-b border-gray-200 dark:border-slate-700">
           <div className="flex items-center gap-4">
              <button onClick={() => setSidebarOpen(true)} className="md:hidden text-slate-600 dark:text-slate-300"><Menu size={24} /></button>
+             
+             {/* PREVIOUS / NEXT NAVIGATION BUTTONS */}
              <div className="hidden md:flex items-center gap-2 mr-4 border-r border-gray-200 dark:border-slate-700 pr-4">
-                 <button onClick={() => navigate(-1)} className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-slate-700 text-slate-500"><ArrowLeft size={18} /></button>
-                 <button onClick={() => navigate(1)} className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-slate-700 text-slate-500"><ArrowRight size={18} /></button>
+                 <button 
+                    onClick={() => navigate(-1)} 
+                    className="p-2 rounded-xl hover:bg-gray-100 dark:hover:bg-slate-700 text-slate-500 transition-all active:scale-90 group"
+                    title="Previous Page"
+                 >
+                    <ArrowLeft size={18} className="group-hover:-translate-x-0.5 transition-transform" />
+                 </button>
+                 <button 
+                    onClick={() => navigate(1)} 
+                    className="p-2 rounded-xl hover:bg-gray-100 dark:hover:bg-slate-700 text-slate-500 transition-all active:scale-90 group"
+                    title="Next Page"
+                 >
+                    <ArrowRight size={18} className="group-hover:translate-x-0.5 transition-transform" />
+                 </button>
              </div>
+
              <div className="flex items-center gap-3">
                 <h1 className="text-xl font-bold text-slate-800 dark:text-white truncate">{pageTitle}</h1>
                 <div className={`flex items-center gap-1.5 px-2 py-0.5 rounded-full border text-[10px] font-black uppercase tracking-widest ${isSupabaseConfigured ? 'bg-emerald-50 text-emerald-600 border-emerald-200 animate-pulse' : 'bg-orange-50 text-orange-600 border-orange-200'}`}>

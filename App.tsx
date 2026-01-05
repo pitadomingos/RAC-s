@@ -19,6 +19,7 @@ import SiteGovernancePage from './pages/SiteGovernancePage';
 import LogsPage from './pages/LogsPage';
 import UserManualsPage from './pages/UserManualsPage';
 import TechnicalDocs from './pages/TechnicalDocs';
+import SystemTechnicalManual from './pages/SystemTechnicalManual';
 import LoginPage from './pages/LoginPage';
 import ResultsPage from './pages/ResultsPage';
 import SettingsPage from './pages/SettingsPage';
@@ -32,11 +33,41 @@ import { db } from './services/databaseService';
 import { isSupabaseConfigured, supabase } from './services/supabaseClient';
 import { UserRole, Booking, EmployeeRequirement, TrainingSession, RacDef, Site, Company, SystemNotification, Employee, User, Room, Trainer, BookingStatus } from './types';
 import { v4 as uuidv4 } from 'uuid';
-import { Loader2, Database, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { Loader2, Database, AlertCircle, CheckCircle2, CloudSync, RefreshCw } from 'lucide-react';
+
+const stringifyError = (err: any): string => {
+    if (!err) return 'Unknown Error';
+    if (typeof err === 'string') return err;
+    if (err.message && typeof err.message === 'string') return err.message;
+    if (err.details && typeof err.details === 'string') return err.details;
+    if (err.error_description && typeof err.error_description === 'string') return err.error_description;
+    try {
+        const str = JSON.stringify(err);
+        if (str !== '{}') return str;
+    } catch (e) {}
+    return String(err);
+};
+
+const RoleBasedHome: React.FC<{ 
+    userRole: UserRole;
+    dashboardProps: any;
+}> = ({ userRole, dashboardProps }) => {
+    if (userRole === UserRole.SYSTEM_ADMIN || userRole === UserRole.ENTERPRISE_ADMIN || userRole === UserRole.SITE_ADMIN) {
+        return <Dashboard {...dashboardProps} />;
+    }
+    if (userRole === UserRole.RAC_TRAINER) {
+        return <Navigate to="/trainer-input" replace />;
+    }
+    if (userRole === UserRole.USER) {
+        return <Navigate to="/request-cards" replace />;
+    }
+    return <Dashboard {...dashboardProps} />;
+};
 
 const AppContent: React.FC = () => {
   const { isAuthenticated, user, logout } = useAuth();
   const [isLoading, setIsLoading] = useState(true);
+  const [isCloudSyncing, setIsCloudSyncing] = useState(false);
   
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [requirements, setRequirements] = useState<EmployeeRequirement[]>([]);
@@ -76,7 +107,7 @@ const AppContent: React.FC = () => {
       setTrainers(trns);
       setUsers(uList);
     } catch (err) {
-      console.error("Failed to refresh app data:", err);
+      console.error("Critical refresh failure:", err);
     }
   };
 
@@ -88,15 +119,22 @@ const AppContent: React.FC = () => {
           }
           try {
               setIsLoading(true);
-              await refreshData();
+              const dataPromise = refreshData();
+              
               if (user?.role === UserRole.SYSTEM_ADMIN && isSupabaseConfigured && supabase) {
-                  const tables = ['companies', 'sites', 'users', 'employees', 'bookings', 'rac_definitions', 'rooms', 'trainers', 'system_logs', 'waiting_list'];
+                  const tables = ['companies', 'sites', 'users', 'employees', 'records', 'rac_definitions', 'rooms', 'trainers', 'system_logs', 'waiting_list'];
                   const health = await Promise.all(tables.map(async t => {
-                      const { error } = await supabase.from(t).select('id').limit(1);
-                      return { table: t, status: error?.code === '42P01' ? 'missing' : 'ok' } as any;
+                      try {
+                          const { error } = await supabase.from(t).select('id').limit(1);
+                          return { table: t, status: error?.code === '42P01' ? 'missing' : 'ok' };
+                      } catch {
+                          return { table: t, status: 'missing' };
+                      }
                   }));
-                  setDbHealth(health);
+                  setDbHealth(health as any);
               }
+              
+              await dataPromise;
           } catch (err: any) {
               console.error("Initialization Error:", err);
           } finally {
@@ -110,13 +148,48 @@ const AppContent: React.FC = () => {
 
   const handleUpdateCompanies = async (updatedCompanies: Company[]) => {
       try {
-          for (const comp of updatedCompanies) {
-              await db.saveCompany(comp);
+          const persistedList: Company[] = [];
+          // Sort to save parents before children if possible
+          const sorted = [...updatedCompanies].sort((a, b) => (a.parentId ? 1 : 0) - (b.parentId ? 1 : 0));
+          
+          for (const comp of sorted) {
+              const savedComp = await db.saveCompany(comp);
+              persistedList.push(savedComp);
           }
-          setCompanies(updatedCompanies);
+          
+          // Re-map children to their new parents if IDs changed from mock to UUID
+          const finalCompanies = persistedList.map(c => {
+              if (c.parentId && !persistedList.some(pc => pc.id === c.parentId)) {
+                  // If parentId is not in persisted list, it might be an old mock ID
+                  const originalParent = updatedCompanies.find(oc => oc.id === c.parentId);
+                  if (originalParent) {
+                      const newParent = persistedList.find(pc => pc.name === originalParent.name);
+                      if (newParent) c.parentId = newParent.id;
+                  }
+              }
+              return c;
+          });
+
+          setCompanies(finalCompanies);
           await db.addLog('AUDIT', 'UPDATE_TENANT_CONFIG', user?.name || 'Admin', { count: updatedCompanies.length });
-      } catch (err) {
+          addNotification({
+              id: uuidv4(),
+              type: 'success',
+              title: 'Infrastructure Updated',
+              message: 'Enterprise hierarchy and tenant settings pushed to cloud.',
+              timestamp: new Date(),
+              isRead: false
+          });
+      } catch (err: any) {
           console.error("Error saving tenant settings:", err);
+          addNotification({
+              id: uuidv4(),
+              type: 'alert',
+              title: 'Infrastructure Fault',
+              message: stringifyError(err),
+              timestamp: new Date(),
+              isRead: false
+          });
       }
   };
 
@@ -212,20 +285,48 @@ const AppContent: React.FC = () => {
   };
 
   const handleImportBookings = async (newBookings: Booking[], sideEffects?: { employee: Employee, aso: string, ops: Record<string, boolean> }[]) => {
+      setIsCloudSyncing(true);
       try {
-          for (const b of newBookings) { await db.saveBooking(b); }
+          const idMap = new Map<string, string>();
           if (sideEffects) {
+              const employeesToUpsert = sideEffects.map(se => se.employee);
+              const dbEmployees = await db.bulkUpsertEmployees(employeesToUpsert);
+              dbEmployees.forEach((e: any) => idMap.set(e.record_id, e.id));
+
+              newBookings.forEach(b => {
+                  const realId = idMap.get(b.employee.recordId);
+                  if (realId) {
+                      b.employee.id = realId;
+                  }
+              });
+
+              const reqsToUpsert: EmployeeRequirement[] = [];
               for (const se of sideEffects) {
-                  await db.upsertEmployee(se.employee);
-                  if (se.aso) {
-                      const currentReq = requirements.find(r => r.employeeId === se.employee.id) || { employeeId: se.employee.id, asoExpiryDate: '', requiredRacs: {} };
-                      await handleUpdateRequirement({ ...currentReq, asoExpiryDate: se.aso, requiredRacs: { ...currentReq.requiredRacs, ...se.ops } });
+                  const realId = idMap.get(se.employee.recordId);
+                  if (realId && (se.aso || Object.keys(se.ops).length > 0)) {
+                      const currentReq = requirements.find(r => r.employeeId === realId) || { employeeId: realId, asoExpiryDate: '', requiredRacs: {} };
+                      reqsToUpsert.push({ 
+                          employeeId: realId, 
+                          asoExpiryDate: se.aso || currentReq.asoExpiryDate, 
+                          requiredRacs: { ...currentReq.requiredRacs, ...se.ops } 
+                      });
                   }
               }
+              if (reqsToUpsert.length > 0) {
+                  await db.bulkUpsertRequirements(reqsToUpsert);
+              }
           }
-          setBookings(prev => [...newBookings, ...prev]);
-          await db.addLog('AUDIT', `DATA_IMPORT: ${newBookings.length} records processed`, user?.name || 'Admin');
-      } catch (err) { console.error("Import failed:", err); }
+
+          await db.bulkUpsertBookings(newBookings);
+          
+          await db.addLog('AUDIT', `HISTORY_IMPORT_SYNC: ${newBookings.length} records pushed to Supabase`, user?.name || 'Admin');
+          await refreshData();
+      } catch (err: any) { 
+          console.error("Import execution failed:", err);
+          throw new Error(stringifyError(err));
+      } finally {
+          setIsCloudSyncing(false);
+      }
   };
 
   const handleUpdateUser = async (updatedUser: Partial<User>) => {
@@ -251,10 +352,12 @@ const AppContent: React.FC = () => {
   };
 
   if (!isAuthenticated) return <LoginPage />;
+  
   if (isLoading) return (
       <div className="h-screen w-screen bg-slate-950 flex flex-col items-center justify-center text-white">
           <Loader2 size={80} className="text-blue-500 animate-spin" />
-          <h2 className="text-2xl font-black uppercase mt-8 animate-pulse">Syncing Production Hub</h2>
+          <h2 className="text-2xl font-black uppercase mt-8 animate-pulse">Establishing Logic Gate</h2>
+          <p className="text-slate-500 text-xs mt-2 uppercase tracking-widest">Checking Production Sync Status...</p>
       </div>
   );
 
@@ -264,11 +367,18 @@ const AppContent: React.FC = () => {
     <AdvisorProvider>
       <MessageProvider>
         <Router>
+          {isCloudSyncing && (
+              <div className="fixed inset-0 z-[1000] bg-slate-950/80 backdrop-blur-md flex flex-col items-center justify-center text-white font-mono">
+                  <RefreshCw size={64} className="text-blue-500 animate-spin mb-6" />
+                  <h3 className="text-xl font-black tracking-tighter">CLOUD SYNCHRONIZATION ACTIVE</h3>
+                  <p className="text-slate-400 text-[10px] uppercase tracking-[0.3em] mt-2">Writing parsed data to Superbase cluster...</p>
+              </div>
+          )}
           {user?.role === UserRole.SYSTEM_ADMIN && missingTables.length > 0 && (
               <div className="fixed top-0 left-0 right-0 z-[100] bg-indigo-600 text-white p-2 flex items-center justify-center gap-4 shadow-xl">
-                  <Database size={16} />
-                  <span className="text-xs font-bold uppercase tracking-wider">Setup Required: {missingTables.length} tables missing.</span>
-                  <button onClick={() => window.location.hash = '#/tech-docs'} className="bg-white text-indigo-600 px-3 py-1 rounded-full text-[10px] font-black">GET SQL</button>
+                  <Database size={16} className="animate-pulse" />
+                  <span className="text-xs font-bold uppercase tracking-wider">Setup Required: {missingTables.length} tables missing in Supabase.</span>
+                  <button onClick={() => window.location.hash = '#/tech-docs'} className="bg-white text-indigo-600 px-3 py-1 rounded-full text-[10px] font-black hover:bg-indigo-50 transition-colors">GET SQL PATCH</button>
               </div>
           )}
           <Routes>
@@ -278,20 +388,21 @@ const AppContent: React.FC = () => {
             <Route path="*" element={
               <Layout userRole={user?.role || UserRole.USER} setUserRole={() => {}} notifications={notifications} clearNotifications={() => setNotifications([])} sites={sites} currentSiteId={currentSiteId} setCurrentSiteId={setCurrentSiteId} companies={companies}>
                 <Routes>
-                  <Route path="/" element={<Dashboard bookings={bookings} requirements={requirements} sessions={sessions} userRole={user?.role || UserRole.USER} racDefinitions={racDefinitions} currentSiteId={currentSiteId} companies={companies} />} />
+                  <Route path="/" element={<RoleBasedHome userRole={user?.role || UserRole.USER} dashboardProps={{ bookings, requirements, sessions, userRole: user?.role, racDefinitions, currentSiteId, companies }} />} />
                   <Route path="/database" element={<DatabasePage bookings={bookings} requirements={requirements} updateRequirements={handleUpdateRequirement} sessions={sessions} onUpdateEmployee={() => {}} onDeleteEmployee={() => {}} racDefinitions={racDefinitions} addNotification={addNotification} currentSiteId={currentSiteId} companies={companies} />} />
                   <Route path="/booking" element={<BookingForm addBookings={handleAddBookings} sessions={sessions} userRole={user?.role || UserRole.USER} existingBookings={bookings} addNotification={addNotification} racDefinitions={racDefinitions} companies={companies} />} />
-                  <Route path="/results" element={<ResultsPage bookings={bookings} updateBookingStatus={handleUpdateBookingStatus} importBookings={handleImportBookings} userRole={user?.role || UserRole.USER} sessions={sessions} racDefinitions={racDefinitions} addNotification={addNotification} currentSiteId={currentSiteId} onRefresh={refreshData} />} />
+                  <Route path="/results" element={<ResultsPage bookings={bookings} updateBookingStatus={handleUpdateBookingStatus} importBookings={handleImportBookings} userRole={user?.role || UserRole.USER} sessions={sessions} requirements={requirements} sites={sites} racDefinitions={racDefinitions} addNotification={addNotification} currentSiteId={currentSiteId} onRefresh={refreshData} />} />
                   <Route path="/users" element={<UserManagement users={users} onUpdateUser={handleUpdateUser} onDeleteUser={() => {}} addNotification={addNotification} sites={sites} currentSiteId={currentSiteId} companies={companies} />} />
                   <Route path="/settings" element={<SettingsPage racDefinitions={racDefinitions} onUpdateRacs={handleUpdateRacs} rooms={rooms} onUpdateRooms={handleUpdateRooms} trainers={trainers} onUpdateTrainers={handleUpdateTrainers} sites={sites} onUpdateSites={handleUpdateSites} companies={companies} onUpdateCompanies={handleUpdateCompanies} userRole={user?.role} addNotification={addNotification} currentSiteId={currentSiteId} />} />
                   <Route path="/schedule" element={<ScheduleTraining sessions={sessions} setSessions={setSessions} rooms={rooms} trainers={trainers} racDefinitions={racDefinitions} addNotification={addNotification} currentSiteId={currentSiteId} bookings={bookings} />} />
                   <Route path="/trainer-input" element={<TrainerInputPage bookings={bookings} updateBookings={handleTrainerUpdateBookings} sessions={sessions} userRole={user?.role} currentUserName={user?.name} racDefinitions={racDefinitions} />} />
                   <Route path="/manuals" element={<UserManualsPage userRole={user?.role || UserRole.USER} />} />
                   <Route path="/tech-docs" element={<TechnicalDocs />} />
+                  <Route path="/system-blueprint" element={<SystemTechnicalManual />} />
                   <Route path="/logs" element={<LogsPage />} />
                   <Route path="/request-cards" element={<RequestCardsPage bookings={bookings} requirements={requirements} racDefinitions={racDefinitions} sessions={sessions} userRole={user?.role || UserRole.USER} currentSiteId={currentSiteId} companies={companies} />} />
                   <Route path="/integration" element={<IntegrationHub userRole={user?.role || UserRole.USER} />} />
-                  <Route path="/reports" element={<ReportsPage bookings={bookings} sessions={sessions} currentSiteId={currentSiteId} racDefinitions={racDefinitions} />} />
+                  <Route path="/reports" element={<ReportsPage bookings={bookings} sessions={sessions} requirements={requirements} sites={sites} currentSiteId={currentSiteId} racDefinitions={racDefinitions} companies={companies} />} />
                   <Route path="/enterprise-dashboard" element={<EnterpriseDashboard sites={sites} bookings={bookings} requirements={requirements} userRole={user?.role} racDefinitions={racDefinitions} />} />
                   <Route path="/alcohol-control" element={<AlcoholIntegration addNotification={addNotification} />} />
                   <Route path="/messages" element={<MessageLogPage />} />

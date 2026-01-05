@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useMemo, useEffect } from 'react';
 import { 
     Settings, Box, Save, Plus, Trash2, Activity, Cpu, Zap, 
@@ -61,7 +60,7 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
       name: '', racs: [], siteId: currentSiteId !== 'all' ? currentSiteId : (sites[0]?.id || '') 
   });
   const [newRac, setNewRac] = useState({ code: '', name: '', validityMonths: 24, requiresDriverLicense: false, requiresPractical: true });
-  const [newCompany, setNewCompany] = useState<Partial<Company>>({ name: '', appName: '', status: 'Active', defaultLanguage: 'en' });
+  const [newCompany, setNewCompany] = useState<Partial<Company>>({ name: '', appName: '', status: 'Active', defaultLanguage: 'en', parentId: undefined });
   
   const [editingTrainer, setEditingTrainer] = useState<Trainer | null>(null);
   const [editingRac, setEditingRac] = useState<RacDef | null>(null);
@@ -155,10 +154,12 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
           appName: newCompany.appName || newCompany.name,
           status: 'Active',
           defaultLanguage: newCompany.defaultLanguage as any || 'en',
+          parentId: newCompany.parentId,
+          tier: newCompany.parentId ? 'Sub' : 'Prime',
           features: { alcohol: false }
       };
       onUpdateCompanies([...companies, created]);
-      setNewCompany({ name: '', appName: '', status: 'Active', defaultLanguage: 'en' });
+      setNewCompany({ name: '', appName: '', status: 'Active', defaultLanguage: 'en', parentId: undefined });
       setActiveModal('NONE');
       addNotification({ id: uuidv4(), type: 'success', title: 'Enterprise Node Created', message: `${created.name} has been provisioned.`, timestamp: new Date(), isRead: false });
   };
@@ -202,7 +203,7 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
     { id: 'Rooms', title: 'Training Venues', desc: 'Classrooms and capacity', icon: Home, color: 'bg-orange-500', visible: true },
     { id: 'Trainers', title: 'Instructors', desc: 'Authorized personnel and certifications', icon: Users2, color: 'bg-indigo-500', visible: true },
     { id: 'RACs', title: 'Safety Catalog', desc: 'Define RAC modules and logic', icon: Activity, color: 'bg-purple-500', visible: canEditGlobal },
-    { id: 'Companies', title: 'Enterprise Nodes', desc: 'Tenant management and provisioning', icon: Building2, color: 'bg-slate-700', visible: isSystemAdmin },
+    { id: 'Companies', title: 'Enterprise Nodes', desc: 'Tenant management and supply chain', icon: Building2, color: 'bg-slate-700', visible: isSystemAdmin },
   ];
 
   const activeHubCategories = hubCategories.filter(c => c.visible);
@@ -497,23 +498,29 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
         {/* --- COMPANIES VIEW --- */}
         {activeCategory === 'Companies' && (
             <div className="space-y-4 animate-fade-in-up">
-                {companies.map(c => (
-                    <div key={c.id} className="bg-white dark:bg-slate-800 p-6 rounded-[2.5rem] border border-slate-100 dark:border-slate-700 shadow-sm flex justify-between items-center group hover:border-blue-500/50 transition-all">
-                        <div className="flex items-center gap-6">
-                            <div className="w-16 h-16 rounded-2xl bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-700 flex items-center justify-center overflow-hidden p-2 shadow-inner">
-                                {c.logoUrl ? <img src={c.logoUrl} className="w-full h-full object-contain" /> : <Building2 className="text-slate-300" size={32} />}
-                            </div>
-                            <div>
-                                <div className="flex items-center gap-3">
-                                    <h4 className="text-xl font-black text-slate-900 dark:text-white tracking-tight">{c.name}</h4>
-                                    <span className={`px-2 py-0.5 rounded text-[10px] font-black uppercase border ${c.status === 'Active' ? 'bg-green-50 text-green-600 border-green-200' : 'bg-red-50 text-red-600 border-red-200'}`}>{c.status}</span>
+                {companies.map(c => {
+                    const parent = companies.find(p => p.id === c.parentId);
+                    return (
+                        <div key={c.id} className="bg-white dark:bg-slate-800 p-6 rounded-[2.5rem] border border-slate-100 dark:border-slate-700 shadow-sm flex justify-between items-center group hover:border-blue-500/50 transition-all">
+                            <div className="flex items-center gap-6">
+                                <div className="w-16 h-16 rounded-2xl bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-700 flex items-center justify-center overflow-hidden p-2 shadow-inner">
+                                    {c.logoUrl ? <img src={c.logoUrl} className="w-full h-full object-contain" /> : <Building2 className="text-slate-300" size={32} />}
                                 </div>
-                                <p className="text-sm text-slate-500 font-medium">App Alias: {c.appName} • Language: {c.defaultLanguage?.toUpperCase()}</p>
+                                <div>
+                                    <div className="flex items-center gap-3">
+                                        <h4 className="text-xl font-black text-slate-900 dark:text-white tracking-tight">{c.name}</h4>
+                                        <span className={`px-2 py-0.5 rounded text-[10px] font-black uppercase border ${c.status === 'Active' ? 'bg-green-50 text-green-600 border-green-200' : 'bg-red-50 text-red-600 border-red-200'}`}>{c.status}</span>
+                                        {c.tier === 'Sub' && <span className="px-2 py-0.5 rounded text-[10px] font-black uppercase bg-blue-50 text-blue-600 border border-blue-200">Sub</span>}
+                                    </div>
+                                    <p className="text-sm text-slate-500 font-medium">
+                                        {parent ? `Main Contractor: ${parent.name}` : 'Prime Vendor'} • Language: {c.defaultLanguage?.toUpperCase()}
+                                    </p>
+                                </div>
                             </div>
+                            <button onClick={() => onUpdateCompanies && onUpdateCompanies(companies.filter(cmp => cmp.id !== c.id))} className="p-3 text-slate-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-all"><Trash2 size={18}/></button>
                         </div>
-                        <button onClick={() => onUpdateCompanies && onUpdateCompanies(companies.filter(cmp => cmp.id !== c.id))} className="p-3 text-slate-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-all"><Trash2 size={18}/></button>
-                    </div>
-                ))}
+                    );
+                })}
             </div>
         )}
 
@@ -593,12 +600,18 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
 
                         {activeModal === 'ADD_COMPANY' && (
                             <div className="space-y-4">
-                                <input className="w-full bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-xl p-4 font-bold" placeholder="Enterprise Name" value={newCompany.name} onChange={e => setNewCompany({...newCompany, name: e.target.value})} />
-                                <input className="w-full bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-xl p-4 font-bold" placeholder="App Display Name (Alias)" value={newCompany.appName} onChange={e => setNewCompany({...newCompany, appName: e.target.value})} />
-                                <select className="w-full bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-xl p-4 font-bold" value={newCompany.defaultLanguage} onChange={e => setNewCompany({...newCompany, defaultLanguage: e.target.value as any})}>
-                                    <option value="en">English (Global)</option>
-                                    <option value="pt">Português (Mozambique)</option>
-                                </select>
+                                <input className="w-full bg-slate-50 dark:bg-slate-900 border-2 border-slate-100 dark:border-slate-700 rounded-xl p-4 font-bold" placeholder="Enterprise Name" value={newCompany.name} onChange={e => setNewCompany({...newCompany, name: e.target.value})} />
+                                <input className="w-full bg-slate-50 dark:bg-slate-900 border-2 border-slate-100 dark:border-slate-700 rounded-xl p-4 font-bold" placeholder="App Display Name (Alias)" value={newCompany.appName} onChange={e => setNewCompany({...newCompany, appName: e.target.value})} />
+                                <div className="grid grid-cols-2 gap-4">
+                                    <select className="w-full bg-slate-50 dark:bg-slate-900 border-2 border-slate-100 dark:border-slate-700 rounded-xl p-4 font-bold" value={newCompany.defaultLanguage} onChange={e => setNewCompany({...newCompany, defaultLanguage: e.target.value as any})}>
+                                        <option value="en">English (Global)</option>
+                                        <option value="pt">Português (Mozambique)</option>
+                                    </select>
+                                    <select className="w-full bg-slate-50 dark:bg-slate-900 border-2 border-slate-100 dark:border-slate-700 rounded-xl p-4 font-bold" value={newCompany.parentId || ''} onChange={e => setNewCompany({...newCompany, parentId: e.target.value || undefined})}>
+                                        <option value="">Main Contractor (None)</option>
+                                        {companies.filter(c => !c.parentId).map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                                    </select>
+                                </div>
                                 <button onClick={handleAddCompany} className="w-full bg-slate-900 text-white py-4 rounded-2xl font-black shadow-lg">PROVISION NODE</button>
                             </div>
                         )}
@@ -664,17 +677,17 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
                     <div className="p-8 space-y-6">
                         <div className="grid grid-cols-3 gap-4">
                             <div>
-                                <label className="text-[10px] font-black uppercase text-slate-400 mb-2 block">Module Code</label>
+                                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 block">Module Code</label>
                                 <input className="w-full bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-xl p-4 font-bold uppercase outline-none focus:ring-2 focus:ring-purple-500" value={editingRac.code} onChange={e => setEditingRac({...editingRac, code: e.target.value.toUpperCase()})} />
                             </div>
                             <div className="col-span-2">
-                                <label className="text-[10px] font-black uppercase text-slate-400 mb-2 block">Full Description</label>
+                                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 block">Full Description</label>
                                 <input className="w-full bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-xl p-4 font-bold outline-none focus:ring-2 focus:ring-purple-500" value={editingRac.name} onChange={e => setEditingRac({...editingRac, name: e.target.value})} />
                             </div>
                         </div>
                         
                         <div>
-                            <label className="text-[10px] font-black uppercase text-slate-400 mb-2 block">Standard Validity (Months)</label>
+                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 block">Standard Validity (Months)</label>
                             <input type="number" className="w-full bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-xl p-4 font-bold outline-none focus:ring-2 focus:ring-purple-500" value={editingRac.validityMonths || 24} onChange={e => setEditingRac({...editingRac, validityMonths: parseInt(e.target.value) || 24})} />
                         </div>
 
