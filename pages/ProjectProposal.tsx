@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useLanguage } from '../contexts/LanguageContext';
 import { 
@@ -355,7 +356,7 @@ const ProjectProposal: React.FC = () => {
                       <h3 className="text-3xl font-bold text-white">Module B</h3>
                   </div>
                   <h4 className="text-xl text-slate-300 mb-4 font-bold">Physical Infrastructure</h4>
-                  <p className="text-lg text-slate-400 leading-relaxed">
+                  <p className="text-lg text-slate-300 leading-relaxed">
                       {t.proposal.futureUpdates.moduleB.split('-')[1]}
                   </p>
               </div>
@@ -590,11 +591,11 @@ const ProjectProposal: React.FC = () => {
           <div className="flex flex-col md:flex-row gap-8 mt-8">
               <div className="bg-slate-900 border border-slate-700 px-10 py-6 rounded-3xl flex items-center gap-4">
                   <Mail size={32} className="text-blue-400"/>
-                  <span className="text-xl md:text-2xl font-bold text-white">pita.domingos@example.com</span>
+                  <span className="text-xl md:text-2xl font-bold text-white">pita.domingos@zd044.onmicrosoft.com</span>
               </div>
               <div className="bg-slate-900 border border-slate-700 px-10 py-6 rounded-3xl flex items-center gap-4">
                   <Phone size={32} className="text-green-400"/>
-                  <span className="text-xl md:text-2xl font-bold text-white">+258 84 123 4567</span>
+                  <span className="text-xl md:text-2xl font-bold text-white">+258 84 547 9481</span>
               </div>
           </div>
       </div>

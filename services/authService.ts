@@ -1,19 +1,21 @@
 
 import { User, UserRole } from '../types';
 import { supabase, isSupabaseConfigured } from './supabaseClient';
+import { db } from './databaseService';
 
 export interface AuthResponse {
     user: User | null;
-    status: 'success' | 'invalid' | 'needs_setup';
+    status: 'success' | 'invalid' | 'error';
+    message?: string;
 }
 
 export const authService = {
   /**
-   * Authenticates user against provided credentials.
-   * Specific logic for Pita Domingos included as System Admin.
+   * Authenticates user against the public.users table manually.
+   * Reverted from Supabase Auth service to previous logic.
    */
   async authenticate(username: string, password?: string): Promise<AuthResponse> {
-    // 1. HARDCODED SYSTEM ADMIN CHECK (The Master Override)
+    // 1. HARDCODED SYSTEM ADMIN CHECK
     if (username === "Pita Domingos" && password === "native@13035") {
       return {
         user: {
@@ -30,10 +32,9 @@ export const authService = {
       };
     }
 
-    // 2. SUPABASE DB CHECK (Live Users Table)
+    // 2. SUPABASE DB CHECK
     if (isSupabaseConfigured && supabase) {
         try {
-            // Find the user by name
             const { data, error } = await supabase
                 .from('users')
                 .select('*')
@@ -43,27 +44,22 @@ export const authService = {
             if (error) throw error;
             if (!data) return { user: null, status: 'invalid' };
 
-            // DETECT FIRST TIME LOGIN
-            // If password column is NULL or empty string, trigger setup workflow
-            if (!data.password || data.password.trim() === '') {
-                return {
-                    user: data as User,
-                    status: 'needs_setup'
-                };
-            }
-
-            // Normal authentication
+            // Standard check (plaintext comparison as per previous logic)
             if (data.password === password) {
                 return {
-                    user: data as User,
+                    user: db.mapUserFromDb(data),
                     status: 'success'
                 };
             }
-        } catch (e) {
-            console.warn("DB Auth not available. Using fallback logic.");
+        } catch (e: any) {
+            return { user: null, status: 'error', message: e.message };
         }
     }
 
     return { user: null, status: 'invalid' };
+  },
+
+  async signOut() {
+      // No Supabase session to clear in manual mode, just handled by Context
   }
 };

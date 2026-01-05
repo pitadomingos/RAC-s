@@ -4,7 +4,7 @@ import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, 
   PieChart, Pie, Cell, Legend
 } from 'recharts';
-import { Booking, BookingStatus, EmployeeRequirement, TrainingSession } from '../types';
+import { Booking, BookingStatus, EmployeeRequirement, TrainingSession, RacDef } from '../types';
 import { RAC_KEYS } from '../constants';
 import { AlertTriangle, Users, CheckCircle, Clock, Activity, ShieldAlert } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
@@ -13,14 +13,15 @@ import { useLanguage } from '../contexts/LanguageContext';
 interface DashboardStatsProps {
   bookings: Booking[];
   requirements: EmployeeRequirement[];
-  sessions: TrainingSession[]; // Added sessions prop
+  sessions: TrainingSession[];
   onBookRenewals?: () => void;
+  racDefinitions: RacDef[];
 }
 
 // Fixed colors by index: 0 = Compliant (Green), 1 = Non-Compliant (Red)
 const PIE_COLORS = ['#059669', '#ef4444'];
 
-const DashboardStats: React.FC<DashboardStatsProps> = memo(({ bookings, requirements, sessions, onBookRenewals }) => {
+const DashboardStats: React.FC<DashboardStatsProps> = memo(({ bookings, requirements, sessions, onBookRenewals, racDefinitions = [] }) => {
   const navigate = useNavigate();
   const { t } = useLanguage();
 
@@ -53,8 +54,10 @@ const DashboardStats: React.FC<DashboardStatsProps> = memo(({ bookings, requirem
   let asoCompliant = 0;
   let asoMissing = 0;
   
+  // Dynamically initialize stats from racDefinitions instead of hardcoded RAC_KEYS
+  const racCodes = racDefinitions.map(d => d.code.toUpperCase());
   const racComplianceStats: Record<string, { required: number, compliant: number, missing: number }> = {};
-  RAC_KEYS.forEach(k => racComplianceStats[k] = { required: 0, compliant: 0, missing: 0 });
+  racCodes.forEach(code => racComplianceStats[code] = { required: 0, compliant: 0, missing: 0 });
 
   uniqueEmployeeIds.forEach(empId => {
     const req = requirements.find(r => r.employeeId === empId) || { 
@@ -67,7 +70,7 @@ const DashboardStats: React.FC<DashboardStatsProps> = memo(({ bookings, requirem
     
     let allRacsMet = true;
     
-    RAC_KEYS.forEach(racKey => {
+    racCodes.forEach(racKey => {
        const isRequired = req.requiredRacs[racKey];
        if (isRequired) {
          racComplianceStats[racKey].required++;
@@ -102,10 +105,10 @@ const DashboardStats: React.FC<DashboardStatsProps> = memo(({ bookings, requirem
 
   const racStackData = [
     { name: 'ASO', Compliant: asoCompliant, Missing: asoMissing },
-    ...RAC_KEYS.map(key => ({
-        name: key,
-        Compliant: racComplianceStats[key].compliant,
-        Missing: racComplianceStats[key].missing
+    ...racCodes.map(code => ({
+        name: code,
+        Compliant: racComplianceStats[code].compliant,
+        Missing: racComplianceStats[code].missing
     }))
   ];
 

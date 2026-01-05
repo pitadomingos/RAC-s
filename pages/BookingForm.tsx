@@ -5,7 +5,7 @@ import { DEPARTMENTS, ROLES } from '../constants';
 import { 
     Plus, Trash2, Save, Settings, ShieldCheck, Calendar, UserPlus, 
     FileSignature, CheckCircle2, AlertCircle, Search, UserCheck, 
-    RefreshCw, Lock, Layers, UserMinus, ArrowRight, ClipboardList 
+    RefreshCw, Lock, Layers, UserMinus, ArrowRight, ClipboardList, Info, Bell
 } from 'lucide-react';
 import { v4 as uuidv4 } from 'uuid';
 import { useNavigate, useLocation } from 'react-router-dom';
@@ -74,6 +74,15 @@ const BookingForm: React.FC<BookingFormProps> = ({ addBookings, sessions, userRo
       return sorted;
   }, [sessions, isSelfService, currentEmployeeId, requirements]);
 
+  const currentSession = useMemo(() => sessions.find(s => s.id === activeSessionId), [activeSessionId, sessions]);
+  
+  const currentOccupancy = useMemo(() => {
+      if (!activeSessionId) return 0;
+      return existingBookings.filter(b => b.sessionId === activeSessionId && (b.status === BookingStatus.PENDING || b.status === BookingStatus.PASSED)).length;
+  }, [activeSessionId, existingBookings]);
+
+  const isSessionFull = currentSession ? currentOccupancy >= currentSession.capacity : false;
+
   useEffect(() => {
     const state = location.state as { prefill?: any[]; targetRac?: string; remainingBatches?: RenewalBatch[] } | null;
     if (state) {
@@ -111,6 +120,26 @@ const BookingForm: React.FC<BookingFormProps> = ({ addBookings, sessions, userRo
     setRows([...rows, { ...initialRows[0], id: uuidv4() }]);
   };
 
+  const checkWaitlistPressureAndNotify = (racType: string) => {
+      const racCode = racType.split(' - ')[0];
+      const waitlistCount = existingBookings.filter(b => {
+          if (b.status !== BookingStatus.WAITLISTED) return false;
+          const sess = sessions.find(s => s.id === b.sessionId);
+          return sess?.racType.includes(racCode);
+      }).length;
+
+      if (waitlistCount >= 5) {
+          addNotification({
+              id: uuidv4(),
+              type: 'warning',
+              title: t.booking.demandAlertTitle,
+              message: t.booking.demandAlertMsg.replace('{rac}', racCode).replace('{count}', String(waitlistCount)),
+              timestamp: new Date(),
+              isRead: false
+          });
+      }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!activeSessionId) {
@@ -122,22 +151,51 @@ const BookingForm: React.FC<BookingFormProps> = ({ addBookings, sessions, userRo
     if (validRows.length === 0) return;
 
     const session = availableSessions.find(s => s.id === activeSessionId);
+    if (!session) return;
 
-    const newBookings: Booking[] = validRows.map(row => ({
-        id: uuidv4(),
-        sessionId: activeSessionId,
-        employee: { ...row },
-        status: BookingStatus.PENDING,
-        isAutoBooked: false,
-        // CAPTURE ASSIGNED TRAINER HERE
-        trainerName: session?.instructor || 'TBD'
-    }));
+    const capacity = session.capacity;
+    let occupancyCursor = currentOccupancy;
 
+    const newBookings: Booking[] = validRows.map(row => {
+        const isOverflow = occupancyCursor >= capacity;
+        occupancyCursor++;
+
+        return {
+            id: uuidv4(),
+            sessionId: activeSessionId,
+            employee: { ...row },
+            status: isOverflow ? BookingStatus.WAITLISTED : BookingStatus.PENDING,
+            isAutoBooked: false,
+            trainerName: session.instructor || 'TBD'
+        };
+    });
+
+    // Ensure confirmed employees exist in the employees table before creating bookings
+    for (const b of newBookings) {
+        await db.upsertEmployee(b.employee);
+    }
+
+    // Call the application prop handler
     addBookings(newBookings);
-    await db.addLog('AUDIT', `NEW_REQUISITION_CREATED: ${newBookings.length} employees for ${session?.racType}`, user?.name || 'System', { sessionId: activeSessionId });
+    
+    const waitlistedCount = newBookings.filter(b => b.status === BookingStatus.WAITLISTED).length;
+    const pendingCount = newBookings.length - waitlistedCount;
+
+    await db.addLog('AUDIT', `REQUISITION_PROCESSED: ${pendingCount} Confirmed, ${waitlistedCount} Queued for ${session.racType}`, user?.name || 'System', { sessionId: activeSessionId });
+
+    if (waitlistedCount > 0) {
+        checkWaitlistPressureAndNotify(session.racType);
+    }
 
     setSubmitted(true);
-    addNotification({ id: uuidv4(), type: 'success', title: 'Success', message: `Requisition for ${newBookings.length} personnel sent.`, timestamp: new Date(), isRead: false });
+    addNotification({ 
+        id: uuidv4(), 
+        type: waitlistedCount > 0 ? 'warning' : 'success', 
+        title: waitlistedCount > 0 ? 'Queue Processed' : 'Success', 
+        message: waitlistedCount > 0 ? `${waitlistedCount} staff added to FIFO Waitlist.` : `Confirmed enrollment for ${newBookings.length} personnel.`, 
+        timestamp: new Date(), 
+        isRead: false 
+    });
     
     setTimeout(() => {
         setSubmitted(false);
@@ -167,6 +225,23 @@ const BookingForm: React.FC<BookingFormProps> = ({ addBookings, sessions, userRo
          </div>
       </div>
 
+      {isSessionFull && (
+          <div className="bg-amber-50 dark:bg-amber-900/20 border-2 border-amber-200 dark:border-amber-800 p-4 rounded-2xl flex items-start gap-4 animate-fade-in-down shadow-sm">
+              <div className="p-2 bg-amber-500 rounded-xl text-white shadow-lg shadow-amber-500/30 shrink-0">
+                  <AlertCircle size={24} />
+              </div>
+              <div>
+                  <h4 className="font-black text-amber-800 dark:text-amber-200 uppercase tracking-tight text-sm">Capacity Warning</h4>
+                  <p className="text-amber-700 dark:text-amber-400 text-sm font-medium leading-relaxed mt-0.5">
+                      {t.booking.waitlistWarning}
+                  </p>
+                  <div className="mt-2 flex items-center gap-2">
+                      <span className="text-[10px] font-black uppercase text-amber-500 bg-white dark:bg-slate-800 px-2 py-0.5 rounded border border-amber-200 dark:border-amber-800">Occupancy: {currentOccupancy} / {currentSession?.capacity}</span>
+                  </div>
+              </div>
+          </div>
+      )}
+
       {submitted && (
         <div className="bg-green-500 text-white p-4 rounded-xl shadow-lg flex items-center justify-center gap-3 animate-bounce-in">
             <CheckCircle2 size={24} />
@@ -184,7 +259,7 @@ const BookingForm: React.FC<BookingFormProps> = ({ addBookings, sessions, userRo
                    <select 
                       value={activeSessionId} 
                       onChange={(e) => setActiveSessionId(e.target.value)}
-                      className={`w-full bg-white dark:bg-slate-700 border-2 rounded-2xl p-4 text-xl font-bold appearance-none cursor-pointer transition-all ${targetRac ? 'border-indigo-500 ring-4 ring-indigo-500/10' : 'border-slate-200 dark:border-slate-600 focus:border-indigo-500'}`}
+                      className={`w-full bg-white dark:bg-slate-700 border-2 rounded-2xl p-4 text-xl font-bold appearance-none cursor-pointer transition-all ${isSessionFull ? 'border-amber-400' : targetRac ? 'border-indigo-500 ring-4 ring-indigo-500/10' : 'border-slate-200 dark:border-slate-600 focus:border-indigo-500'}`}
                       required
                     >
                       <option value="">-- {t.booking.chooseSession} --</option>
@@ -247,8 +322,8 @@ const BookingForm: React.FC<BookingFormProps> = ({ addBookings, sessions, userRo
             </div>
 
             <div className="p-8 border-t border-slate-100 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 flex justify-end">
-              <button type="submit" className="bg-indigo-600 hover:bg-indigo-500 text-white text-lg px-12 py-4 rounded-2xl font-black shadow-xl shadow-indigo-500/20 transition-all transform hover:-translate-y-1">
-                <Save size={20} className="inline mr-2" /> {t.booking.submitBooking}
+              <button type="submit" className={`bg-indigo-600 hover:bg-indigo-500 text-white text-lg px-12 py-4 rounded-2xl font-black shadow-xl shadow-indigo-500/20 transition-all transform hover:-translate-y-1 ${isSessionFull ? 'from-amber-600 to-amber-500 shadow-amber-500/30' : ''}`}>
+                <Save size={20} className="inline mr-2" /> {isSessionFull ? 'Register to Waitlist' : t.booking.submitBooking}
               </button>
             </div>
           </form>

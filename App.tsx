@@ -90,7 +90,7 @@ const AppContent: React.FC = () => {
               setIsLoading(true);
               await refreshData();
               if (user?.role === UserRole.SYSTEM_ADMIN && isSupabaseConfigured && supabase) {
-                  const tables = ['companies', 'sites', 'users', 'employees', 'bookings', 'rac_definitions', 'rooms', 'trainers', 'system_logs'];
+                  const tables = ['companies', 'sites', 'users', 'employees', 'bookings', 'rac_definitions', 'rooms', 'trainers', 'system_logs', 'waiting_list'];
                   const health = await Promise.all(tables.map(async t => {
                       const { error } = await supabase.from(t).select('id').limit(1);
                       return { table: t, status: error?.code === '42P01' ? 'missing' : 'ok' } as any;
@@ -122,14 +122,11 @@ const AppContent: React.FC = () => {
 
   const handleUpdateRacs = async (updatedRacs: RacDef[]) => {
       try {
-          // Identify removed
-          // Fixed: Explicitly typed Sets to string to avoid 'unknown' inference issues
           const originalIds = new Set<string>(racDefinitions.map(r => r.id));
           const updatedIds = new Set<string>(updatedRacs.map(r => r.id));
           for (const id of originalIds) {
               if (!updatedIds.has(id)) await db.deleteRacDefinition(id);
           }
-          // Upsert current
           for (const rac of updatedRacs) {
               await db.saveRacDefinition(rac);
           }
@@ -142,7 +139,6 @@ const AppContent: React.FC = () => {
 
   const handleUpdateRooms = async (updatedRooms: Room[]) => {
     try {
-        // Fixed: Explicitly typed Sets to string to avoid 'unknown' inference issues
         const originalIds = new Set<string>(rooms.map(r => r.id));
         const updatedIds = new Set<string>(updatedRooms.map(r => r.id));
         for (const id of originalIds) {
@@ -157,7 +153,6 @@ const AppContent: React.FC = () => {
 
   const handleUpdateTrainers = async (updatedTrainers: Trainer[]) => {
     try {
-        // Fixed: Explicitly typed Sets to string to avoid 'unknown' inference issues
         const originalIds = new Set<string>(trainers.map(t => t.id));
         const updatedIds = new Set<string>(updatedTrainers.map(t => t.id));
         for (const id of originalIds) {
@@ -172,7 +167,6 @@ const AppContent: React.FC = () => {
 
   const handleUpdateSites = async (updatedSites: Site[]) => {
     try {
-        // Fixed: Explicitly typed Sets to string to avoid 'unknown' inference issues
         const originalIds = new Set<string>(sites.map(s => s.id));
         const updatedIds = new Set<string>(updatedSites.map(s => s.id));
         for (const id of originalIds) {
@@ -219,9 +213,7 @@ const AppContent: React.FC = () => {
 
   const handleImportBookings = async (newBookings: Booking[], sideEffects?: { employee: Employee, aso: string, ops: Record<string, boolean> }[]) => {
       try {
-          for (const b of newBookings) {
-              await db.saveBooking(b);
-          }
+          for (const b of newBookings) { await db.saveBooking(b); }
           if (sideEffects) {
               for (const se of sideEffects) {
                   await db.upsertEmployee(se.employee);
@@ -232,10 +224,8 @@ const AppContent: React.FC = () => {
               }
           }
           setBookings(prev => [...newBookings, ...prev]);
-          await db.addLog('AUDIT', `DATA_IMPORT: ${newBookings.length} records processed from CSV`, user?.name || 'Admin');
-      } catch (err) {
-          console.error("Import failed:", err);
-      }
+          await db.addLog('AUDIT', `DATA_IMPORT: ${newBookings.length} records processed`, user?.name || 'Admin');
+      } catch (err) { console.error("Import failed:", err); }
   };
 
   const handleUpdateUser = async (updatedUser: Partial<User>) => {
@@ -277,7 +267,7 @@ const AppContent: React.FC = () => {
           {user?.role === UserRole.SYSTEM_ADMIN && missingTables.length > 0 && (
               <div className="fixed top-0 left-0 right-0 z-[100] bg-indigo-600 text-white p-2 flex items-center justify-center gap-4 shadow-xl">
                   <Database size={16} />
-                  <span className="text-xs font-bold uppercase tracking-wider">Production Setup: {missingTables.length} tables missing.</span>
+                  <span className="text-xs font-bold uppercase tracking-wider">Setup Required: {missingTables.length} tables missing.</span>
                   <button onClick={() => window.location.hash = '#/tech-docs'} className="bg-white text-indigo-600 px-3 py-1 rounded-full text-[10px] font-black">GET SQL</button>
               </div>
           )}
@@ -291,10 +281,10 @@ const AppContent: React.FC = () => {
                   <Route path="/" element={<Dashboard bookings={bookings} requirements={requirements} sessions={sessions} userRole={user?.role || UserRole.USER} racDefinitions={racDefinitions} currentSiteId={currentSiteId} companies={companies} />} />
                   <Route path="/database" element={<DatabasePage bookings={bookings} requirements={requirements} updateRequirements={handleUpdateRequirement} sessions={sessions} onUpdateEmployee={() => {}} onDeleteEmployee={() => {}} racDefinitions={racDefinitions} addNotification={addNotification} currentSiteId={currentSiteId} companies={companies} />} />
                   <Route path="/booking" element={<BookingForm addBookings={handleAddBookings} sessions={sessions} userRole={user?.role || UserRole.USER} existingBookings={bookings} addNotification={addNotification} racDefinitions={racDefinitions} companies={companies} />} />
-                  <Route path="/results" element={<ResultsPage bookings={bookings} updateBookingStatus={handleUpdateBookingStatus} importBookings={handleImportBookings} userRole={user?.role || UserRole.USER} sessions={sessions} racDefinitions={racDefinitions} addNotification={addNotification} currentSiteId={currentSiteId} />} />
+                  <Route path="/results" element={<ResultsPage bookings={bookings} updateBookingStatus={handleUpdateBookingStatus} importBookings={handleImportBookings} userRole={user?.role || UserRole.USER} sessions={sessions} racDefinitions={racDefinitions} addNotification={addNotification} currentSiteId={currentSiteId} onRefresh={refreshData} />} />
                   <Route path="/users" element={<UserManagement users={users} onUpdateUser={handleUpdateUser} onDeleteUser={() => {}} addNotification={addNotification} sites={sites} currentSiteId={currentSiteId} companies={companies} />} />
                   <Route path="/settings" element={<SettingsPage racDefinitions={racDefinitions} onUpdateRacs={handleUpdateRacs} rooms={rooms} onUpdateRooms={handleUpdateRooms} trainers={trainers} onUpdateTrainers={handleUpdateTrainers} sites={sites} onUpdateSites={handleUpdateSites} companies={companies} onUpdateCompanies={handleUpdateCompanies} userRole={user?.role} addNotification={addNotification} currentSiteId={currentSiteId} />} />
-                  <Route path="/schedule" element={<ScheduleTraining sessions={sessions} setSessions={setSessions} rooms={rooms} trainers={trainers} racDefinitions={racDefinitions} addNotification={addNotification} currentSiteId={currentSiteId} />} />
+                  <Route path="/schedule" element={<ScheduleTraining sessions={sessions} setSessions={setSessions} rooms={rooms} trainers={trainers} racDefinitions={racDefinitions} addNotification={addNotification} currentSiteId={currentSiteId} bookings={bookings} />} />
                   <Route path="/trainer-input" element={<TrainerInputPage bookings={bookings} updateBookings={handleTrainerUpdateBookings} sessions={sessions} userRole={user?.role} currentUserName={user?.name} racDefinitions={racDefinitions} />} />
                   <Route path="/manuals" element={<UserManualsPage userRole={user?.role || UserRole.USER} />} />
                   <Route path="/tech-docs" element={<TechnicalDocs />} />

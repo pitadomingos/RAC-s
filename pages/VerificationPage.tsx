@@ -55,26 +55,29 @@ const VerificationPage: React.FC<VerificationPageProps> = ({
     const isDlExpired = !!(dlExpiry && dlExpiry < today) || !dlExpiry;
     const isActive = employee.isActive ?? true;
 
-    // ALIGNED RAC 02 BYPASS LOGIC
+    // DYNAMIC DL LOGIC: Identify which RACs require a license based on tenant settings
+    const drivingRacs = racDefinitions.filter(d => d.requiresDriverLicense).map(d => d.code);
+    
     let allRacsMet = true;
     const mappedRacs = Object.entries(req.requiredRacs).filter(([_, val]) => val === true).map(([k]) => k);
     
-    const drivingRacs = ['RAC02', 'RAC11', 'LIB_MOV'];
+    // Check if the employee has any required RAC that is NOT a driving/ops RAC.
+    // This allows multiskilled workers to retain site access even if their driving privilege is revoked.
     const isMultiskilled = mappedRacs.some(k => !drivingRacs.includes(k) && !OPS_KEYS.includes(k));
 
     racDefinitions.forEach(def => {
         const key = def.code;
         if (!req.requiredRacs[key]) return;
 
-        // If it's a driving requirement
+        // If this specific module requires a license (defined in Settings)
         if (drivingRacs.includes(key)) {
             if (isDlExpired) {
-                // Only block the whole record if they have no other roles
+                // Only block the entire record if they have no other site roles (multiskilled bypass)
                 if (!isMultiskilled) {
                     allRacsMet = false;
                 }
             } else {
-                // Check Training
+                // Check Training validity for the driving module
                 const passedBookings = bookings.filter(b => {
                     if (b.employee.id !== employeeId) return false;
                     if (b.status !== BookingStatus.PASSED) return false;
@@ -85,7 +88,7 @@ const VerificationPage: React.FC<VerificationPageProps> = ({
                 if (!passedBookings[0]?.expiryDate || passedBookings[0].expiryDate < today) allRacsMet = false;
             }
         } else {
-            // Standard Checks
+            // Standard non-driving module check
             const passedBookings = bookings.filter(b => {
                  if (b.employee.id !== employeeId) return false;
                  if (b.status !== BookingStatus.PASSED) return false;

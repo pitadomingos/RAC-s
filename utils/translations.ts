@@ -48,6 +48,8 @@ export const translations = {
       passed: 'Passed',
       failed: 'Failed',
       pending: 'Pending',
+      absent: 'Absent',
+      waitlisted: 'Waitlisted',
       enterpriseView: 'Enterprise View',
       complianceRate: 'Compliance Rate',
       testsProcessed: 'Tests Processed',
@@ -97,7 +99,7 @@ export const translations = {
       communications: 'Communications',
       schedule: 'Schedule',
       siteGovernance: 'Governance',
-      trainerInput: 'Trainer Input',
+      trainerInput: 'Instructor Input',
       users: 'Users',
       settings: 'Settings',
       logs: 'Logs',
@@ -120,15 +122,26 @@ export const translations = {
       autoBookRenewals: 'Auto-Book Renewals',
       liveWorkforceMatrix: 'Live Workforce Matrix',
       personnelStatus: 'Active Personnel Status',
+      waitlistAnalytics: 'Waitlist Pressure Index',
+      waitlistSub: 'Modules requiring additional sessions',
+      highDemand: 'HIGH DEMAND',
       upcoming: {
-        title: 'Next Scheduled Requisitions',
+        title: 'Upcoming Scheduled Sessions',
         viewSchedule: 'View Schedule',
         date: 'Date',
         session: 'Session',
-        capacity: 'Capacity'
+        capacity: 'Capacity',
+        faculty: 'Instructor',
+        empty: 'No upcoming sessions scheduled.'
       },
       booked: {
-        title: 'Recently Requisitioned'
+        title: 'Upcoming Bookings',
+        personnel: 'Personnel',
+        requirement: 'Requirement',
+        details: 'Details',
+        schedule: 'Schedule',
+        registered: 'Registered',
+        empty: 'No personnel booked for the upcoming sessions.'
       },
       kpi: {
         adherence: 'Workforce Adherence',
@@ -156,12 +169,17 @@ export const translations = {
       selectSession: 'Select Training Session',
       chooseSession: 'Choose a session...',
       addRow: 'Add Personnel',
-      submitBooking: 'Submit Requisition'
+      submitBooking: 'Submit Requisition',
+      waitlistWarning: 'Capacity Alert: Selected session is at full capacity. New students will be added to the Waiting List.',
+      demandAlertTitle: 'Waitlist Threshold Reached',
+      demandAlertMsg: 'Module {rac} has {count} people waitlisted. Please consider scheduling a new session.'
     },
     results: {
       searchPlaceholder: 'Search by Name or ID...',
       passport: 'My Passport',
       export: 'Export CSV',
+      viewWaitlist: 'Queue Management',
+      viewAll: 'All Records',
       table: {
         employee: 'Personnel',
         session: 'Requirement',
@@ -288,7 +306,7 @@ export const translations = {
         systemSubtitle: 'Multi-tenant infrastructure view',
         globalHealth: 'Global Health',
         totalWorkforce: 'Total Workforce',
-        topPerformer: 'Top Performer',
+        topPerformer: 'Better Performance',
         needsAttention: 'Needs Attention',
         noData: 'No data',
         tenantMatrix: 'Tenant Matrix',
@@ -306,6 +324,187 @@ export const translations = {
         bottlenecks: 'Training Bottlenecks',
         failure: 'Failure Rate',
         siteName: 'Site'
+    },
+    proposal: {
+        digitalTrans: 'Digital Safety Transformation',
+        scenario: {
+            title: 'Operational Readiness Scenario',
+            challenge: 'The Legacy Challenge',
+            challengeSub: 'Disconnected Datasets',
+            challengeText: 'Operator Paulo Manjate has a RAC 01 expiring in {days} days. HSE only discovers this during a gate lockout.',
+            automation: 'Integrated Readiness',
+            automationSub: 'Predictive Sync',
+            automationText1: 'Sync Engine identifies Paulo\'s {days}-day window and checks medical status.',
+            automationText2: 'System validates room capacity and auto-reserves a renewal slot.',
+            automationOutcome: 'Zero Production Downtime. Paulo is trained 48 hours BEFORE lockout.'
+        },
+        execSummary: {
+            title: 'Executive Summary',
+            text: 'A unified digital infrastructure for managing critical activity requisitions (CARS) across the entire enterprise. Eliminating manual data entry, reducing audit friction, and ensuring 100% operational readiness.',
+            quote: 'Converting reactive safety into predictive operational resilience.'
+        },
+        objectives: {
+            title: 'Primary Objectives',
+            problemTitle: 'Current Barriers',
+            problemText: 'Fragmented contractor data, manual certification tracking, and lack of real-time visibility into site-wide compliance levels.',
+            solutionTitle: 'The Future State',
+            goals: [
+                'Automated HR & Contractor Data Merging',
+                'Predictive Renewal Management & Waitlisting',
+                'Digital Safety Passport for Every Worker',
+                'Executive HSE Analytics & AI Reporting'
+            ]
+        },
+        integration: {
+            title: 'Unified Data Ecosystem',
+            staffSource: 'SuccessFactors / HR',
+            staff: 'Permanent Staff',
+            contractorSource: 'Contract Manager',
+            contractor: 'Third-Party Vendors',
+            middlewareTitle: 'Integration Hub',
+            middlewareDesc: 'Restful API layer merging contractor and permanent datasets.',
+            sourceTitle: 'CARS Single Source of Truth',
+            noManual: 'No Manual Onboarding',
+            isolation: 'Logical Data Isolation',
+            liveMatrix: 'Live Compliance Matrix'
+        },
+        organogram: {
+            title: 'Project Structure',
+            tech1: 'Architecture & DevOps',
+            tech2: 'Cloud Data Engineer'
+        },
+        timeline: {
+            title: 'Implementation Roadmap',
+            phase1: 'Discovery & API Audit',
+            phase1desc: 'Audit of HR and Contractor data sources.',
+            phase2: 'Integration Layer',
+            phase2desc: 'Developing the CARS Middleware for sync.',
+            phase3: 'Module Deployment',
+            phase3desc: 'Customizing RAC 01-11 evaluation logic.',
+            phase4: 'Pilot Program',
+            phase4desc: 'UAT testing at a single operational site.',
+            phase5: 'Enterprise Scale',
+            phase5desc: 'Global rollout to all departments.'
+        },
+        techStack: {
+            title: 'Modern Architecture',
+            frontendTitle: 'User Experience',
+            frontend: 'React 18 • TypeScript • Tailwind',
+            backendTitle: 'System Logic',
+            backend: 'Node.js • Cloud Functions • Supabase',
+            databaseTitle: 'Data Persistence',
+            database: 'PostgreSQL • Vector Storage (AI)',
+            securityTitle: 'Access Control',
+            security: 'JWT • SSL • RLS Policy'
+        },
+        financials: {
+            title: 'Investment Summary',
+            headers: { desc: 'Description', cost: 'Investment' },
+            items: {
+                item1: 'Core Architecture & Initial Development',
+                item2: 'System Setup & API Integration Layer',
+                item3: 'Cloud Infrastructure & Managed SaaS',
+                item4: 'Ongoing Maintenance & AI Engine'
+            },
+            initialInvest: 'Total Initial Investment',
+            recurring: 'Monthly Recurring Services'
+        },
+        roadmap: {
+            title: 'Strategic Roadmap',
+            auth: 'Biometric Link',
+            authDesc: 'Face-ID for field verify.',
+            db: 'Predictive AI',
+            dbDesc: 'Forecasting training load.',
+            email: 'Automated SMS',
+            emailDesc: 'Direct student notifications.',
+            hosting: 'Mobile App',
+            hostingDesc: 'Native iOS/Android build.'
+        },
+        aiFeatures: {
+            title: 'Gemini Safety Intelligence',
+            chatbot: 'Real-time safety advisor for RAC protocols.',
+            reporting: 'Executive AI summaries of site-wide risks.'
+        },
+        futureUpdates: {
+            title: 'V2 Expansion: IoT Access',
+            moduleA: 'Alcohol Control Software',
+            moduleADesc: 'Live breathalyzer integration with gate locking logic.',
+            moduleB: 'Physical Infrastructure',
+            moduleBDesc: 'Hardware deployment of connected turnstiles.'
+        },
+        enhancedCaps: {
+            title: 'Enhanced Capabilities',
+            mobileVerify: { title: 'Mobile Verification', desc: 'HSE officers can verify any passport instantly via QR scan.' },
+            autoBooking: { title: 'Auto-Booking', desc: 'Predictive enrollment for expiring certifications.' },
+            massData: { title: 'Mass Import', desc: 'Bulk processing of legacy contractor certificates.' }
+        },
+        conclusion: {
+            title: 'The Path Forward',
+            text: 'CARS is not just a training tool; it is an operational safeguard. It ensures that only those who are fit, trained, and authorized can enter the risk zone.'
+        },
+        thankYou: {
+            title: 'Thank You',
+            subtitle: 'Ready for Operational Deployment',
+            email: 'pita.domingos@zd044.onmicrosoft.com',
+            phone: '+258 84 547 9481'
+        },
+        waitlist: {
+            title: 'Queue Intelligence',
+            subtitle: 'Proactive Demand Management',
+            capacityTitle: 'Room Capacity Guard',
+            capacityDesc: 'Automatic redirection of overflow personnel to a FIFO waiting list.',
+            demandTitle: 'Admin Notifications',
+            demandDesc: 'Threshold-based alerts (e.g. 5+ waitlisted) to trigger new session scheduling.',
+            outcome: '100% Enrollment Visibility',
+            outcomeDesc: 'Never lose a requisition in an email chain.'
+        },
+        workflow: {
+            title: 'System Workflow Diagram',
+            subtitle: 'End-to-End Data Lifecycle',
+            step1: 'Submission',
+            step1sub: 'HSE Requisition',
+            step1actor: 'HSE / Contractor Admin',
+            step1desc: 'Personnel requirements submitted for validation.',
+            step2: 'Scheduling',
+            step2sub: 'Allocation & Queue',
+            step2actor: 'Training Dept',
+            step2desc: 'Automated seat allocation or priority Waitlist entry.',
+            step3: 'Evaluation',
+            step3sub: 'Grading (Pass/Fail)',
+            step3actor: 'RAC Instructor',
+            step3desc: 'Trainer grading with real-time score auditing (Pass/Fail).',
+            step4: 'Access Logic',
+            step4sub: 'Matrix Compliance',
+            step4actor: 'System Core',
+            step4desc: 'Logic Merge: [Active] + [ASO] + [RAC Result] = Status.',
+            step5: 'Certification',
+            step5sub: 'Passport Issuance',
+            step5actor: 'HSE Office',
+            step5desc: 'Certification generation & secure digital card issuance.',
+            step6: 'Verification',
+            step6sub: 'Field QR Audit',
+            step6actor: 'Field Safety Team',
+            step6desc: 'Instant QR audit verifies authorization at risk zones.'
+        },
+        aboutMe: {
+            title: 'System Architect Profile',
+            name: 'Pita Domingos',
+            preferred: 'Software Engineer & Safety Architect',
+            bio: 'Over 8 years of experience building mission-critical enterprise systems. Specialized in integrating complex operational data into streamlined, high-performance web architectures that prioritize user safety and data integrity.',
+            cert: 'Certified Cloud Solutions Architect',
+            role: 'Founder & Lead Engineer at DigiSols',
+            portfolioTitle: 'Enterprise Portfolio',
+            portfolio: {
+                edudesk: 'Higher Ed Management',
+                h365: 'Medical Data Hub',
+                swiftpos: 'Cloud Retail OS',
+                microfin: 'Lending Analytics',
+                sentinel: 'HSE Observation Tool',
+                dataUnif: 'Integration Middleware'
+            },
+            archPhil: 'Architecture Philosophy',
+            archPhilText: 'Logic should be invisible. Experience should be intuitive. Data must be absolute.'
+        }
     },
     feedback: {
         title: 'User Feedback',
@@ -339,7 +538,7 @@ export const translations = {
         }
     },
     trainer: {
-        title: 'Trainer Input',
+        title: 'Instructor Input',
         loggedInAs: 'Instructor:',
         noSessions: 'No pending sessions',
         selectSession: 'Select Session',
@@ -412,267 +611,16 @@ export const translations = {
             students: 'Students',
             avgTheory: 'Avg Theory'
         },
+        notes: {
+            totalRecords: 'Total Records',
+            passRate: 'Pass Rate',
+            passed: 'Passed',
+            failed: 'Failed',
+            totalUsers: 'Total Users',
+            active: 'Active',
+            admins: 'Admins'
+        },
         noShowsTitle: 'Unauthorized Absences'
-    },
-    proposal: {
-        digitalTrans: 'Digital Transformation Proposal',
-        aboutMe: {
-            title: 'Architect Profile',
-            name: 'Pita Domingos',
-            preferred: 'Lead Solution Architect',
-            cert: 'IBM Certified Full Stack Data Scientist Professional',
-            role: 'Contract Manager (Jachris) • Ex-Vale Specialist',
-            bio: 'Expert architect specializing in the digital transformation of heavy industry. Expert in architecting "Source of Truth" ecosystems using Python, React, and Supabase Cloud. Previously optimized large-scale operations at Vale before moving to Jachris. Advanced proficiency in Power BI and AI Diagnostics to drive automated, data-unified safety compliance.',
-            skills: ['Python', 'React', 'Power BI', 'Excel', 'Pandas', 'Matplotlib'],
-            history: 'Vale (Specialist) → Jachris (Contract Manager)',
-            portfolioTitle: 'Ecosystem Portfolio',
-            portfolio: {
-                edudesk: 'EduDesk: K12 School Management (SaaS)',
-                h365: 'H365: Health Management System (SaaS)',
-                swiftpos: 'SwiftPOS: POS, Finance & Warehouse Management',
-                microfin: 'MicroFin: Microcredit Financial System',
-                sentinel: 'Sentinel: AI-Powered Home Security App',
-                dataUnif: 'Data Unification: Enterprise Integrity Logic'
-            },
-            stackTitle: 'Full Stack Proficiency',
-            archPhil: 'Architecture Philosophy',
-            archPhilText: 'Unified Data Integrity is the foundation of modern safety.'
-        },
-        objectives: {
-            title: 'Strategic Goals',
-            problemTitle: 'Current Operational Challenges',
-            problemText: 'Currently, RAC training data management involves disparate Excel spreadsheets, with individual roles maintaining isolated records. The RAC Admin is forced to manually consolidate this fragmented data, a process that is laborious, difficult to manage, and highly prone to human error and data inconsistency.',
-            solutionTitle: 'Proposed Solution',
-            goals: [
-                'Centralization: Consolidate disparate spreadsheets into a single, secure master database.',
-                'Automation: Eliminate manual consolidation by automating the data flow from Trainer Input to Admin Dashboards.',
-                'Integrity: Ensure "One Version of Truth" for all safety records across the mine.',
-                'Efficiency: Reduce administrative time spent on reporting and consolidation by 80%.'
-            ]
-        },
-        execSummary: {
-            title: 'Executive Summary',
-            text: 'The RACS Manager is an Enterprise Safety Integrity Ecosystem designed to optimize the safety training lifecycle. By migrating from manual spreadsheets to a centralized Supabase Cloud platform, it eliminates compliance gaps, automates validity management, and enforces strict access control protocols.',
-            quote: 'An intelligent safety mechanism that not only tracks training but actively manages compliance through automated scheduling intervention and smart access logic.'
-        },
-        integration: {
-            title: 'Unified Data Ecosystem',
-            staff: 'Permanent Staff (SuccessFactors)',
-            staffSource: 'HR Database',
-            contractor: 'Contractor Management DB',
-            contractorSource: 'Célula de Contracto',
-            middlewareTitle: 'Cloud Core Middleware',
-            middlewareDesc: 'Nightly synchronization engine utilizing Read-Only APIs to merge & normalize datasets into Supabase Realtime.',
-            sourceTitle: 'Immutable Ledger of Safety',
-            noManual: 'ZERO Manual Entry',
-            isolation: 'Multi-Tenant Data Isolation',
-            liveMatrix: 'Live Site Access Logic'
-        },
-        scenario: {
-            title: 'The Data Integrity Lifecycle',
-            challenge: 'Legacy Fragmentation',
-            challengeSub: 'Reactive Risk Model',
-            challengeText: 'Manual spreadsheets create compliance gaps. Paulo Manjates RAC 02 expires in {days} days, but no one knows.',
-            automation: 'CARS Digital Ecosystem',
-            automationSub: 'Proactive Resilience',
-            automationText1: 'Predictive Sync: System identifies expiry {days} days in advance via SuccessFactors API.',
-            automationText2: 'Automated Mitigation: Paulo is Auto-Booked for the next session. SMS alert sent instantly.',
-            automationOutcome: 'Outcome: Zero site lockout. Zero production delay. 100% Compliance Integrity.'
-        },
-        organogram: {
-            title: 'Project Structure',
-            tech1: 'Backend / Security',
-            tech2: 'Cloud / UI-UX'
-        },
-        timeline: {
-            title: 'Rollout Roadmap',
-            phase1: 'Architecture',
-            phase1desc: 'Infrastructure setup',
-            phase2: 'Integration',
-            phase2desc: 'API implementation',
-            phase3: 'UAT',
-            phase3desc: 'Testing phase',
-            phase4: 'Production',
-            phase4desc: 'Live rollout',
-            phase5: 'Managed Services',
-            phase5desc: 'Maintenance'
-        },
-        techStack: {
-          title: 'Technological Blueprint',
-          frontendTitle: 'Tactical Frontend',
-          frontend: 'React 19 high-performance UI with 300s Tactical Inactivity Session Guard.',
-          backendTitle: 'Supabase Realtime',
-          backend: 'Enterprise Cloud Core for secure, distributed storage and Row-Level Security (RLS).',
-          databaseTitle: 'RoboTech Intelligence',
-          database: 'Gemini 3.0 for automated self-healing and proactive safety diagnostics.',
-          securityTitle: 'Military Grade Identity',
-          security: 'Encrypted Master Key protocols and automated access denial logic.'
-        },
-        financials: {
-          title: 'Investment Model',
-          initialInvest: 'Total Initial Investment',
-          recurring: 'Monthly Recurring Services',
-          headers: {
-            desc: 'Item Description',
-            type: 'Type',
-            cost: 'Cost'
-          },
-          items: {
-              item1: 'Core Architecture & Initial Development',
-              item2: 'System Setup & API Integration Layer',
-              item3: 'Cloud Infrastructure & Managed SaaS Hosting',
-              item4: 'Ongoing Maintenance & Robotic Engine Support'
-          }
-        },
-        roadmap: {
-            title: 'Feature Roadmap',
-            auth: 'Identity',
-            authDesc: 'Azure AD link',
-            db: 'Scalability',
-            dbDesc: 'Distributed nodes',
-            email: 'Alerts',
-            emailDesc: 'Notification directly',
-            hosting: 'Mobile',
-            hostingDesc: 'Progressive Web App'
-        },
-        aiFeatures: {
-            title: 'Next Gen AI',
-            chatbot: 'Integrated safety guide.',
-            reporting: 'Executive summaries.'
-        },
-        futureUpdates: {
-            title: 'Advanced Modules',
-            moduleA: 'A - IoT Hub',
-            moduleB: 'B - Hardware Sync',
-            moduleADesc: 'Integrated software logic that connects your digital safety matrices directly to physical access points.',
-            moduleBDesc: 'Hardware synchronization layer involving turnstiles, breathalyzers, and facial recognition infrastructure.'
-        },
-        enhancedCaps: {
-            title: 'Enhanced Capabilities',
-            mobileVerify: { title: 'Mobile Verification', desc: 'Instant QR scanning.' },
-            autoBooking: { title: 'Auto-Booking', desc: 'Smart reservation.' },
-            massData: { title: 'Mass Data Sync', desc: 'Mass CSV import.' }
-        },
-        conclusion: {
-            title: 'The Future of HSE',
-            text: 'Standardizing safety through architecture.'
-        },
-        thankYou: {
-            title: 'Muito Obrigado',
-            subtitle: "Let's build a safer, more automated future for our workforce together.",
-            email: 'pita.domingos@zd044.onmicrosoft.com',
-            phone: '+258 84 5479 481'
-        }
-    },
-    adminManual: {
-        title: 'Admin Manual',
-        subtitle: 'Master System Operations',
-        slides: {
-            intro: 'Introduction',
-            logic: 'Core Logic',
-            dashboard: 'Painéis',
-            workflows: 'Fluxos de Trabalho',
-            advanced: 'Advanced Tools',
-            robotics: 'RoboTech Self-Healing',
-            troubleshoot: 'Troubleshooting',
-            architecture: 'Platform Architecture'
-        },
-        content: {
-            logic: {
-                title: 'Access Permission Logic',
-                desc: 'The system uses a 3-point validation check.',
-                active: 'Active Status',
-                aso: 'Medical (ASO)',
-                racs: 'Training (RACs)',
-                result: 'SITE ACCESS GRANTED'
-            }
-        }
-    },
-    manuals: {
-        title: 'Operator Manuals',
-        subtitle: 'System usage documentation',
-        sysAdmin: {
-            title: 'System Administrator',
-            subtitle: 'Full platform management',
-            configTitle: 'System Configuration',
-            configDesc: 'Manage high-level entities to ensure operational continuity.',
-            rooms: 'Define training rooms and their capacity limits.',
-            trainers: 'Assign authorized RAC modules to specific evaluators.',
-            racs: 'Configure validity months and practical requirements for each RAC.',
-            dbTitle: 'Database Management',
-            dbDesc: 'CARS operates as a unified repository for all personnel.',
-            restrictionWarning: 'Note: Database filters restrict data by the selected operational site.',
-            csv: 'Use the CSV Import wizard to sync with external HR systems.',
-            active: 'Toggle "Active" status to block access for terminated staff.'
-        },
-        racAdmin: {
-            title: 'RAC Coordinator',
-            subtitle: 'Evaluation scheduling',
-            schedTitle: 'Session Scheduling',
-            schedDesc: 'Planning training cohorts based on room availability.',
-            create: 'Create new sessions by selecting RAC Type and Date.',
-            lang: 'Select session language (English/Portuguese) for instruction.',
-            autoTitle: 'Lógica de Auto-Agendamento',
-            autoDesc: 'System automatically books staff expiring in < 7 days.',
-            approve: 'Admins must review and confirm auto-booked candidates.',
-            renewTitle: 'Renewal Tracking',
-            renewDesc: 'Dashboards highlight candidates in the "Expiring Soon" red zone.'
-        },
-        racTrainer: {
-            title: 'Safety Instructor',
-            subtitle: 'Grading and register',
-            inputTitle: 'Result Entry',
-            inputDesc: 'Entering theoretical and practical evaluation scores.',
-            grading: 'Passing requires >= 70% in both components.',
-            rac02: 'RAC 02 requires a valid Driver License verification check.',
-            save: 'Click "Save Results" to trigger digital certificate updates.'
-        },
-        deptAdmin: {
-            title: 'Department Manager',
-            subtitle: 'Operational compliance',
-            reqTitle: 'Tracking Compliance',
-            reqDesc: 'Monitor the readiness of your specific workforce segment.',
-            search: 'Search for staff members by Personnel ID.',
-            print: 'Print current rosters for site entry audit.',
-            repTitle: 'Analytics',
-            repDesc: 'Analyze failure trends to identify training bottlenecks.'
-        },
-        user: {
-            title: 'General User',
-            subtitle: 'Personal safety record',
-            statusTitle: 'Compliance Status',
-            statusDesc: 'Check your current readiness for critical tasks.',
-            filterAlert: 'Alert: Ensure you check the "Site Filter" to see data for your location.',
-            green: 'Green status means you are fully authorized for site entry.',
-            red: 'Red status indicates missing training or an expired medical (ASO).',
-            qr: 'Scan the Passport QR code at gate terminals for instant verification.'
-        }
-    },
-    cards: {
-        title: 'Certification Cards',
-        requestButton: 'Request Cards',
-        sending: 'Sending Requisition...',
-        eligibility: {
-            failedTitle: 'Compliance Error',
-            failedMsg: 'You are currently not authorized to generate a card. Please ensure all mandatory RACs and ASO are valid.',
-            checkReqs: 'Check Requirements'
-        }
-    },
-    advisor: {
-        title: 'Safety AI Advisor',
-        button: 'Ask AI Advisor',
-        sender: 'AI Guide',
-        placeholder: 'Ask about safety rules...',
-        emptyState: 'How can I help with your safety requisition today?'
-    },
-    verification: {
-        title: 'Digital Verification',
-        verified: 'AUTHORIZED',
-        notVerified: 'ACCESS DENIED',
-        notFound: 'RECORD NOT FOUND',
-        scanTime: 'Verification Time',
-        asoStatus: 'Medical (ASO)',
-        dlStatus: 'Driver License'
     },
     racDefs: {
         RAC01: 'RAC 01 - Working at Height',
@@ -696,7 +644,7 @@ export const translations = {
   },
   pt: {
     common: {
-      vulcan: 'RACS',
+      vulcan: 'CARS',
       all: 'Todos',
       search: 'Pesquisar...',
       rowsPerPage: 'Linhas por página:',
@@ -711,50 +659,52 @@ export const translations = {
       role: 'Função',
       actions: 'Ações',
       cancel: 'Cancelar',
-      save: 'Salvar',
-      delete: 'Excluir',
+      save: 'Gravar',
+      delete: 'Eliminar',
       edit: 'Editar',
       view: 'Ver',
       print: 'Imprimir',
-      download: 'Baixar',
+      download: 'Descarregar',
       import: 'Importar',
       template: 'Modelo',
       yes: 'Sim',
       no: 'Não',
       time: 'Hora',
-      status: 'Status',
-      recordsFound: 'registros encontrados',
+      status: 'Estado',
+      recordsFound: 'registos encontrados',
       completed: 'Concluído',
       timeLeft: 'restante',
       passed: 'Aprovado',
       failed: 'Reprovado',
       pending: 'Pendente',
-      enterpriseView: 'Visão Enterprise',
+      absent: 'Faltou',
+      waitlisted: 'Lista de Espera',
+      enterpriseView: 'Vista Corporativa',
       complianceRate: 'Taxa de Conformidade',
       testsProcessed: 'Testes Processados',
       active: 'Ativo',
       stats: {
-        totalRecords: 'Total de Registros',
+        totalRecords: 'Total de Registos',
         passRate: 'Taxa de Aprovação',
         passed: 'Aprovados',
         failed: 'Reprovados',
-        totalUsers: 'Total de Usuários',
+        totalUsers: 'Total de Utilizadores',
         active: 'Ativos',
         admins: 'Admins'
       }
     },
     login: {
-      title: 'Gestor RACS',
+      title: 'Gestor CARS',
       subtitle: 'Portal de Conformidade de Segurança',
-      usernameLabel: 'Usuário / ID de Pessoal',
+      usernameLabel: 'Utilizador / ID de Pessoal',
       passwordLabel: 'Chave Mestra',
       usernamePlaceholder: 'ex: Pita Domingos',
       passwordPlaceholder: 'Deixe vazio no primeiro acesso',
-      establishing: 'Authorizando...',
-      submitBtn: 'Estabelecer Ligação',
+      establishing: 'Autorizando...',
+      submitBtn: 'Estabelecer Link',
       version: 'Arquitetura v2.5 • Encriptado',
       welcome: 'Bem-vindo, {name}!',
-      setupDesc: 'Este é o seu primeiro acesso. Por favor, crie uma senha segura para ativar o seu link de acesso.',
+      setupDesc: 'Este é o seu primeiro acesso. Por favor, crie uma senha segura para ativar o seu link.',
       newKey: 'Nova Chave Mestra',
       newKeyPlaceholder: 'Mín. 6 caracteres',
       confirmKey: 'Confirmar Chave',
@@ -764,85 +714,101 @@ export const translations = {
       applying: 'Aplicando...',
       errorMinChar: 'A senha deve ter pelo menos 6 caracteres.',
       errorMatch: 'As senhas não coincidem.',
-      errorSave: 'Falha ao salvar a senha.'
+      errorSave: 'Erro ao gravar senha.'
     },
     nav: {
       dashboard: 'Painel',
       booking: 'Requisições',
-      records: 'Registros',
-      database: 'Banco de Dados',
+      records: 'Registos',
+      database: 'Base de Dados',
       reports: 'Relatórios',
-      enterpriseDashboard: 'Empresa',
-      alcohol: 'Controle de Álcool',
+      enterpriseDashboard: 'Corporativo',
+      alcohol: 'Controlo de Álcool',
       requestCards: 'Solicitar Cartões',
       communications: 'Comunicações',
-      schedule: 'Cronograma',
-      siteGovernance: 'Governança',
-      trainerInput: 'Input do Formador',
-      users: 'Usuários',
-      settings: 'Configurações',
+      schedule: 'Agenda',
+      siteGovernance: 'Governação',
+      trainerInput: 'Entrada Instrutor',
+      users: 'Utilizadores',
+      settings: 'Definições',
       logs: 'Logs',
       manuals: 'Manuais',
       integration: 'Integração',
-      presentation: 'Proposta de Projecto',
+      presentation: 'Apresentação',
       techDocs: 'Docs Técnicos'
     },
     dashboard: {
       title: 'Centro de Comando de Segurança',
-      subtitle: 'Sistema de Requisição de Atividades Críticas (RACS)',
-      systemStatus: 'Status de Prontidão Global',
+      subtitle: 'Sistema de Requisição de Atividades Críticas (CARS)',
+      systemStatus: 'Estado de Prontidão Global',
       newRequisition: 'Nova Requisição',
-      executiveOverview: 'Visão Executiva',
+      executiveOverview: 'Resumo Executivo',
       globalReadiness: 'Prontidão Global',
-      systemDescription: 'Matriz de Requisição de Atividades Críticas (Visão Enterprise). Monitoramento de conformidade em tempo real.',
-      complianceAnalytics: 'Análise de Conformidade',
+      systemDescription: 'Matriz de Requisição de Atividade Crítica (Vista Corporativa). Monitorização de conformidade em tempo real.',
+      complianceAnalytics: 'Analítica de Conformidade',
       renewalManagement: 'Gestão de Renovações',
-      renewalDescription: 'O sistema identificou {count} funcionários com certificações a expirar nos próximos 30 dias.',
-      autoBookRenewals: 'Agendar Renovações Auto',
-      liveWorkforceMatrix: 'Matriz da Força de Trabalho',
-      personnelStatus: 'Status do Pessoal Ativo',
+      renewalDescription: 'O sistema identificou {count} colaboradores com certificações a expirar nos próximos 30 dias.',
+      autoBookRenewals: 'Auto-Agendar Renovações',
+      liveWorkforceMatrix: 'Matriz de Pessoal em Tempo Real',
+      personnelStatus: 'Estado do Pessoal Ativo',
+      waitlistAnalytics: 'Pressão da Lista de Espera',
+      waitlistSub: 'Módulos que necessitam de sessões extras',
+      highDemand: 'ALTA DEMANDA',
       upcoming: {
-        title: 'Próximas Requisições Agendadas',
-        viewSchedule: 'Ver Cronograma',
-        date: 'Date',
+        title: 'Próximas Sessões Agendadas',
+        viewSchedule: 'Ver Agenda',
+        date: 'Data',
         session: 'Sessão',
-        capacity: 'Capacidade'
+        capacity: 'Capacidade',
+        faculty: 'Instrutor',
+        empty: 'Nenhuma sessão agendada em breve.'
       },
       booked: {
-        title: 'Requisitados Recentemente'
+        title: 'Inscrições Recentes',
+        personnel: 'Pessoal',
+        requirement: 'Requisito',
+        details: 'Detalhes',
+        schedule: 'Agenda',
+        registered: 'Inscritos',
+        empty: 'Nenhum pessoal inscrito para as próximas sessões.'
       },
       kpi: {
-        adherence: 'Aderência da Força de Trabalho',
+        adherence: 'Aderência do Pessoal',
         certifications: 'Certificações',
-        pending: 'Requis. Pendentes',
-        expiring: 'Expirando em Breve',
-        scheduled: 'Sessões Agendadas',
-        accessGranted: 'Acesso Autorizado'
+        pending: 'Reqs Pendentes',
+        expiring: 'Expira em Breve',
+        scheduled: 'Sessões Marcadas',
+        accessGranted: 'Acesso Concedido'
       },
       charts: {
         compliant: 'Autorizado',
         nonCompliant: 'Bloqueado',
-        complianceTitle: 'Matriz de Conformidade',
-        complianceSubtitle: 'Aderência por Módulo',
+        complianceTitle: 'Matriz de Conformidade de Treino',
+        complianceSubtitle: 'Aderência aos Requisitos por Módulo',
         accessTitle: 'Permissões de Acesso ao Site',
-        missing: 'Requisitos Ausentes',
-        accessLegend: '"{compliant}" = ASO Válido + Todos os RACS obrigatórios aprovados. "{nonCompliant}" = ASO Expirado ou RACS ausentes.'
+        missing: 'Requisitos em Falta',
+        accessLegend: '"{compliant}" = ASO Válido + Todos RACs necessários aprovados. "{nonCompliant}" = ASO Expirado ou RACs em falta.'
       }
     },
     booking: {
       title: 'Nova Requisição',
       selfServiceTitle: 'Auto-Requisição',
-      secureMode: 'Matriz de Segurança Ativa',
-      success: 'Requisição Enviada com Sucesso',
-      selectSession: 'Selecionar Sessão de Treinamento',
+      secureMode: 'Matriz Segura Ativa',
+      success: 'Requisição Submetida com Sucesso',
+      selectSession: 'Selecionar Sessão de Treino',
       chooseSession: 'Escolha uma sessão...',
       addRow: 'Adicionar Pessoal',
-      submitBooking: 'Enviar Requisição'
+      submitBooking: 'Submeter Requisição',
+      waitlistWarning: 'Alerta de Capacidade: A sessão selecionada está lotada. Novos alunos serão adicionados à Lista de Espera.',
+      demandAlertTitle: 'Limite de Espera Atingido',
+      demandAlertMsg: 'Módulo {rac} tem {count} pessoas em espera. Considere agendar uma nova sessão.'
     },
     results: {
       searchPlaceholder: 'Pesquisar por Nome ou ID...',
       passport: 'Meu Passaporte',
       export: 'Exportar CSV',
+      viewWaitlist: 'Gestão de Fila',
+      viewAll: 'Todos os Registos',
       table: {
         employee: 'Pessoal',
         session: 'Requisito',
@@ -850,115 +816,349 @@ export const translations = {
         trainer: 'Avaliador',
         theory: 'Teoria',
         status: 'Autorização',
-        expiry: 'Expiração'
+        expiry: 'Validade'
       }
     },
     database: {
         active: 'Ativo',
-        importSuccess: 'Importação concluída',
+        importSuccess: 'Importação bem-sucedida',
         importCsv: 'Importar CSV',
-        confirmDelete: 'Tem certeza?',
+        confirmDelete: 'Tem a certeza?',
         confirmDeleteMsg: 'Esta ação não pode ser desfeita.'
     },
     users: {
-        title: 'Gestão de Usuários',
-        subtitle: 'Gerenciar acessos e permissões do sistema.',
-        addUser: 'Adicionar Usuário',
+        title: 'Gestão de Utilizadores',
+        subtitle: 'Gerir acessos e permissões do sistema.',
+        addUser: 'Adicionar Utilizador',
         modal: {
-            title: 'Novo Usuário',
+            title: 'Novo Utilizador',
             name: 'Nome',
-            email: 'Email',
-            createUser: 'Criar Usuário'
+            email: 'E-mail',
+            createUser: 'Criar Utilizador'
         },
         table: {
-            user: 'Usuário',
+            user: 'Utilizador',
             role: 'Função',
-            status: 'Status',
+            status: 'Estado',
             actions: 'Ações'
         }
     },
     schedule: {
-        title: 'Agenda de Treinamento',
-        subtitle: 'Gerenciar próximas sessões de treinamento.',
+        title: 'Agenda de Treinos',
+        subtitle: 'Gerir próximas sessões de formação.',
         newSession: 'Nova Sessão',
         modal: {
             title: 'Agendar Sessão',
-            racType: 'Tipo RAC',
-            date: 'Date',
-            startTime: 'Hora Início',
+            racType: 'Tipo de RAC',
+            date: 'Data',
+            startTime: 'Hora de Início',
             location: 'Local',
             capacity: 'Capacidade',
             instructor: 'Instrutor',
             language: 'Idioma',
             portuguese: 'Português',
             english: 'Inglês',
-            saveSession: 'Salvar Sessão'
+            saveSession: 'Gravar Sessão'
         }
     },
     settings: {
-        title: 'Configurações',
+        title: 'Definições do Sistema',
         globalConfig: 'Configuração Global',
         localConfig: 'Configuração Local do Site',
-        saveAll: 'Salvar Alterações',
+        saveAll: 'Gravar Alterações',
         tabs: {
-            branding: 'Marca'
+            branding: 'Identidade'
         },
         branding: {
-            title: 'Marca do Cliente',
+            title: 'Identidade do Cliente',
             appName: 'Nome da Aplicação',
-            safetyLogo: 'Logotipo de Segurança'
+            safetyLogo: 'Emblema de Segurança'
+        }
+    },
+    alcohol: {
+        dashboard: {
+            title: 'Controlo de Álcool',
+            subtitle: 'Monitorização em tempo real',
+            live: 'Feed ao Vivo',
+            online: 'Online',
+            specs: 'Especificações Técnicas',
+            backToLive: 'Voltar ao Vivo',
+            onlineStatus: 'Online',
+            hourlyTrend: 'Tendência Horária',
+            dailyTrend: 'Tendência Diária',
+            deviceLoad: 'Carga do Dispositivo',
+            complianceRatio: 'Rácio de Conformidade',
+            liveStream: 'Transmissão em Direto',
+            mqtt: 'Protocolo MQTT',
+            deviceHealth: 'Estado do Dispositivo',
+            close: 'Fechar',
+            actions: 'Ações Automáticas',
+            kpi: {
+                total: 'Total de Testes',
+                violations: 'Violações',
+                health: 'Saúde do Sistema'
+            },
+            alert: {
+                title: 'DETEÇÃO POSITIVA',
+                desc: 'Sequência de acesso interrompida',
+                measured: 'TAS Medida'
+            },
+            actionLog: {
+                locked: 'Iniciada sequência de bloqueio de portaria',
+                logged: 'Registado no perfil do colaborador',
+                generating: 'A gerar relatório de risco IA...',
+                contacting: 'A contactar segurança local...',
+                sent: 'Alerta enviado'
+            }
+        },
+        protocol: {
+            title: 'Protocolos de Controlo',
+            positiveTitle: 'Protocolo Positivo',
+            positiveDesc: 'Bloqueio imediato da cancela e notificação do supervisor.',
+            resetTitle: 'Protocolo de Reinício',
+            resetDesc: 'Requer verificação de RH para desbloqueio.'
+        },
+        features: {
+            title: 'Funcionalidades Integradas',
+            iotTitle: 'Conexão IoT',
+            iotDesc: 'Sincronização direta de hardware.',
+            accessTitle: 'Negação de Acesso',
+            accessDesc: 'Bloqueio instantâneo.',
+            complianceTitle: 'Link de Conformidade',
+            complianceDesc: 'Registo automático de resultados.'
         }
     },
     enterprise: {
-        title: 'Painel Enterprise',
-        subtitle: 'Análise global de todas as operações',
+        title: 'Painel Corporativo',
+        subtitle: 'Analítica global em todas as operações',
         systemTitle: 'Comando da Plataforma',
-        systemSubtitle: 'Visão de infraestrutura multi-tenant',
+        systemSubtitle: 'Vista de infraestrutura multi-cliente',
         globalHealth: 'Saúde Global',
         totalWorkforce: 'Força de Trabalho Total',
-        topPerformer: 'Melhor Performance',
-        needsAttention: 'Precisa de Atenção',
+        topPerformer: 'Melhor Desempenho',
+        needsAttention: 'Necessita Atenção',
         noData: 'Sem dados',
         tenantMatrix: 'Matriz de Clientes',
-        systemView: 'Visão do Admin do Sistema',
+        systemView: 'Vista Admin do Sistema',
         siteComparison: 'Comparação de Sites',
         selectPrompt: 'Selecione um filtro para comparar sites',
         riskHeatmap: 'Mapa de Calor de Risco',
-        aiAuditor: 'Auditor de Segurança IA',
+        aiAuditor: 'Arquiteto de Segurança IA',
         aiDirector: 'Diretor IA',
         systemIntelligence: 'Inteligência do Sistema',
-        companyIntelligence: 'Análise para',
+        companyIntelligence: 'Analítica para',
         aiPrompt: 'Solicitar análise',
         aiPromptSystem: 'Gerar relatório de segurança global',
-        aiPromptEnterprise: 'Gerar relatório enterprise',
-        bottlenecks: 'Gargalos de Treinamento',
-        failure: 'Taxa de Reprovação',
+        aiPromptEnterprise: 'Gerar relatório corporativo',
+        bottlenecks: 'Gargalos de Treino',
+        failure: 'Taxa de Falha',
         siteName: 'Site'
     },
+    proposal: {
+        digitalTrans: 'Transformação Digital de Segurança',
+        scenario: {
+            title: 'Cenário de Prontidão Operacional',
+            challenge: 'O Desafio Legado',
+            challengeSub: 'Dados Desconectados',
+            challengeText: 'O operador Paulo Manjate tem um RAC 01 a expirar em {days} dias. O HSE só descobre durante um bloqueio de portaria.',
+            automation: 'Prontidão Integrada',
+            automationSub: 'Sincronização Preditiva',
+            automationText1: 'O Motor de Sincronização identifica a janela de {days} dias do Paulo e verifica o estado médico.',
+            automationText2: 'O sistema valida a capacidade da sala e auto-reserva uma vaga de renovação.',
+            automationOutcome: 'Zero Tempo de Inatividade. Paulo é treinado 48 horas ANTES do bloqueio.'
+        },
+        execSummary: {
+            title: 'Resumo Executivo',
+            text: 'Uma infraestrutura digital unificada para gestão de requisições de atividades críticas (CARS) em toda a empresa. Eliminando a entrada manual de dados, reduzindo o atrito de auditoria e garantindo 100% de prontidão operacional.',
+            quote: 'Convertendo segurança reativa em resiliência operacional preditiva.'
+        },
+        objectives: {
+            title: 'Objetivos Primários',
+            problemTitle: 'Barreiras Atuais',
+            problemText: 'Dados de empreiteiros fragmentados, rastreio manual de certificações e falta de visibilidade em tempo real sobre os níveis de conformidade.',
+            solutionTitle: 'Estado Futuro',
+            goals: [
+                'Fusão Automática de Dados de RH e Empreiteiros',
+                'Gestão Preditiva de Renovações e Filas de Espera',
+                'Passaporte de Segurança Digital para Cada Trabalhador',
+                'Analítica Executiva HSE e Relatórios IA'
+            ]
+        },
+        integration: {
+            title: 'Ecossistema de Dados Unificado',
+            staffSource: 'SuccessFactors / RH',
+            staff: 'Pessoal Permanente',
+            contractorSource: 'Gestor de Contratos',
+            contractor: 'Vendedores Externos',
+            middlewareTitle: 'Hub de Integração',
+            middlewareDesc: 'Camada API Restful fundindo dados de empreiteiros e permanentes.',
+            sourceTitle: 'CARS: Fonte Única de Verdade',
+            noManual: 'Sem Integração Manual',
+            isolation: 'Isolamento Lógico de Dados',
+            liveMatrix: 'Matriz de Conformidade em Tempo Real'
+        },
+        organogram: {
+            title: 'Estrutura do Projecto',
+            tech1: 'Arquitetura e DevOps',
+            tech2: 'Engenheiro de Dados Cloud'
+        },
+        timeline: {
+            title: 'Roteiro de Implementação',
+            phase1: 'Descoberta e Auditoria API',
+            phase1desc: 'Auditoria das fontes de dados de RH e Empreiteiros.',
+            phase2: 'Camada de Integração',
+            phase2desc: 'Desenvolvimento do Middleware CARS para sincronização.',
+            phase3: 'Implementação de Módulos',
+            phase3desc: 'Customização da lógica de avaliação RAC 01-11.',
+            phase4: 'Programa Piloto',
+            phase4desc: 'Testes UAT num único site operacional.',
+            phase5: 'Escala Corporativa',
+            phase5desc: 'Lançamento global para todos os departamentos.'
+        },
+        techStack: {
+            title: 'Arquitetura Moderna',
+            frontendTitle: 'Experiência do Utilizador',
+            frontend: 'React 18 • TypeScript • Tailwind',
+            backendTitle: 'Lógica do Sistema',
+            backend: 'Node.js • Cloud Functions • Supabase',
+            databaseTitle: 'Persistência de Dados',
+            database: 'PostgreSQL • Vector Storage (IA)',
+            securityTitle: 'Controlo de Acesso',
+            security: 'JWT • SSL • RLS Policy'
+        },
+        financials: {
+            title: 'Resumo de Investimento',
+            headers: { desc: 'Descrição', cost: 'Investimento' },
+            items: {
+                item1: 'Arquitetura Core e Desenvolvimento Inicial',
+                item2: 'Configuração e Camada de Integração API',
+                item3: 'Infraestrutura Cloud e SaaS Gerido',
+                item4: 'Manutenção Contínua e Motor de IA'
+            },
+            initialInvest: 'Investimento Inicial Total',
+            recurring: 'Serviços Mensais Recorrentes'
+        },
+        roadmap: {
+            title: 'Roteiro Estratégico',
+            auth: 'Link Biométrico',
+            authDesc: 'Face-ID para verificação em campo.',
+            db: 'IA Preditiva',
+            dbDesc: 'Previsão de carga de treino.',
+            email: 'SMS Automatizado',
+            emailDesc: 'Notificações diretas aos alunos.',
+            hosting: 'App Móvel',
+            hostingDesc: 'Versão nativa iOS/Android.'
+        },
+        aiFeatures: {
+            title: 'Inteligência de Segurança Gemini',
+            chatbot: 'Conselheiro de segurança em tempo real para protocolos RAC.',
+            reporting: 'Resumos executivos IA sobre riscos nos sites.'
+        },
+        futureUpdates: {
+            title: 'Expansão V2: Acesso IoT',
+            moduleA: 'Software de Controlo de Álcool',
+            moduleADesc: 'Integração em tempo real de bafômetros com lógica de portaria.',
+            moduleB: 'Infraestrutura Física',
+            moduleBDesc: 'Instalação de catracas conectadas.'
+        },
+        enhancedCaps: {
+            title: 'Capacidades Avançadas',
+            mobileVerify: { title: 'Verificação Móvel', desc: 'Fiscais HSE podem verificar qualquer passaporte via QR code.' },
+            autoBooking: { title: 'Auto-Agendamento', desc: 'Inscrição preditiva para certificações a expirar.' },
+            massData: { title: 'Importação em Massa', desc: 'Preocessamento de certificados legados.' }
+        },
+        conclusion: {
+            title: 'O Caminho em Frente',
+            text: 'O CARS não é apenas uma ferramenta de treino; é uma salvaguarda operacional. Garante que apenas quem está apto, treinado e autorizado possa entrar na zona de risco.'
+        },
+        thankYou: {
+            title: 'Obrigado',
+            subtitle: 'Pronto para Implementação Operacional',
+            email: 'pita.domingos@zd044.onmicrosoft.com',
+            phone: '+258 84 547 9481'
+        },
+        waitlist: {
+            title: 'Inteligência de Fila',
+            subtitle: 'Gestão Proativa de Demanda',
+            capacityTitle: 'Guarda de Capacidade',
+            capacityDesc: 'Redirecionamento automático de pessoal excedente para uma lista de espera FIFO.',
+            demandTitle: 'Notificações Admin',
+            demandDesc: 'Alertas baseados em limite (ex: 5+ em espera) para agendar novas sessões.',
+            outcome: 'Visibilidade Total',
+            outcomeDesc: 'Nunca perca uma requisição em cadeias de e-mail.'
+        },
+        workflow: {
+            title: 'Diagrama de Fluxo do Sistema',
+            subtitle: 'Ciclo de Vida de Dados de Ponta a Ponta',
+            step1: 'Submissão',
+            step1sub: 'Requisição HSE',
+            step1actor: 'HSE / Admin de Empreiteiro',
+            step1desc: 'Requisitos de pessoal submetidos para validação.',
+            step2: 'Agendamento',
+            step2sub: 'Alocação e Fila',
+            step2actor: 'Depto de Formação',
+            step2desc: 'Alocação automática de vagas ou entrada em Fila de Espera prioritária.',
+            step3: 'Avaliação',
+            step3sub: 'Graduação (Aprov/Repr)',
+            step3actor: 'Instrutor RAC',
+            step3desc: 'Graduação pelo formador com auditoria de pontuação em tempo real (Aprov/Repr).',
+            step4: 'Lógica de Acesso',
+            step4sub: 'Conformidade de Matriz',
+            step4actor: 'Core do Sistema',
+            step4desc: 'Fusão Lógica: [Ativo] + [ASO] + [Resultado RAC] = Estado.',
+            step5: 'Certificação',
+            step5sub: 'Emissão de Passaporte',
+            step5actor: 'Escritório HSE',
+            step5desc: 'Geração de certificação e emissão de cartões digitais seguros.',
+            step6: 'Verificação',
+            step6sub: 'Auditoria de Campo QR',
+            step6actor: 'Equipa de Segurança de Campo',
+            step6desc: 'Auditoria QR instantânea verifica autorização em zonas de risco.'
+        },
+        aboutMe: {
+            title: 'Perfil do Arquiteto do Sistema',
+            name: 'Pita Domingos',
+            preferred: 'Engenheiro de Software e Arquiteto de Segurança',
+            bio: 'Mais de 8 anos de experiência na construção de sistemas empresariais de missão crítica. Especializado na integração de dados operacionais complexos em arquiteturas web simplificadas e de alto desempenho, priorizando a segurança do utilizador e a integridade dos dados.',
+            cert: 'Arquiteto de Soluções Cloud Certificado',
+            role: 'Fundador e Engenheiro Chefe na DigiSols',
+            portfolioTitle: 'Portfólio Corporativo',
+            portfolio: {
+                edudesk: 'Gestão de Ensino Superior',
+                h365: 'Hub de Dados Médicos',
+                swiftpos: 'OS de Retalho Cloud',
+                microfin: 'Analítica de Empréstimos',
+                sentinel: 'Ferramenta de Observação HSE',
+                dataUnif: 'Middleware de Integração'
+            },
+            archPhil: 'Filosofia de Arquitetura',
+            archPhilText: 'A lógica deve ser invisível. A experiência deve ser intuitiva. Os dados devem ser absolutos.'
+        }
+    },
     feedback: {
-        title: 'Feedback do Usuário',
-        subtitle: 'Valorizamos sua opinião',
+        title: 'Feedback do Utilizador',
+        subtitle: 'Valorizamos a sua opinião',
         adminTitle: 'Comando de Feedback',
-        manage: 'Gerenciar relatórios do sistema',
+        manage: 'Gerir relatórios do sistema',
         typeLabel: 'Tipo de Feedback',
         messageLabel: 'Sua mensagem',
-        msgPlaceholder: 'Descreva sua sugestão ou problema...',
+        msgPlaceholder: 'Descreva a sua sugestão ou problema...',
         button: 'Enviar Feedback',
         actionable: 'Acionável',
         noSelection: 'Selecione uma entrada para inspecionar',
         workflow: 'Fluxo de Trabalho',
         priority: 'Priority',
         markActionable: 'Marcar como Acionável',
-        markedActionable: 'Acionável Definido',
+        markedActionable: 'Definido como Acionável',
         submittedBy: 'Enviado por',
         internalNotes: 'Notas Internas',
         visibleAdmin: 'Visível apenas para admins',
-        deleteRecord: 'Excluir Registro',
+        deleteRecord: 'Eliminar Registo',
         status: {
             New: 'Novo',
             InProgress: 'Em Progresso',
             Resolved: 'Resolvido',
-            Dismissed: 'Descartado'
+            Dismissed: 'Ignorado'
         },
         types: {
             Bug: 'Erro',
@@ -967,7 +1167,7 @@ export const translations = {
         }
     },
     trainer: {
-        title: 'Input do Formador',
+        title: 'Entrada do Instrutor',
         loggedInAs: 'Instrutor:',
         noSessions: 'Sem sessões pendentes',
         selectSession: 'Selecionar Sessão',
@@ -975,35 +1175,35 @@ export const translations = {
         saveResults: 'Confirmar Resultados'
     },
     communications: {
-        title: 'Central de Comunicação',
-        subtitle: 'Logs automatizados',
+        title: 'Centro de Comunicação',
+        subtitle: 'Logs automáticos',
         clear: 'Limpar logs',
         search: 'Pesquisar mensagens',
-        empty: 'Nenhuma mensagem registrada',
-        select: 'Selecione uma mensagem para visualizar',
+        empty: 'Sem mensagens registadas',
+        select: 'Selecione uma mensagem para pré-visualizar',
         sms: 'Mensagem SMS',
         to: 'Para',
         automated: 'Esta é uma mensagem automática do sistema',
-        gateway: 'Gateway SMS RACS',
+        gateway: 'Gateway SMS CARS',
     },
     logs: {
         title: 'Logs do Sistema',
         levels: {
             all: 'Todos os Níveis',
             info: 'INFO',
-            warn: 'WARN',
+            warn: 'AVISO',
             error: 'ERRO',
             audit: 'AUDITORIA'
         },
         table: {
             level: 'Nível',
             timestamp: 'Timestamp',
-            user: 'Usuário',
+            user: 'Utilizador',
             message: 'Mensagem'
         }
     },
     reports: {
-        title: 'Análises de Segurança',
+        title: 'Analítica de Segurança',
         subtitle: 'Métricas de Desempenho RACS',
         generate: 'Gerar Relatório',
         analyzing: 'Analisando...',
@@ -1011,7 +1211,7 @@ export const translations = {
         stats: {
             totalTrained: 'Total de Pessoal',
             passRate: 'Taxa de Sucesso',
-            attendance: 'Presença',
+            attendance: 'Assiduidade',
             noShows: 'Faltas'
         },
         filters: {
@@ -1024,17 +1224,17 @@ export const translations = {
         periods: {
             weekly: 'Semanal',
             monthly: 'Mensal',
-            ytd: 'Ano Corrente',
+            ytd: 'Ano até à data',
             custom: 'Intervalo Personalizado'
         },
         charts: {
-            performance: 'Sucesso do Treinamento',
+            performance: 'Sucesso de Formação',
             distributionTitle: 'Distribuição de Conformidade',
-            distributionSubtitle: 'Relação Aprovação/Reprovação',
+            distributionSubtitle: 'Rácio Aprovado/Reprovado',
             aiSubtitle: 'Inteligência de Segurança Contextual',
-            breakdownTitle: 'Resultados de avaliação específicos por módulo'
+            breakdownTitle: 'Resultados de avaliação por módulo'
         },
-        leaderboard: 'Desempenho do Avaliador',
+        leaderboard: 'Desempenho de Formadores',
         printReport: 'Imprimir Estatísticas',
         trainerMetrics: {
             students: 'Alunos',
@@ -1042,281 +1242,23 @@ export const translations = {
         },
         noShowsTitle: 'Ausências Não Autorizadas'
     },
-    proposal: {
-        digitalTrans: 'Proposta de Transformação Digital',
-        aboutMe: {
-            title: 'Perfil do Arquiteto',
-            name: 'Pita Domingos',
-            preferred: 'Arquiteto Líder de Soluções',
-            cert: 'Profissional Cientista de Dados Full Stack Certificado pela IBM',
-            role: 'Gestor de Contratos (Jachris) • Ex-Especialista Vale',
-            bio: 'Arquiteto especialista na transformação digital da indústria pesada. Especialista em projetar ecossistemas de "Fonte Única de Verdade" usando Python, React e Supabase Cloud. Anteriormente optimizou operações de larga escala na Vale antes da transição para a Jachris. Proficiência avançada em Power BI e diagnósticos de IA para impulsionar a conformidade de segurança automatizada e unificada por dados.',
-            skills: ['Python', 'React', 'Power BI', 'Excel', 'Pandas', 'Matplotlib'],
-            history: 'Vale (Especialista) → Jachris (Gestor de Contratos)',
-            portfolioTitle: 'Portfólio de Ecossistemas',
-            portfolio: {
-                edudesk: 'EduDesk: Gestão Escolar K12 (SaaS)',
-                h365: 'H365: Sistema de Gestão de Saúde (SaaS)',
-                swiftpos: 'SwiftPOS: POS, Finanças e Gestão de Armazém',
-                microfin: 'MicroFin: Sistema Financeiro de Microcrédito',
-                sentinel: 'Sentinel: App de Segurança Doméstica com IA',
-                dataUnif: 'Unificação de Dados: Lógica de Integridade Enterprise'
-            },
-            stackTitle: 'Proficiência Full Stack',
-            archPhil: 'Filosofia de Arquitectura',
-            archPhilText: 'A Integridade de Dados Unificada é a base da segurança moderna.'
-        },
-        objectives: {
-            title: 'Metas Estratégicas',
-            problemTitle: 'Desafios Operacionais Atuais',
-            problemText: 'Atualmente, a gestão de dados de treinamento RAC envolve planilhas de Excel díspares, com funções individuais mantendo registros isolados. O Admin de RACs é obrigado a consolidar manualmente esses dados fragmentados, um processo que é trabalhoso, difícil de gerenciar e altamente propenso a erro humano e inconsistência de dados.',
-            solutionTitle: 'Solução Proposta',
-            goals: [
-                'Centralização: Consolidar planilhas díspares em uma base de dados mestre única e segura.',
-                'Automação: Eliminar a consolidação manual automatizando o fluxo de dados da Entrada do Instrutor para os Painéis Administrativos.',
-                'Integrity: Garantir "Uma Versão da Verdade" para todos os registros de segurança em toda a mina.',
-                'Eficiência: Reduzir o tempo administrativo gasto em relatórios e consolidação em 80%.'
-            ]
-        },
-        execSummary: {
-            title: 'Resumo Executivo',
-            text: 'O gestor de RACS é um Ecossistema de Integridade de Segurança Enterprise projetado para otimizar o ciclo de vida do treinamento. Ao migrar de planilhas manuais para uma plataforma centralizada Supabase Cloud, visa eliminar lacunas de conformidade, automatizar a gestão de validade e impor protocolos rígidos de controle de acesso.',
-            quote: 'Um mecanismo de segurança inteligente que não apenas rastreia o treinamento, mas gerencia ativamente a conformidade por meio de intervenção automatizada de agendamento e lógica de acesso inteligente.'
-        },
-        integration: {
-            title: 'Ecossistema de Dados Unificado',
-            staff: 'Pessoal Permanente (SuccessFactors)',
-            staffSource: 'Base de Dados RH',
-            contractor: 'Base de Gestão de Contratados',
-            contractorSource: 'Célula de Contracto',
-            middlewareTitle: 'Middleware Cloud Core',
-            middlewareDesc: 'Motor de sincronização nocturna utilizando APIs Read-Only para fundir e normalizar conjuntos de dados no Supabase Realtime.',
-            sourceTitle: 'Livro de Registro de Segurança Imutável',
-            noManual: 'ZERO Entrada Manual',
-            isolation: 'Isolamento Multi-Tenant',
-            liveMatrix: 'Lógica de Acesso ao Site em Tempo Real'
-        },
-        scenario: {
-            title: 'Ciclo de Vida da Integridade de Dados',
-            challenge: 'Fragmentação Legada',
-            challengeSub: 'Modelo de Risco Reactivo',
-            challengeText: 'Planilhas manuais criam lacunas de conformidade. A certificação RAC 02 do Paulo Manjate expira em {days} dias, mas ninguém sabe.',
-            automation: 'Ecossistema Digital CARS',
-            automationSub: 'Resiliência Proativa',
-            automationText1: 'Sincronização Preditiva: O sistema identifica a expiração com {days} dias de antecedência via API SuccessFactors.',
-            automationText2: 'Mitigação Automatizada: O Paulo é agendado automaticamente para a próxima sessão. Alerta SMS enviado instantaneamente.',
-            automationOutcome: 'Resultado: Zero bloqueio de site. Zero atraso na produção. 100% integridade de conformidade.'
-        },
-        organogram: {
-            title: 'Estrutura do Projeto',
-            tech1: 'Backend / Segurança',
-            tech2: 'Nuvem / UI-UX'
-        },
-        timeline: {
-            title: 'Cronograma de Implementação',
-            phase1: 'Arquitetura',
-            phase1desc: 'Configuração da infraestrutura',
-            phase2: 'Integração',
-            phase2desc: 'Implementação de APIs',
-            phase3: 'UAT',
-            phase3desc: 'Fase de testes',
-            phase4: 'Production',
-            phase4desc: 'Live rollout',
-            phase5: 'Serviços Geridos',
-            phase5desc: 'Manutenção'
-        },
-        techStack: {
-          title: 'Projecto Tecnológico',
-          frontendTitle: 'Frontend Tático',
-          frontend: 'React 19 para UI de alta performance com Guarda de Sessão de Inatividade de 300s.',
-          backendTitle: 'Supabase Realtime',
-          backend: 'Core Cloud Enterprise para armazenamento seguro e sincronizado com segurança RLS.',
-          databaseTitle: 'Inteligência RoboTech',
-          database: 'Gemini 3.0 para Auto-Cura automatizada e diagnósticos proativos de segurança.',
-          securityTitle: 'Identidade de Grau Militar',
-          security: 'Protocolos de Chave Mestra encriptados e lógica de negação de acesso automatizada.'
-        },
-        financials: {
-          title: 'Modelo de Investimento',
-          initialInvest: 'Total Investimento Inicial',
-          recurring: 'Serviços Mensais Recorrentes',
-          headers: {
-            desc: 'Descrição do Item',
-            type: 'Tipo',
-            cost: 'Custo'
-          },
-          items: {
-              item1: 'Arquitectura Core e Desenvolvimento Inicial',
-              item2: 'Configuração do Sistema e Camada de Integração API',
-              item3: 'Infraestrutura Cloud e Alojamento SaaS Gerido',
-              item4: 'Manutenção Contínua e Suporte ao Motor Robótico'
-          }
-        },
-        roadmap: {
-            title: 'Roteiro de Funcionalidades',
-            auth: 'Identidade',
-            authDesc: 'Link Azure AD',
-            db: 'Scalability',
-            dbDesc: 'Nós distribuídos',
-            email: 'Alertas',
-            emailDesc: 'Notificação direta',
-            hosting: 'Mobile',
-            hostingDesc: 'Web App Progressivo'
-        },
-        aiFeatures: {
-            title: 'IA de Próxima Geração',
-            chatbot: 'Guia de segurança integrado.',
-            reporting: 'Resumos executivos.'
-        },
-        futureUpdates: {
-            title: 'Módulos Avançados',
-            moduleA: 'A - IoT Hub',
-            moduleB: 'B - Sincronização de Hardware',
-            moduleADesc: 'Lógica de software integrada que liga as suas matrizes de segurança digital directamente aos pontos de acesso físico.',
-            moduleBDesc: 'Camada de sincronização de hardware envolvendo catracas, bafómetros e infraestrutura de reconhecimento facial.'
-        },
-        enhancedCaps: {
-            title: 'Capacidades Aprimoradas',
-            mobileVerify: { title: 'Verificação Móvel', desc: 'Digitalização instantânea de QR.' },
-            autoBooking: { title: 'Auto-Agendamento', desc: 'Reserva inteligente.' },
-            massData: { title: 'Sincronização de Massa', desc: 'Importação em massa de CSV.' }
-        },
-        conclusion: {
-            title: 'O Futuro do HSE',
-            text: 'Normalizar a segurança através da arquitectura.'
-        },
-        thankYou: {
-            title: 'Muito Obrigado',
-            subtitle: 'Vamos construir juntos um futuro mais seguro e automatizado para a nossa força de trabalho.',
-            email: 'pita.domingos@zd044.onmicrosoft.com',
-            phone: '+258 84 5479 481'
-        }
-      },
-    adminManual: {
-        title: 'Manual do Administrador',
-        subtitle: 'Operações Mestras do Sistema',
-        slides: {
-            intro: 'Introdução',
-            logic: 'Lógica Central',
-            dashboard: 'Painéis',
-            workflows: 'Fluxos de Trabalho',
-            advanced: 'Ferramentas Avançadas',
-            robotics: 'Auto-Cura RoboTech',
-            troubleshoot: 'Resolução de Problemas',
-            architecture: 'Arquitectura da Plataforma'
-        },
-        content: {
-            logic: {
-                title: 'Lógica de Permissão de Acesso',
-                desc: 'O sistema utiliza uma verificação de validação de 3 pontos.',
-                active: 'Status Ativo',
-                aso: 'Exame Médico (ASO)',
-                racs: 'Treinamento (RACs)',
-                result: 'ACESSO AO SITE AUTORIZADO'
-            }
-        }
-    },
-    manuals: {
-      title: 'Manuais do Operador',
-      subtitle: 'Documentação de uso do sistema',
-      sysAdmin: {
-          title: 'Administrador do Sistema',
-          subtitle: 'Gestão total da plataforma',
-          configTitle: 'Configuração do Sistema',
-          configDesc: 'Gerencie entidades de alto nível para garantir a continuidade operacional.',
-          rooms: 'Defina salas de treinamento e seus limites de capacidade.',
-          trainers: 'Atribua módulos RAC autorizados a avaliadores específicos.',
-          racs: 'Configure meses de validade e requisitos práticos para cada RAC.',
-          dbTitle: 'Gestão de Base de Dados',
-          dbDesc: 'O RACS opera como um repositório unificado para todo o pessoal.',
-          restrictionWarning: 'Nota: Os filtros de base de dados restringem os dados pelo site operacional selecionado.',
-          csv: 'Use the CSV Import wizard to sync with external HR systems.',
-          active: 'Alterne o status "Ativo" para bloquear o acesso de funcionários desligados.'
-      },
-      racAdmin: {
-          title: 'Coordenador RAC',
-          subtitle: 'Agendamento de avaliações',
-          schedTitle: 'Agendamento de Sessões',
-          schedDesc: 'Planeamento de coortes de treinamento com base na disponibilidade de salas.',
-          create: 'Crie novas sessões selecionando o Tipo de RAC e a Data.',
-          lang: 'Selecione o idioma da sessão (Inglês/Português) para instrução.',
-          autoTitle: 'Lógica de Auto-Agendamento',
-          autoDesc: 'O sistema agenda automaticamente pessoal com expiração < 7 dias.',
-          approve: 'Os administradores devem revisar e confirmar candidatos auto-agendados.',
-          renewTitle: 'Acompanhamento de Renovações',
-          renewDesc: 'Os painéis destacam candidatos na zona vermelha "Expirando em Breve".'
-      },
-      racTrainer: {
-          title: 'Instrutor de Segurança',
-          subtitle: 'Graduação e registo',
-          inputTitle: 'Entrada de Resultados',
-          inputDesc: 'Inserção de pontuações de avaliação teórica e prática.',
-          grading: 'A aprovação requer >= 70% in both components.',
-          rac02: 'O RAC 02 requer uma verificação de validade da Carta de Condução.',
-          save: 'Clique em "Salvar Resultados" para acionar atualizações de certificados digitais.'
-      },
-      deptAdmin: {
-          title: 'Gestor de Departamento',
-          subtitle: 'Conformidade operacional',
-          reqTitle: 'Acompanhamento de Conformidade',
-          reqDesc: 'Monitorize a prontidão do seu segmento específico da força de trabalho.',
-          search: 'Pesquise membros da equipa pelo ID de Pessoal.',
-          print: 'Imprima listas atuais para auditoria de entrada no site.',
-          repTitle: 'Análises',
-          repDesc: 'Analise tendências de reprovação para identificar gargalos de treinamento.'
-      },
-      user: {
-          title: 'Utilizador Geral',
-          subtitle: 'Registo pessoal de segurança',
-          statusTitle: 'Status de Conformidade',
-          statusDesc: 'Verifique a sua prontidão atual para tarefas críticas.',
-          filterAlert: 'Alerta: Certifique-se de verificar o "Filtro de Site" para ver os dados da sua localização.',
-          green: 'O status verde significa que está totalmente autorizado para entrada no site.',
-          red: 'O status vermelho indica treinamento em falta ou exame médico (ASO) expirado.',
-          qr: 'Digitalize o QR do Passaporte nos terminais de entrada para verificação instantânea.'
-      }
-    },
-    cards: {
-        title: 'Cartões de Certificação',
-        requestButton: 'Solicitar Cartões',
-        sending: 'Enviando Requisição...',
-        eligibility: {
-            failedTitle: 'Erro de Conformidade',
-            failedMsg: 'Você não está autorizado a gerar um cartão. Certifique-se de que todos os RACs obrigatórios e o ASO estão válidos.',
-            checkReqs: 'Verificar Requisitos'
-        }
-    },
-    advisor: {
-        title: 'Consultor de Segurança IA',
-        button: 'Consultar IA',
-        sender: 'Guia IA',
-        placeholder: 'Pergunte sobre segurança...',
-        emptyState: 'Como posso ajudar com sua requisição de segurança hoje?'
-    },
-    verification: {
-        title: 'Verificação Digital',
-        verified: 'AUTORIZADO',
-        notVerified: 'ACESSO NEGADO',
-        asoStatus: 'Exame Médico (ASO)',
-        dlStatus: 'Carta de Condução'
-    },
     racDefs: {
         RAC01: 'RAC 01 - Trabalho em Altura',
         RAC02: 'RAC 02 - Veículos e Equipamentos',
-        RAC03: 'RAC 03 - Bloqueio',
-        RAC04: 'RAC 04 - Proteção',
-        RAC05: 'RAC 05 - Confinado',
-        RAC06: 'RAC 06 - Içamento',
-        RAC07: 'RAC 07 - Solo',
-        RAC08: 'RAC 08 - Elétrica',
-        RAC09: 'RAC 09 - Explosivos',
-        RAC10: 'RAC 10 - Metal',
-        RAC11: 'RAC 11 - Tráfego',
-        PTS: 'PTS - Permissão',
-        ART: 'ART - Análise'
+        RAC03: 'RAC 03 - Isolamento de Energia',
+        RAC04: 'RAC 04 - Proteção de Máquinas',
+        RAC05: 'RAC 05 - Espaços Confinados',
+        RAC06: 'RAC 06 - Operações de Içamento',
+        RAC07: 'RAC 07 - Estabilidade de Solo',
+        RAC08: 'RAC 08 - Segurança Elétrica',
+        RAC09: 'RAC 09 - Controlo de Explosivos',
+        RAC10: 'RAC 10 - Metal Fundido',
+        RAC11: 'RAC 11 - Regras de Trânsito',
+        PTS: 'PTS - Permissão de Trabalho',
+        ART: 'ART - Análise de Risco'
     },
     ai: {
-        systemPromptAdvice: "Você é um Especialista em Segurança. Forneça conselhos claros sobre {rac} em {language}.",
+        systemPromptAdvice: "É um Especialista em Segurança. Forneça conselhos claros sobre {rac} em {language}.",
         systemPromptReport: "Analise as seguintes estatísticas de segurança e forneça um resumo executivo em {language}."
     }
   }

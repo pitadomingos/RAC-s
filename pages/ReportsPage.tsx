@@ -1,7 +1,7 @@
 
 import React, { useState, useMemo } from 'react';
-import { Booking, BookingStatus, TrainingSession } from '../types';
-import { DEPARTMENTS, RAC_KEYS } from '../constants';
+import { Booking, BookingStatus, TrainingSession, RacDef } from '../types';
+import { DEPARTMENTS } from '../constants';
 import { generateSafetyReport } from '../services/geminiService';
 import { 
   FileText, Calendar, Sparkles, BarChart3, Printer, UserX, 
@@ -17,12 +17,13 @@ import { useLanguage } from '../contexts/LanguageContext';
 interface ReportsPageProps {
   bookings: Booking[];
   sessions: TrainingSession[];
-  currentSiteId: string; // Added to enable Global Site Filter
+  currentSiteId: string;
+  racDefinitions: RacDef[];
 }
 
 type ReportPeriod = 'Weekly' | 'Monthly' | 'YTD' | 'Custom';
 
-const ReportsPage: React.FC<ReportsPageProps> = ({ bookings, sessions, currentSiteId }) => {
+const ReportsPage: React.FC<ReportsPageProps> = ({ bookings, sessions, currentSiteId, racDefinitions }) => {
   const { t, language } = useLanguage();
   const [period, setPeriod] = useState<ReportPeriod>('Monthly');
   const [startDate, setStartDate] = useState('');
@@ -30,10 +31,8 @@ const ReportsPage: React.FC<ReportsPageProps> = ({ bookings, sessions, currentSi
   const [selectedDept, setSelectedDept] = useState('All');
   const [selectedRac, setSelectedRac] = useState('All');
   
-  // Local Site Filter (Use only if Global is 'All')
   const [localSelectedSite, setLocalSelectedSite] = useState('All');
   
-  // Determine effective site filter
   const effectiveSiteId = currentSiteId !== 'all' ? currentSiteId : localSelectedSite;
 
   const availableSites = useMemo(() => {
@@ -41,14 +40,12 @@ const ReportsPage: React.FC<ReportsPageProps> = ({ bookings, sessions, currentSi
       bookings.forEach(b => {
           if (b.employee.siteId) sites.add(b.employee.siteId);
       });
-      // Map IDs to readable names if possible (using mock logic or passed props, here simplified)
       return Array.from(sites);
   }, [bookings]);
 
   const [aiReport, setAiReport] = useState<string | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
 
-  // -- Helpers --
   const getBookingDate = (b: Booking) => {
     if (b.resultDate) return b.resultDate;
     const session = sessions.find(s => s.id === b.sessionId);
@@ -58,10 +55,9 @@ const ReportsPage: React.FC<ReportsPageProps> = ({ bookings, sessions, currentSi
   const getRacCode = (b: Booking) => {
     const session = sessions.find(s => s.id === b.sessionId);
     const rawName = session ? session.racType : b.sessionId;
-    return rawName.split(' - ')[0].replace(' ', '');
+    return rawName.split(' - ')[0].replace(/\s+/g, '').toUpperCase();
   };
 
-  // -- 1. Data Filtering --
   const filteredBookings = useMemo(() => {
     let start = startDate;
     let end = endDate;
@@ -88,17 +84,15 @@ const ReportsPage: React.FC<ReportsPageProps> = ({ bookings, sessions, currentSi
        if (start && bDate < start) return false;
        if (end && bDate > end) return false;
        if (selectedDept !== 'All' && b.employee.department !== selectedDept) return false;
-       if (selectedRac !== 'All' && getRacCode(b) !== selectedRac) return false;
+       if (selectedRac !== 'All' && getRacCode(b) !== selectedRac.toUpperCase()) return false;
        
-       // Site Filter Logic
-       const bSite = b.employee.siteId || 's1'; // Default
+       const bSite = b.employee.siteId || 's1';
        if (effectiveSiteId !== 'All' && bSite !== effectiveSiteId) return false;
 
        return true;
     });
   }, [bookings, period, startDate, endDate, selectedDept, selectedRac, effectiveSiteId, sessions]);
 
-  // -- 2. Stats Calculation --
   const stats = useMemo(() => {
      const total = filteredBookings.length;
      const passed = filteredBookings.filter(b => b.status === BookingStatus.PASSED).length;
@@ -129,9 +123,9 @@ const ReportsPage: React.FC<ReportsPageProps> = ({ bookings, sessions, currentSi
      }));
 
      const pieData = [
-        { name: t.common.passed, value: passed, color: '#10b981' }, // Emerald-500
-        { name: t.common.failed, value: failed, color: '#ef4444' }, // Red-500
-        { name: t.common.pending, value: total - passed - failed, color: '#f59e0b' } // Amber-500
+        { name: t.common.passed, value: passed, color: '#10b981' },
+        { name: t.common.failed, value: failed, color: '#ef4444' },
+        { name: t.common.pending, value: total - passed - failed, color: '#f59e0b' }
      ].filter(d => d.value > 0);
 
      return {
@@ -139,7 +133,6 @@ const ReportsPage: React.FC<ReportsPageProps> = ({ bookings, sessions, currentSi
      };
   }, [filteredBookings, t]);
 
-  // -- 3. Trainer Stats --
   const trainerStats = useMemo(() => {
     const tStats: Record<string, { total: number, passed: number, theorySum: number }> = {};
 
@@ -161,7 +154,6 @@ const ReportsPage: React.FC<ReportsPageProps> = ({ bookings, sessions, currentSi
     })).sort((a, b) => parseFloat(b.passRate) - parseFloat(a.passRate));
   }, [filteredBookings, sessions]);
 
-  // -- 4. No Shows --
   const noShowList = useMemo(() => {
     return filteredBookings
         .filter(b => !b.attendance)
@@ -175,7 +167,6 @@ const ReportsPage: React.FC<ReportsPageProps> = ({ bookings, sessions, currentSi
         .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
   }, [filteredBookings]);
 
-  // -- AI Gen --
   const handleGenerateReport = async () => {
      setIsGenerating(true);
      const context = {
@@ -202,7 +193,6 @@ const ReportsPage: React.FC<ReportsPageProps> = ({ bookings, sessions, currentSi
   return (
     <div className="space-y-8 pb-12 animate-fade-in-up">
        
-       {/* --- Control Bar --- */}
        <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-lg border border-slate-100 dark:border-slate-700 flex flex-col xl:flex-row justify-between gap-6 transition-all sticky top-0 z-20">
           <div className="flex items-center gap-4">
              <div className="p-3 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl shadow-lg text-white">
@@ -215,7 +205,6 @@ const ReportsPage: React.FC<ReportsPageProps> = ({ bookings, sessions, currentSi
           </div>
 
           <div className="flex flex-wrap items-end gap-3">
-             {/* Period Filter */}
              <div className="flex-1 min-w-[120px]">
                 <label className="text-[10px] font-bold text-slate-900 dark:text-slate-400 uppercase tracking-wider mb-1 block ml-1">{t.reports.filters.period}</label>
                 <div className="relative group">
@@ -233,7 +222,6 @@ const ReportsPage: React.FC<ReportsPageProps> = ({ bookings, sessions, currentSi
                 </div>
              </div>
 
-             {/* Site Filter - Only show local filter if Global is All */}
              {currentSiteId === 'all' && availableSites.length > 0 && (
                  <div className="flex-1 min-w-[120px]">
                     <label className="text-[10px] font-bold text-slate-900 dark:text-slate-400 uppercase tracking-wider mb-1 block ml-1">Site</label>
@@ -280,7 +268,9 @@ const ReportsPage: React.FC<ReportsPageProps> = ({ bookings, sessions, currentSi
                 <div className="relative">
                     <select value={selectedRac} onChange={(e) => setSelectedRac(e.target.value)} className="w-full bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 text-slate-900 dark:text-white rounded-xl px-4 py-2.5 text-sm font-bold focus:ring-2 focus:ring-blue-500 outline-none appearance-none cursor-pointer">
                         <option value="All">{t.common.all}</option>
-                        {RAC_KEYS.map(r => <option key={r} value={r}>{r}</option>)}
+                        {racDefinitions.map(r => (
+                            <option key={r.id} value={r.code}>{r.code}</option>
+                        ))}
                     </select>
                     <Filter className="absolute right-3 top-2.5 text-slate-400" size={16} />
                 </div>
@@ -296,7 +286,6 @@ const ReportsPage: React.FC<ReportsPageProps> = ({ bookings, sessions, currentSi
           </div>
        </div>
 
-       {/* --- KPI Command Center --- */}
        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           <StatCard 
              title={t.reports.stats.totalTrained} 
@@ -328,10 +317,8 @@ const ReportsPage: React.FC<ReportsPageProps> = ({ bookings, sessions, currentSi
           />
        </div>
 
-       {/* --- Charts Section --- */}
        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           
-          {/* RAC Performance Bar Chart */}
           <div className="lg:col-span-2 bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-lg border border-slate-100 dark:border-slate-700">
              <div className="flex items-center justify-between mb-6">
                 <div>
@@ -360,7 +347,6 @@ const ReportsPage: React.FC<ReportsPageProps> = ({ bookings, sessions, currentSi
              </div>
           </div>
 
-          {/* Pass Ratio Donut Chart */}
           <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-lg border border-slate-100 dark:border-slate-700 flex flex-col h-full">
              <h3 className="text-lg font-bold text-slate-800 dark:text-white mb-2">{t.reports.charts.distributionTitle}</h3>
              <p className="text-xs text-slate-500 mb-6">{t.reports.charts.distributionSubtitle}</p>
@@ -383,7 +369,6 @@ const ReportsPage: React.FC<ReportsPageProps> = ({ bookings, sessions, currentSi
                       <Legend verticalAlign="bottom" height={36}/>
                    </PieChart>
                 </ResponsiveContainer>
-                {/* Center Text */}
                 <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none pb-8">
                    <span className="text-3xl font-black text-slate-800 dark:text-white">{stats.total}</span>
                    <span className="text-[10px] uppercase font-bold text-slate-400">Total</span>
@@ -392,12 +377,9 @@ const ReportsPage: React.FC<ReportsPageProps> = ({ bookings, sessions, currentSi
           </div>
        </div>
 
-       {/* --- AI & Trainers Row --- */}
        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           
-          {/* AI Analysis Card */}
           <div className="lg:col-span-2 relative overflow-hidden bg-white dark:bg-slate-800 rounded-2xl shadow-xl border border-slate-100 dark:border-slate-700">
-             {/* Decorative Gradient Border */}
              <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500" />
              
              <div className="p-6 h-full flex flex-col">
@@ -445,7 +427,6 @@ const ReportsPage: React.FC<ReportsPageProps> = ({ bookings, sessions, currentSi
              </div>
           </div>
 
-          {/* Trainer Leaderboard */}
           <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-lg border border-slate-100 dark:border-slate-700 p-6 flex flex-col h-full">
              <div className="flex items-center gap-2 mb-6">
                 <Award className="text-yellow-500" size={24} />
@@ -484,7 +465,6 @@ const ReportsPage: React.FC<ReportsPageProps> = ({ bookings, sessions, currentSi
           </div>
        </div>
 
-       {/* --- No Shows Alert Zone --- */}
        {noShowList.length > 0 && (
           <div className="bg-red-50 dark:bg-red-900/20 rounded-2xl p-6 border border-red-100 dark:border-red-900/50">
              <div className="flex items-center gap-3 mb-4 text-red-700 dark:text-red-400">
@@ -525,8 +505,6 @@ const ReportsPage: React.FC<ReportsPageProps> = ({ bookings, sessions, currentSi
     </div>
   );
 };
-
-// --- Sub-Components ---
 
 const StatCard = ({ title, value, icon: Icon, gradient, subtext }: any) => (
    <div className="bg-white dark:bg-slate-800 p-1 rounded-2xl shadow-lg border border-slate-100 dark:border-slate-700 hover:shadow-xl transition-shadow group">

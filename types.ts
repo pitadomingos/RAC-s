@@ -99,7 +99,9 @@ export enum BookingStatus {
   ATTENDED = 'Attended',
   PASSED = 'Passed',
   FAILED = 'Failed',
-  EXPIRED = 'Expired'
+  EXPIRED = 'Expired',
+  ABSENT = 'Absent',
+  WAITLISTED = 'Waitlisted'
 }
 
 export interface Booking {

@@ -34,7 +34,7 @@ export const OPS_KEYS = [
 export const PERMISSION_KEYS = ['EMI_PTS', 'APR_ART', 'DONO_AREA_PTS', 'EXEC'];
 
 // Exporting RAC_KEYS for components that still rely on hardcoded keys for logic
-export const RAC_KEYS = ['RAC01', 'RAC02', 'RAC03', 'RAC04', 'RAC05', 'RAC06', 'RAC07', 'RAC08', 'RAC09', 'RAC10', 'PTS', 'ART'];
+export const RAC_KEYS = ['RAC01', 'RAC02', 'RAC03', 'RAC04', 'RAC05', 'RAC06', 'RAC07', 'RAC08', 'RAC09', 'RAC10', 'RAC11', 'PTS', 'ART'];
 
 // Exporting INITIAL_RAC_DEFINITIONS as a fallback for components requiring local defaults
 export const INITIAL_RAC_DEFINITIONS: RacDef[] = [
@@ -48,6 +48,7 @@ export const INITIAL_RAC_DEFINITIONS: RacDef[] = [
     { id: 'rac8', code: 'RAC08', name: 'RAC 08 - Electrical Safety', validityMonths: 24, requiresPractical: true },
     { id: 'rac9', code: 'RAC09', name: 'RAC 09 - Explosives Control', validityMonths: 24, requiresPractical: true },
     { id: 'rac10', code: 'RAC10', name: 'RAC 10 - Molten Metal Safety', validityMonths: 24, requiresPractical: true },
+    { id: 'rac11', code: 'RAC11', name: 'RAC 11 - Mine Traffic Rules', validityMonths: 24, requiresDriverLicense: true, requiresPractical: true },
     { id: 'pts', code: 'PTS', name: 'PTS - Work Permit Issuer', validityMonths: 24, requiresPractical: true },
     { id: 'art', code: 'ART', name: 'ART - Risk Assessment', validityMonths: 24, requiresPractical: true }
 ];
@@ -67,7 +68,7 @@ const getPastDate = (daysToSubtract: number) => {
 export const MOCK_SESSIONS: TrainingSession[] = [
   { id: 'S001', racType: 'RAC 01 - Working at Height', date: '2023-11-15', startTime: '08:00', location: 'Room A', instructor: 'John Doe', capacity: 20, sessionLanguage: 'English' },
   { id: 'S002', racType: 'RAC 02 - Vehicles and Mobile Equipment', date: '2023-11-20', startTime: '09:00', location: 'Field B', instructor: 'Jane Smith', capacity: 15, sessionLanguage: 'Portuguese' },
-  { id: 'S003', racType: 'RAC 05 - Confined Space', date: '2023-12-01', startTime: '13:00', location: 'Room C', instructor: 'Mike Brown', capacity: 10, sessionLanguage: 'Portuguese' }
+  { id: 'S011', racType: 'RAC 11 - Mine Traffic Rules', date: '2024-12-05', startTime: '10:30', location: 'Room D', instructor: 'Antonio Sitoe', capacity: 30, sessionLanguage: 'Portuguese' }
 ];
 
 export const MOCK_EMPLOYEES: Employee[] = [
@@ -82,7 +83,8 @@ export const MOCK_REQUIREMENTS: EmployeeRequirement[] = [
 
 export const MOCK_BOOKINGS: Booking[] = [
   { id: 'b1', sessionId: 'S001', employee: MOCK_EMPLOYEES[0], status: BookingStatus.PASSED, resultDate: '2023-11-15', expiryDate: getFutureDate(600), attendance: true, theoryScore: 85, practicalScore: 90 },
-  { id: 'b2', sessionId: 'S002', employee: MOCK_EMPLOYEES[0], status: BookingStatus.PASSED, resultDate: '2023-11-20', expiryDate: getFutureDate(605), attendance: true, theoryScore: 88, practicalScore: 92, driverLicenseVerified: true }
+  { id: 'b2', sessionId: 'S002', employee: MOCK_EMPLOYEES[0], status: BookingStatus.PASSED, resultDate: '2023-11-20', expiryDate: getFutureDate(605), attendance: true, theoryScore: 88, practicalScore: 92, driverLicenseVerified: true },
+  { id: 'b3', sessionId: 'S011', employee: MOCK_EMPLOYEES[0], status: BookingStatus.PASSED, resultDate: '2024-12-05', expiryDate: getFutureDate(730), attendance: true, theoryScore: 95, practicalScore: 95, driverLicenseVerified: true }
 ];
 
 export const MOCK_FEEDBACK: Feedback[] = [

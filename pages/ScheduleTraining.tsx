@@ -1,7 +1,7 @@
 
-import React, { useState } from 'react';
-import { TrainingSession, Room, Trainer, RacDef, SystemNotification } from '../types';
-import { Calendar, Plus, Settings, X, Save, Clock, MapPin, User, CalendarDays, ChevronLeft, ChevronRight, Globe, Trash2, Search, Filter } from 'lucide-react';
+import React, { useState, useMemo } from 'react';
+import { TrainingSession, Room, Trainer, RacDef, SystemNotification, Booking, BookingStatus } from '../types';
+import { Calendar, Plus, Settings, X, Save, Clock, MapPin, User, CalendarDays, ChevronLeft, ChevronRight, Globe, Trash2, Search, Filter, Users as UsersIcon, ListFilter } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { v4 as uuidv4 } from 'uuid';
 import { useLanguage } from '../contexts/LanguageContext';
@@ -14,10 +14,11 @@ interface ScheduleTrainingProps {
     trainers: Trainer[];
     racDefinitions: RacDef[];
     addNotification: (notif: SystemNotification) => void;
-    currentSiteId: string; // Added to enable Global Site Filter
+    currentSiteId: string; 
+    bookings?: Booking[];
 }
 
-const ScheduleTraining: React.FC<ScheduleTrainingProps> = ({ sessions, setSessions, rooms, trainers, racDefinitions, addNotification, currentSiteId }) => {
+const ScheduleTraining: React.FC<ScheduleTrainingProps> = ({ sessions, setSessions, rooms, trainers, racDefinitions, addNotification, currentSiteId, bookings = [] }) => {
   const navigate = useNavigate();
   const { t } = useLanguage();
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -32,7 +33,7 @@ const ScheduleTraining: React.FC<ScheduleTrainingProps> = ({ sessions, setSessio
       instructor: '',
       capacity: 0,
       sessionLanguage: 'Portuguese',
-      siteId: currentSiteId !== 'all' ? currentSiteId : 's1' // Pre-fill with current site or default
+      siteId: currentSiteId !== 'all' ? currentSiteId : 's1' 
   });
 
   // Pagination State
@@ -91,7 +92,6 @@ const ScheduleTraining: React.FC<ScheduleTrainingProps> = ({ sessions, setSessio
           isRead: false
       });
 
-      // Reset form slightly but keep useful defaults
       setNewSession(prev => ({ ...prev, date: '', startTime: '08:00' }));
   };
 
@@ -107,7 +107,6 @@ const ScheduleTraining: React.FC<ScheduleTrainingProps> = ({ sessions, setSessio
 
   // Filter & Sort Logic
   const filteredSessions = sessions.filter(s => {
-      // Global Site Filter
       const sSiteId = s.siteId || 's1';
       if (currentSiteId !== 'all' && sSiteId !== currentSiteId) return false;
 
@@ -130,15 +129,21 @@ const ScheduleTraining: React.FC<ScheduleTrainingProps> = ({ sessions, setSessio
       setCurrentPage(1);
   };
 
+  const getSessionCounts = (sessionId: string) => {
+      const sessBookings = bookings.filter(b => b.sessionId === sessionId);
+      return {
+          pending: sessBookings.filter(b => b.status === BookingStatus.PENDING || b.status === BookingStatus.PASSED).length,
+          waitlisted: sessBookings.filter(b => b.status === BookingStatus.WAITLISTED).length
+      };
+  };
+
   return (
     <div className="space-y-6 pb-24 animate-fade-in-up relative h-full">
        
-       {/* --- HERO HEADER --- */}
        <div className="bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 rounded-3xl shadow-2xl p-8 text-white relative overflow-hidden border border-slate-700/50">
          <div className="absolute top-0 right-0 opacity-[0.03] pointer-events-none">
             <CalendarDays size={400} />
          </div>
-         {/* Ambient Glow */}
          <div className="absolute -bottom-24 -left-24 w-64 h-64 bg-blue-500/20 rounded-full blur-3xl pointer-events-none"></div>
 
          <div className="relative z-10 flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
@@ -174,10 +179,8 @@ const ScheduleTraining: React.FC<ScheduleTrainingProps> = ({ sessions, setSessio
          </div>
        </div>
 
-       {/* --- CONTENT AREA --- */}
        <div className="bg-white dark:bg-slate-800 rounded-3xl shadow-xl border border-slate-100 dark:border-slate-700 flex flex-col overflow-hidden relative min-h-[600px]">
           
-          {/* Control Bar */}
           <div className="p-5 border-b border-slate-100 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50 flex flex-col md:flex-row justify-between items-center gap-4">
               <div className="relative w-full md:w-72">
                   <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
@@ -206,15 +209,16 @@ const ScheduleTraining: React.FC<ScheduleTrainingProps> = ({ sessions, setSessio
               </div>
           </div>
 
-          {/* Session List */}
           <div className="flex-1 overflow-y-auto p-5 space-y-3 bg-slate-50/30 dark:bg-slate-900/10">
-              {paginatedSessions.map((session) => (
+              {paginatedSessions.map((session) => {
+                  const counts = getSessionCounts(session.id);
+                  const isFull = counts.pending >= session.capacity;
+                  
+                  return (
                   <div key={session.id} className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 p-5 flex flex-col md:flex-row items-start md:items-center justify-between hover:shadow-lg hover:border-blue-300 dark:hover:border-blue-500 transition-all group relative overflow-hidden">
-                      {/* Left Accent */}
                       <div className="absolute left-0 top-0 bottom-0 w-1.5 bg-gradient-to-b from-blue-500 to-indigo-600"></div>
 
                       <div className="flex flex-col md:flex-row md:items-center gap-6 flex-1 pl-2">
-                          {/* Date Block */}
                           <div className="flex flex-col items-center justify-center bg-slate-50 dark:bg-slate-700/50 text-slate-700 dark:text-slate-300 w-16 h-16 rounded-2xl border border-slate-100 dark:border-slate-600 shrink-0 shadow-inner">
                               <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500">{new Date(session.date).toLocaleString('default', { month: 'short' })}</span>
                               <span className="text-2xl font-black text-blue-600 dark:text-blue-400">{new Date(session.date).getDate()}</span>
@@ -239,12 +243,21 @@ const ScheduleTraining: React.FC<ScheduleTrainingProps> = ({ sessions, setSessio
                       </div>
 
                       <div className="mt-4 md:mt-0 flex items-center gap-6 md:border-l border-slate-100 dark:border-slate-700 pt-4 md:pt-0 md:pl-6">
-                          <div className="text-right">
-                              <div className="text-[10px] text-slate-400 font-bold uppercase tracking-wider mb-0.5">Capacity</div>
-                              <div className="text-xl font-black text-slate-800 dark:text-white flex items-center justify-end gap-1">
-                                  {session.capacity} 
-                                  <span className="text-xs font-medium text-slate-400 mb-1">seats</span>
+                          <div className="flex gap-4">
+                              <div className="text-center">
+                                  <div className="text-[10px] text-slate-400 font-bold uppercase tracking-wider mb-0.5 flex items-center justify-center gap-1"><UsersIcon size={10}/> Capacity</div>
+                                  <div className={`text-xl font-black flex items-center justify-center gap-1 ${isFull ? 'text-red-500' : 'text-slate-800 dark:text-white'}`}>
+                                      {counts.pending} <span className="text-xs font-medium text-slate-400">/ {session.capacity}</span>
+                                  </div>
                               </div>
+                              {counts.waitlisted > 0 && (
+                                  <div className="text-center">
+                                      <div className="text-[10px] text-amber-500 font-bold uppercase tracking-wider mb-0.5 flex items-center justify-center gap-1"><ListFilter size={10}/> Waitlist</div>
+                                      <div className="text-xl font-black text-amber-600 bg-amber-50 dark:bg-amber-900/20 px-3 rounded-lg border border-amber-100 dark:border-amber-800">
+                                          {counts.waitlisted}
+                                      </div>
+                                  </div>
+                              )}
                           </div>
                           <button 
                             onClick={() => handleDeleteSession(session.id)}
@@ -255,7 +268,7 @@ const ScheduleTraining: React.FC<ScheduleTrainingProps> = ({ sessions, setSessio
                           </button>
                       </div>
                   </div>
-              ))}
+              )})}
               
               {sortedSessions.length === 0 && (
                   <div className="flex flex-col items-center justify-center py-24 text-slate-400">
@@ -268,7 +281,6 @@ const ScheduleTraining: React.FC<ScheduleTrainingProps> = ({ sessions, setSessio
               )}
           </div>
 
-          {/* Footer Pagination */}
           {sortedSessions.length > 0 && (
               <div className="p-4 border-t border-slate-100 dark:border-slate-700 bg-white dark:bg-slate-800 flex justify-between items-center">
                   <div className="flex items-center gap-4">
@@ -285,7 +297,6 @@ const ScheduleTraining: React.FC<ScheduleTrainingProps> = ({ sessions, setSessio
           )}
        </div>
 
-      {/* --- CONFIRMATION MODAL --- */}
       <ConfirmModal 
           isOpen={confirmState.isOpen}
           title={confirmState.title}
@@ -296,7 +307,6 @@ const ScheduleTraining: React.FC<ScheduleTrainingProps> = ({ sessions, setSessio
           confirmText="Confirm"
       />
 
-      {/* Add Session Modal */}
       {isModalOpen && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-md z-50 flex items-center justify-center p-4 animate-fade-in">
             <div className="bg-white dark:bg-slate-800 rounded-3xl shadow-2xl w-full max-w-xl p-0 overflow-hidden transform transition-all scale-100 border border-slate-200 dark:border-slate-700">

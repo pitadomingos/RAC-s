@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, useMemo, useEffect } from 'react';
 import { 
     Settings, Box, Save, Plus, Trash2, Activity, Cpu, Zap, 
@@ -33,7 +34,7 @@ interface SettingsPageProps {
     currentSiteId: string;
 }
 
-type ActiveModal = 'NONE' | 'ADD_SITE' | 'ADD_ROOM' | 'ADD_TRAINER' | 'ADD_RAC' | 'ADD_COMPANY' | 'EDIT_TRAINER';
+type ActiveModal = 'NONE' | 'ADD_SITE' | 'ADD_ROOM' | 'ADD_TRAINER' | 'ADD_RAC' | 'ADD_COMPANY' | 'EDIT_TRAINER' | 'EDIT_RAC';
 
 const SettingsPage: React.FC<SettingsPageProps> = ({ 
     racDefinitions, onUpdateRacs, 
@@ -61,7 +62,9 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
   });
   const [newRac, setNewRac] = useState({ code: '', name: '', validityMonths: 24, requiresDriverLicense: false, requiresPractical: true });
   const [newCompany, setNewCompany] = useState<Partial<Company>>({ name: '', appName: '', status: 'Active', defaultLanguage: 'en' });
+  
   const [editingTrainer, setEditingTrainer] = useState<Trainer | null>(null);
+  const [editingRac, setEditingRac] = useState<RacDef | null>(null);
 
   const isSystemAdmin = userRole === UserRole.SYSTEM_ADMIN;
   const isEnterpriseAdmin = userRole === UserRole.ENTERPRISE_ADMIN;
@@ -81,7 +84,6 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
 
   // --- ACTIONS ---
   
-  // Fix: Move handleLogoUpload function definition up to ensure it's defined before use in the JSX.
   const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>, type: 'corporate' | 'safety') => {
       const file = e.target.files?.[0];
       if (!file) return;
@@ -128,7 +130,7 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
       onUpdateTrainers([...trainers, { id: uuidv4(), name: newTrainer.name, racs: newTrainer.racs, siteId: newTrainer.siteId }]);
       setNewTrainer({ name: '', racs: [], siteId: currentSiteId !== 'all' ? currentSiteId : (sites[0]?.id || '') });
       setActiveModal('NONE');
-      addNotification({ id: uuidv4(), type: 'success', title: 'Faculty Registered', message: `${newTrainer.name} is now authorized.`, timestamp: new Date(), isRead: false });
+      addNotification({ id: uuidv4(), type: 'success', title: 'Instructor Registered', message: `${newTrainer.name} is now authorized.`, timestamp: new Date(), isRead: false });
   };
 
   const handleAddRac = () => { 
@@ -136,6 +138,13 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
       onUpdateRacs([...racDefinitions, { id: uuidv4(), companyId: myCompany?.id, code: newRac.code.toUpperCase(), name: newRac.name, validityMonths: newRac.validityMonths, requiresDriverLicense: newRac.requiresDriverLicense, requiresPractical: newRac.requiresPractical }]); 
       setNewRac({ code: '', name: '', validityMonths: 24, requiresDriverLicense: false, requiresPractical: true }); 
       setActiveModal('NONE');
+  };
+
+  const handleSaveRacEdit = () => {
+      if (!editingRac) return;
+      onUpdateRacs(racDefinitions.map(r => r.id === editingRac.id ? editingRac : r));
+      setEditingRac(null);
+      addNotification({ id: uuidv4(), type: 'success', title: 'RAC Updated', message: `Module ${editingRac.code} has been modified.`, timestamp: new Date(), isRead: false });
   };
 
   const handleAddCompany = () => {
@@ -179,7 +188,7 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
   const deleteTrainer = (id: string, name: string) => {
       setConfirmState({
           isOpen: true,
-          title: 'Remove Faculty?',
+          title: 'Remove Instructor?',
           message: `Are you sure you want to remove ${name} from the instructors list?`,
           isDestructive: true,
           onConfirm: () => onUpdateTrainers(trainers.filter(t => t.id !== id))
@@ -191,7 +200,7 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
     { id: 'General', title: 'Global Policy', desc: 'Validity periods and pass marks', icon: Shield, color: 'bg-blue-500', visible: true },
     { id: 'Sites', title: 'Operational Sites', desc: 'Manage facility locations', icon: MapPin, color: 'bg-emerald-500', visible: true },
     { id: 'Rooms', title: 'Training Venues', desc: 'Classrooms and capacity', icon: Home, color: 'bg-orange-500', visible: true },
-    { id: 'Trainers', title: 'Academic Faculty', desc: 'Instructors and authorizations', icon: Users2, color: 'bg-indigo-500', visible: true },
+    { id: 'Trainers', title: 'Instructors', desc: 'Authorized personnel and certifications', icon: Users2, color: 'bg-indigo-500', visible: true },
     { id: 'RACs', title: 'Safety Catalog', desc: 'Define RAC modules and logic', icon: Activity, color: 'bg-purple-500', visible: canEditGlobal },
     { id: 'Companies', title: 'Enterprise Nodes', desc: 'Tenant management and provisioning', icon: Building2, color: 'bg-slate-700', visible: isSystemAdmin },
   ];
@@ -461,10 +470,13 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
         {activeCategory === 'RACs' && (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 animate-fade-in-up">
                 {racDefinitions.map(rac => (
-                    <div key={rac.id} className="bg-white dark:bg-slate-800 p-6 rounded-3xl border border-slate-100 dark:border-slate-700 shadow-sm hover:shadow-xl transition-all group">
+                    <div key={rac.id} className="bg-white dark:bg-slate-800 p-6 rounded-3xl border border-slate-100 dark:border-slate-700 shadow-sm hover:shadow-xl transition-all group relative">
                         <div className="flex justify-between items-center mb-6">
                             <RacIcon racCode={rac.code} size={28} />
-                            <button onClick={() => onUpdateRacs(racDefinitions.filter(r => r.id !== rac.id))} className="p-2 text-slate-300 hover:text-red-500 transition-all opacity-0 group-hover:opacity-100"><Trash2 size={18}/></button>
+                            <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                <button onClick={() => setEditingRac(rac)} className="p-2 text-slate-300 hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-all" title="Edit Module"><Edit size={16}/></button>
+                                <button onClick={() => onUpdateRacs(racDefinitions.filter(r => r.id !== rac.id))} className="p-2 text-slate-300 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-all" title="Delete Module"><Trash2 size={18}/></button>
+                            </div>
                         </div>
                         <h4 className="font-black text-slate-900 dark:text-white text-md tracking-tight leading-tight mb-4">{rac.name}</h4>
                         <div className="grid grid-cols-2 gap-2 border-t border-slate-50 dark:border-slate-700 pt-4">
@@ -604,7 +616,7 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
                             <div className="w-14 h-14 rounded-2xl bg-indigo-600 text-white flex items-center justify-center font-black text-2xl shadow-lg uppercase">{editingTrainer.name.charAt(0)}</div>
                             <div>
                                 <h3 className="text-xl font-black text-slate-900 dark:text-white tracking-tight">{editingTrainer.name}</h3>
-                                <p className="text-xs text-slate-500 font-bold uppercase tracking-widest">Update Faculty Authorization</p>
+                                <p className="text-xs text-slate-500 font-bold uppercase tracking-widest">Update Instructor Authorization</p>
                             </div>
                         </div>
                         <button onClick={() => setEditingTrainer(null)} className="p-2 hover:bg-white dark:hover:bg-slate-700 rounded-full transition-colors text-slate-400"><X size={24} /></button>
@@ -630,6 +642,64 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
                         </div>
                     </div>
                     <div className="p-6 bg-slate-50 dark:bg-slate-900/50 border-t border-slate-100 dark:border-slate-700 flex justify-end"><button onClick={() => setEditingTrainer(null)} className="bg-slate-900 dark:bg-indigo-600 text-white px-10 py-3 rounded-2xl font-black shadow-xl hover:scale-105 transition-all flex items-center gap-2"><Save size={20} /><span>Confirm Assignments</span></button></div>
+                </div>
+            </div>
+        )}
+
+        {/* --- EDIT RAC MODAL --- */}
+        {editingRac && (
+            <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md animate-fade-in">
+                <div className="bg-white dark:bg-slate-800 rounded-[2.5rem] shadow-2xl max-w-xl w-full overflow-hidden border border-slate-200 dark:border-slate-700">
+                    <div className="p-8 bg-slate-50 dark:bg-slate-900/50 border-b border-slate-100 dark:border-slate-700 flex justify-between items-center">
+                        <div className="flex items-center gap-4">
+                            <div className="p-3 bg-purple-600 rounded-xl text-white shadow-lg"><Activity size={24} /></div>
+                            <div>
+                                <h3 className="text-xl font-black text-slate-900 dark:text-white tracking-tight">Edit Safety Module</h3>
+                                <p className="text-xs text-slate-500 font-bold uppercase tracking-widest">Update parameters for {editingRac.code}</p>
+                            </div>
+                        </div>
+                        <button onClick={() => setEditingRac(null)} className="p-2 hover:bg-white dark:hover:bg-slate-700 rounded-full transition-colors text-slate-400"><X size={24} /></button>
+                    </div>
+                    
+                    <div className="p-8 space-y-6">
+                        <div className="grid grid-cols-3 gap-4">
+                            <div>
+                                <label className="text-[10px] font-black uppercase text-slate-400 mb-2 block">Module Code</label>
+                                <input className="w-full bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-xl p-4 font-bold uppercase outline-none focus:ring-2 focus:ring-purple-500" value={editingRac.code} onChange={e => setEditingRac({...editingRac, code: e.target.value.toUpperCase()})} />
+                            </div>
+                            <div className="col-span-2">
+                                <label className="text-[10px] font-black uppercase text-slate-400 mb-2 block">Full Description</label>
+                                <input className="w-full bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-xl p-4 font-bold outline-none focus:ring-2 focus:ring-purple-500" value={editingRac.name} onChange={e => setEditingRac({...editingRac, name: e.target.value})} />
+                            </div>
+                        </div>
+                        
+                        <div>
+                            <label className="text-[10px] font-black uppercase text-slate-400 mb-2 block">Standard Validity (Months)</label>
+                            <input type="number" className="w-full bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-xl p-4 font-bold outline-none focus:ring-2 focus:ring-purple-500" value={editingRac.validityMonths || 24} onChange={e => setEditingRac({...editingRac, validityMonths: parseInt(e.target.value) || 24})} />
+                        </div>
+
+                        <div className="flex gap-4">
+                            <button 
+                                onClick={() => setEditingRac({...editingRac, requiresDriverLicense: !editingRac.requiresDriverLicense})} 
+                                className={`flex-1 p-4 rounded-xl border-2 font-bold text-xs transition-all flex flex-col items-center gap-2 ${editingRac.requiresDriverLicense ? 'border-purple-500 bg-purple-50 dark:bg-purple-900/20 text-purple-700 dark:text-purple-300' : 'border-slate-100 dark:border-slate-700 text-slate-400 bg-white dark:bg-slate-800'}`}
+                            >
+                                <CreditCard size={20} />
+                                <span>DRIVER LICENSE</span>
+                            </button>
+                            <button 
+                                onClick={() => setEditingRac({...editingRac, requiresPractical: !editingRac.requiresPractical})} 
+                                className={`flex-1 p-4 rounded-xl border-2 font-bold text-xs transition-all flex flex-col items-center gap-2 ${editingRac.requiresPractical ? 'border-purple-500 bg-purple-50 dark:bg-purple-900/20 text-purple-700 dark:text-purple-300' : 'border-slate-100 dark:border-slate-700 text-slate-400 bg-white dark:bg-slate-800'}`}
+                            >
+                                <LayoutList size={20} />
+                                <span>PRACTICAL EVAL</span>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div className="p-6 bg-slate-50 dark:bg-slate-900/50 border-t border-slate-100 dark:border-slate-700 flex justify-end gap-3">
+                        <button onClick={() => setEditingRac(null)} className="px-6 py-3 text-sm text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-xl font-bold transition-colors">Cancel</button>
+                        <button onClick={handleSaveRacEdit} className="bg-purple-600 hover:bg-purple-500 text-white px-10 py-3 rounded-xl font-black shadow-xl hover:scale-105 transition-all flex items-center gap-2"><Save size={20} /><span>Update Module</span></button>
+                    </div>
                 </div>
             </div>
         )}

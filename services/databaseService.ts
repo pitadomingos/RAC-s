@@ -142,12 +142,59 @@ export const db = {
     async getBookings(): Promise<Booking[]> {
         if (!isSupabaseConfigured || !supabase) return MOCK_BOOKINGS;
         try {
-            const { data, error } = await supabase.from('bookings').select(`*, employee:employees(*)`);
-            if (error) throw error;
-            return ((data as any[]) || []).map(b => this.mapBookingFromDb(b));
+            // Unified view: Fetch from both Confirmed Bookings and Waiting List
+            const [confirmed, queued] = await Promise.all([
+                supabase.from('bookings').select(`*, employee:employees(*)`),
+                supabase.from('waiting_list').select(`*, employee:employees(*)`)
+            ]);
+
+            const confirmedData = ((confirmed.data as any[]) || []).map(b => this.mapBookingFromDb(b));
+            const waitData = ((queued.data as any[]) || []).map(w => ({
+                id: w.id,
+                sessionId: w.session_id,
+                employee: this.mapEmployeeFromDb(w.employee),
+                status: BookingStatus.WAITLISTED,
+                resultDate: null,
+                expiryDate: null,
+                theoryScore: 0,
+                practicalScore: 0,
+                attendance: false
+            } as Booking));
+
+            return [...confirmedData, ...waitData];
         } catch (e: any) {
             return MOCK_BOOKINGS;
         }
+    },
+
+    async promoteFromWaitlist(entryId: string, sessionId: string, employeeId: string) {
+        if (!isSupabaseConfigured || !supabase) return;
+        
+        // Step 1: Create Confirmed Booking
+        const { error: insertErr } = await supabase.from('bookings').insert({
+            session_id: sessionId,
+            employee_id: employeeId,
+            status: BookingStatus.PENDING
+        });
+        if (insertErr) throw insertErr;
+
+        // Step 2: Remove from Waitlist
+        const { error: deleteErr } = await supabase.from('waiting_list').delete().eq('id', entryId);
+        if (deleteErr) throw deleteErr;
+    },
+
+    async saveWaitlistEntry(sessionId: string, employeeId: string) {
+        if (!isSupabaseConfigured || !supabase) return;
+        const { error } = await supabase.from('waiting_list').insert({
+            session_id: sessionId,
+            employee_id: employeeId
+        });
+        if (error) throw error;
+    },
+
+    async removeFromWaitlist(entryId: string) {
+        if (!isSupabaseConfigured || !supabase) return;
+        await supabase.from('waiting_list').delete().eq('id', entryId);
     },
 
     async getRequirements(): Promise<EmployeeRequirement[]> {
@@ -156,7 +203,7 @@ export const db = {
         return raw.map(r => ({
             ...r,
             employeeId: r.employee_id,
-            aso_expiry_date: r.aso_expiry_date,
+            asoExpiryDate: r.aso_expiry_date,
             requiredRacs: r.required_racs
         }));
     },
@@ -177,14 +224,6 @@ export const db = {
             racs: t.authorized_racs || [], 
             siteId: t.site_id 
         }));
-    },
-
-    async getFeedback(): Promise<Feedback[]> {
-        return this.safeQuery('feedback', supabase?.from('feedback').select('*').order('timestamp', { ascending: false }), []);
-    },
-
-    async getNotifications(): Promise<SystemNotification[]> {
-        return this.safeQuery('notifications', supabase?.from('notifications').select('*').order('timestamp', { ascending: false }), []);
     },
 
     async saveCompany(company: Company) {
@@ -301,11 +340,17 @@ export const db = {
 
     async saveBooking(booking: Partial<Booking>) {
         if (!isSupabaseConfigured || !supabase) return booking;
+        
+        // Handle routing to the new table if status is Waitlisted
+        if (booking.status === BookingStatus.WAITLISTED) {
+            await this.saveWaitlistEntry(booking.sessionId!, booking.employee!.id);
+            return booking;
+        }
+
         const payload: any = { ...booking };
         if (booking.employee) payload.employee_id = booking.employee.id;
         delete payload.employee;
         
-        // Map camelCase to snake_case for the database
         const dbPayload = {
             id: payload.id,
             session_id: payload.sessionId,
