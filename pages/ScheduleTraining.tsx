@@ -1,7 +1,7 @@
 
 import React, { useState, useMemo } from 'react';
-import { TrainingSession, Room, Trainer, RacDef, SystemNotification, Booking, BookingStatus } from '../types';
-import { Calendar, Plus, Settings, X, Save, Clock, MapPin, User, CalendarDays, ChevronLeft, ChevronRight, Globe, Trash2, Search, Filter, Users as UsersIcon, ListFilter } from 'lucide-react';
+import { TrainingSession, Room, Trainer, RacDef, SystemNotification, Booking, BookingStatus, Employee, EmployeeRequirement } from '../types';
+import { Calendar, Plus, Settings, X, Save, Clock, MapPin, User, CalendarDays, ChevronLeft, ChevronRight, Globe, Trash2, Search, Filter, Users as UsersIcon, ListFilter, AlertTriangle, CheckCircle, ChevronDown, ChevronUp, UserCheck } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { v4 as uuidv4 } from 'uuid';
 import { useLanguage } from '../contexts/LanguageContext';
@@ -16,9 +16,24 @@ interface ScheduleTrainingProps {
     addNotification: (notif: SystemNotification) => void;
     currentSiteId: string; 
     bookings?: Booking[];
+    employees?: Employee[];
+    requirements?: EmployeeRequirement[];
+    onAddBookings?: (newBookings: Booking[]) => Promise<void>;
 }
 
-const ScheduleTraining: React.FC<ScheduleTrainingProps> = ({ sessions, setSessions, rooms, trainers, racDefinitions, addNotification, currentSiteId, bookings = [] }) => {
+const ScheduleTraining: React.FC<ScheduleTrainingProps> = ({ 
+    sessions, 
+    setSessions, 
+    rooms, 
+    trainers, 
+    racDefinitions, 
+    addNotification, 
+    currentSiteId, 
+    bookings = [],
+    employees = [],
+    requirements = [],
+    onAddBookings
+}) => {
   const navigate = useNavigate();
   const { t } = useLanguage();
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -54,6 +69,178 @@ const ScheduleTraining: React.FC<ScheduleTrainingProps> = ({ sessions, setSessio
     onConfirm: () => {},
     isDestructive: false
   });
+
+  const [expandedSessionId, setExpandedSessionId] = useState<string | null>(null);
+
+  const getSessionRacCode = (session: TrainingSession): string => {
+      const foundDef = racDefinitions.find(r => r.name === session.racType || r.code === session.racType);
+      if (foundDef) return foundDef.code;
+      return session.racType.split(' - ')[0].replace(/\s+/g, '');
+  };
+
+  const getEligibleExpiringEmployees = (session: TrainingSession): Employee[] => {
+      const sessionRacCode = getSessionRacCode(session);
+      const todayStr = new Date().toISOString().split('T')[0];
+      const today = new Date(todayStr);
+
+      return employees.filter(emp => {
+          // Employee must be active (defaults to active if not explicitly false)
+          if (emp.isActive === false) return false;
+
+          // Site relevance: employee site must match current site filter,
+          // or if filter is 'all', they must belong to the session site.
+          const siteToMatch = currentSiteId !== 'all' ? currentSiteId : session.siteId;
+          if (siteToMatch && emp.siteId !== siteToMatch) return false;
+
+          // Must have this RAC in their required list
+          const req = requirements.find(r => r.employeeId === emp.id);
+          if (!req || !req.requiredRacs[sessionRacCode]) return false;
+
+          // Must not be already in this session, and must not have a pending booking for this RAC
+          const empBookings = bookings.filter(b => b.employee?.id === emp.id);
+          const isAlreadyInSession = empBookings.some(b => b.sessionId === session.id);
+          if (isAlreadyInSession) return false;
+
+          const hasPendingBookingForRac = empBookings.some(b => {
+              if (b.status !== BookingStatus.PENDING) return false;
+              const bSession = sessions.find(s => s.id === b.sessionId);
+              const bRacCode = bSession ? getSessionRacCode(bSession) : '';
+              return bRacCode === sessionRacCode;
+          });
+          if (hasPendingBookingForRac) return false;
+
+          // Expiry Check: Must have missing, expired, or expiring training (<= 60 days)
+          const passedBookings = empBookings.filter(b => {
+              if (b.status !== BookingStatus.PASSED) return false;
+              const bSession = sessions.find(s => s.id === b.sessionId);
+              const bRacCode = bSession ? getSessionRacCode(bSession) : '';
+              return bRacCode === sessionRacCode;
+          });
+
+          passedBookings.sort((a, b) => new Date(b.expiryDate || '').getTime() - new Date(a.expiryDate || '').getTime());
+          const latestPassed = passedBookings[0];
+
+          if (!latestPassed || !latestPassed.expiryDate) {
+              return true; // Missing or expired
+          }
+
+          const expDate = new Date(latestPassed.expiryDate);
+          const diffTime = expDate.getTime() - today.getTime();
+          const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+          return diffDays <= 60;
+      });
+  };
+
+  const getEmployeeExpiryStatus = (empId: string, sessionRacCode: string): { status: 'missing' | 'expired' | 'expiring'; daysRemaining?: number; expiryDate?: string } => {
+      const todayStr = new Date().toISOString().split('T')[0];
+      const today = new Date(todayStr);
+      const empBookings = bookings.filter(b => b.employee?.id === empId);
+
+      const passedBookings = empBookings.filter(b => {
+          if (b.status !== BookingStatus.PASSED) return false;
+          const bSession = sessions.find(s => s.id === b.sessionId);
+          const bRacCode = bSession ? getSessionRacCode(bSession) : '';
+          return bRacCode === sessionRacCode;
+      });
+
+      passedBookings.sort((a, b) => new Date(b.expiryDate || '').getTime() - new Date(a.expiryDate || '').getTime());
+      const latestPassed = passedBookings[0];
+
+      if (!latestPassed) {
+          return { status: 'missing' };
+      }
+
+      if (!latestPassed.expiryDate) {
+          return { status: 'expired' };
+      }
+
+      const expDate = new Date(latestPassed.expiryDate);
+      const diffTime = expDate.getTime() - today.getTime();
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+      if (diffDays <= 0) {
+          return { status: 'expired', expiryDate: latestPassed.expiryDate };
+      }
+
+      return { status: 'expiring', daysRemaining: diffDays, expiryDate: latestPassed.expiryDate };
+  };
+
+  const getEmployeeWarnings = (emp: Employee, sessionRacCode: string): string[] => {
+      const warnings: string[] = [];
+      const req = requirements.find(r => r.employeeId === emp.id);
+      const todayStr = new Date().toISOString().split('T')[0];
+
+      if (!req) {
+          warnings.push("ASO Missing");
+      } else if (!req.asoExpiryDate) {
+          warnings.push("ASO Missing");
+      } else if (req.asoExpiryDate <= todayStr) {
+          warnings.push(`ASO Expired (${req.asoExpiryDate})`);
+      }
+
+      const foundDef = racDefinitions.find(r => r.code === sessionRacCode);
+      if (foundDef?.requiresDriverLicense) {
+          const dlExpiry = emp.driverLicenseExpiry || '';
+          if (!dlExpiry) {
+              warnings.push("License Missing");
+          } else if (dlExpiry <= todayStr) {
+              warnings.push(`License Expired (${dlExpiry})`);
+          }
+      }
+
+      return warnings;
+  };
+
+  const handlePushToSession = async (employee: Employee, session: TrainingSession) => {
+      if (!onAddBookings) {
+          addNotification({
+              id: uuidv4(),
+              type: 'alert',
+              title: 'System Error',
+              message: 'Database action handler is not configured.',
+              timestamp: new Date(),
+              isRead: false
+          });
+          return;
+      }
+
+      const counts = getSessionCounts(session.id);
+      const isFull = counts.pending >= session.capacity;
+      const status = isFull ? BookingStatus.WAITLISTED : BookingStatus.PENDING;
+
+      const newBooking: Booking = {
+          id: uuidv4(),
+          sessionId: session.id,
+          employee,
+          status,
+          trainerName: session.instructor,
+          isAutoBooked: false
+      };
+
+      try {
+          await onAddBookings([newBooking]);
+          
+          addNotification({
+              id: uuidv4(),
+              type: 'success',
+              title: isFull ? 'Added to Waitlist' : 'Employee Scheduled',
+              message: `${employee.name} has been ${isFull ? 'waitlisted' : 'scheduled'} for ${session.racType} on ${session.date}.`,
+              timestamp: new Date(),
+              isRead: false
+          });
+      } catch (err: any) {
+          console.error("Failed to push employee to session:", err);
+          addNotification({
+              id: uuidv4(),
+              type: 'alert',
+              title: 'Registration Failed',
+              message: err.message || 'Unknown error occurred while booking.',
+              timestamp: new Date(),
+              isRead: false
+          });
+      }
+  };
 
   const handleAddSession = () => {
       if (!newSession.date || !newSession.racType || !newSession.location) {
@@ -215,58 +402,180 @@ const ScheduleTraining: React.FC<ScheduleTrainingProps> = ({ sessions, setSessio
                   const isFull = counts.pending >= session.capacity;
                   
                   return (
-                  <div key={session.id} className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 p-5 flex flex-col md:flex-row items-start md:items-center justify-between hover:shadow-lg hover:border-blue-300 dark:hover:border-blue-500 transition-all group relative overflow-hidden">
-                      <div className="absolute left-0 top-0 bottom-0 w-1.5 bg-gradient-to-b from-blue-500 to-indigo-600"></div>
+                  <div key={session.id} className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 hover:shadow-lg hover:border-blue-300 dark:hover:border-blue-500 transition-all relative overflow-hidden">
+                      <div className="p-5 flex flex-col md:flex-row items-start md:items-center justify-between group relative">
+                          <div className="absolute left-0 top-0 bottom-0 w-1.5 bg-gradient-to-b from-blue-500 to-indigo-600"></div>
 
-                      <div className="flex flex-col md:flex-row md:items-center gap-6 flex-1 pl-2">
-                          <div className="flex flex-col items-center justify-center bg-slate-50 dark:bg-slate-700/50 text-slate-700 dark:text-slate-300 w-16 h-16 rounded-2xl border border-slate-100 dark:border-slate-600 shrink-0 shadow-inner">
-                              <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500">{new Date(session.date).toLocaleString('default', { month: 'short' })}</span>
-                              <span className="text-2xl font-black text-blue-600 dark:text-blue-400">{new Date(session.date).getDate()}</span>
+                          <div className="flex flex-col md:flex-row md:items-center gap-6 flex-1 pl-2">
+                              <div className="flex flex-col items-center justify-center bg-slate-50 dark:bg-slate-700/50 text-slate-700 dark:text-slate-300 w-16 h-16 rounded-2xl border border-slate-100 dark:border-slate-600 shrink-0 shadow-inner">
+                                  <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500">{new Date(session.date).toLocaleString('default', { month: 'short' })}</span>
+                                  <span className="text-2xl font-black text-blue-600 dark:text-blue-400">{new Date(session.date).getDate()}</span>
+                              </div>
+                              
+                              <div className="flex-1">
+                                  <div className="flex items-center gap-2 mb-1">
+                                      <h3 className="text-lg font-bold text-slate-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">{session.racType}</h3>
+                                      {session.sessionLanguage && (
+                                          <span className={`text-[10px] font-black uppercase px-2 py-0.5 rounded-md border flex items-center gap-1 ${session.sessionLanguage === 'English' ? 'bg-indigo-50 text-indigo-700 border-indigo-100 dark:bg-indigo-900/20 dark:text-indigo-300 dark:border-indigo-800' : 'bg-green-50 text-green-700 border-green-100 dark:bg-green-900/20 dark:text-green-300 dark:border-green-800'}`}>
+                                              <Globe size={10} />
+                                              {session.sessionLanguage === 'English' ? 'ENG' : 'PT'}
+                                          </span>
+                                      )}
+                                  </div>
+                                  <div className="flex flex-wrap items-center gap-4 text-xs font-medium text-slate-500 dark:text-slate-400">
+                                      <span className="flex items-center gap-1.5 bg-slate-100 dark:bg-slate-700/50 px-2 py-1 rounded-lg"><Clock size={12} className="text-slate-400"/> {session.startTime}</span>
+                                      <span className="flex items-center gap-1.5 bg-slate-100 dark:bg-slate-700/50 px-2 py-1 rounded-lg"><MapPin size={12} className="text-slate-400"/> {session.location}</span>
+                                      <span className="flex items-center gap-1.5 bg-slate-100 dark:bg-slate-700/50 px-2 py-1 rounded-lg"><User size={12} className="text-slate-400"/> {session.instructor}</span>
+                                  </div>
+                              </div>
                           </div>
-                          
-                          <div className="flex-1">
-                              <div className="flex items-center gap-2 mb-1">
-                                  <h3 className="text-lg font-bold text-slate-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">{session.racType}</h3>
-                                  {session.sessionLanguage && (
-                                      <span className={`text-[10px] font-black uppercase px-2 py-0.5 rounded-md border flex items-center gap-1 ${session.sessionLanguage === 'English' ? 'bg-indigo-50 text-indigo-700 border-indigo-100 dark:bg-indigo-900/20 dark:text-indigo-300 dark:border-indigo-800' : 'bg-green-50 text-green-700 border-green-100 dark:bg-green-900/20 dark:text-green-300 dark:border-green-800'}`}>
-                                          <Globe size={10} />
-                                          {session.sessionLanguage === 'English' ? 'ENG' : 'PT'}
-                                      </span>
+
+                          <div className="mt-4 md:mt-0 flex items-center gap-4 md:border-l border-slate-100 dark:border-slate-700 pt-4 md:pt-0 md:pl-6">
+                              <div className="flex gap-4">
+                                  <div className="text-center">
+                                      <div className="text-[10px] text-slate-400 font-bold uppercase tracking-wider mb-0.5 flex items-center justify-center gap-1"><UsersIcon size={10}/> Capacity</div>
+                                      <div className={`text-xl font-black flex items-center justify-center gap-1 ${isFull ? 'text-red-500' : 'text-slate-800 dark:text-white'}`}>
+                                          {counts.pending} <span className="text-xs font-medium text-slate-400">/ {session.capacity}</span>
+                                      </div>
+                                  </div>
+                                  {counts.waitlisted > 0 && (
+                                      <div className="text-center">
+                                          <div className="text-[10px] text-amber-500 font-bold uppercase tracking-wider mb-0.5 flex items-center justify-center gap-1"><ListFilter size={10}/> Waitlist</div>
+                                          <div className="text-xl font-black text-amber-600 bg-amber-50 dark:bg-amber-900/20 px-3 rounded-lg border border-amber-100 dark:border-amber-800">
+                                              {counts.waitlisted}
+                                          </div>
+                                      </div>
                                   )}
                               </div>
-                              <div className="flex flex-wrap items-center gap-4 text-xs font-medium text-slate-500 dark:text-slate-400">
-                                  <span className="flex items-center gap-1.5 bg-slate-100 dark:bg-slate-700/50 px-2 py-1 rounded-lg"><Clock size={12} className="text-slate-400"/> {session.startTime}</span>
-                                  <span className="flex items-center gap-1.5 bg-slate-100 dark:bg-slate-700/50 px-2 py-1 rounded-lg"><MapPin size={12} className="text-slate-400"/> {session.location}</span>
-                                  <span className="flex items-center gap-1.5 bg-slate-100 dark:bg-slate-700/50 px-2 py-1 rounded-lg"><User size={12} className="text-slate-400"/> {session.instructor}</span>
+                              
+                              <div className="flex items-center gap-2">
+                                  {/* Expiring / Missing training button */}
+                                  <button 
+                                    onClick={() => {
+                                        setExpandedSessionId(expandedSessionId === session.id ? null : session.id);
+                                    }}
+                                    className={`px-3 py-1.5 rounded-xl text-xs font-black tracking-tight transition-all border flex items-center gap-1.5 ${
+                                        expandedSessionId === session.id
+                                            ? 'bg-blue-600 border-blue-600 text-white shadow-lg shadow-blue-500/20'
+                                            : 'bg-slate-50 hover:bg-slate-100 dark:bg-slate-700 dark:hover:bg-slate-600 border-slate-200 dark:border-slate-600 text-slate-700 dark:text-slate-200'
+                                    }`}
+                                    title="View Expiring or Missing Employees"
+                                  >
+                                      {expandedSessionId === session.id ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+                                      <span>Expiring ({getEligibleExpiringEmployees(session).length})</span>
+                                  </button>
+                                  
+                                  <button 
+                                    onClick={() => handleDeleteSession(session.id)}
+                                    className="w-10 h-10 flex items-center justify-center text-slate-300 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-xl transition-all"
+                                    title="Cancel Session"
+                                  >
+                                      <Trash2 size={18} />
+                                  </button>
                               </div>
                           </div>
                       </div>
 
-                      <div className="mt-4 md:mt-0 flex items-center gap-6 md:border-l border-slate-100 dark:border-slate-700 pt-4 md:pt-0 md:pl-6">
-                          <div className="flex gap-4">
-                              <div className="text-center">
-                                  <div className="text-[10px] text-slate-400 font-bold uppercase tracking-wider mb-0.5 flex items-center justify-center gap-1"><UsersIcon size={10}/> Capacity</div>
-                                  <div className={`text-xl font-black flex items-center justify-center gap-1 ${isFull ? 'text-red-500' : 'text-slate-800 dark:text-white'}`}>
-                                      {counts.pending} <span className="text-xs font-medium text-slate-400">/ {session.capacity}</span>
-                                  </div>
+                      {/* Expiring / Missing panel */}
+                      {expandedSessionId === session.id && (
+                          <div className="border-t border-slate-100 dark:border-slate-700 p-5 bg-slate-50/50 dark:bg-slate-900/10 animate-fade-in">
+                              <div className="flex items-center justify-between mb-4">
+                                  <h4 className="text-sm font-black uppercase text-slate-500 dark:text-slate-400 tracking-wider flex items-center gap-2">
+                                      <AlertTriangle size={16} className="text-amber-500" />
+                                      Expiring or Missing Training
+                                  </h4>
+                                  <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest bg-slate-100 dark:bg-slate-700 px-2 py-1 rounded">
+                                      Module: {getSessionRacCode(session)}
+                                  </span>
                               </div>
-                              {counts.waitlisted > 0 && (
-                                  <div className="text-center">
-                                      <div className="text-[10px] text-amber-500 font-bold uppercase tracking-wider mb-0.5 flex items-center justify-center gap-1"><ListFilter size={10}/> Waitlist</div>
-                                      <div className="text-xl font-black text-amber-600 bg-amber-50 dark:bg-amber-900/20 px-3 rounded-lg border border-amber-100 dark:border-amber-800">
-                                          {counts.waitlisted}
-                                      </div>
+
+                              {getEligibleExpiringEmployees(session).length === 0 ? (
+                                  <div className="text-center py-6 text-slate-500 text-xs font-semibold">
+                                      No active employees with missing, expired, or expiring training for this module on this site.
+                                  </div>
+                              ) : (
+                                  <div className="overflow-x-auto rounded-xl border border-slate-100 dark:border-slate-700 bg-white dark:bg-slate-800">
+                                      <table className="w-full text-left border-collapse text-xs">
+                                          <thead>
+                                              <tr className="bg-slate-50 dark:bg-slate-900/50 text-slate-400 dark:text-slate-500 font-bold border-b border-slate-100 dark:border-slate-700">
+                                                  <th className="p-3">Employee</th>
+                                                  <th className="p-3">Company / Dept</th>
+                                                  <th className="p-3">Training Status</th>
+                                                  <th className="p-3">Compliance Warnings</th>
+                                                  <th className="p-3 text-right">Actions</th>
+                                              </tr>
+                                          </thead>
+                                          <tbody className="divide-y divide-slate-100 dark:divide-slate-700 font-medium">
+                                              {getEligibleExpiringEmployees(session).map(emp => {
+                                                  const expStatus = getEmployeeExpiryStatus(emp.id, getSessionRacCode(session));
+                                                  const warnings = getEmployeeWarnings(emp, getSessionRacCode(session));
+                                                  return (
+                                                      <tr key={emp.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-700/30 transition-colors">
+                                                          <td className="p-3">
+                                                              <div className="font-bold text-slate-800 dark:text-slate-200">{emp.name}</div>
+                                                              <div className="text-[10px] text-slate-400 dark:text-slate-500 font-mono mt-0.5">{emp.recordId}</div>
+                                                          </td>
+                                                          <td className="p-3 text-slate-600 dark:text-slate-400">
+                                                              <div>{emp.company}</div>
+                                                              <div className="text-[10px] text-slate-400 dark:text-slate-500 mt-0.5">{emp.department}</div>
+                                                          </td>
+                                                          <td className="p-3">
+                                                              {expStatus.status === 'missing' && (
+                                                                  <span className="px-2 py-0.5 bg-rose-50 text-rose-600 dark:bg-rose-950/20 dark:text-rose-400 border border-rose-100 dark:border-rose-900/50 rounded-md font-bold uppercase text-[9px] tracking-wider">
+                                                                      Missing
+                                                                  </span>
+                                                              )}
+                                                              {expStatus.status === 'expired' && (
+                                                                  <span className="px-2 py-0.5 bg-red-50 text-red-600 dark:bg-red-950/20 dark:text-red-400 border border-red-100 dark:border-red-900/50 rounded-md font-bold uppercase text-[9px] tracking-wider" title={expStatus.expiryDate}>
+                                                                      Expired
+                                                                  </span>
+                                                              )}
+                                                              {expStatus.status === 'expiring' && (
+                                                                  <span className="px-2 py-0.5 bg-amber-50 text-amber-600 dark:bg-amber-950/20 dark:text-amber-400 border border-amber-100 dark:border-amber-900/50 rounded-md font-bold uppercase text-[9px] tracking-wider" title={`Expires on ${expStatus.expiryDate}`}>
+                                                                      Expiring ({expStatus.daysRemaining} days)
+                                                                  </span>
+                                                              )}
+                                                          </td>
+                                                          <td className="p-3">
+                                                              <div className="flex flex-wrap gap-1.5">
+                                                                  {warnings.length === 0 ? (
+                                                                      <span className="flex items-center gap-1 text-[10px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-100 dark:border-emerald-900/50 px-2 py-0.5 rounded-md">
+                                                                          <CheckCircle size={10} />
+                                                                          ASO & License OK
+                                                                      </span>
+                                                                  ) : (
+                                                                      warnings.map((warn, i) => (
+                                                                          <span key={i} className="flex items-center gap-1 text-[10px] font-bold text-rose-600 dark:text-rose-400 bg-rose-50 dark:bg-rose-950/20 border border-rose-100 dark:border-rose-900/50 px-2 py-0.5 rounded-md">
+                                                                              <AlertTriangle size={10} />
+                                                                              {warn}
+                                                                          </span>
+                                                                      ))
+                                                                  )}
+                                                              </div>
+                                                          </td>
+                                                          <td className="p-3 text-right">
+                                                              <button
+                                                                onClick={() => handlePushToSession(emp, session)}
+                                                                className={`px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all transform hover:-translate-y-0.5 flex items-center gap-1.5 ml-auto border shadow-sm ${
+                                                                    isFull
+                                                                        ? 'bg-amber-500 hover:bg-amber-600 border-amber-600 text-white'
+                                                                        : 'bg-blue-600 hover:bg-blue-500 border-blue-700 text-white'
+                                                                }`}
+                                                                title={isFull ? 'Add to Waitlist (Capacity Full)' : 'Push to Scheduled Session'}
+                                                              >
+                                                                  <UserCheck size={12} />
+                                                                  {isFull ? 'Waitlist' : 'Push'}
+                                                              </button>
+                                                          </td>
+                                                      </tr>
+                                                  );
+                                              })}
+                                          </tbody>
+                                      </table>
                                   </div>
                               )}
                           </div>
-                          <button 
-                            onClick={() => handleDeleteSession(session.id)}
-                            className="w-10 h-10 flex items-center justify-center text-slate-300 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-xl transition-all"
-                            title="Cancel Session"
-                          >
-                              <Trash2 size={18} />
-                          </button>
-                      </div>
+                      )}
                   </div>
               )})}
               
