@@ -115,6 +115,83 @@ const VerificationPage: React.FC<VerificationPageProps> = ({
     return 'Compliant';
   }, [employee, employeeId, requirements, bookings, racDefinitions, sessions]);
 
+  const complianceIssues = useMemo(() => {
+    if (!employee || !employeeId) return [];
+
+    const issues: string[] = [];
+    const req = requirements.find(r => r.employeeId === employeeId) || {
+        employeeId, asoExpiryDate: '', requiredRacs: {}
+    };
+
+    const today = new Date().toISOString().split('T')[0];
+    const isAsoValid = !!(req.asoExpiryDate && req.asoExpiryDate >= today);
+    const dlExpiry = employee.driverLicenseExpiry || '';
+    const isDlExpired = !dlExpiry || (dlExpiry < today);
+    const isActive = employee.isActive ?? true;
+
+    if (!isActive) {
+        issues.push("Employee is marked as Inactive in the registry.");
+        return issues;
+    }
+
+    if (!req.asoExpiryDate) {
+        issues.push("ASO Medical record is missing.");
+    } else if (req.asoExpiryDate < today) {
+        issues.push(`ASO Medical expired on ${req.asoExpiryDate}.`);
+    }
+
+    const drivingRacs = racDefinitions.filter(d => d.requiresDriverLicense).map(d => d.code);
+    const mappedRacs = Object.entries(req.requiredRacs).filter(([_, val]) => val === true).map(([k]) => k);
+    const isMultiskilled = mappedRacs.some(k => !drivingRacs.includes(k) && !OPS_KEYS.includes(k));
+
+    racDefinitions.forEach(def => {
+        const key = def.code;
+        if (!req.requiredRacs[key]) return;
+
+        if (drivingRacs.includes(key)) {
+            if (isDlExpired) {
+                if (!isMultiskilled) {
+                    issues.push(`Driver's license is expired or missing (required for ${key} / ${def.name}).`);
+                }
+            } else {
+                const passedBookings = bookings.filter(b => {
+                    if (b.employee?.id !== employeeId) return false;
+                    if (b.status !== BookingStatus.PASSED) return false;
+                    const code = getRacKeyFromBooking(b);
+                    return code === key;
+                });
+                passedBookings.sort((a, b) => new Date(b.expiryDate || '1970-01-01').getTime() - new Date(a.expiryDate || '1970-01-01').getTime());
+                const latest = passedBookings[0];
+                if (!latest) {
+                    issues.push(`Missing training record for ${key} (${def.name}).`);
+                } else if (!latest.expiryDate) {
+                    issues.push(`Training expiry date is missing for ${key} (${def.name}).`);
+                } else if (latest.expiryDate < today) {
+                    issues.push(`Training for ${key} (${def.name}) expired on ${latest.expiryDate}.`);
+                }
+            }
+        } else {
+            const passedBookings = bookings.filter(b => {
+                 if (b.employee?.id !== employeeId) return false;
+                 if (b.status !== BookingStatus.PASSED) return false;
+                 const code = getRacKeyFromBooking(b);
+                 return code === key;
+            });
+            passedBookings.sort((a, b) => new Date(b.expiryDate || '1970-01-01').getTime() - new Date(a.expiryDate || '1970-01-01').getTime());
+            const latest = passedBookings[0];
+            if (!latest) {
+                issues.push(`Missing training record for ${key} (${def.name}).`);
+            } else if (!latest.expiryDate) {
+                issues.push(`Training expiry date is missing for ${key} (${def.name}).`);
+            } else if (latest.expiryDate < today) {
+                issues.push(`Training for ${key} (${def.name}) expired on ${latest.expiryDate}.`);
+            }
+        }
+    });
+
+    return issues;
+  }, [employee, employeeId, requirements, bookings, racDefinitions, sessions]);
+
   if (!employee) {
       return (
           <div className="min-h-screen bg-gray-100 flex flex-col items-center justify-center p-6 text-center">
@@ -198,6 +275,22 @@ const VerificationPage: React.FC<VerificationPageProps> = ({
                                      {employee.driverLicenseExpiry}
                                  </div>
                              </div>
+                        </div>
+                    )}
+                    
+                    {complianceIssues.length > 0 && (
+                        <div className="border-t border-gray-100 pt-4 mt-2">
+                            <h3 className="text-xs font-black uppercase tracking-wider text-rose-500 mb-2 flex items-center gap-1.5">
+                                <AlertTriangle size={14} /> Compliance Issues
+                            </h3>
+                            <ul className="text-xs text-rose-600 dark:text-rose-400 space-y-1.5 font-medium bg-rose-50 dark:bg-rose-950/20 p-3.5 rounded-2xl border border-rose-100 dark:border-rose-900/30">
+                                {complianceIssues.map((issue, idx) => (
+                                    <li key={idx} className="flex items-start gap-1.5">
+                                        <span className="text-rose-400 select-none">•</span>
+                                        <span>{issue}</span>
+                                    </li>
+                                ))}
+                            </ul>
                         </div>
                     )}
                 </div>
