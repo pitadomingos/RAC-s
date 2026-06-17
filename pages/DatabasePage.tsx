@@ -45,8 +45,17 @@ const DatabasePage: React.FC<DatabasePageProps> = ({ bookings, requirements, upd
 
   const getTrainingStatus = (empId: string, racCode: string): string | null => {
     const today = new Date().toISOString().split('T')[0];
-    const match = bookings.find(b => b.employee.id === empId && b.status === BookingStatus.PASSED && b.expiryDate && b.expiryDate > today && (b.sessionId.includes(racCode)));
-    return match ? match.expiryDate || null : null;
+    const matched = bookings.filter(b => {
+        if (b.employee?.id !== empId) return false;
+        if (b.status !== BookingStatus.PASSED) return false;
+        if (!b.expiryDate || b.expiryDate <= today) return false;
+        const session = sessions.find(s => s.id === b.sessionId);
+        if (!session) return false;
+        const code = session.racType.split(' - ')[0].replace(/\s+/g, '').toUpperCase();
+        return code === racCode.toUpperCase();
+    });
+    matched.sort((a, b) => new Date(b.expiryDate || '').getTime() - new Date(a.expiryDate || '').getTime());
+    return matched[0]?.expiryDate || null;
   };
 
   const handleRequirementChange = (empId: string, racKey: string, isRequired: boolean) => {
@@ -57,7 +66,7 @@ const DatabasePage: React.FC<DatabasePageProps> = ({ bookings, requirements, upd
 
   const processedData = useMemo(() => {
     const uniqueEmployeesMap = new Map<string, Employee>();
-    bookings.forEach(b => { if (!uniqueEmployeesMap.has(b.employee.id)) uniqueEmployeesMap.set(b.employee.id, b.employee); });
+    bookings.forEach(b => { if (b.employee && !uniqueEmployeesMap.has(b.employee.id)) uniqueEmployeesMap.set(b.employee.id, b.employee); });
     
     return Array.from(uniqueEmployeesMap.values()).map(emp => {
       const req = getRequirement(emp.id);
@@ -188,9 +197,9 @@ const DatabasePage: React.FC<DatabasePageProps> = ({ bookings, requirements, upd
              </div>
 
              <div className="flex flex-wrap items-center gap-3">
-                 <div className="flex items-center gap-2 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-xl px-4 py-2.5 shadow-sm">
+                  <div className="flex items-center gap-2 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-xl px-4 py-2.5 shadow-sm">
                     <Filter size={16} className="text-slate-400" />
-                    <select value={selectedCompany} onChange={e => setSelectedCompany(e.target.value)} className="text-sm font-bold bg-transparent outline-none text-slate-800 dark:text-white cursor-pointer pr-4">
+                    <select value={selectedCompany} onChange={e => setSelectedCompany(e.target.value)} title="Filter by company" aria-label="Filter by company" className="text-sm font-bold bg-transparent outline-none text-slate-800 dark:text-white cursor-pointer pr-4">
                         <option value="All">All Companies</option>
                         {companies.map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
                     </select>
@@ -198,7 +207,7 @@ const DatabasePage: React.FC<DatabasePageProps> = ({ bookings, requirements, upd
                  
                  <div className="relative w-64">
                     <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"/>
-                    <input type="text" placeholder="Search ID or Name..." className="w-full pl-11 pr-4 py-2.5 border border-slate-200 dark:border-slate-600 rounded-xl text-sm font-medium bg-white dark:bg-slate-700 outline-none focus:ring-2 focus:ring-indigo-500 transition-all shadow-sm" value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
+                    <input type="text" placeholder="Search ID or Name..." title="Search ID or Name" aria-label="Search personnel by ID or Name" className="w-full pl-11 pr-4 py-2.5 border border-slate-200 dark:border-slate-600 rounded-xl text-sm font-medium bg-white dark:bg-slate-700 outline-none focus:ring-2 focus:ring-indigo-500 transition-all shadow-sm" value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
                  </div>
 
                  <div className="h-10 w-px bg-slate-200 dark:bg-slate-700 mx-2"></div>
@@ -219,7 +228,7 @@ const DatabasePage: React.FC<DatabasePageProps> = ({ bookings, requirements, upd
                         {isImporting ? <RefreshCw size={16} className="animate-spin"/> : <Upload size={16} />}
                         <span>{isImporting ? 'Processing' : 'Import CSV'}</span>
                     </button>
-                    <input type="file" ref={fileInputRef} className="hidden" accept=".csv" onChange={handleFileUpload} />
+                    <input type="file" id="csv-file-input" ref={fileInputRef} className="hidden" accept=".csv" onChange={handleFileUpload} title="Upload CSV Registry" aria-label="Upload CSV Registry" />
                  </div>
              </div>
         </div>
@@ -232,7 +241,7 @@ const DatabasePage: React.FC<DatabasePageProps> = ({ bookings, requirements, upd
                         <th className="px-8 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-100 dark:border-slate-700">Access Identity</th>
                         <th className="px-8 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-100 dark:border-slate-700">Company & Role</th>
                         <th className="px-8 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-100 dark:border-slate-700">Medical (ASO)</th>
-                        {racDefinitions.slice(0, 8).map(rac => (
+                        {racDefinitions.map(rac => (
                             <th key={rac.id} className="px-2 py-4 text-center text-[10px] font-black text-indigo-500 uppercase tracking-widest border-b border-slate-100 dark:border-slate-700">
                                 <div className="flex flex-col items-center gap-1.5">
                                     <RacIcon racCode={rac.code} racName={rac.name} size={16} />
@@ -267,15 +276,20 @@ const DatabasePage: React.FC<DatabasePageProps> = ({ bookings, requirements, upd
                                     <div className="text-[8px] text-slate-400 uppercase font-black">VALIDITY DATE</div>
                                 </div>
                             </td>
-                            {racDefinitions.slice(0, 8).map(rac => {
+                            {racDefinitions.map(rac => {
                                 const expiry = getTrainingStatus(emp.id, rac.code);
                                 const isRequired = !!req.requiredRacs[rac.code];
                                 return (
                                     <td key={rac.id} className="px-1 py-5 text-center">
                                         <div className="flex flex-col items-center gap-1.5">
-                                            <div className={`w-3.5 h-3.5 rounded border transition-colors ${isRequired ? 'bg-indigo-600 border-indigo-600' : 'border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800'}`}>
-                                                {isRequired && <CheckCircle size={14} className="text-white -ml-0.5 -mt-0.5" />}
-                                            </div>
+                                            <button
+                                                aria-label={`Toggle ${rac.code} requirement for ${emp.name}`}
+                                                title={`${isRequired ? 'Remove' : 'Add'} ${rac.code} requirement`}
+                                                onClick={() => handleRequirementChange(emp.id, rac.code, !isRequired)}
+                                                className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-all hover:scale-110 cursor-pointer ${isRequired ? 'bg-indigo-600 border-indigo-600 shadow-md shadow-indigo-400/30' : 'border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 hover:border-indigo-400'}`}
+                                            >
+                                                {isRequired && <CheckCircle size={14} className="text-white" />}
+                                            </button>
                                             {isRequired && (
                                                 <div className={`text-[8px] font-black px-1.5 rounded uppercase ${expiry ? 'text-emerald-600' : 'text-rose-500'}`}>
                                                     {expiry ? format(new Date(expiry), 'dd/MM/yy') : 'MISSING'}
@@ -284,19 +298,20 @@ const DatabasePage: React.FC<DatabasePageProps> = ({ bookings, requirements, upd
                                         </div>
                                     </td>
                                 );
+
                             })}
                             <td className="px-8 py-5 text-right whitespace-nowrap">
                                 <div className="flex justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                    <button onClick={() => setQrEmployee(emp)} className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-xl transition-all"><QrCode size={18}/></button>
-                                    <button onClick={() => setEditingEmployee(emp)} className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded-xl transition-all"><Edit size={18}/></button>
-                                    <button className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-900/20 rounded-xl transition-all"><Trash2 size={18}/></button>
+                                    <button aria-label="View QR code" onClick={() => setQrEmployee(emp)} className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-xl transition-all" title="View Verification QR"><QrCode size={18}/></button>
+                                    <button aria-label="Edit employee" onClick={() => setEditingEmployee(emp)} className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded-xl transition-all" title="Edit Employee"><Edit size={18}/></button>
+                                    <button aria-label="Delete employee" onClick={() => setConfirmState({ isOpen: true, title: 'Delete Employee', message: `Permanently remove ${emp.name} (${emp.recordId}) from the registry? This cannot be undone.`, isDestructive: true, onConfirm: () => { onDeleteEmployee(emp.id); setConfirmState(s => ({ ...s, isOpen: false })); } })} className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-900/20 rounded-xl transition-all" title="Delete Employee"><Trash2 size={18}/></button>
                                 </div>
                             </td>
                         </tr>
                     ))}
                     {processedData.length === 0 && (
                         <tr>
-                            <td colSpan={12} className="py-24 text-center">
+                            <td colSpan={3 + racDefinitions.length + 1} className="py-24 text-center">
                                 <div className="flex flex-col items-center gap-4 text-slate-300">
                                     <Search size={64} className="opacity-20" />
                                     <p className="text-lg font-black uppercase tracking-widest">Zero Matching Personnel Discovered</p>
@@ -328,6 +343,98 @@ const DatabasePage: React.FC<DatabasePageProps> = ({ bookings, requirements, upd
                 </button>
             </div>
         </div>
+
+        {/* --- CONFIRM MODAL --- */}
+        <ConfirmModal
+            isOpen={confirmState.isOpen}
+            title={confirmState.title}
+            message={confirmState.message}
+            onConfirm={confirmState.onConfirm}
+            onCancel={() => setConfirmState(s => ({ ...s, isOpen: false }))}
+            isDestructive={confirmState.isDestructive}
+        />
+
+        {/* --- QR CODE MODAL --- */}
+        {qrEmployee && (
+            <div className="fixed inset-0 z-[100] bg-slate-900/80 backdrop-blur-md flex items-center justify-center p-4 animate-fade-in" onClick={() => setQrEmployee(null)}>
+                <div className="bg-white dark:bg-slate-800 rounded-3xl p-8 shadow-2xl max-w-xs w-full flex flex-col items-center gap-4 border border-slate-100 dark:border-slate-700" onClick={e => e.stopPropagation()}>
+                    <div className="w-full flex justify-between items-start">
+                        <div>
+                            <h3 className="text-base font-black text-slate-900 dark:text-white">Site Access QR</h3>
+                            <p className="text-xs text-slate-400 font-mono">{qrEmployee.recordId}</p>
+                        </div>
+                        <button aria-label="Close QR modal" onClick={() => setQrEmployee(null)} className="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-400"><X size={16}/></button>
+                    </div>
+                    <img
+                        src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(`${window.location.origin}${window.location.pathname}#/verify/${qrEmployee.recordId}`)}`}
+                        alt={`QR code for ${qrEmployee.name}`}
+                        className="w-48 h-48 rounded-xl border-4 border-slate-100 dark:border-slate-700 shadow-sm"
+                    />
+                    <p className="text-[11px] text-slate-400 text-center leading-relaxed">
+                        Scan to verify <span className="font-bold text-slate-700 dark:text-slate-200">{qrEmployee.name}</span>'s site access authorization
+                    </p>
+                    <button onClick={() => setQrEmployee(null)} className="w-full py-2.5 rounded-xl bg-slate-900 dark:bg-indigo-600 text-white font-bold text-sm hover:opacity-90 transition-opacity">Close</button>
+                </div>
+            </div>
+        )}
+
+        {/* --- EDIT EMPLOYEE MODAL --- */}
+        {editingEmployee && (
+            <div className="fixed inset-0 z-[100] bg-slate-900/80 backdrop-blur-md flex items-center justify-center p-4 animate-fade-in" onClick={() => setEditingEmployee(null)}>
+                <div className="bg-white dark:bg-slate-800 rounded-3xl p-8 shadow-2xl max-w-md w-full border border-slate-100 dark:border-slate-700" onClick={e => e.stopPropagation()}>
+                    <div className="flex justify-between items-center mb-6">
+                        <div>
+                            <h3 className="text-lg font-black text-slate-900 dark:text-white">Edit Employee</h3>
+                            <p className="text-xs font-mono text-slate-400">{editingEmployee.recordId}</p>
+                        </div>
+                        <button aria-label="Close edit modal" onClick={() => setEditingEmployee(null)} className="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-400"><X size={16}/></button>
+                    </div>
+                    <div className="space-y-4">
+                        {([
+                            { label: 'Full Name', field: 'name' as const },
+                            { label: 'Role / Job Title', field: 'role' as const },
+                            { label: 'Department', field: 'department' as const },
+                            { label: 'Company', field: 'company' as const },
+                        ]).map(({ label, field }) => (
+                            <div key={field}>
+                                <label htmlFor={`edit-emp-${field}`} className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-1">{label}</label>
+                                <input
+                                    type="text"
+                                    id={`edit-emp-${field}`}
+                                    placeholder={label}
+                                    title={label}
+                                    aria-label={label}
+                                    value={(editingEmployee as any)[field] || ''}
+                                    onChange={e => setEditingEmployee(prev => prev ? { ...prev, [field]: e.target.value } : null)}
+                                    className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 text-sm font-medium text-slate-800 dark:text-white outline-none focus:ring-2 focus:ring-indigo-500 transition-all"
+                                />
+                            </div>
+                        ))}
+                        <div className="flex items-center gap-3 p-4 bg-slate-50 dark:bg-slate-900/50 rounded-xl">
+                            <input
+                                type="checkbox"
+                                id="emp-active"
+                                checked={editingEmployee.isActive ?? true}
+                                onChange={e => setEditingEmployee(prev => prev ? { ...prev, isActive: e.target.checked } : null)}
+                                className="w-4 h-4 rounded accent-indigo-600"
+                            />
+                            <label htmlFor="emp-active" className="text-sm font-bold text-slate-700 dark:text-slate-200">Active Employee</label>
+                        </div>
+                    </div>
+                    <div className="flex gap-3 mt-6">
+                        <button onClick={() => setEditingEmployee(null)} className="flex-1 py-3 rounded-xl border border-slate-200 dark:border-slate-600 text-sm font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition-all">Cancel</button>
+                        <button
+                            onClick={() => {
+                                onUpdateEmployee(editingEmployee.id, editingEmployee);
+                                setEditingEmployee(null);
+                                addNotification({ id: String(Date.now()), type: 'success', title: 'Employee Updated', message: `${editingEmployee.name} record saved.`, timestamp: new Date(), isRead: false });
+                            }}
+                            className="flex-1 py-3 rounded-xl bg-indigo-600 text-white text-sm font-bold hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-600/20"
+                        >Save Changes</button>
+                    </div>
+                </div>
+            </div>
+        )}
     </div>
   );
 };

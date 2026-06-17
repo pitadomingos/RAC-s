@@ -739,6 +739,99 @@ export const translations = {
             checkReqs: 'View Requirements'
         }
     },
+    manuals: {
+        title: 'User Manuals',
+        subtitle: 'Role-based guides for the CARS platform',
+        sysAdmin: {
+            title: 'System Administrator Manual',
+            subtitle: 'Full platform control and global configuration',
+            configTitle: 'Initial Configuration',
+            configDesc: 'Before going live, a System Admin must configure the core system entities.',
+            rooms: 'Go to Settings → Rooms and add the training rooms with capacity and site assignment.',
+            trainers: 'Go to Settings → Trainers and add all certified instructors with their authorized RAC modules.',
+            racs: 'Go to Settings → RAC Definitions to verify the active safety modules for each site.',
+            dbTitle: 'Database & Employee Registry',
+            dbDesc: 'The Database page allows bulk import of employees via CSV. Each employee must have a unique Record ID.',
+            restrictionWarning: 'Never delete an employee who has existing training records. Instead, set their status to Inactive.',
+            csv: 'Use the CSV template (download link on Database page) to ensure correct column mapping before importing.',
+            active: 'The "Active" flag controls whether an employee appears in requisition workflows.'
+        },
+        racAdmin: {
+            title: 'RAC Administrator Manual',
+            subtitle: 'Training schedule management and compliance oversight',
+            schedTitle: 'Scheduling Training Sessions',
+            schedDesc: 'Create new training sessions from the Schedule page. Each session requires a RAC type, date, instructor, room, and capacity.',
+            create: 'Click "New Session", fill in all required fields, and save. The session becomes immediately available for requisitions.',
+            lang: 'Select the session language (PT/EN) so trainees are informed in advance.',
+            autoTitle: 'Auto-Booking Approvals',
+            autoDesc: 'When the system auto-books expiring certifications, a notification appears on the Dashboard requiring approval.',
+            approve: 'Always review auto-booked requisitions before confirming. The system suggests the nearest available session.',
+            renewTitle: 'Renewal Management',
+            renewDesc: 'Use the Dashboard → Renewal Management panel to see all certifications expiring within 30 days and trigger bulk auto-booking.'
+        },
+        racTrainer: {
+            title: 'RAC Trainer Manual',
+            subtitle: 'Grading, evaluation, and result submission',
+            inputTitle: 'Submitting Training Results',
+            inputDesc: 'After completing a training session, navigate to Instructor Input to submit scores for each attendee.',
+            grading: 'Select the session, then enter a Theory score (0-100) and Practical score (0-100) for each trainee. The system calculates pass/fail automatically.',
+            rac02: 'For RAC 02 (Vehicles & Equipment), you must also verify and record the trainee\'s Driver License number, class, and expiry date before marking as Passed.',
+            save: 'Click "Commit Results" to finalize. Results are immediately reflected in the employee\'s compliance passport.'
+        },
+        deptAdmin: {
+            title: 'Department Administrator Manual',
+            subtitle: 'Personnel requisitions and compliance reporting',
+            reqTitle: 'Submitting Requisitions',
+            reqDesc: 'Use the New Requisition page to register personnel for upcoming training sessions.',
+            search: 'Search for employees by name or Record ID. Select the appropriate RAC session and submit.',
+            print: 'After a successful evaluation, go to Request Cards to generate and print physical RAC credential cards.',
+            repTitle: 'Running Compliance Reports',
+            repDesc: 'The Reports page provides analytics on training success rates, attendance, and module-level compliance. Use the filters to scope by date range, department, or RAC module.'
+        },
+        user: {
+            title: 'Personnel Self-Service Manual',
+            subtitle: 'How to view your compliance status and credentials',
+            statusTitle: 'Viewing Your Compliance Status',
+            statusDesc: 'After logging in, navigate to Records → My Passport to see your full training history and current compliance state.',
+            filterAlert: 'Your access status is determined by three factors: (1) Active employment, (2) Valid medical exam (ASO), and (3) All required RAC trainings passed and not expired.',
+            green: 'All requirements met. You are authorized to access the operational risk zone.',
+            red: 'One or more requirements are missing or expired. Contact your supervisor or HR.',
+            qr: 'Your credential card contains a QR code. Field safety officers can scan this to instantly verify your authorization status — no internet connection required.'
+        }
+    },
+    verification: {
+        title: 'Site Access Verification',
+        notFound: 'Record Not Found',
+        verified: 'AUTHORIZED',
+        notVerified: 'ACCESS DENIED',
+        scanTime: 'Verified at',
+        asoStatus: 'Medical Exam (ASO)',
+        dlStatus: 'Driver License'
+    },
+    adminManual: {
+        title: 'CARS System Administration Guide',
+        subtitle: 'A complete walkthrough for system administrators — configuration, workflows, automation and architecture.',
+        slides: {
+            intro: 'Introduction',
+            logic: 'Compliance Logic',
+            dashboard: 'Dashboard Overview',
+            workflows: 'Automated Workflows',
+            advanced: 'Advanced Configuration',
+            robotics: 'RoboTech AI Engine',
+            troubleshoot: 'Troubleshooting',
+            architecture: 'System Architecture'
+        },
+        content: {
+            logic: {
+                title: 'The Compliance Formula',
+                desc: 'CARS evaluates every employee against three mandatory gates. All three must be valid to grant site access.',
+                active: 'Active Employee',
+                aso: 'Valid Medical (ASO)',
+                racs: 'All RACs Current',
+                result: 'AUTHORIZED'
+            }
+        }
+    },
     ai: {
         systemPromptAdvice: "You are a Safety Expert. Provide clear advice on {rac} in {language}.",
         systemPromptReport: "Analyze the following safety stats and provide an executive summary in {language}."
@@ -1460,6 +1553,99 @@ export const translations = {
             failedTitle: 'Não Elegível',
             failedMsg: 'Não cumpre atualmente os requisitos de conformidade para receber uma credencial RAC. Certifique-se de que o seu exame médico (ASO) e todos os treinos RAC necessários estão válidos.',
             checkReqs: 'Ver Requisitos'
+        }
+    },
+    manuals: {
+        title: 'Manuais de Utilizador',
+        subtitle: 'Guias por função para a plataforma CARS',
+        sysAdmin: {
+            title: 'Manual do Administrador de Sistema',
+            subtitle: 'Controlo total da plataforma e configuração global',
+            configTitle: 'Configuração Inicial',
+            configDesc: 'Antes de entrar em produção, o Administrador de Sistema deve configurar as entidades principais.',
+            rooms: 'Vá a Configurações → Salas e adicione as salas com capacidade e local.',
+            trainers: 'Vá a Configurações → Formadores e adicione todos os instrutores com os módulos RAC autorizados.',
+            racs: 'Vá a Configurações → Definições RAC para verificar os módulos ativos por local.',
+            dbTitle: 'Base de Dados e Registo de Colaboradores',
+            dbDesc: 'A página Base de Dados permite importação em massa via CSV. Cada colaborador deve ter um ID de Registo único.',
+            restrictionWarning: 'Nunca elimine um colaborador com registos de treino. Em vez disso, defina o estado como Inativo.',
+            csv: 'Use o modelo CSV (link na página Base de Dados) para garantir o mapeamento correto das colunas.',
+            active: 'A flag "Ativo" controla se um colaborador aparece nos fluxos de requisição.'
+        },
+        racAdmin: {
+            title: 'Manual do Administrador RAC',
+            subtitle: 'Gestão do plano de formação e supervisão de conformidade',
+            schedTitle: 'Agendamento de Sessões de Treino',
+            schedDesc: 'Crie sessões na página Agenda. Cada sessão requer tipo RAC, data, instrutor, sala e capacidade.',
+            create: 'Clique em "Nova Sessão", preencha os campos e guarde. A sessão fica disponível para requisições.',
+            lang: 'Selecione o idioma (PT/EN) para informar os formandos antecipadamente.',
+            autoTitle: 'Aprovações de Reserva Automática',
+            autoDesc: 'Quando o sistema reserva certificações a expirar, aparece uma notificação no Dashboard.',
+            approve: 'Reveja sempre as requisições auto-reservadas antes de confirmar.',
+            renewTitle: 'Gestão de Renovações',
+            renewDesc: 'Use o painel Gestão de Renovações do Dashboard para ver certificações a expirar em 30 dias e acionar a reserva automática.'
+        },
+        racTrainer: {
+            title: 'Manual do Formador RAC',
+            subtitle: 'Classificação, avaliação e submissão de resultados',
+            inputTitle: 'Submissão de Resultados de Treino',
+            inputDesc: 'Após a sessão, vá a Input do Instrutor para submeter as notas de cada participante.',
+            grading: 'Selecione a sessão e insira Teoria (0-100) e Prática (0-100). O sistema calcula aprovação/reprovação.',
+            rac02: 'Para RAC 02, deve registar o número, classe e validade da Carta de Condução antes de marcar como Aprovado.',
+            save: 'Clique em "Confirmar Resultados". Os resultados refletem-se no passaporte de conformidade imediatamente.'
+        },
+        deptAdmin: {
+            title: 'Manual do Administrador de Departamento',
+            subtitle: 'Requisições de pessoal e relatórios de conformidade',
+            reqTitle: 'Submissão de Requisições',
+            reqDesc: 'Use Nova Requisição para registar pessoal em sessões de treino.',
+            search: 'Pesquise por nome ou ID de Registo. Selecione a sessão RAC e submeta.',
+            print: 'Após avaliação, vá a Solicitar Cartões para gerar e imprimir cartões de credencial RAC.',
+            repTitle: 'Geração de Relatórios',
+            repDesc: 'A página Relatórios fornece análises sobre taxa de sucesso, presença e conformidade por módulo.'
+        },
+        user: {
+            title: 'Manual de Auto-Serviço do Colaborador',
+            subtitle: 'Como ver o seu estado de conformidade e credenciais',
+            statusTitle: 'Ver o Seu Estado de Conformidade',
+            statusDesc: 'Após iniciar sessão, vá a Registos → Meu Passaporte para ver o histórico de treino e conformidade.',
+            filterAlert: 'O seu acesso depende de: (1) Emprego ativo, (2) ASO válido, e (3) Todos os treinos RAC aprovados e não expirados.',
+            green: 'Todos os requisitos cumpridos. Autorizado a aceder à zona de risco.',
+            red: 'Um ou mais requisitos em falta ou expirados. Contacte o supervisor ou RH.',
+            qr: 'O cartão contém um código QR. Agentes de segurança podem digitalizá-lo para verificar a sua autorização instantaneamente.'
+        }
+    },
+    verification: {
+        title: 'Verificação de Acesso ao Local',
+        notFound: 'Registo Não Encontrado',
+        verified: 'AUTORIZADO',
+        notVerified: 'ACESSO NEGADO',
+        scanTime: 'Verificado às',
+        asoStatus: 'Exame Médico (ASO)',
+        dlStatus: 'Carta de Condução'
+    },
+    adminManual: {
+        title: 'Guia de Administração do Sistema CARS',
+        subtitle: 'Um guia completo para administradores de sistema — configuração, fluxos de trabalho, automação e arquitetura.',
+        slides: {
+            intro: 'Introdução',
+            logic: 'Lógica de Conformidade',
+            dashboard: 'Visão Geral do Dashboard',
+            workflows: 'Fluxos Automatizados',
+            advanced: 'Configuração Avançada',
+            robotics: 'Motor IA RoboTech',
+            troubleshoot: 'Resolução de Problemas',
+            architecture: 'Arquitetura do Sistema'
+        },
+        content: {
+            logic: {
+                title: 'A Fórmula de Conformidade',
+                desc: 'O CARS avalia cada colaborador em três portas obrigatórias. As três devem ser válidas para conceder acesso ao local.',
+                active: 'Colaborador Ativo',
+                aso: 'ASO Válido',
+                racs: 'Todos os RACs Atuais',
+                result: 'AUTORIZADO'
+            }
         }
     },
     ai: {

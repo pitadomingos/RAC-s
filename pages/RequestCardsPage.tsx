@@ -282,7 +282,7 @@ const RequestCardsPage: React.FC<RequestCardsPageProps> = ({ bookings, requireme
 
       <div className="flex-1 min-h-[500px] relative">
         <div className="absolute inset-0 bg-slate-100 dark:bg-slate-900/50 rounded-3xl border border-slate-200 dark:border-slate-800 overflow-hidden">
-            <div className="absolute inset-0 opacity-[0.03] dark:opacity-[0.05]" style={{ backgroundImage: 'radial-gradient(#64748b 1px, transparent 1px)', backgroundSize: '24px 24px' }}></div>
+            <div className="absolute inset-0 opacity-[0.03] dark:opacity-[0.05] radial-grid-slate"></div>
         </div>
 
         {activeCount === 0 ? (
@@ -318,6 +318,7 @@ const RequestCardsPage: React.FC<RequestCardsPageProps> = ({ bookings, requireme
                      <div className="absolute -top-3 -right-3 z-30 flex gap-2 opacity-0 group-hover:opacity-100 transition-all duration-300 transform translate-y-2 group-hover:translate-y-0">
                         {!isSelfService && (
                             <button 
+                                aria-label="Remove slot"
                                 onClick={() => clearSlot(idx)}
                                 className="bg-white dark:bg-slate-800 text-red-500 p-2 rounded-full shadow-lg border border-slate-100 dark:border-slate-700 hover:bg-red-50 dark:hover:bg-red-900/30 transition-colors"
                             >
@@ -325,6 +326,7 @@ const RequestCardsPage: React.FC<RequestCardsPageProps> = ({ bookings, requireme
                             </button>
                         )}
                         <button 
+                            aria-label="Zoom card"
                             onClick={() => setZoomedBookingId(booking.id)}
                             className="bg-white dark:bg-slate-800 text-blue-500 p-2 rounded-full shadow-lg border border-slate-100 dark:border-slate-700 hover:bg-blue-50 dark:hover:bg-blue-900/30 transition-colors"
                         >
@@ -405,7 +407,7 @@ const RequestCardsPage: React.FC<RequestCardsPageProps> = ({ bookings, requireme
       {zoomedBooking && (
           <div className="fixed inset-0 z-[100] bg-slate-900/90 backdrop-blur-md flex items-center justify-center p-4 animate-fade-in" onClick={() => setZoomedBookingId(null)}>
               <div className="relative" onClick={(e) => e.stopPropagation()}>
-                  <button onClick={() => setZoomedBookingId(null)} className="absolute -top-16 right-0 text-white/70 hover:text-white bg-white/10 p-3 rounded-full transition-all">
+                  <button aria-label="Close preview" onClick={() => setZoomedBookingId(null)} className="absolute -top-16 right-0 text-white/70 hover:text-white bg-white/10 p-3 rounded-full transition-all">
                       <X size={24} />
                   </button>
                   <div className="transform scale-[1.5] md:scale-[1.8] origin-center shadow-2xl rounded-lg overflow-hidden ring-8 ring-white/10">

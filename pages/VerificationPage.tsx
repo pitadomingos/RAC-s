@@ -28,7 +28,7 @@ const VerificationPage: React.FC<VerificationPageProps> = ({
   };
 
   const foundBooking = bookings.find(b => 
-      normalizeId(b.employee.recordId) === normalizeId(recordId)
+      b.employee && normalizeId(b.employee.recordId) === normalizeId(recordId)
   );
 
   const employee: Employee | undefined = foundBooking?.employee;
@@ -79,7 +79,7 @@ const VerificationPage: React.FC<VerificationPageProps> = ({
             } else {
                 // Check Training validity for the driving module
                 const passedBookings = bookings.filter(b => {
-                    if (b.employee.id !== employeeId) return false;
+                    if (b.employee?.id !== employeeId) return false;
                     if (b.status !== BookingStatus.PASSED) return false;
                     const code = getRacKeyFromBooking(b);
                     return code === key;
@@ -90,7 +90,7 @@ const VerificationPage: React.FC<VerificationPageProps> = ({
         } else {
             // Standard non-driving module check
             const passedBookings = bookings.filter(b => {
-                 if (b.employee.id !== employeeId) return false;
+                 if (b.employee?.id !== employeeId) return false;
                  if (b.status !== BookingStatus.PASSED) return false;
                  const code = getRacKeyFromBooking(b);
                  return code === key;

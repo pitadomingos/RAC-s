@@ -199,7 +199,7 @@ const DashboardStats: React.FC<DashboardStatsProps> = memo(({ bookings, requirem
         {/* Chart 1 */}
         <div className="bg-white dark:bg-slate-800 p-6 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 transition-colors flex flex-col">
           <h3 className="text-lg font-bold text-slate-800 dark:text-white mb-4">{t.dashboard.charts.complianceTitle}</h3>
-          <div className="flex-1 w-full min-h-[300px]" style={{ minWidth: 0 }}>
+          <div className="flex-1 w-full min-h-[300px] min-w-0">
             <ResponsiveContainer width="100%" height="100%">
           <BarChart data={racStackData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
@@ -233,7 +233,7 @@ const DashboardStats: React.FC<DashboardStatsProps> = memo(({ bookings, requirem
         {/* Chart 2 */}
         <div className="bg-white dark:bg-slate-800 p-6 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 transition-colors flex flex-col">
           <h3 className="text-lg font-bold text-slate-800 dark:text-white mb-4">{t.dashboard.charts.accessTitle}</h3>
-          <div className="flex-1 w-full min-h-[300px]" style={{ minWidth: 0 }}>
+          <div className="flex-1 w-full min-h-[300px] min-w-0">
              <ResponsiveContainer width="100%" height="100%">
               <PieChart>
                 <Pie

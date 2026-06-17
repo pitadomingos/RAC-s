@@ -25,6 +25,7 @@ export class ErrorBoundary extends React.Component<Props, State> {
   declare setState: React.Component<Props, State>['setState'];
   declare props: React.PropsWithChildren<Props>;
   private simulationInterval: any = null;
+  private progressBarRef = React.createRef<HTMLDivElement>();
 
   // Initialize state as a class property for better type inference
   public state: State = {
@@ -72,6 +73,12 @@ export class ErrorBoundary extends React.Component<Props, State> {
 
   public componentWillUnmount() {
       if (this.simulationInterval) clearInterval(this.simulationInterval);
+  }
+
+  public componentDidUpdate(prevProps: Props, prevState: State) {
+    if (this.progressBarRef.current) {
+      this.progressBarRef.current.style.width = `${this.state.repairProgress}%`;
+    }
   }
 
   /**
@@ -183,9 +190,7 @@ export class ErrorBoundary extends React.Component<Props, State> {
       return (
         <div className="fixed inset-0 z-[99999] bg-slate-950 flex flex-col items-center justify-center p-6 font-mono overflow-hidden text-white animate-fade-in">
           
-          <div className="absolute inset-0 opacity-10 pointer-events-none" 
-               style={{ backgroundImage: 'radial-gradient(#22d3ee 1px, transparent 1px)', backgroundSize: '30px 30px' }}>
-          </div>
+          <div className="absolute inset-0 opacity-10 pointer-events-none radial-grid-cyan"></div>
 
           <div className="relative z-10 max-w-2xl w-full">
             
@@ -228,8 +233,8 @@ export class ErrorBoundary extends React.Component<Props, State> {
                 </div>
                 <div className="h-3 w-full bg-slate-900 rounded-full border border-slate-800 overflow-hidden relative">
                     <div 
+                        ref={this.progressBarRef}
                         className={`h-full transition-all duration-300 ease-out relative overflow-hidden ${this.state.isRepaired ? 'bg-green-500' : 'bg-cyan-50'}`}
-                        style={{ width: `${this.state.repairProgress}%` }}
                     >
                         <div className="absolute top-0 left-0 bottom-0 right-0 bg-gradient-to-r from-transparent via-white/30 to-transparent w-full -translate-x-full animate-[shimmer_1.5s_infinite]"></div>
                     </div>

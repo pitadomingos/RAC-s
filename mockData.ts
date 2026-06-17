@@ -235,6 +235,10 @@ export const DEMO_EMPLOYEES: Employee[] = [
   { id: 'emp-026', name: 'Manuel Xadreque', recordId: 'JAC-001', company: 'Jachris Services', department: 'Administration', role: 'Catering Supervisor', isActive: true, siteId: 's-moatize' },
   { id: 'emp-027', name: 'Nuno Zaqueu', recordId: 'JAC-002', company: 'Jachris Services', department: 'Logistics', role: 'General Helper', isActive: true, siteId: 's-moatize' },
   { id: 'emp-028', name: 'Odete Zunguze', recordId: 'JAC-003', company: 'Jachris Services', department: 'Administration', role: 'Cleaner', isActive: true, siteId: 's-nacala' },
+
+  // ── DEMO CHAMPIONS — fully compliant for card issuance demo ──
+  { id: 'emp-029', name: 'Daniela Cossa', recordId: 'VUL-DEMO-01', company: 'Vulcan Resources Mozambique', department: 'HSE', role: 'HSE Coordinator', isActive: true, siteId: 's-maputo' },
+  { id: 'emp-030', name: 'Edgar Massinga', recordId: 'VUL-DEMO-02', company: 'Vulcan Resources Mozambique', department: 'Plant Maintenance', role: 'Maintenance Engineer', isActive: true, siteId: 's-nacala' },
 ];
 
 // ─── 8. Training Sessions ────────────────────────────────────
@@ -331,6 +335,14 @@ export const DEMO_BOOKINGS: Booking[] = [
   { id: 'bk-045', sessionId: 'S-P01', employee: mkEmployee('emp-016'), status: BookingStatus.PASSED, resultDate: d(-670), expiryDate: d(50), attendance: true, theoryScore: 74, practicalScore: 76, trainerName: 'Inês Baloi' },
   { id: 'bk-046', sessionId: 'S-P02', employee: mkEmployee('emp-021'), status: BookingStatus.PASSED, resultDate: d(-660), expiryDate: d(60), attendance: true, theoryScore: 80, practicalScore: 82, driverLicenseVerified: true, trainerName: 'António Sitoe' },
   { id: 'bk-047', sessionId: 'S-P03', employee: mkEmployee('emp-004'), status: BookingStatus.PASSED, resultDate: d(-640), expiryDate: d(80), attendance: true, theoryScore: 90, practicalScore: 92, trainerName: 'Humberto Machava' },
+
+  // ── DEMO CHAMPIONS: emp-029 (Daniela — requires RAC01+PTS) ──
+  { id: 'bk-048', sessionId: 'S-P01', employee: mkEmployee('emp-029'), status: BookingStatus.PASSED, resultDate: d(-90), expiryDate: d(630), attendance: true, theoryScore: 94, practicalScore: 96, trainerName: 'Inês Baloi' },
+  { id: 'bk-049', sessionId: 'S-P06', employee: mkEmployee('emp-029'), status: BookingStatus.PASSED, resultDate: d(-20), expiryDate: d(700), attendance: true, theoryScore: 98, practicalScore: 97, trainerName: 'Inês Baloi' },
+
+  // ── DEMO CHAMPIONS: emp-030 (Edgar — requires RAC01+RAC08) ──
+  { id: 'bk-050', sessionId: 'S-P01', employee: mkEmployee('emp-030'), status: BookingStatus.PASSED, resultDate: d(-90), expiryDate: d(630), attendance: true, theoryScore: 91, practicalScore: 93, trainerName: 'Inês Baloi' },
+  { id: 'bk-051', sessionId: 'S-P04', employee: mkEmployee('emp-030'), status: BookingStatus.PASSED, resultDate: d(-45), expiryDate: d(675), attendance: true, theoryScore: 95, practicalScore: 96, trainerName: 'Felicidade Cossa' },
 ];
 
 // ─── 10. Employee Requirements ───────────────────────────────
@@ -364,6 +376,12 @@ export const DEMO_REQUIREMENTS: EmployeeRequirement[] = [
   { employeeId: 'emp-026', asoExpiryDate: d(100), requiredRacs: { RAC01: true, RAC05: true } },
   { employeeId: 'emp-027', asoExpiryDate: d(80), requiredRacs: { RAC01: true } },
   { employeeId: 'emp-028', asoExpiryDate: d(200), requiredRacs: { RAC01: true } },
+
+  // ── DEMO CHAMPIONS — all requirements fully satisfied ──
+  // Daniela Cossa: RAC01 ✓ (bk-048) + PTS ✓ (bk-049), ASO valid 365 days
+  { employeeId: 'emp-029', asoExpiryDate: d(365), requiredRacs: { RAC01: true, PTS: true } },
+  // Edgar Massinga: RAC01 ✓ (bk-050) + RAC08 ✓ (bk-051), ASO valid 365 days
+  { employeeId: 'emp-030', asoExpiryDate: d(365), requiredRacs: { RAC01: true, RAC08: true } },
 ];
 
 // ─── 11. Breathalyzer Tests ──────────────────────────────────
