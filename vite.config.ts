@@ -18,6 +18,38 @@ export default defineConfig(({ mode }) => {
         alias: {
           '@': path.resolve(__dirname, '.'),
         }
-      }
+      },
+      build: {
+        rollupOptions: {
+          output: {
+            manualChunks: (id) => {
+              // React core + router → one small, very-cacheable chunk
+              if (id.includes('node_modules/react') || id.includes('node_modules/react-dom') || id.includes('node_modules/react-router-dom')) {
+                return 'vendor-react';
+              }
+              // Charting library (heaviest single dep)
+              if (id.includes('node_modules/recharts')) {
+                return 'vendor-charts';
+              }
+              // Icon set
+              if (id.includes('node_modules/lucide-react')) {
+                return 'vendor-icons';
+              }
+              // Gemini AI SDK
+              if (id.includes('node_modules/@google/genai')) {
+                return 'vendor-gemini';
+              }
+              // Smaller utilities — date-fns, uuid, jszip
+              if (
+                id.includes('node_modules/date-fns') ||
+                id.includes('node_modules/uuid') ||
+                id.includes('node_modules/jszip')
+              ) {
+                return 'vendor-utils';
+              }
+            },
+          },
+        },
+      },
     };
 });

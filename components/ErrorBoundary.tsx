@@ -234,7 +234,7 @@ export class ErrorBoundary extends React.Component<Props, State> {
             </div>
 
             <div className="mt-8 bg-black/80 rounded-lg border border-slate-800 p-4 font-mono text-xs h-32 overflow-hidden flex flex-col justify-end shadow-inner">
-                <div className="text-slate-500 mb-1">C:\CARS_MANAGER\SYS\ROOT> initiate_healing.exe --force</div>
+                <div className="text-slate-500 mb-1">C:\CARS_MANAGER\SYS\ROOT{'>'} initiate_healing.exe --force</div>
                 <div className="text-slate-500 mb-1">Catching Exception... OK</div>
                 <div className="text-slate-400 mb-1">Analyzing stack trace...</div>
                 {this.state.aiDiagnosis && (
