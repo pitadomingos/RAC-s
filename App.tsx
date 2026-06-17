@@ -80,12 +80,13 @@ const AppContent: React.FC = () => {
   const [users, setUsers] = useState<User[]>([]);
   const [rooms, setRooms] = useState<Room[]>([]);
   const [trainers, setTrainers] = useState<Trainer[]>([]);
+  const [employees, setEmployees] = useState<Employee[]>([]);
 
   const [dbHealth, setDbHealth] = useState<{table: string, status: 'ok'|'missing'}[]>([]);
 
   const refreshData = async () => {
     try {
-      const [c, s, sess, b, req, uList, racs, rms, trns] = await Promise.all([
+      const [c, s, sess, b, req, uList, racs, rms, trns, emps] = await Promise.all([
           db.getCompanies(),
           db.getSites(),
           db.getSessions(),
@@ -94,7 +95,8 @@ const AppContent: React.FC = () => {
           db.getUsers(),
           db.getRacDefinitions(),
           db.getRooms(),
-          db.getTrainers()
+          db.getTrainers(),
+          db.getEmployees()
       ]);
 
       setCompanies(c);
@@ -106,6 +108,7 @@ const AppContent: React.FC = () => {
       setRooms(rms);
       setTrainers(trns);
       setUsers(uList);
+      setEmployees(emps);
     } catch (err) {
       console.error("Critical refresh failure:", err);
     }
@@ -341,6 +344,18 @@ const AppContent: React.FC = () => {
       } catch (err) { console.error(err); }
   };
 
+  const handleDeleteUser = async (id: number) => {
+      try {
+          const u = users.find(usr => usr.id === id);
+          if (u) {
+              await db.deleteUser(id);
+              setUsers(prev => prev.filter(usr => usr.id !== id));
+              await db.addLog('AUDIT', `USER_DELETE: ${u.name}`, user?.name || 'Admin');
+              await refreshData();
+          }
+      } catch (err) { console.error(err); }
+  };
+
   const handleUpdateRequirement = async (updatedReq: EmployeeRequirement) => {
       try {
           await db.updateRequirement(updatedReq);
@@ -349,6 +364,35 @@ const AppContent: React.FC = () => {
               return (idx >= 0) ? prev.map((r, i) => i === idx ? updatedReq : r) : [...prev, updatedReq];
           });
       } catch (err) { console.error(err); }
+  };
+
+  const handleUpdateEmployee = async (id: string, updates: Partial<Employee>) => {
+      try {
+          const original = employees.find(e => e.id === id);
+          if (original) {
+              const updated = { ...original, ...updates };
+              const saved = await db.upsertEmployee(updated);
+              setEmployees(prev => prev.map(e => e.id === id ? { ...e, ...saved } : e));
+              await db.addLog('AUDIT', `EMPLOYEE_UPDATE: ${updated.recordId}`, user?.name || 'Admin');
+              await refreshData();
+          }
+      } catch (err) {
+          console.error("Error updating employee:", err);
+      }
+  };
+
+  const handleDeleteEmployee = async (id: string) => {
+      try {
+          const emp = employees.find(e => e.id === id);
+          if (emp) {
+              await db.deleteEmployee(id);
+              setEmployees(prev => prev.filter(e => e.id !== id));
+              await db.addLog('AUDIT', `EMPLOYEE_DELETE: ${emp.recordId}`, user?.name || 'Admin');
+              await refreshData();
+          }
+      } catch (err) {
+          console.error("Error deleting employee:", err);
+      }
   };
 
   if (!isAuthenticated) return <LoginPage />;
@@ -383,16 +427,16 @@ const AppContent: React.FC = () => {
           )}
           <Routes>
             <Route path="/presentation" element={<PresentationPage />} />
-            <Route path="/verify/:recordId" element={<VerificationPage bookings={bookings} requirements={requirements} racDefinitions={racDefinitions} sessions={sessions} />} />
+            <Route path="/verify/:recordId" element={<VerificationPage bookings={bookings} requirements={requirements} racDefinitions={racDefinitions} sessions={sessions} employees={employees} />} />
             <Route path="/print-cards" element={<CardsPage bookings={bookings} requirements={requirements} racDefinitions={racDefinitions} sessions={sessions} userRole={user?.role} companies={companies} />} />
             <Route path="*" element={
               <Layout userRole={user?.role || UserRole.USER} setUserRole={() => {}} notifications={notifications} clearNotifications={() => setNotifications([])} sites={sites} currentSiteId={currentSiteId} setCurrentSiteId={setCurrentSiteId} companies={companies}>
                 <Routes>
                   <Route path="/" element={<RoleBasedHome userRole={user?.role || UserRole.USER} dashboardProps={{ bookings, requirements, sessions, userRole: user?.role, racDefinitions, currentSiteId, companies }} />} />
-                  <Route path="/database" element={<DatabasePage bookings={bookings} requirements={requirements} updateRequirements={handleUpdateRequirement} sessions={sessions} onUpdateEmployee={() => {}} onDeleteEmployee={() => {}} racDefinitions={racDefinitions} addNotification={addNotification} currentSiteId={currentSiteId} companies={companies} />} />
+                  <Route path="/database" element={<DatabasePage employees={employees} bookings={bookings} requirements={requirements} updateRequirements={handleUpdateRequirement} sessions={sessions} onUpdateEmployee={handleUpdateEmployee} onDeleteEmployee={handleDeleteEmployee} racDefinitions={racDefinitions} addNotification={addNotification} currentSiteId={currentSiteId} companies={companies} />} />
                   <Route path="/booking" element={<BookingForm addBookings={handleAddBookings} sessions={sessions} userRole={user?.role || UserRole.USER} existingBookings={bookings} addNotification={addNotification} racDefinitions={racDefinitions} companies={companies} />} />
                   <Route path="/results" element={<ResultsPage bookings={bookings} updateBookingStatus={handleUpdateBookingStatus} importBookings={handleImportBookings} userRole={user?.role || UserRole.USER} sessions={sessions} requirements={requirements} sites={sites} racDefinitions={racDefinitions} addNotification={addNotification} currentSiteId={currentSiteId} onRefresh={refreshData} />} />
-                  <Route path="/users" element={<UserManagement users={users} onUpdateUser={handleUpdateUser} onDeleteUser={() => {}} addNotification={addNotification} sites={sites} currentSiteId={currentSiteId} companies={companies} />} />
+                  <Route path="/users" element={<UserManagement users={users} onUpdateUser={handleUpdateUser} onDeleteUser={handleDeleteUser} addNotification={addNotification} sites={sites} currentSiteId={currentSiteId} companies={companies} />} />
                   <Route path="/settings" element={<SettingsPage racDefinitions={racDefinitions} onUpdateRacs={handleUpdateRacs} rooms={rooms} onUpdateRooms={handleUpdateRooms} trainers={trainers} onUpdateTrainers={handleUpdateTrainers} sites={sites} onUpdateSites={handleUpdateSites} companies={companies} onUpdateCompanies={handleUpdateCompanies} userRole={user?.role} addNotification={addNotification} currentSiteId={currentSiteId} />} />
                   <Route path="/schedule" element={<ScheduleTraining sessions={sessions} setSessions={setSessions} rooms={rooms} trainers={trainers} racDefinitions={racDefinitions} addNotification={addNotification} currentSiteId={currentSiteId} bookings={bookings} />} />
                   <Route path="/trainer-input" element={<TrainerInputPage bookings={bookings} updateBookings={handleTrainerUpdateBookings} sessions={sessions} userRole={user?.role} currentUserName={user?.name} racDefinitions={racDefinitions} />} />

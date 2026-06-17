@@ -11,13 +11,15 @@ interface VerificationPageProps {
   requirements: EmployeeRequirement[];
   racDefinitions?: RacDef[];
   sessions: TrainingSession[];
+  employees?: Employee[];
 }
 
 const VerificationPage: React.FC<VerificationPageProps> = ({ 
     bookings, 
     requirements, 
     racDefinitions = INITIAL_RAC_DEFINITIONS,
-    sessions
+    sessions,
+    employees = []
 }) => {
   const { recordId } = useParams<{ recordId: string }>();
   const { t, language } = useLanguage();
@@ -31,7 +33,7 @@ const VerificationPage: React.FC<VerificationPageProps> = ({
       b.employee && normalizeId(b.employee.recordId) === normalizeId(recordId)
   );
 
-  const employee: Employee | undefined = foundBooking?.employee;
+  const employee: Employee | undefined = foundBooking?.employee || employees.find(e => normalizeId(e.recordId) === normalizeId(recordId));
   const employeeId = employee?.id;
   
   const getRacKeyFromBooking = (booking: Booking): string => {

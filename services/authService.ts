@@ -1,6 +1,7 @@
 import { User, UserRole } from '../types';
 import { supabase, isSupabaseConfigured } from './supabaseClient';
 import { db } from './databaseService';
+import { DEMO_USERS } from '../mockData';
 
 export interface AuthResponse {
     user: User | null;
@@ -22,7 +23,7 @@ export const authService = {
             email: "p.domingos@vulcan.com",
             role: UserRole.SYSTEM_ADMIN,
             status: 'Active',
-            company: 'Vulcan',
+            company: 'Vulcan Resources Mozambique',
             jobTitle: 'Lead System Architect',
             siteId: 'all'
         },
@@ -51,6 +52,15 @@ export const authService = {
             }
         } catch (e: any) {
             return { user: null, status: 'error', message: e.message };
+        }
+    } else {
+        // Offline / Presentation fallback
+        const found = DEMO_USERS.find(u => u.name.toLowerCase() === username.toLowerCase());
+        if (found) {
+            return {
+                user: found,
+                status: 'success'
+            };
         }
     }
 

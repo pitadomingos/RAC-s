@@ -15,14 +15,38 @@ import {
     DEMO_USERS,
 } from '../mockData';
 
-// Use rich demo data as offline fallback when Supabase is not configured
-const FALLBACK_EMPLOYEES  = DEMO_EMPLOYEES.length  ? DEMO_EMPLOYEES  : MOCK_EMPLOYEES;
-const FALLBACK_BOOKINGS   = DEMO_BOOKINGS.length   ? DEMO_BOOKINGS   : MOCK_BOOKINGS;
-const FALLBACK_SESSIONS   = DEMO_SESSIONS.length   ? DEMO_SESSIONS   : MOCK_SESSIONS;
-const FALLBACK_REQUIREMENTS = DEMO_REQUIREMENTS.length ? DEMO_REQUIREMENTS : MOCK_REQUIREMENTS;
+// Helper to load/save JSON in localStorage for offline persistence
+const getLocalStorageJson = (key: string, defaultVal: any) => {
+    try {
+        const item = typeof window !== 'undefined' ? localStorage.getItem(key) : null;
+        return item ? JSON.parse(item) : defaultVal;
+    } catch (e) {
+        return defaultVal;
+    }
+};
+
+const saveLocalStorageJson = (key: string, val: any) => {
+    try {
+        if (typeof window !== 'undefined') {
+            localStorage.setItem(key, JSON.stringify(val));
+        }
+    } catch (e) {
+        console.error("Failed to save to localStorage", e);
+    }
+};
+
 import { v4 as uuidv4 } from 'uuid';
 
-const FALLBACK_USERS: User[] = [
+const initialEmployees = DEMO_EMPLOYEES.length ? DEMO_EMPLOYEES : MOCK_EMPLOYEES;
+const initialBookings = DEMO_BOOKINGS.length ? DEMO_BOOKINGS : MOCK_BOOKINGS;
+const initialSessions = DEMO_SESSIONS.length ? DEMO_SESSIONS : MOCK_SESSIONS;
+const initialRequirements = DEMO_REQUIREMENTS.length ? DEMO_REQUIREMENTS : MOCK_REQUIREMENTS;
+const initialCompanies = DEMO_COMPANIES;
+const initialSites = DEMO_SITES;
+const initialRooms = DEMO_ROOMS;
+const initialTrainers = DEMO_TRAINERS;
+const initialRacDefs = DEMO_RAC_DEFINITIONS;
+const initialUsers: User[] = DEMO_USERS.length ? DEMO_USERS : [
     {
         id: 1337,
         name: "Pita Domingos",
@@ -34,6 +58,18 @@ const FALLBACK_USERS: User[] = [
         siteId: 'all'
     }
 ];
+
+let FALLBACK_EMPLOYEES: Employee[] = getLocalStorageJson('fallback_employees', initialEmployees);
+let FALLBACK_BOOKINGS: Booking[] = getLocalStorageJson('fallback_bookings', initialBookings);
+let FALLBACK_SESSIONS: TrainingSession[] = getLocalStorageJson('fallback_sessions', initialSessions);
+let FALLBACK_REQUIREMENTS: EmployeeRequirement[] = getLocalStorageJson('fallback_requirements', initialRequirements);
+let FALLBACK_COMPANIES: Company[] = getLocalStorageJson('fallback_companies', initialCompanies);
+let FALLBACK_SITES: Site[] = getLocalStorageJson('fallback_sites', initialSites);
+let FALLBACK_ROOMS: Room[] = getLocalStorageJson('fallback_rooms', initialRooms);
+let FALLBACK_TRAINERS: Trainer[] = getLocalStorageJson('fallback_trainers', initialTrainers);
+let FALLBACK_RAC_DEFS: RacDef[] = getLocalStorageJson('fallback_rac_defs', initialRacDefs);
+let FALLBACK_USERS: User[] = getLocalStorageJson('fallback_users', initialUsers);
+
 
 // Helper to validate UUID format to prevent Supabase database crashes
 // Standard UUID is 8-4-4-4-12 (36 chars with hyphens)
@@ -206,7 +242,48 @@ export const db = {
     },
 
     async bulkUpsertEmployees(employees: Partial<Employee>[]) {
-        if (!isSupabaseConfigured || !supabase) return [];
+        if (!isSupabaseConfigured || !supabase) {
+            const returnedData: { id: string, record_id: string }[] = [];
+            const updatedList = [...FALLBACK_EMPLOYEES];
+            
+            employees.forEach(emp => {
+                const targetId = isUUID(emp.id) ? emp.id : uuidv4();
+                const recordId = emp.recordId || '';
+                
+                const existingIdx = updatedList.findIndex(e => e.recordId === recordId);
+                const employeeObj: Employee = {
+                    id: targetId,
+                    recordId: recordId,
+                    name: emp.name || 'Unknown',
+                    company: emp.company || 'Unknown',
+                    department: emp.department || 'N/A',
+                    role: emp.role || 'N/A',
+                    siteId: emp.siteId || 's1',
+                    isActive: emp.isActive ?? true,
+                    phoneNumber: emp.phoneNumber,
+                    driverLicenseNumber: emp.driverLicenseNumber,
+                    driverLicenseClass: emp.driverLicenseClass,
+                    driverLicenseExpiry: emp.driverLicenseExpiry
+                };
+                
+                if (existingIdx >= 0) {
+                    employeeObj.id = updatedList[existingIdx].id;
+                    updatedList[existingIdx] = {
+                        ...updatedList[existingIdx],
+                        ...emp,
+                        id: employeeObj.id
+                    };
+                } else {
+                    updatedList.push(employeeObj);
+                }
+                
+                returnedData.push({ id: employeeObj.id, record_id: employeeObj.recordId });
+            });
+            
+            FALLBACK_EMPLOYEES = updatedList;
+            saveLocalStorageJson('fallback_employees', FALLBACK_EMPLOYEES);
+            return returnedData;
+        }
         const payload = employees.map(e => this.mapEmployeeToDb(e));
         const { data, error } = await supabase.from('employees').upsert(payload, { onConflict: 'record_id' }).select('id, record_id');
         if (error) throw error;
@@ -214,7 +291,53 @@ export const db = {
     },
 
     async bulkUpsertBookings(bookings: Partial<Booking>[]) {
-        if (!isSupabaseConfigured || !supabase) return;
+        if (!isSupabaseConfigured || !supabase) {
+            const updatedList = [...FALLBACK_BOOKINGS];
+            bookings.forEach(b => {
+                const id = isUUID(b.id) ? b.id : uuidv4();
+                const existingIdx = updatedList.findIndex(x => x.id === id);
+                
+                let empObj = b.employee || FALLBACK_EMPLOYEES.find(e => e.id === b.employee?.id);
+                if (!empObj) {
+                    empObj = {
+                        id: b.employee?.id || uuidv4(),
+                        recordId: b.employee?.recordId || 'MOCK-EMP',
+                        name: b.employee?.name || 'Unknown',
+                        company: b.employee?.company || 'Unknown',
+                        department: b.employee?.department || 'N/A',
+                        role: b.employee?.role || 'N/A',
+                        isActive: true
+                    };
+                }
+
+                const bookingObj: Booking = {
+                    id,
+                    sessionId: b.sessionId || '',
+                    employee: empObj,
+                    status: b.status || BookingStatus.PENDING,
+                    resultDate: b.resultDate || null,
+                    expiryDate: b.expiryDate || null,
+                    theoryScore: b.theoryScore || 0,
+                    practicalScore: b.practicalScore || 0,
+                    attendance: b.attendance ?? false,
+                    trainerName: b.trainerName,
+                    comments: b.comments || (!isUUID(b.sessionId) ? `Imported Classroom: ${b.sessionId}` : null)
+                };
+
+                if (existingIdx >= 0) {
+                    updatedList[existingIdx] = {
+                        ...updatedList[existingIdx],
+                        ...b,
+                        employee: empObj
+                    } as Booking;
+                } else {
+                    updatedList.push(bookingObj);
+                }
+            });
+            FALLBACK_BOOKINGS = updatedList;
+            saveLocalStorageJson('fallback_bookings', FALLBACK_BOOKINGS);
+            return;
+        }
         const payload = bookings.map(b => ({
             id: b.id,
             session_id: isUUID(b.sessionId) ? b.sessionId : null,
@@ -233,7 +356,27 @@ export const db = {
     },
 
     async bulkUpsertRequirements(reqs: EmployeeRequirement[]) {
-        if (!isSupabaseConfigured || !supabase) return;
+        if (!isSupabaseConfigured || !supabase) {
+            const updatedList = [...FALLBACK_REQUIREMENTS];
+            reqs.forEach(r => {
+                const existingIdx = updatedList.findIndex(x => x.employeeId === r.employeeId);
+                if (existingIdx >= 0) {
+                    updatedList[existingIdx] = {
+                        ...updatedList[existingIdx],
+                        asoExpiryDate: r.asoExpiryDate || updatedList[existingIdx].asoExpiryDate,
+                        requiredRacs: {
+                            ...updatedList[existingIdx].requiredRacs,
+                            ...r.requiredRacs
+                        }
+                    };
+                } else {
+                    updatedList.push(r);
+                }
+            });
+            FALLBACK_REQUIREMENTS = updatedList;
+            saveLocalStorageJson('fallback_requirements', FALLBACK_REQUIREMENTS);
+            return;
+        }
         const payload = reqs.map(r => ({
             employee_id: r.employeeId,
             aso_expiry_date: r.asoExpiryDate,
@@ -336,7 +479,14 @@ export const db = {
     },
 
     async promoteFromWaitlist(entryId: string, sessionId: string, employeeId: string) {
-        if (!isSupabaseConfigured || !supabase) return;
+        if (!isSupabaseConfigured || !supabase) {
+            const idx = FALLBACK_BOOKINGS.findIndex(b => b.id === entryId);
+            if (idx >= 0) {
+                FALLBACK_BOOKINGS[idx].status = BookingStatus.PENDING;
+                saveLocalStorageJson('fallback_bookings', FALLBACK_BOOKINGS);
+            }
+            return;
+        }
         const { error: insertErr } = await supabase.from('records').insert({
             session_id: sessionId,
             employee_id: employeeId,
@@ -348,7 +498,25 @@ export const db = {
     },
 
     async saveWaitlistEntry(sessionId: string, employeeId: string) {
-        if (!isSupabaseConfigured || !supabase) return;
+        if (!isSupabaseConfigured || !supabase) {
+            const emp = FALLBACK_EMPLOYEES.find(e => e.id === employeeId);
+            if (emp) {
+                const newWaitlistBooking: Booking = {
+                    id: uuidv4(),
+                    sessionId,
+                    employee: emp,
+                    status: BookingStatus.WAITLISTED,
+                    resultDate: null,
+                    expiryDate: null,
+                    theoryScore: 0,
+                    practicalScore: 0,
+                    attendance: false
+                };
+                FALLBACK_BOOKINGS.push(newWaitlistBooking);
+                saveLocalStorageJson('fallback_bookings', FALLBACK_BOOKINGS);
+            }
+            return;
+        }
         const { error } = await supabase.from('waiting_list').insert({
             session_id: sessionId,
             employee_id: employeeId
@@ -357,7 +525,11 @@ export const db = {
     },
 
     async removeFromWaitlist(entryId: string) {
-        if (!isSupabaseConfigured || !supabase) return;
+        if (!isSupabaseConfigured || !supabase) {
+            FALLBACK_BOOKINGS = FALLBACK_BOOKINGS.filter(b => b.id !== entryId);
+            saveLocalStorageJson('fallback_bookings', FALLBACK_BOOKINGS);
+            return;
+        }
         await supabase.from('waiting_list').delete().eq('id', entryId);
     },
 
@@ -374,19 +546,19 @@ export const db = {
 
     async getRacDefinitions(): Promise<RacDef[]> {
         const raw = await this.safeQuery('rac_definitions', supabase?.from('rac_definitions').select('*').order('code'), []);
-        if (raw.length === 0 && !isSupabaseConfigured) return DEMO_RAC_DEFINITIONS;
+        if (raw.length === 0 && !isSupabaseConfigured) return FALLBACK_RAC_DEFS;
         return raw;
     },
 
     async getRooms(): Promise<Room[]> {
         const raw = await this.safeQuery('rooms', supabase?.from('rooms').select('*'), []);
-        if (raw.length === 0 && !isSupabaseConfigured) return DEMO_ROOMS;
+        if (raw.length === 0 && !isSupabaseConfigured) return FALLBACK_ROOMS;
         return raw;
     },
 
     async getTrainers(): Promise<Trainer[]> {
         const raw = await this.safeQuery('trainers', supabase?.from('trainers').select('*'), []);
-        if (raw.length === 0 && !isSupabaseConfigured) return DEMO_TRAINERS;
+        if (raw.length === 0 && !isSupabaseConfigured) return FALLBACK_TRAINERS;
         return raw.map((t: any) => ({ 
             id: t.id,
             name: t.name,
@@ -396,7 +568,29 @@ export const db = {
     },
 
     async saveCompany(company: Company): Promise<Company> {
-        if (!isSupabaseConfigured || !supabase) return company;
+        if (!isSupabaseConfigured || !supabase) {
+            const targetId = isUUID(company.id) ? company.id : uuidv4();
+            const companyObj: Company = {
+                id: targetId,
+                name: company.name,
+                appName: company.appName,
+                logoUrl: company.logoUrl,
+                safetyLogoUrl: company.safetyLogoUrl,
+                status: company.status || 'Active',
+                defaultLanguage: company.defaultLanguage || 'en',
+                parentId: company.parentId && isUUID(company.parentId) ? company.parentId : undefined,
+                tier: company.tier || 'Prime',
+                features: company.features || { alcohol: false }
+            };
+            const idx = FALLBACK_COMPANIES.findIndex(c => c.id === targetId);
+            if (idx >= 0) {
+                FALLBACK_COMPANIES[idx] = companyObj;
+            } else {
+                FALLBACK_COMPANIES.push(companyObj);
+            }
+            saveLocalStorageJson('fallback_companies', FALLBACK_COMPANIES);
+            return companyObj;
+        }
         
         // Ensure ID is a valid UUID. If it's a mock ID like 'c1', generate a new one.
         const targetId = isUUID(company.id) ? company.id : uuidv4();
@@ -427,7 +621,26 @@ export const db = {
     },
 
     async saveRacDefinition(rac: RacDef) {
-        if (!isSupabaseConfigured || !supabase) return rac;
+        if (!isSupabaseConfigured || !supabase) {
+            const targetId = isUUID(rac.id) ? rac.id : uuidv4();
+            const racObj: RacDef = {
+                id: targetId,
+                companyId: rac.companyId || null,
+                code: rac.code,
+                name: rac.name,
+                validityMonths: rac.validityMonths,
+                requiresDriverLicense: rac.requiresDriverLicense,
+                requiresPractical: rac.requiresPractical
+            };
+            const idx = FALLBACK_RAC_DEFS.findIndex(r => r.id === targetId);
+            if (idx >= 0) {
+                FALLBACK_RAC_DEFS[idx] = racObj;
+            } else {
+                FALLBACK_RAC_DEFS.push(racObj);
+            }
+            saveLocalStorageJson('fallback_rac_defs', FALLBACK_RAC_DEFS);
+            return racObj;
+        }
         const payload = {
             id: isUUID(rac.id) ? rac.id : uuidv4(),
             company_id: (rac.companyId && isUUID(rac.companyId)) ? rac.companyId : null,
@@ -443,12 +656,33 @@ export const db = {
     },
 
     async deleteRacDefinition(id: string) {
-        if (!isSupabaseConfigured || !supabase) return;
+        if (!isSupabaseConfigured || !supabase) {
+            FALLBACK_RAC_DEFS = FALLBACK_RAC_DEFS.filter(r => r.id !== id);
+            saveLocalStorageJson('fallback_rac_defs', FALLBACK_RAC_DEFS);
+            return;
+        }
         await supabase.from('rac_definitions').delete().eq('id', id);
     },
 
     async saveSite(site: Site) {
-        if (!isSupabaseConfigured || !supabase) return site;
+        if (!isSupabaseConfigured || !supabase) {
+            const targetId = isUUID(site.id) ? site.id : uuidv4();
+            const siteObj: Site = {
+                id: targetId,
+                companyId: site.companyId || null,
+                name: site.name,
+                location: site.location,
+                mandatoryRacs: site.mandatoryRacs || []
+            };
+            const idx = FALLBACK_SITES.findIndex(s => s.id === targetId);
+            if (idx >= 0) {
+                FALLBACK_SITES[idx] = siteObj;
+            } else {
+                FALLBACK_SITES.push(siteObj);
+            }
+            saveLocalStorageJson('fallback_sites', FALLBACK_SITES);
+            return siteObj;
+        }
         const { data, error } = await supabase.from('sites').upsert({
             id: isUUID(site.id) ? site.id : uuidv4(),
             company_id: isUUID(site.companyId) ? site.companyId : null,
@@ -461,12 +695,32 @@ export const db = {
     },
 
     async deleteSite(id: string) {
-        if (!isSupabaseConfigured || !supabase) return;
+        if (!isSupabaseConfigured || !supabase) {
+            FALLBACK_SITES = FALLBACK_SITES.filter(s => s.id !== id);
+            saveLocalStorageJson('fallback_sites', FALLBACK_SITES);
+            return;
+        }
         await supabase.from('sites').delete().eq('id', id);
     },
 
     async saveRoom(room: Room) {
-        if (!isSupabaseConfigured || !supabase) return room;
+        if (!isSupabaseConfigured || !supabase) {
+            const targetId = isUUID(room.id) ? room.id : uuidv4();
+            const roomObj: Room = {
+                id: targetId,
+                name: room.name,
+                capacity: room.capacity,
+                siteId: room.siteId || null
+            };
+            const idx = FALLBACK_ROOMS.findIndex(r => r.id === targetId);
+            if (idx >= 0) {
+                FALLBACK_ROOMS[idx] = roomObj;
+            } else {
+                FALLBACK_ROOMS.push(roomObj);
+            }
+            saveLocalStorageJson('fallback_rooms', FALLBACK_ROOMS);
+            return roomObj;
+        }
         const { data, error } = await supabase.from('rooms').upsert({
             id: isUUID(room.id) ? room.id : uuidv4(),
             name: room.name,
@@ -478,12 +732,32 @@ export const db = {
     },
 
     async deleteRoom(id: string) {
-        if (!isSupabaseConfigured || !supabase) return;
+        if (!isSupabaseConfigured || !supabase) {
+            FALLBACK_ROOMS = FALLBACK_ROOMS.filter(r => r.id !== id);
+            saveLocalStorageJson('fallback_rooms', FALLBACK_ROOMS);
+            return;
+        }
         await supabase.from('rooms').delete().eq('id', id);
     },
 
     async saveTrainer(trainer: Trainer) {
-        if (!isSupabaseConfigured || !supabase) return trainer;
+        if (!isSupabaseConfigured || !supabase) {
+            const targetId = isUUID(trainer.id) ? trainer.id : uuidv4();
+            const trainerObj: Trainer = {
+                id: targetId,
+                name: trainer.name,
+                racs: trainer.racs || [],
+                siteId: trainer.siteId || null
+            };
+            const idx = FALLBACK_TRAINERS.findIndex(t => t.id === targetId);
+            if (idx >= 0) {
+                FALLBACK_TRAINERS[idx] = trainerObj;
+            } else {
+                FALLBACK_TRAINERS.push(trainerObj);
+            }
+            saveLocalStorageJson('fallback_trainers', FALLBACK_TRAINERS);
+            return trainerObj;
+        }
         const { data, error } = await supabase.from('trainers').upsert({
             id: isUUID(trainer.id) ? trainer.id : uuidv4(),
             name: trainer.name,
@@ -495,12 +769,36 @@ export const db = {
     },
 
     async deleteTrainer(id: string) {
-        if (!isSupabaseConfigured || !supabase) return;
+        if (!isSupabaseConfigured || !supabase) {
+            FALLBACK_TRAINERS = FALLBACK_TRAINERS.filter(t => t.id !== id);
+            saveLocalStorageJson('fallback_trainers', FALLBACK_TRAINERS);
+            return;
+        }
         await supabase.from('trainers').delete().eq('id', id);
     },
 
     async upsertUser(user: Partial<User>) {
-        if (!isSupabaseConfigured || !supabase) return user;
+        if (!isSupabaseConfigured || !supabase) {
+            const targetId = typeof user.id === 'number' ? user.id : Math.floor(Math.random() * 10000);
+            const userObj: User = {
+                id: targetId,
+                name: user.name || 'Unknown',
+                email: user.email || '',
+                role: user.role || UserRole.USER,
+                status: user.status || 'Active',
+                company: user.company || 'Unknown',
+                jobTitle: user.jobTitle || 'N/A',
+                siteId: user.siteId || 'all'
+            };
+            const idx = FALLBACK_USERS.findIndex(u => u.email === user.email || u.id === targetId);
+            if (idx >= 0) {
+                FALLBACK_USERS[idx] = { ...FALLBACK_USERS[idx], ...userObj };
+            } else {
+                FALLBACK_USERS.push(userObj);
+            }
+            saveLocalStorageJson('fallback_users', FALLBACK_USERS);
+            return userObj;
+        }
         const payload = this.mapUserToDb(user);
         const { data, error } = await supabase.from('users').upsert(payload, { onConflict: 'email' }).select();
         if (error) throw error;
@@ -513,16 +811,113 @@ export const db = {
         if (error) throw error;
     },
 
+    async deleteUser(id: number) {
+        if (!isSupabaseConfigured || !supabase) {
+            FALLBACK_USERS = FALLBACK_USERS.filter(u => u.id !== id);
+            saveLocalStorageJson('fallback_users', FALLBACK_USERS);
+            return;
+        }
+        const { error } = await supabase.from('users').delete().eq('id', id);
+        if (error) throw error;
+    },
+
     async upsertEmployee(emp: Partial<Employee>) {
-        if (!isSupabaseConfigured || !supabase) return emp;
+        if (!isSupabaseConfigured || !supabase) {
+            const recordId = emp.recordId || '';
+            const existingIdx = FALLBACK_EMPLOYEES.findIndex(e => e.recordId === recordId || (isUUID(emp.id) && e.id === emp.id));
+            let employeeObj: Employee;
+            if (existingIdx >= 0) {
+                employeeObj = {
+                    ...FALLBACK_EMPLOYEES[existingIdx],
+                    ...emp
+                } as Employee;
+                FALLBACK_EMPLOYEES[existingIdx] = employeeObj;
+            } else {
+                employeeObj = {
+                    id: isUUID(emp.id) ? emp.id : uuidv4(),
+                    recordId: recordId,
+                    name: emp.name || 'Unknown',
+                    company: emp.company || 'Unknown',
+                    department: emp.department || 'N/A',
+                    role: emp.role || 'N/A',
+                    siteId: emp.siteId || 's1',
+                    isActive: emp.isActive ?? true,
+                    phoneNumber: emp.phoneNumber,
+                    driverLicenseNumber: emp.driverLicenseNumber,
+                    driverLicenseClass: emp.driverLicenseClass,
+                    driverLicenseExpiry: emp.driverLicenseExpiry
+                };
+                FALLBACK_EMPLOYEES.push(employeeObj);
+            }
+            saveLocalStorageJson('fallback_employees', FALLBACK_EMPLOYEES);
+            return employeeObj;
+        }
         const payload = this.mapEmployeeToDb(emp);
-        const { data, error } = await supabase.from('users').upsert(payload, { onConflict: 'record_id' }).select();
+        const { data, error } = await supabase.from('employees').upsert(payload, { onConflict: 'record_id' }).select();
         if (error) throw error;
         return this.mapEmployeeFromDb(data[0]);
     },
 
+    async deleteEmployee(id: string) {
+        if (!isSupabaseConfigured || !supabase) {
+            FALLBACK_EMPLOYEES = FALLBACK_EMPLOYEES.filter(e => e.id !== id);
+            saveLocalStorageJson('fallback_employees', FALLBACK_EMPLOYEES);
+            FALLBACK_REQUIREMENTS = FALLBACK_REQUIREMENTS.filter(r => r.employeeId !== id);
+            saveLocalStorageJson('fallback_requirements', FALLBACK_REQUIREMENTS);
+            FALLBACK_BOOKINGS = FALLBACK_BOOKINGS.filter(b => b.employee?.id !== id);
+            saveLocalStorageJson('fallback_bookings', FALLBACK_BOOKINGS);
+            return;
+        }
+        const { error } = await supabase.from('employees').delete().eq('id', id);
+        if (error) throw error;
+    },
+
     async saveBooking(booking: Partial<Booking>) {
-        if (!isSupabaseConfigured || !supabase) return booking;
+        if (!isSupabaseConfigured || !supabase) {
+            if (booking.status === BookingStatus.WAITLISTED) {
+                await this.saveWaitlistEntry(booking.sessionId!, booking.employee!.id);
+                return booking;
+            }
+            const targetId = isUUID(booking.id) ? booking.id : uuidv4();
+            const existingIdx = FALLBACK_BOOKINGS.findIndex(b => b.id === targetId);
+            
+            let empObj = booking.employee || FALLBACK_EMPLOYEES.find(e => e.id === booking.employee?.id);
+            if (!empObj) {
+                empObj = {
+                    id: booking.employee?.id || uuidv4(),
+                    recordId: booking.employee?.recordId || 'MOCK-EMP',
+                    name: booking.employee?.name || 'Unknown',
+                    company: booking.employee?.company || 'Unknown',
+                    department: booking.employee?.department || 'N/A',
+                    role: booking.employee?.role || 'N/A',
+                    isActive: true
+                };
+            }
+            const bookingObj: Booking = {
+                id: targetId,
+                sessionId: booking.sessionId || '',
+                employee: empObj,
+                status: booking.status || BookingStatus.PENDING,
+                resultDate: booking.resultDate || null,
+                expiryDate: booking.expiryDate || null,
+                theoryScore: booking.theoryScore || 0,
+                practicalScore: booking.practicalScore || 0,
+                attendance: booking.attendance ?? false,
+                trainerName: booking.trainerName,
+                comments: booking.comments || (!isUUID(booking.sessionId) ? `Virtual Session: ${booking.sessionId}` : null)
+            };
+            if (existingIdx >= 0) {
+                FALLBACK_BOOKINGS[existingIdx] = {
+                    ...FALLBACK_BOOKINGS[existingIdx],
+                    ...booking,
+                    employee: empObj
+                } as Booking;
+            } else {
+                FALLBACK_BOOKINGS.push(bookingObj);
+            }
+            saveLocalStorageJson('fallback_bookings', FALLBACK_BOOKINGS);
+            return bookingObj;
+        }
         
         if (booking.status === BookingStatus.WAITLISTED) {
             await this.saveWaitlistEntry(booking.sessionId!, booking.employee!.id);
@@ -555,7 +950,16 @@ export const db = {
     },
 
     async updateRequirement(req: EmployeeRequirement) {
-        if (!isSupabaseConfigured || !supabase) return;
+        if (!isSupabaseConfigured || !supabase) {
+            const existingIdx = FALLBACK_REQUIREMENTS.findIndex(r => r.employeeId === req.employeeId);
+            if (existingIdx >= 0) {
+                FALLBACK_REQUIREMENTS[existingIdx] = req;
+            } else {
+                FALLBACK_REQUIREMENTS.push(req);
+            }
+            saveLocalStorageJson('fallback_requirements', FALLBACK_REQUIREMENTS);
+            return;
+        }
         const payload = { 
             employee_id: req.employeeId, 
             aso_expiry_date: req.asoExpiryDate, 
@@ -570,7 +974,20 @@ export const db = {
     },
 
     async addLog(level: string, message: string, user: string, metadata?: any) {
-        if (!isSupabaseConfigured || !supabase) return;
+        if (!isSupabaseConfigured || !supabase) {
+            const logs = getLocalStorageJson('fallback_logs', []);
+            logs.unshift({
+                id: uuidv4(),
+                level,
+                message_key: message,
+                user_name: user,
+                timestamp: new Date().toISOString(),
+                metadata: metadata || {}
+            });
+            if (logs.length > 100) logs.pop();
+            saveLocalStorageJson('fallback_logs', logs);
+            return;
+        }
         await supabase.from('system_logs').insert({
             level,
             message_key: message,
@@ -580,7 +997,17 @@ export const db = {
     },
 
     async getLogs(): Promise<any[]> {
-        if (!isSupabaseConfigured || !supabase) return [];
+        if (!isSupabaseConfigured || !supabase) {
+            const logs = getLocalStorageJson('fallback_logs', []);
+            return logs.map((l: any) => ({
+                id: l.id,
+                level: l.level,
+                messageKey: l.message_key,
+                user: l.user_name,
+                timestamp: l.timestamp,
+                aiFix: l.metadata?.aiFix || null
+            }));
+        }
         const { data, error } = await supabase
             .from('system_logs')
             .select('*')

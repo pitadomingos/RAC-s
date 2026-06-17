@@ -32,13 +32,20 @@ const RequestCardsPage: React.FC<RequestCardsPageProps> = ({ bookings, requireme
   const safeBookings = Array.isArray(bookings) ? bookings : [];
   const isSelfService = userRole === UserRole.USER;
 
-  const isEmployeeCompliant = (empId: string): boolean => {
+  const getEligibilityDetails = (empId: string): { isEligible: boolean; reasons: string[] } => {
+      const reasons: string[] = [];
       const req = requirements.find(r => r.employeeId === empId);
-      if (!req) return false;
+      if (!req) {
+          return { isEligible: false, reasons: ["No requirements or ASO record found for this employee."] };
+      }
+      
       const today = new Date().toISOString().split('T')[0];
-      if (!req.asoExpiryDate || req.asoExpiryDate <= today) return false;
+      if (!req.asoExpiryDate) {
+          reasons.push("ASO Medical record is missing.");
+      } else if (req.asoExpiryDate <= today) {
+          reasons.push(`ASO Medical expired on ${req.asoExpiryDate}.`);
+      }
 
-      let allRacsMet = true;
       const mappedRacs = Object.entries(req.requiredRacs).filter(([_, val]) => val === true).map(([k]) => k);
       
       const drivingRacs = ['RAC02', 'RAC11', 'LIB_MOV'];
@@ -46,14 +53,13 @@ const RequestCardsPage: React.FC<RequestCardsPageProps> = ({ bookings, requireme
 
       const empObj = safeBookings.find(b => b.employee?.id === empId)?.employee;
       const dlExpiry = empObj?.driverLicenseExpiry || '';
-      const isDlExpired = !!(dlExpiry && dlExpiry <= today) || !dlExpiry;
+      const isDlExpired = !dlExpiry || (dlExpiry <= today);
 
       mappedRacs.forEach(key => {
          if (drivingRacs.includes(key)) {
              if (isDlExpired) {
-                 // ONLY block the whole record if they have no other roles
                  if (!isMultiskilled) {
-                     allRacsMet = false;
+                     reasons.push(`Driver's license is expired or missing (required for ${key}).`);
                  }
              } else {
                  const passedBooking = safeBookings.find(b => {
@@ -72,8 +78,12 @@ const RequestCardsPage: React.FC<RequestCardsPageProps> = ({ bookings, requireme
                      }
                      return racCode === key;
                  });
-                 if (!passedBooking || !passedBooking.expiryDate || passedBooking.expiryDate <= today) {
-                     allRacsMet = false;
+                 if (!passedBooking) {
+                     reasons.push(`Missing passed training for ${key}.`);
+                 } else if (!passedBooking.expiryDate) {
+                     reasons.push(`Training expiry date is missing for ${key}.`);
+                 } else if (passedBooking.expiryDate <= today) {
+                     reasons.push(`Training for ${key} expired on ${passedBooking.expiryDate}.`);
                  }
              }
          } else {
@@ -93,13 +103,24 @@ const RequestCardsPage: React.FC<RequestCardsPageProps> = ({ bookings, requireme
                  }
                  return racCode === key;
              });
-             if (!passedBooking || !passedBooking.expiryDate || passedBooking.expiryDate <= today) {
-                 allRacsMet = false;
+             if (!passedBooking) {
+                 reasons.push(`Missing passed training for ${key}.`);
+             } else if (!passedBooking.expiryDate) {
+                 reasons.push(`Training expiry date is missing for ${key}.`);
+             } else if (passedBooking.expiryDate <= today) {
+                 reasons.push(`Training for ${key} expired on ${passedBooking.expiryDate}.`);
              }
          }
       });
 
-      return allRacsMet;
+      return {
+          isEligible: reasons.length === 0,
+          reasons
+      };
+  };
+
+  const isEmployeeCompliant = (empId: string): boolean => {
+      return getEligibilityDetails(empId).isEligible;
   };
 
   const allEligibleBookings = useMemo(() => {
@@ -270,8 +291,52 @@ const RequestCardsPage: React.FC<RequestCardsPageProps> = ({ bookings, requireme
                           );
                       })}
                   </div>
-                  <div className="mt-3 flex justify-end">
-                      <button onClick={() => setSlotInputs(Array(8).fill(''))} className="text-[10px] font-bold text-slate-400 hover:text-red-500 flex items-center gap-1 transition-colors">
+                  <div className="mt-3 flex justify-between items-start border-t border-slate-100 dark:border-slate-700/50 pt-3">
+                      <div className="flex-1">
+                          {slotInputs.some((input, idx) => !slots[idx] && input.trim().length > 0) && (
+                              <div className="flex items-start gap-2 text-xs text-rose-600 dark:text-rose-400 bg-rose-50 dark:bg-rose-950/20 p-3 rounded-xl border border-rose-100 dark:border-rose-900/30 mr-4">
+                                  <AlertCircle size={14} className="shrink-0 mt-0.5" />
+                                  <div className="space-y-1">
+                                      <span className="font-bold uppercase tracking-wider text-[10px]">Eligibility Issues:</span>
+                                      {slotInputs.map((input, idx) => {
+                                          if (slots[idx] || !input.trim()) return null;
+                                          
+                                          // Find the employee in the full booking records
+                                          const foundBooking = safeBookings.find(b => 
+                                              b.employee && (
+                                                  b.employee.recordId.toLowerCase() === input.toLowerCase() ||
+                                                  b.employee.name.toLowerCase() === input.toLowerCase()
+                                              )
+                                          ) || safeBookings.find(b => 
+                                              b.employee && (
+                                                  b.employee.recordId.toLowerCase().includes(input.toLowerCase()) ||
+                                                  b.employee.name.toLowerCase().includes(input.toLowerCase())
+                                              )
+                                          );
+                                          
+                                          if (!foundBooking) {
+                                              return (
+                                                  <div key={idx} className="text-slate-500 dark:text-slate-400">
+                                                      Slot {idx + 1}: Personnel <span className="font-bold">"{input}"</span> not found in database.
+                                                  </div>
+                                              );
+                                          }
+                                          
+                                          const details = getEligibilityDetails(foundBooking.employee.id);
+                                          return (
+                                              <div key={idx} className="pl-2 border-l-2 border-rose-300 dark:border-rose-800">
+                                                  <span className="font-bold text-slate-800 dark:text-slate-200">{foundBooking.employee.name} ({foundBooking.employee.recordId})</span>:
+                                                  <div className="text-[11px] text-rose-500 dark:text-rose-400 list-none mt-0.5 space-y-0.5">
+                                                      {details.reasons.map((r, ri) => <div key={ri}>• {r}</div>)}
+                                                  </div>
+                                              </div>
+                                          );
+                                      })}
+                                  </div>
+                              </div>
+                          )}
+                      </div>
+                      <button onClick={() => setSlotInputs(Array(8).fill(''))} className="text-[10px] font-bold text-slate-400 hover:text-red-500 flex items-center gap-1 transition-colors shrink-0 mt-1">
                           <Trash2 size={12} /> CLEAR BATCH
                       </button>
                   </div>

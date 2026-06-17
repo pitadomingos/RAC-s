@@ -9,10 +9,12 @@ import { v4 as uuidv4 } from 'uuid';
 import { format } from 'date-fns';
 import { isSupabaseConfigured } from '../services/supabaseClient';
 import RacIcon from '../components/RacIcon';
+import { parseCsv } from '../utils/csvParser';
 import { db } from '../services/databaseService';
 import { useAuth } from '../contexts/AuthContext';
 
 interface DatabasePageProps {
+  employees: Employee[];
   bookings: Booking[];
   requirements: EmployeeRequirement[];
   updateRequirements: (req: EmployeeRequirement) => void;
@@ -25,7 +27,7 @@ interface DatabasePageProps {
   companies?: Company[];
 }
 
-const DatabasePage: React.FC<DatabasePageProps> = ({ bookings, requirements, updateRequirements, sessions, onUpdateEmployee, onDeleteEmployee, racDefinitions, addNotification, currentSiteId, companies = [] }) => {
+const DatabasePage: React.FC<DatabasePageProps> = ({ employees = [], bookings, requirements, updateRequirements, sessions, onUpdateEmployee, onDeleteEmployee, racDefinitions, addNotification, currentSiteId, companies = [] }) => {
   const { t } = useLanguage();
   const { user } = useAuth();
   const [selectedCompany, setSelectedCompany] = useState('All');
@@ -66,6 +68,7 @@ const DatabasePage: React.FC<DatabasePageProps> = ({ bookings, requirements, upd
 
   const processedData = useMemo(() => {
     const uniqueEmployeesMap = new Map<string, Employee>();
+    employees.forEach(emp => { if (emp && !uniqueEmployeesMap.has(emp.id)) uniqueEmployeesMap.set(emp.id, emp); });
     bookings.forEach(b => { if (b.employee && !uniqueEmployeesMap.has(b.employee.id)) uniqueEmployeesMap.set(b.employee.id, b.employee); });
     
     return Array.from(uniqueEmployeesMap.values()).map(emp => {
@@ -125,15 +128,13 @@ const DatabasePage: React.FC<DatabasePageProps> = ({ bookings, requirements, upd
     const reader = new FileReader();
     reader.onload = async (evt) => {
         const text = evt.target?.result as string;
-        const lines = text.split('\n');
+        const rows = parseCsv(text);
         const batch: Partial<Employee>[] = [];
         const reqs: EmployeeRequirement[] = [];
 
-        for (let i = 1; i < lines.length; i++) {
-            if (!lines[i].trim()) continue;
-            const cols = lines[i].split(',').map(c => c.trim().replace(/^"|"$/g, ''));
-            
-            if (cols[0] && cols[1]) {
+        for (let i = 1; i < rows.length; i++) {
+            const cols = rows[i];
+            if (cols && cols[0] && cols[1]) {
                 const empId = uuidv4();
                 batch.push({
                     id: empId,
@@ -148,11 +149,13 @@ const DatabasePage: React.FC<DatabasePageProps> = ({ bookings, requirements, upd
 
                 const reqRacs: Record<string, boolean> = {};
                 if (cols[6]) {
-                    cols[6].split(';').forEach(c => reqRacs[c.trim().toUpperCase()] = true);
+                    cols[6].split(/[;,]/).forEach(c => {
+                        if (c.trim()) reqRacs[c.trim().toUpperCase()] = true;
+                    });
                 }
                 
                 reqs.push({
-                    employeeId: empId, // Note: This mapping needs RecordID match in production dbService, using UUID for now
+                    employeeId: empId,
                     asoExpiryDate: cols[5] || '',
                     requiredRacs: reqRacs
                 });
@@ -160,13 +163,29 @@ const DatabasePage: React.FC<DatabasePageProps> = ({ bookings, requirements, upd
         }
 
         try {
-            await db.bulkUpsertEmployees(batch);
-            // Re-sync IDs for requirements if needed, but for simplicity we rely on bulkUpsert success
+            const dbEmployees = await db.bulkUpsertEmployees(batch);
+            
+            const idMap = new Map<string, string>();
+            dbEmployees.forEach((e: any) => idMap.set(e.record_id, e.id));
+
+            const reqsToUpsert = reqs.map((r, idx) => {
+                const empRecordId = batch[idx].recordId!;
+                const realId = idMap.get(empRecordId) || r.employeeId;
+                return {
+                    ...r,
+                    employeeId: realId
+                };
+            });
+
+            if (reqsToUpsert.length > 0) {
+                await db.bulkUpsertRequirements(reqsToUpsert);
+            }
+
             addNotification({
                 id: uuidv4(),
                 type: 'success',
                 title: 'Cloud Registry Updated',
-                message: `Successfully imported ${batch.length} personnel records into Supabase.`,
+                message: `Successfully imported ${batch.length} personnel records.`,
                 timestamp: new Date(),
                 isRead: false
             });

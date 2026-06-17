@@ -15,6 +15,8 @@ import { OPS_KEYS } from '../constants';
 import { db, isUUID } from '../services/databaseService';
 import { useAuth } from '../contexts/AuthContext';
 
+import { parseCsv } from '../utils/csvParser';
+
 interface ResultsPageProps {
   bookings: Booking[];
   updateBookingStatus: (id: string, status: BookingStatus) => void;
@@ -164,14 +166,14 @@ const ResultsPage: React.FC<ResultsPageProps> = ({ bookings, updateBookingStatus
     const reader = new FileReader();
     reader.onload = async (evt) => {
         const text = evt.target?.result as string;
-        const lines = text.split('\n');
+        const rows = parseCsv(text);
         
         const newImportedBookings: Booking[] = [];
         const sideEffects: { employee: Employee, aso: string, ops: Record<string, boolean> }[] = [];
 
-        for (let i = 1; i < lines.length; i++) {
-            if (!lines[i].trim()) continue;
-            const cols = lines[i].split(',').map(c => c.trim().replace(/^"|"$/g, ''));
+        for (let i = 1; i < rows.length; i++) {
+            const cols = rows[i];
+            if (!cols) continue;
             
             const recordId = cols[0];
             const name = cols[1];
@@ -191,7 +193,7 @@ const ResultsPage: React.FC<ResultsPageProps> = ({ bookings, updateBookingStatus
                     department: cols[3] || 'N/A',
                     role: cols[4] || 'N/A',
                     isActive: true,
-                    // FIX: Ensure siteId is a UUID or null. Mock ID "s1" is not a valid UUID.
+                    // Ensure siteId is a UUID or null. Mock ID "s1" is not a valid UUID.
                     siteId: isUUID(currentSiteId) ? currentSiteId : undefined
                 };
 

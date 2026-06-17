@@ -28,6 +28,7 @@ const UserManagement: React.FC<UserManagementProps> = ({ users, onUpdateUser, on
   const [newUser, setNewUser] = useState<Partial<User>>({
       name: '', email: '', phoneNumber: '', role: UserRole.USER, status: 'Active', company: defaultCompany, jobTitle: '', siteId: currentSiteId !== 'all' ? currentSiteId : (sites[0]?.id || 'all')
   });
+  const [editingUser, setEditingUser] = useState<Partial<User> | null>(null);
   const [openActionId, setOpenActionId] = useState<number | null>(null);
 
   // Pagination State
@@ -49,8 +50,9 @@ const UserManagement: React.FC<UserManagementProps> = ({ users, onUpdateUser, on
     isDestructive: false
   });
 
-  const handleAddUser = async () => {
-      if (!newUser.name || !newUser.email) {
+  const handleSaveUser = async () => {
+      const targetUser = editingUser || newUser;
+      if (!targetUser.name || !targetUser.email) {
           addNotification({
               id: uuidv4(),
               type: 'warning',
@@ -65,25 +67,27 @@ const UserManagement: React.FC<UserManagementProps> = ({ users, onUpdateUser, on
       setIsSubmitting(true);
       try {
           const userToAdd: Partial<User> = {
-              name: newUser.name,
-              email: newUser.email,
-              phoneNumber: newUser.phoneNumber || '',
-              role: newUser.role || UserRole.USER,
-              status: newUser.status || 'Active',
-              company: newUser.company || 'Unknown',
-              jobTitle: newUser.jobTitle || 'N/A',
-              siteId: newUser.siteId || (currentSiteId !== 'all' ? currentSiteId : 'all')
+              id: targetUser.id,
+              name: targetUser.name,
+              email: targetUser.email,
+              phoneNumber: targetUser.phoneNumber || '',
+              role: targetUser.role || UserRole.USER,
+              status: targetUser.status || 'Active',
+              company: targetUser.company || 'Unknown',
+              jobTitle: targetUser.jobTitle || 'N/A',
+              siteId: targetUser.siteId || (currentSiteId !== 'all' ? currentSiteId : 'all')
           };
           
           await onUpdateUser(userToAdd);
           
           setIsModalOpen(false);
           setNewUser({ name: '', email: '', phoneNumber: '', role: UserRole.USER, status: 'Active', company: defaultCompany, jobTitle: '', siteId: currentSiteId !== 'all' ? currentSiteId : 'all' });
+          setEditingUser(null);
           addNotification({
               id: uuidv4(),
               type: 'success',
-              title: 'User Created',
-              message: `User ${userToAdd.name} added. A welcome email has been sent for password setup.`,
+              title: editingUser ? 'User Updated' : 'User Created',
+              message: editingUser ? `User ${userToAdd.name} has been updated.` : `User ${userToAdd.name} added. A welcome email has been sent for password setup.`,
               timestamp: new Date(),
               isRead: false
           });
@@ -262,7 +266,7 @@ const UserManagement: React.FC<UserManagementProps> = ({ users, onUpdateUser, on
                 <button onClick={() => fileInputRef.current?.click()} className="flex items-center gap-2 bg-white/10 hover:bg-white/20 text-white px-4 py-3 rounded-xl font-bold backdrop-blur-sm border border-white/10 transition-all text-xs">
                     <Upload size={16} /> {t.database.importCsv}
                 </button>
-                <input type="file" ref={fileInputRef} className="hidden" accept=".csv" onChange={handleFileUpload} />
+                <input type="file" ref={fileInputRef} className="hidden" accept=".csv" onChange={handleFileUpload} title="Import CSV File" aria-label="Import CSV File" />
                 
                 <button onClick={() => setIsModalOpen(true)} className="flex items-center gap-2 bg-green-600 hover:bg-green-500 text-white px-6 py-3 rounded-xl font-bold shadow-lg shadow-green-500/30 transition-all transform hover:-translate-y-0.5 text-sm">
                     <Plus size={18} />
@@ -298,7 +302,7 @@ const UserManagement: React.FC<UserManagementProps> = ({ users, onUpdateUser, on
             <div className="flex items-center gap-3">
                 <div className="flex items-center gap-2 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-xl px-3 py-2 shadow-sm">
                     <span className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">{t.common.rowsPerPage}</span>
-                    <select value={itemsPerPage} onChange={handlePageSizeChange} className="text-sm font-bold bg-transparent outline-none text-slate-800 dark:text-white cursor-pointer">
+                    <select value={itemsPerPage} onChange={handlePageSizeChange} className="text-sm font-bold bg-transparent outline-none text-slate-800 dark:text-white cursor-pointer" title={t.common.rowsPerPage} aria-label={t.common.rowsPerPage}>
                         <option value={10}>10</option>
                         <option value={20}>20</option>
                         <option value={50}>50</option>
@@ -350,10 +354,10 @@ const UserManagement: React.FC<UserManagementProps> = ({ users, onUpdateUser, on
                             )}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium relative">
-                        <button onClick={() => setOpenActionId(openActionId === u.id ? null : u.id)} className="text-slate-400 hover:text-slate-700 dark:hover:text-white p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"><MoreVertical size={18} /></button>
+                        <button onClick={() => setOpenActionId(openActionId === u.id ? null : u.id)} className="text-slate-400 hover:text-slate-700 dark:hover:text-white p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors" title="Actions Menu" aria-label="Actions Menu"><MoreVertical size={18} /></button>
                         {openActionId === u.id && (
                             <div className="absolute right-10 top-2 w-40 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-xl z-50 overflow-hidden animate-fade-in-up">
-                                <button className="w-full text-left px-4 py-3 text-xs font-bold hover:bg-slate-50 dark:hover:bg-slate-700 flex items-center gap-2 text-slate-700 dark:text-slate-300 transition-colors"><Edit size={14} /> {t.common.edit}</button>
+                                <button onClick={() => { setEditingUser(u); setIsModalOpen(true); setOpenActionId(null); }} className="w-full text-left px-4 py-3 text-xs font-bold hover:bg-slate-50 dark:hover:bg-slate-700 flex items-center gap-2 text-slate-700 dark:text-slate-300 transition-colors"><Edit size={14} /> {t.common.edit}</button>
                                 <button onClick={() => handleDeleteUser(u.id)} className="w-full text-left px-4 py-3 text-xs font-bold hover:bg-red-50 dark:hover:bg-red-900/20 text-red-600 dark:text-red-400 flex items-center gap-2 transition-colors border-t border-slate-100 dark:border-slate-700"><Trash2 size={14} /> {t.common.delete}</button>
                             </div>
                         )}
@@ -383,8 +387,8 @@ const UserManagement: React.FC<UserManagementProps> = ({ users, onUpdateUser, on
              <div className="flex items-center gap-4">
                  <div className="text-xs font-bold text-slate-400 uppercase tracking-wider">{t.common.page} {currentPage} {t.common.of} {Math.max(1, totalPages)} • {users.length} Total</div>
                  <div className="flex gap-2">
-                    <button onClick={() => goToPage(currentPage - 1)} disabled={currentPage === 1} className="p-2 rounded-lg border border-slate-200 dark:border-slate-600 hover:bg-slate-100 dark:hover:bg-slate-700 disabled:opacity-50 transition-colors text-slate-600 dark:text-slate-300"><ChevronLeft size={16} /></button>
-                    <button onClick={() => goToPage(currentPage + 1)} disabled={currentPage === totalPages} className="p-2 rounded-lg border border-slate-200 dark:border-slate-600 hover:bg-slate-100 dark:hover:bg-slate-700 disabled:opacity-50 transition-colors text-slate-600 dark:text-slate-300"><ChevronRight size={16} /></button>
+                    <button onClick={() => goToPage(currentPage - 1)} disabled={currentPage === 1} className="p-2 rounded-lg border border-slate-200 dark:border-slate-600 hover:bg-slate-100 dark:hover:bg-slate-700 disabled:opacity-50 transition-colors text-slate-600 dark:text-slate-300" title="Previous Page" aria-label="Previous Page"><ChevronLeft size={16} /></button>
+                    <button onClick={() => goToPage(currentPage + 1)} disabled={currentPage === totalPages} className="p-2 rounded-lg border border-slate-200 dark:border-slate-600 hover:bg-slate-100 dark:hover:bg-slate-700 disabled:opacity-50 transition-colors text-slate-600 dark:text-slate-300" title="Next Page" aria-label="Next Page"><ChevronRight size={16} /></button>
                  </div>
              </div>
         </div>
@@ -397,37 +401,82 @@ const UserManagement: React.FC<UserManagementProps> = ({ users, onUpdateUser, on
               <div className="bg-white dark:bg-slate-800 rounded-3xl shadow-2xl w-full max-w-lg p-0 overflow-hidden transform transition-all scale-100 border border-slate-200 dark:border-slate-700">
                    <div className="p-6 bg-slate-50 dark:bg-slate-900/50 border-b border-slate-100 dark:border-slate-700 flex justify-between items-center">
                        <div>
-                           <h3 className="text-xl font-black text-slate-900 dark:text-white tracking-tight">{t.users.modal.title}</h3>
-                           <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Create a new system user profile.</p>
+                           <h3 className="text-xl font-black text-slate-900 dark:text-white tracking-tight">
+                               {editingUser ? 'Edit User Profile' : t.users.modal.title}
+                           </h3>
+                           <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                               {editingUser ? 'Modify user details and roles.' : 'Create a new system user profile.'}
+                           </p>
                        </div>
-                       <button onClick={() => setIsModalOpen(false)} className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-2 rounded-full hover:bg-white dark:hover:bg-slate-700 transition-colors"><X size={20} /></button>
+                       <button onClick={() => { setIsModalOpen(false); setEditingUser(null); }} className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-2 rounded-full hover:bg-white dark:hover:bg-slate-700 transition-colors" title="Close Modal" aria-label="Close Modal"><X size={20} /></button>
                    </div>
                    <div className="p-8 space-y-5">
                        <div>
                            <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2 block ml-1">{t.users.modal.name}</label>
-                           <input className="w-full bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-xl p-3 text-sm font-semibold focus:ring-2 focus:ring-green-500 outline-none text-slate-900 dark:text-white transition-all" value={newUser.name || ''} onChange={e => setNewUser({...newUser, name: e.target.value})} placeholder="Full Name" />
+                           <input 
+                               className="w-full bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-xl p-3 text-sm font-semibold focus:ring-2 focus:ring-green-500 outline-none text-slate-900 dark:text-white transition-all" 
+                               value={editingUser ? (editingUser.name || '') : (newUser.name || '')} 
+                               onChange={e => {
+                                   if (editingUser) setEditingUser({...editingUser, name: e.target.value});
+                                   else setNewUser({...newUser, name: e.target.value});
+                               }} 
+                               placeholder="Full Name" 
+                           />
                        </div>
                        <div>
                            <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2 block ml-1">{t.users.modal.email}</label>
-                           <input className="w-full bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-xl p-3 text-sm font-semibold focus:ring-2 focus:ring-green-500 outline-none text-slate-900 dark:text-white transition-all" value={newUser.email || ''} onChange={e => setNewUser({...newUser, email: e.target.value})} placeholder="email@example.com" />
+                           <input 
+                               className="w-full bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-xl p-3 text-sm font-semibold focus:ring-2 focus:ring-green-500 outline-none text-slate-900 dark:text-white transition-all" 
+                               value={editingUser ? (editingUser.email || '') : (newUser.email || '')} 
+                               onChange={e => {
+                                   if (editingUser) setEditingUser({...editingUser, email: e.target.value});
+                                   else setNewUser({...newUser, email: e.target.value});
+                               }} 
+                               placeholder="email@example.com" 
+                               disabled={!!editingUser}
+                           />
                        </div>
                        <div>
                            <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2 block ml-1">Phone Number</label>
                            <div className="relative">
-                               <input className="w-full bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-xl p-3 pl-10 text-sm font-semibold focus:ring-2 focus:ring-green-500 outline-none text-slate-900 dark:text-white transition-all" value={newUser.phoneNumber || ''} onChange={e => setNewUser({...newUser, phoneNumber: e.target.value})} placeholder="+258 84..." />
+                               <input 
+                                   className="w-full bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-xl p-3 pl-10 text-sm font-semibold focus:ring-2 focus:ring-green-500 outline-none text-slate-900 dark:text-white transition-all" 
+                                   value={editingUser ? (editingUser.phoneNumber || '') : (newUser.phoneNumber || '')} 
+                                   onChange={e => {
+                                       if (editingUser) setEditingUser({...editingUser, phoneNumber: e.target.value});
+                                       else setNewUser({...newUser, phoneNumber: e.target.value});
+                                   }} 
+                                   placeholder="+258 84..." 
+                               />
                                <Smartphone size={16} className="absolute left-3 top-3.5 text-slate-400" />
                            </div>
                        </div>
                        <div className="grid grid-cols-2 gap-5">
                            <div>
                                <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2 block ml-1">{t.common.company}</label>
-                               <select className="w-full bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-xl p-3 text-sm font-medium focus:ring-2 focus:ring-green-500 outline-none text-slate-900 dark:text-white appearance-none" value={newUser.company || ''} onChange={e => setNewUser({...newUser, company: e.target.value})}>
+                               <select 
+                                   className="w-full bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-xl p-3 text-sm font-medium focus:ring-2 focus:ring-green-500 outline-none text-slate-900 dark:text-white appearance-none" 
+                                   value={editingUser ? (editingUser.company || '') : (newUser.company || '')} 
+                                   onChange={e => {
+                                       if (editingUser) setEditingUser({...editingUser, company: e.target.value});
+                                       else setNewUser({...newUser, company: e.target.value});
+                                   }}
+                                   title="Company"
+                               >
                                    {companies.map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
                                </select>
                            </div>
                            <div>
                                <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2 block ml-1">{t.common.role}</label>
-                               <select className="w-full bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-xl p-3 text-sm font-medium focus:ring-2 focus:ring-green-500 outline-none text-slate-900 dark:text-white appearance-none" value={newUser.role || ''} onChange={e => setNewUser({...newUser, role: e.target.value as UserRole})}>
+                               <select 
+                                   className="w-full bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-xl p-3 text-sm font-medium focus:ring-2 focus:ring-green-500 outline-none text-slate-900 dark:text-white appearance-none" 
+                                   value={editingUser ? (editingUser.role || '') : (newUser.role || '')} 
+                                   onChange={e => {
+                                       if (editingUser) setEditingUser({...editingUser, role: e.target.value as UserRole});
+                                       else setNewUser({...newUser, role: e.target.value as UserRole});
+                                   }}
+                                   title="Role"
+                               >
                                     {Object.values(UserRole).map(r => <option key={String(r)} value={String(r)}>{String(r)}</option>)}
                                 </select>
                            </div>
@@ -435,21 +484,52 @@ const UserManagement: React.FC<UserManagementProps> = ({ users, onUpdateUser, on
                        <div className="grid grid-cols-2 gap-5">
                            <div>
                                <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2 block ml-1">{t.common.jobTitle}</label>
-                               <input className="w-full bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-xl p-3 text-sm font-semibold focus:ring-2 focus:ring-green-500 outline-none text-slate-900 dark:text-white transition-all" value={newUser.jobTitle || ''} onChange={e => setNewUser({...newUser, jobTitle: e.target.value})} placeholder="e.g. Safety Officer" />
+                               <input 
+                                   className="w-full bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-xl p-3 text-sm font-semibold focus:ring-2 focus:ring-green-500 outline-none text-slate-900 dark:text-white transition-all" 
+                                   value={editingUser ? (editingUser.jobTitle || '') : (newUser.jobTitle || '')} 
+                                   onChange={e => {
+                                       if (editingUser) setEditingUser({...editingUser, jobTitle: e.target.value});
+                                       else setNewUser({...newUser, jobTitle: e.target.value});
+                                   }} 
+                                   placeholder="e.g. Safety Officer" 
+                               />
                            </div>
                            <div>
                                <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2 block ml-1">Site</label>
-                               <select className="w-full bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-xl p-3 text-sm font-medium focus:ring-2 focus:ring-blue-500 outline-none text-slate-800 dark:text-white appearance-none" value={newUser.siteId || ''} onChange={e => setNewUser({...newUser, siteId: e.target.value})}>
+                               <select 
+                                   className="w-full bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-xl p-3 text-sm font-medium focus:ring-2 focus:ring-blue-500 outline-none text-slate-800 dark:text-white appearance-none" 
+                                   value={editingUser ? (editingUser.siteId || '') : (newUser.siteId || '')} 
+                                   onChange={e => {
+                                       if (editingUser) setEditingUser({...editingUser, siteId: e.target.value});
+                                       else setNewUser({...newUser, siteId: e.target.value});
+                                   }}
+                                   title="Site"
+                               >
                                    <option value="all">Enterprise (Global)</option>
                                    {sites.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
                                </select>
                            </div>
                        </div>
+                       {editingUser && (
+                           <div>
+                               <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-1">Account Status</label>
+                               <select 
+                                   className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 text-sm font-medium text-slate-800 dark:text-white outline-none focus:ring-2 focus:ring-indigo-500 transition-all" 
+                                   value={editingUser.status || 'Active'} 
+                                   onChange={e => setEditingUser({...editingUser, status: e.target.value as 'Active' | 'Inactive'})}
+                                   title="Account Status"
+                               >
+                                   <option value="Active">Active</option>
+                                   <option value="Inactive">Inactive</option>
+                               </select>
+                           </div>
+                       )}
                    </div>
                    <div className="p-6 bg-slate-50 dark:bg-slate-900/50 border-t border-slate-100 dark:border-slate-700 flex justify-end gap-3">
-                       <button onClick={() => setIsModalOpen(false)} className="px-6 py-3 text-sm text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-xl font-bold transition-colors">{t.common.cancel}</button>
-                       <button onClick={handleAddUser} disabled={isSubmitting} className="px-8 py-3 text-sm bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-500 hover:to-emerald-500 text-white rounded-xl font-bold shadow-lg shadow-green-500/30 flex items-center gap-2 transition-all transform hover:-translate-y-0.5 disabled:opacity-50">
-                           {isSubmitting ? <Loader2 size={18} className="animate-spin" /> : <Plus size={18} />} {t.users.modal.createUser}
+                       <button onClick={() => { setIsModalOpen(false); setEditingUser(null); }} className="px-6 py-3 text-sm text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-xl font-bold transition-colors">{t.common.cancel}</button>
+                       <button onClick={handleSaveUser} disabled={isSubmitting} className="px-8 py-3 text-sm bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-500 hover:to-emerald-500 text-white rounded-xl font-bold shadow-lg shadow-green-500/30 flex items-center gap-2 transition-all transform hover:-translate-y-0.5 disabled:opacity-50">
+                           {isSubmitting ? <Loader2 size={18} className="animate-spin" /> : (editingUser ? <CheckCircle2 size={18} /> : <Plus size={18} />)} 
+                           {editingUser ? 'Save Changes' : t.users.modal.createUser}
                        </button>
                    </div>
               </div>
