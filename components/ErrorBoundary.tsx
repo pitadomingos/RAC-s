@@ -19,8 +19,11 @@ interface State {
  * Catches runtime errors and triggers autonomous repair visuals.
  * Inherits from the standard React.Component class to provide error boundary lifecycle methods.
  */
-// Fix: Explicitly use React.Component to ensure setState and props are recognized by the TypeScript compiler.
+// Fix: Declare inherited React.Component members explicitly for React 19 compatibility.
 export class ErrorBoundary extends React.Component<Props, State> {
+  // React 19 types require explicit declarations for inherited members in strict mode
+  declare setState: React.Component<Props, State>['setState'];
+  declare props: React.PropsWithChildren<Props>;
   private simulationInterval: any = null;
 
   // Initialize state as a class property for better type inference

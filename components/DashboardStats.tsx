@@ -43,7 +43,7 @@ const DashboardStats: React.FC<DashboardStatsProps> = memo(({ bookings, requirem
 
   // 2. Compliance Logic (Requirements vs Actuals)
   const uniqueEmployeeIds = Array.from(new Set([
-    ...bookings.map(b => b.employee.id),
+    ...bookings.filter(b => !!b.employee).map(b => b.employee.id),
     ...requirements.map(r => r.employeeId)
   ]));
 
@@ -201,17 +201,27 @@ const DashboardStats: React.FC<DashboardStatsProps> = memo(({ bookings, requirem
           <h3 className="text-lg font-bold text-slate-800 dark:text-white mb-4">{t.dashboard.charts.complianceTitle}</h3>
           <div className="flex-1 w-full min-h-[300px]" style={{ minWidth: 0 }}>
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={racStackData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
-                <CartesianGrid strokeDasharray="3 3" className="stroke-gray-300 dark:stroke-gray-700" />
-                <XAxis dataKey="name" fontSize={10} interval={0} stroke="currentColor" className="text-gray-500 dark:text-gray-400" />
-                <YAxis stroke="currentColor" className="text-gray-500 dark:text-gray-400" />
+          <BarChart data={racStackData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+                <XAxis 
+                    dataKey="name" 
+                    interval={0} 
+                    tick={{ fill: '#64748b', fontSize: 10, fontWeight: 700 }} 
+                    axisLine={{ stroke: '#cbd5e1' }} 
+                    tickLine={false} 
+                />
+                <YAxis 
+                    tick={{ fill: '#64748b', fontSize: 10 }} 
+                    axisLine={{ stroke: '#cbd5e1' }} 
+                    tickLine={false} 
+                />
                 <Tooltip 
-                    contentStyle={{ backgroundColor: '#1e293b', borderColor: '#334155', color: '#fff' }}
+                    contentStyle={{ backgroundColor: '#1e293b', borderColor: '#334155', color: '#fff', borderRadius: '8px' }}
                     itemStyle={{ color: '#fff' }}
                 />
-                <Legend />
-                <Bar dataKey="Compliant" stackId="a" fill="#059669" name={t.dashboard.charts.compliant} />
-                <Bar dataKey="Missing" stackId="a" fill="#ef4444" name={t.dashboard.charts.missing} />
+                <Legend wrapperStyle={{ fontSize: 12, color: '#64748b', paddingTop: 8 }} />
+                <Bar dataKey="Compliant" stackId="a" fill="#059669" name={t.dashboard.charts.compliant} radius={[0,0,0,0]} />
+                <Bar dataKey="Missing" stackId="a" fill="#ef4444" name={t.dashboard.charts.missing} radius={[4,4,0,0]} />
               </BarChart>
             </ResponsiveContainer>
           </div>

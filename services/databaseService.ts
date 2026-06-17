@@ -2,6 +2,24 @@
 import { supabase, isSupabaseConfigured } from './supabaseClient';
 import { Booking, Employee, TrainingSession, EmployeeRequirement, Site, Company, BookingStatus, User, UserRole, RacDef, Room, Trainer, Feedback, SystemNotification, DataConnector } from '../types';
 import { MOCK_EMPLOYEES, MOCK_BOOKINGS, MOCK_SESSIONS, MOCK_REQUIREMENTS } from '../constants';
+import {
+    DEMO_EMPLOYEES,
+    DEMO_BOOKINGS,
+    DEMO_SESSIONS,
+    DEMO_REQUIREMENTS,
+    DEMO_COMPANIES,
+    DEMO_SITES,
+    DEMO_ROOMS,
+    DEMO_TRAINERS,
+    DEMO_RAC_DEFINITIONS,
+    DEMO_USERS,
+} from '../mockData';
+
+// Use rich demo data as offline fallback when Supabase is not configured
+const FALLBACK_EMPLOYEES  = DEMO_EMPLOYEES.length  ? DEMO_EMPLOYEES  : MOCK_EMPLOYEES;
+const FALLBACK_BOOKINGS   = DEMO_BOOKINGS.length   ? DEMO_BOOKINGS   : MOCK_BOOKINGS;
+const FALLBACK_SESSIONS   = DEMO_SESSIONS.length   ? DEMO_SESSIONS   : MOCK_SESSIONS;
+const FALLBACK_REQUIREMENTS = DEMO_REQUIREMENTS.length ? DEMO_REQUIREMENTS : MOCK_REQUIREMENTS;
 import { v4 as uuidv4 } from 'uuid';
 
 const FALLBACK_USERS: User[] = [
@@ -125,28 +143,31 @@ export const db = {
 
     async getCompanies(): Promise<Company[]> {
         const raw = await this.safeQuery('companies', supabase?.from('companies').select('*'), []);
+        if (raw.length === 0 && !isSupabaseConfigured) return DEMO_COMPANIES;
         return raw.map((c: any) => this.mapCompanyFromDb(c));
     },
 
     async getSites(): Promise<Site[]> {
-        return this.safeQuery('sites', supabase?.from('sites').select('*'), []);
+        const raw = await this.safeQuery('sites', supabase?.from('sites').select('*'), []);
+        if (raw.length === 0 && !isSupabaseConfigured) return DEMO_SITES;
+        return raw;
     },
 
     async getUsers(): Promise<User[]> {
         const raw = await this.safeQuery('users', supabase?.from('users').select('*').order('name', { ascending: true }), []);
-        if (raw.length === 0 && !isSupabaseConfigured) return FALLBACK_USERS;
+        if (raw.length === 0 && !isSupabaseConfigured) return DEMO_USERS;
         return raw.map(u => this.mapUserFromDb(u));
     },
 
     async getEmployees(): Promise<Employee[]> {
         const raw = await this.safeQuery('employees', supabase?.from('employees').select('*'), []);
-        if (raw.length === 0 && !isSupabaseConfigured) return MOCK_EMPLOYEES;
+        if (raw.length === 0 && !isSupabaseConfigured) return FALLBACK_EMPLOYEES;
         return raw.map(e => this.mapEmployeeFromDb(e));
     },
 
     async getSessions(): Promise<TrainingSession[]> {
         const raw = await this.safeQuery('training_sessions', supabase?.from('training_sessions').select('*').order('date', { ascending: true }), []);
-        if (raw.length === 0 && !isSupabaseConfigured) return MOCK_SESSIONS;
+        if (raw.length === 0 && !isSupabaseConfigured) return FALLBACK_SESSIONS;
         return raw.map(s => ({
             ...s,
             id: s.id,
@@ -158,7 +179,7 @@ export const db = {
     },
 
     async getBookings(): Promise<Booking[]> {
-        if (!isSupabaseConfigured || !supabase) return MOCK_BOOKINGS;
+        if (!isSupabaseConfigured || !supabase) return FALLBACK_BOOKINGS;
         try {
             const [confirmed, queued] = await Promise.all([
                 supabase.from('records').select(`*, employee:employees(*)`),
@@ -342,7 +363,7 @@ export const db = {
 
     async getRequirements(): Promise<EmployeeRequirement[]> {
         const raw = await this.safeQuery('employee_requirements', supabase?.from('employee_requirements').select('*'), []);
-        if (raw.length === 0 && !isSupabaseConfigured) return MOCK_REQUIREMENTS;
+        if (raw.length === 0 && !isSupabaseConfigured) return FALLBACK_REQUIREMENTS;
         return raw.map(r => ({
             ...r,
             employeeId: r.employee_id,
@@ -352,15 +373,20 @@ export const db = {
     },
 
     async getRacDefinitions(): Promise<RacDef[]> {
-        return this.safeQuery('rac_definitions', supabase?.from('rac_definitions').select('*').order('code'), []);
+        const raw = await this.safeQuery('rac_definitions', supabase?.from('rac_definitions').select('*').order('code'), []);
+        if (raw.length === 0 && !isSupabaseConfigured) return DEMO_RAC_DEFINITIONS;
+        return raw;
     },
 
     async getRooms(): Promise<Room[]> {
-        return this.safeQuery('rooms', supabase?.from('rooms').select('*'), []);
+        const raw = await this.safeQuery('rooms', supabase?.from('rooms').select('*'), []);
+        if (raw.length === 0 && !isSupabaseConfigured) return DEMO_ROOMS;
+        return raw;
     },
 
     async getTrainers(): Promise<Trainer[]> {
         const raw = await this.safeQuery('trainers', supabase?.from('trainers').select('*'), []);
+        if (raw.length === 0 && !isSupabaseConfigured) return DEMO_TRAINERS;
         return raw.map((t: any) => ({ 
             id: t.id,
             name: t.name,

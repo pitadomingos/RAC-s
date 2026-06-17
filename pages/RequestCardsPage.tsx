@@ -44,7 +44,7 @@ const RequestCardsPage: React.FC<RequestCardsPageProps> = ({ bookings, requireme
       const drivingRacs = ['RAC02', 'RAC11', 'LIB_MOV'];
       const isMultiskilled = mappedRacs.some(k => !drivingRacs.includes(k) && !OPS_KEYS.includes(k));
 
-      const empObj = safeBookings.find(b => b.employee.id === empId)?.employee;
+      const empObj = safeBookings.find(b => b.employee?.id === empId)?.employee;
       const dlExpiry = empObj?.driverLicenseExpiry || '';
       const isDlExpired = !!(dlExpiry && dlExpiry <= today) || !dlExpiry;
 
@@ -105,9 +105,10 @@ const RequestCardsPage: React.FC<RequestCardsPageProps> = ({ bookings, requireme
   const allEligibleBookings = useMemo(() => {
      const uniqueMap = new Map<string, Booking>();
      safeBookings.forEach(b => {
+         if (!b || !b.employee) return;  // guard: skip bookings with no employee ref
          const eSiteId = b.employee.siteId || 's1';
          if (currentSiteId !== 'all' && eSiteId !== currentSiteId) return;
-         if (b && b.status === BookingStatus.PASSED && b.employee && !uniqueMap.has(b.employee.id)) {
+         if (b.status === BookingStatus.PASSED && !uniqueMap.has(b.employee.id)) {
              uniqueMap.set(b.employee.id, b);
          }
      });

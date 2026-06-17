@@ -729,6 +729,16 @@ export const translations = {
         PTS: 'PTS - Work Permit',
         ART: 'ART - Risk Assessment'
     },
+    cards: {
+        title: 'Request Cards',
+        requestButton: 'Submit Card Request',
+        sending: 'Sending Request...',
+        eligibility: {
+            failedTitle: 'Not Eligible',
+            failedMsg: 'You do not currently meet the compliance requirements to receive a RAC credential. Please ensure your medical exam (ASO) and all required RAC trainings are valid.',
+            checkReqs: 'View Requirements'
+        }
+    },
     ai: {
         systemPromptAdvice: "You are a Safety Expert. Provide clear advice on {rac} in {language}.",
         systemPromptReport: "Analyze the following safety stats and provide an executive summary in {language}."
@@ -1441,6 +1451,16 @@ export const translations = {
         RAC11: 'RAC 11 - Regras de Trânsito',
         PTS: 'PTS - Permissão de Trabalho',
         ART: 'ART - Análise de Risco'
+    },
+    cards: {
+        title: 'Solicitar Cartões',
+        requestButton: 'Submeter Pedido de Cartão',
+        sending: 'A enviar pedido...',
+        eligibility: {
+            failedTitle: 'Não Elegível',
+            failedMsg: 'Não cumpre atualmente os requisitos de conformidade para receber uma credencial RAC. Certifique-se de que o seu exame médico (ASO) e todos os treinos RAC necessários estão válidos.',
+            checkReqs: 'Ver Requisitos'
+        }
     },
     ai: {
         systemPromptAdvice: "É um Especialista em Segurança. Forneça conselhos claros sobre {rac} em {language}.",

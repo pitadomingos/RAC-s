@@ -33,7 +33,7 @@ import { db } from './services/databaseService';
 import { isSupabaseConfigured, supabase } from './services/supabaseClient';
 import { UserRole, Booking, EmployeeRequirement, TrainingSession, RacDef, Site, Company, SystemNotification, Employee, User, Room, Trainer, BookingStatus } from './types';
 import { v4 as uuidv4 } from 'uuid';
-import { Loader2, Database, AlertCircle, CheckCircle2, CloudSync, RefreshCw } from 'lucide-react';
+import { Loader2, Database, AlertCircle, CheckCircle2, Cloud, RefreshCw } from 'lucide-react';
 
 const stringifyError = (err: any): string => {
     if (!err) return 'Unknown Error';
