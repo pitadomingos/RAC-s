@@ -547,7 +547,16 @@ export const db = {
     async getRacDefinitions(): Promise<RacDef[]> {
         const raw = await this.safeQuery('rac_definitions', supabase?.from('rac_definitions').select('*').order('code'), []);
         if (raw.length === 0 && !isSupabaseConfigured) return FALLBACK_RAC_DEFS;
-        return raw;
+        return raw.map((r: any) => ({
+            id: r.id,
+            companyId: r.company_id,
+            code: r.code,
+            name: r.name,
+            validityMonths: r.validity_months !== undefined ? r.validity_months : r.validityMonths,
+            requiresDriverLicense: r.requires_driver_license !== undefined ? r.requires_driver_license : r.requiresDriverLicense,
+            requiresPractical: r.requires_practical !== undefined ? r.requires_practical : r.requiresPractical,
+            passScore: r.pass_score !== undefined ? r.pass_score : (r.passScore || 70)
+        }));
     },
 
     async getRooms(): Promise<Room[]> {
@@ -630,7 +639,8 @@ export const db = {
                 name: rac.name,
                 validityMonths: rac.validityMonths,
                 requiresDriverLicense: rac.requiresDriverLicense,
-                requiresPractical: rac.requiresPractical
+                requiresPractical: rac.requiresPractical,
+                passScore: rac.passScore || 70
             };
             const idx = FALLBACK_RAC_DEFS.findIndex(r => r.id === targetId);
             if (idx >= 0) {
@@ -648,7 +658,8 @@ export const db = {
             name: rac.name,
             validity_months: rac.validityMonths,
             requires_driver_license: rac.requiresDriverLicense,
-            requires_practical: rac.requiresPractical
+            requires_practical: rac.requiresPractical,
+            pass_score: rac.passScore || 70
         };
         const { data, error } = await supabase.from('rac_definitions').upsert(payload).select();
         if (error) throw error;

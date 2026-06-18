@@ -29,6 +29,7 @@ export const translations = {
       role: 'Role',
       actions: 'Actions',
       cancel: 'Cancel',
+      confirm: 'Confirm',
       save: 'Save',
       delete: 'Delete',
       edit: 'Edit',
@@ -260,7 +261,9 @@ export const translations = {
         importSuccess: 'Import successful',
         importCsv: 'Import CSV',
         confirmDelete: 'Are you sure?',
-        confirmDeleteMsg: 'This action cannot be undone.'
+        confirmDeleteMsg: 'This action cannot be undone.',
+        deleteEmployee: 'Delete Employee',
+        deleteEmployeeConfirm: 'Permanently remove {name} ({recordId}) from the registry? This cannot be undone.'
     },
     users: {
         title: 'User Management',
@@ -309,7 +312,15 @@ export const translations = {
             title: 'Tenant Branding',
             appName: 'Application Name',
             safetyLogo: 'Safety Badge'
-        }
+        },
+        breathalyzer: 'Breathalyzer',
+        enabled: 'Enabled',
+        disabled: 'Disabled',
+        enableAlcoholLabel: 'Enable Breathalyzer Module',
+        enableAlcoholDesc: 'Can be enabled or disabled later in Settings.',
+        featureUpdated: 'Feature Updated',
+        featureEnabledMsg: 'Breathalyzer module enabled for {name}.',
+        featureDisabledMsg: 'Breathalyzer module disabled for {name}.'
     },
     alcohol: {
         dashboard: {
@@ -463,7 +474,8 @@ export const translations = {
         organogram: {
             title: 'Project Structure',
             tech1: 'Architecture & DevOps',
-            tech2: 'Cloud Data Engineer'
+            tech2: 'Cloud Data Engineer',
+            applicabilityNote: 'Applicable exclusively under Option 2a (Managed On-Premises) and Option 2b (Hosted Cloud SaaS) agreements.'
         },
         timeline: {
             title: 'Implementation Roadmap',
@@ -499,7 +511,45 @@ export const translations = {
                 item4: 'Ongoing Maintenance & AI Engine'
             },
             initialInvest: 'Total Initial Investment',
-            recurring: 'Monthly Recurring Services'
+            recurring: 'Monthly Recurring Services',
+            models: {
+                title: 'Strategic Delivery Models',
+                buyout: {
+                    title: '1. Corporate Buyout',
+                    cost: '$22,000.00 One-time',
+                    desc: 'On-premises installation with complete ownership. Covers software, user, and IT team training.',
+                    badge: 'CapEx Buyout',
+                    features: [
+                        'Full Source Code & Database Ownership',
+                        'Corporate Server Deployment',
+                        'IT & End-User Training Included'
+                    ]
+                },
+                managed: {
+                    title: '2a. Managed On-Premises',
+                    cost: '$4,000.00 / Month',
+                    desc: 'Runs on corporate servers for absolute data residency. DigiSols manages updates & support.',
+                    badge: 'Recommended Model',
+                    setup: '$18,000 Setup',
+                    features: [
+                        'Absolute Health Data Residency',
+                        'DigiSols Handles Maintenance & Updates',
+                        'User Support & Continuous Training'
+                    ]
+                },
+                saas: {
+                    title: '2b. Hosted Cloud SaaS',
+                    cost: '$5,000.00 / Month',
+                    desc: 'Turnkey hosted solution. DigiSols manages infrastructure, domain, and data security.',
+                    badge: 'Zero IT Strain',
+                    setup: '$18,000 Setup',
+                    features: [
+                        'Zero Infrastructure / IT Overhead',
+                        'Managed Security, Domain & Backups',
+                        'Continuous Software Deployment'
+                    ]
+                }
+            }
         },
         roadmap: {
             title: 'Strategic Roadmap',
@@ -522,7 +572,8 @@ export const translations = {
             moduleA: 'Alcohol Control Software',
             moduleADesc: 'Live breathalyzer integration with gate locking logic.',
             moduleB: 'Physical Infrastructure',
-            moduleBDesc: 'Hardware deployment of connected turnstiles.'
+            moduleBDesc: 'Hardware deployment of connected turnstiles.',
+            optionalNotice: 'Note: The breathalyzer (bafômetro) module is optional and must be activated for the company node in Settings.'
         },
         enhancedCaps: {
             title: 'Enhanced Capabilities',
@@ -797,7 +848,10 @@ export const translations = {
             green: 'All requirements met. You are authorized to access the operational risk zone.',
             red: 'One or more requirements are missing or expired. Contact your supervisor or HR.',
             qr: 'Your credential card contains a QR code. Field safety officers can scan this to instantly verify your authorization status — no internet connection required.'
-        }
+        },
+        specialRules: 'Special Rules',
+        finalize: 'Finalize',
+        digitalVerification: 'Digital Verification'
     },
     verification: {
         title: 'Site Access Verification',
@@ -806,7 +860,16 @@ export const translations = {
         notVerified: 'ACCESS DENIED',
         scanTime: 'Verified at',
         asoStatus: 'Medical Exam (ASO)',
-        dlStatus: 'Driver License'
+        dlStatus: 'Driver License',
+        complianceIssues: 'Compliance Issues',
+        inactiveEmployee: 'Employee is marked as Inactive in the registry.',
+        asoMissing: 'ASO Medical record is missing.',
+        asoExpired: 'ASO Medical expired on {date}.',
+        dlExpiredOrMissing: 'Driver\'s license is expired or missing (required for {key} / {name}).',
+        missingTraining: 'Missing training record for {key} ({name}).',
+        expiryDateMissing: 'Training expiry date is missing for {key} ({name}).',
+        trainingExpired: 'Training for {key} ({name}) expired on {date}.',
+        systemVerificationId: 'System Verification ID'
     },
     adminManual: {
         title: 'CARS System Administration Guide',
@@ -835,6 +898,50 @@ export const translations = {
     ai: {
         systemPromptAdvice: "You are a Safety Expert. Provide clear advice on {rac} in {language}.",
         systemPromptReport: "Analyze the following safety stats and provide an executive summary in {language}."
+    },
+    app: {
+      loadingModule: 'Loading Module',
+      fetchingResources: 'Fetching application resources...',
+      establishingGate: 'Establishing Logic Gate',
+      checkingSync: 'Checking Production Sync Status...',
+      syncActive: 'CLOUD SYNCHRONIZATION ACTIVE',
+      writingToSupabase: 'Writing parsed data to Supabase cluster...',
+      setupRequired: 'Setup Required: {count} tables missing in Supabase.',
+      getSqlPatch: 'GET SQL PATCH',
+      infraUpdated: 'Infrastructure Updated',
+      infraUpdatedMsg: 'Enterprise hierarchy and tenant settings pushed to cloud.',
+      infraFault: 'Infrastructure Fault',
+      unknownError: 'Unknown Error'
+    },
+    governance: {
+      title: 'Site Governance',
+      subtitle: 'Define mandatory safety training policies per location. Changes here automatically update the requirements matrix for all site employees.',
+      selectSite: 'Select Operation Site',
+      configureMandatory: 'Configure Mandatory RACs',
+      changesAffectAll: 'Changes affect all site personnel',
+      savePolicy: 'Save & Push Policy',
+      applyingPolicy: 'Applying Policy...',
+      pleaseSelectSite: 'Please select a site.',
+      policyUpdated: 'Policy updated for {siteName}. Requirements pushed to {count} employees.'
+    },
+    technicalDocs: {
+      title: 'Database & API Specs',
+      subtitle: 'Reference guide for Supabase infrastructure and third-party API consumption for external systems (Access Control, IoT, Hardware).',
+      sections: {
+        schema: 'Master Schema',
+        security: 'Access Control',
+        api: 'API Consumption',
+        waitlist: 'Queue Logic'
+      },
+      masterStructure: 'Master Structure (v2.5)',
+      copyCode: 'Copy Code',
+      copied: 'Copied!',
+      resilienceNoteTitle: 'Resilience Note:',
+      resilienceNoteDesc: 'This script is safe to run multiple times. It uses IF NOT EXISTS logic to ensure existing data and tables are not overwritten or deleted.',
+      consumerApiInterface: 'Consumer API Interface',
+      integrationScenarioTitle: 'Integration Scenario:',
+      integrationScenarioDesc: 'The third software responsible for site turnstiles calls the Verify Personnel endpoint. CARS merges HR data, Medical validity, and Training results to return a single GRANTED or BLOCKED boolean status.',
+      rowLevelSecurity: 'Row Level Security (RLS)'
     }
   },
   pt: {
@@ -854,6 +961,7 @@ export const translations = {
       role: 'Função',
       actions: 'Ações',
       cancel: 'Cancelar',
+      confirm: 'Confirmar',
       save: 'Gravar',
       delete: 'Eliminar',
       edit: 'Editar',
@@ -1085,7 +1193,9 @@ export const translations = {
         importSuccess: 'Importação bem-sucedida',
         importCsv: 'Importar CSV',
         confirmDelete: 'Tem a certeza?',
-        confirmDeleteMsg: 'Esta ação não pode ser desfeita.'
+        confirmDeleteMsg: 'Esta ação não pode ser desfeita.',
+        deleteEmployee: 'Eliminar Colaborador',
+        deleteEmployeeConfirm: 'Remover permanentemente {name} ({recordId}) do registo? Esta ação não pode ser desfeita.'
     },
     users: {
         title: 'Gestão de Utilizadores',
@@ -1134,7 +1244,15 @@ export const translations = {
             title: 'Identidade do Cliente',
             appName: 'Nome da Aplicação',
             safetyLogo: 'Emblema de Segurança'
-        }
+        },
+        breathalyzer: 'Bafômetro',
+        enabled: 'Ativado',
+        disabled: 'Desativado',
+        enableAlcoholLabel: 'Ativar Módulo de Bafômetro',
+        enableAlcoholDesc: 'Pode ser ativado ou desativado mais tarde em Definições.',
+        featureUpdated: 'Funcionalidade Atualizada',
+        featureEnabledMsg: 'Módulo de bafômetro ativado para {name}.',
+        featureDisabledMsg: 'Módulo de bafômetro desativado para {name}.'
     },
     alcohol: {
         dashboard: {
@@ -1288,7 +1406,8 @@ export const translations = {
         organogram: {
             title: 'Estrutura do Projecto',
             tech1: 'Arquitetura e DevOps',
-            tech2: 'Engenheiro de Dados Cloud'
+            tech2: 'Engenheiro de Dados Cloud',
+            applicabilityNote: 'Aplicável exclusivamente sob os contratos da Opção 2a (Local Gerenciado) e Opção 2b (SaaS Cloud Hospedado).'
         },
         timeline: {
             title: 'Roteiro de Implementação',
@@ -1324,7 +1443,45 @@ export const translations = {
                 item4: 'Manutenção Contínua e Motor de IA'
             },
             initialInvest: 'Investimento Inicial Total',
-            recurring: 'Serviços Mensais Recorrentes'
+            recurring: 'Serviços Mensais Recorrentes',
+            models: {
+                title: 'Modelos Estratégicos de Entrega',
+                buyout: {
+                    title: '1. Aquisição Corporativa',
+                    cost: '$22.000,00 Único',
+                    desc: 'Instalação local com propriedade total. Inclui software, treinamento de usuários e equipe de TI.',
+                    badge: 'Aquisição CapEx',
+                    features: [
+                        'Propriedade Total do Código-Fonte e Base de Dados',
+                        'Implementação em Servidor Corporativo',
+                        'Formação de Utilizadores e Equipa de TI Incluída'
+                    ]
+                },
+                managed: {
+                    title: '2a. Local Gerenciado',
+                    cost: '$4.000,00 / Mês',
+                    desc: 'Executado nos servidores corporativos para residência absoluta de dados. DigiSols gerencia atualizações e suporte.',
+                    badge: 'Modelo Recomendado',
+                    setup: '$18.000 Configuração',
+                    features: [
+                        'Residência Absoluta de Dados de Saúde',
+                        'DigiSols Gere Manutenção e Atualizações',
+                        'Suporte ao Utilizador e Formação Contínua'
+                    ]
+                },
+                saas: {
+                    title: '2b. SaaS Cloud Hospedado',
+                    cost: '$5.000,00 / Mês',
+                    desc: 'Solução hospedada pronta a usar. DigiSols gerencia infraestrutura, domínio e segurança de dados.',
+                    badge: 'Zero Esforço de TI',
+                    setup: '$18.000 Configuração',
+                    features: [
+                        'Zero Infraestrutura / Sem Esforço de TI',
+                        'Segurança, Domínio e Backups Geridos',
+                        'Implementação Contínua de Software'
+                    ]
+                }
+            }
         },
         roadmap: {
             title: 'Roteiro Estratégico',
@@ -1347,7 +1504,8 @@ export const translations = {
             moduleA: 'Software de Controlo de Álcool',
             moduleADesc: 'Integração em tempo real de bafômetros com lógica de portaria.',
             moduleB: 'Infraestrutura Física',
-            moduleBDesc: 'Instalação de catracas conectadas.'
+            moduleBDesc: 'Instalação de catracas conectadas.',
+            optionalNotice: 'Nota: O módulo de bafômetro é opcional e deve ser ativado para cada nó de empresa no painel de Definições.'
         },
         enhancedCaps: {
             title: 'Capacidades Avançadas',
@@ -1613,7 +1771,10 @@ export const translations = {
             green: 'Todos os requisitos cumpridos. Autorizado a aceder à zona de risco.',
             red: 'Um ou mais requisitos em falta ou expirados. Contacte o supervisor ou RH.',
             qr: 'O cartão contém um código QR. Agentes de segurança podem digitalizá-lo para verificar a sua autorização instantaneamente.'
-        }
+        },
+        specialRules: 'Regras Especiais',
+        finalize: 'Finalização',
+        digitalVerification: 'Verificação Digital'
     },
     verification: {
         title: 'Verificação de Acesso ao Local',
@@ -1622,7 +1783,16 @@ export const translations = {
         notVerified: 'ACESSO NEGADO',
         scanTime: 'Verificado às',
         asoStatus: 'Exame Médico (ASO)',
-        dlStatus: 'Carta de Condução'
+        dlStatus: 'Carta de Condução',
+        complianceIssues: 'Problemas de Conformidade',
+        inactiveEmployee: 'Colaborador marcado como Inativo no registo.',
+        asoMissing: 'Falta o registo de Exame Médico (ASO).',
+        asoExpired: 'Exame Médico (ASO) expirou em {date}.',
+        dlExpiredOrMissing: 'Carta de condução expirada ou em falta (necessária para {key} / {name}).',
+        missingTraining: 'Falta o registo de treino para {key} ({name}).',
+        expiryDateMissing: 'Falta a data de expiração do treino para {key} ({name}).',
+        trainingExpired: 'O treino para {key} ({name}) expirou em {date}.',
+        systemVerificationId: 'ID de Verificação do Sistema'
     },
     adminManual: {
         title: 'Guia de Administração do Sistema CARS',
@@ -1651,6 +1821,50 @@ export const translations = {
     ai: {
         systemPromptAdvice: "É um Especialista em Segurança. Forneça conselhos claros sobre {rac} em {language}.",
         systemPromptReport: "Analise as seguintes estatísticas de segurança e forneça um resumo executivo em {language}."
+    },
+    app: {
+      loadingModule: 'Carregando Módulo',
+      fetchingResources: 'Procurando recursos da aplicação...',
+      establishingGate: 'Estabelecendo Porta Lógica',
+      checkingSync: 'A verificar estado de sincronização de produção...',
+      syncActive: 'SINCRONIZAÇÃO DE NUVEM ATIVA',
+      writingToSupabase: 'A gravar dados analisados no cluster Supabase...',
+      setupRequired: 'Configuração Necessária: {count} tabelas em falta no Supabase.',
+      getSqlPatch: 'OBTER SQL PATCH',
+      infraUpdated: 'Infraestrutura Atualizada',
+      infraUpdatedMsg: 'Hierarquia da empresa e definições de cliente enviadas para a nuvem.',
+      infraFault: 'Falha na Infraestrutura',
+      unknownError: 'Erro Desconhecido'
+    },
+    governance: {
+      title: 'Governação do Site',
+      subtitle: 'Defina políticas obrigatórias de treino de segurança por localização. As alterações aqui atualizam automaticamente a matriz de requisitos para todos os colaboradores do site.',
+      selectSite: 'Selecione o Site de Operação',
+      configureMandatory: 'Configurar RACs Obrigatórios',
+      changesAffectAll: 'As alterações afetam todo o pessoal do site',
+      savePolicy: 'Gravar & Pressionar Política',
+      applyingPolicy: 'Aplicando Política...',
+      pleaseSelectSite: 'Por favor, selecione um site.',
+      policyUpdated: 'Política atualizada para {siteName}. Requisitos enviados para {count} colaboradores.'
+    },
+    technicalDocs: {
+      title: 'Especificações de BD & API',
+      subtitle: 'Guia de referência para infraestrutura Supabase e consumo de API por sistemas externos (Controlo de Acesso, IoT, Hardware).',
+      sections: {
+        schema: 'Esquema Mestre',
+        security: 'Controlo de Acesso',
+        api: 'Consumo de API',
+        waitlist: 'Lógica de Fila'
+      },
+      masterStructure: 'Estrutura Mestre (v2.5)',
+      copyCode: 'Copiar Código',
+      copied: 'Copiado!',
+      resilienceNoteTitle: 'Nota de Resiliência:',
+      resilienceNoteDesc: 'Este script é seguro para ser executado várias vezes. Utiliza a lógica IF NOT EXISTS para garantir que os dados e tabelas existentes não sejam sobrescritos ou eliminados.',
+      consumerApiInterface: 'Interface de API do Consumidor',
+      integrationScenarioTitle: 'Cenário de Integração:',
+      integrationScenarioDesc: 'O software de terceiros responsável pelas catracas do site chama o endpoint Verificar Pessoal. O CARS junta os dados de RH, validade Médica e resultados de Treino para retornar um único estado booleano AUTORIZADO ou BLOQUEADO.',
+      rowLevelSecurity: 'Segurança ao Nível da Linha (RLS)'
     }
   }
 };

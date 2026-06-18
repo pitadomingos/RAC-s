@@ -6,6 +6,7 @@ export interface RacDef {
   validityMonths?: number;
   requiresDriverLicense?: boolean;
   requiresPractical?: boolean;
+  passScore?: number;
 }
 
 export interface Company {

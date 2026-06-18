@@ -1,16 +1,18 @@
 
 import React, { useState } from 'react';
 import { FileCode, Database, Layers, Terminal, ShieldAlert, Sparkles, Copy, ListFilter, GitMerge, ShieldCheck, Key, GlobeLock, Smartphone, Info } from 'lucide-react';
+import { useLanguage } from '../contexts/LanguageContext';
 
 const TechnicalDocs: React.FC = () => {
+  const { t } = useLanguage();
   const [activeSection, setActiveSection] = useState('schema');
   const [copied, setCopied] = useState(false);
 
   const sections = [
-    { id: 'schema', label: 'Master Schema', icon: Database },
-    { id: 'security', label: 'Access Control', icon: Key },
-    { id: 'api', label: 'API Consumption', icon: GlobeLock },
-    { id: 'waitlist', label: 'Queue Logic', icon: ListFilter },
+    { id: 'schema', label: t.technicalDocs.sections.schema, icon: Database },
+    { id: 'security', label: t.technicalDocs.sections.security, icon: Key },
+    { id: 'api', label: t.technicalDocs.sections.api, icon: GlobeLock },
+    { id: 'waitlist', label: t.technicalDocs.sections.waitlist, icon: ListFilter },
   ];
 
   const sqlSchema = `-- ==========================================
@@ -133,7 +135,8 @@ CREATE TABLE IF NOT EXISTS rac_definitions (
   name TEXT NOT NULL,
   validity_months INTEGER DEFAULT 24,
   requires_driver_license BOOLEAN DEFAULT false,
-  requires_practical BOOLEAN DEFAULT true
+  requires_practical BOOLEAN DEFAULT true,
+  pass_score INTEGER DEFAULT 70
 );
 
 CREATE TABLE IF NOT EXISTS rooms (
@@ -217,8 +220,8 @@ FOR ALL USING (
     <div className="space-y-6 pb-24 animate-fade-in-up h-full">
       <div className="bg-slate-900 rounded-3xl p-8 text-white border border-slate-700 relative overflow-hidden">
          <div className="absolute top-0 right-0 opacity-10 pointer-events-none"><Terminal size={200}/></div>
-         <h2 className="text-3xl font-black flex items-center gap-3 relative z-10"><Terminal className="text-cyan-400" /> Database & API Specs</h2>
-         <p className="text-slate-400 mt-2 relative z-10 max-w-2xl">Reference guide for Supabase infrastructure and third-party API consumption for external systems (Access Control, IoT, Hardware).</p>
+         <h2 className="text-3xl font-black flex items-center gap-3 relative z-10"><Terminal className="text-cyan-400" /> {t.technicalDocs.title}</h2>
+         <p className="text-slate-400 mt-2 relative z-10 max-w-2xl">{t.technicalDocs.subtitle}</p>
       </div>
 
       <div className="flex flex-col lg:flex-row gap-8">
@@ -239,18 +242,18 @@ FOR ALL USING (
                       <div className="flex justify-between items-center">
                         <div className="flex items-center gap-2">
                             <ShieldCheck className="text-emerald-500" size={20} />
-                            <h3 className="text-xl font-black uppercase tracking-tight">Master Structure (v2.5)</h3>
+                            <h3 className="text-xl font-black uppercase tracking-tight">{t.technicalDocs.masterStructure}</h3>
                         </div>
                         <button onClick={() => handleCopy(sqlSchema)} className="bg-slate-900 text-white px-4 py-2 rounded-lg text-[10px] font-black uppercase flex items-center gap-2">
-                            <Copy size={14} /> {copied ? 'Copied!' : 'Copy Code'}
+                            <Copy size={14} /> {copied ? t.technicalDocs.copied : t.technicalDocs.copyCode}
                         </button>
                       </div>
                       
                       <div className="bg-emerald-50 dark:bg-emerald-900/10 p-4 rounded-xl border border-emerald-100 dark:border-emerald-800 flex gap-3 mb-4">
                           <Info className="text-emerald-500 shrink-0" size={18} />
                           <div className="text-xs text-emerald-700 dark:text-emerald-300">
-                              <p className="font-bold mb-1">Resilience Note:</p>
-                              <p>This script is safe to run multiple times. It uses <code>IF NOT EXISTS</code> logic to ensure existing data and tables are not overwritten or deleted.</p>
+                              <p className="font-bold mb-1">{t.technicalDocs.resilienceNoteTitle}</p>
+                              <p>{t.technicalDocs.resilienceNoteDesc}</p>
                           </div>
                       </div>
 
@@ -265,18 +268,18 @@ FOR ALL USING (
                       <div className="flex justify-between items-center">
                         <div className="flex items-center gap-2">
                             <GlobeLock className="text-blue-500" size={20} />
-                            <h3 className="text-xl font-black uppercase tracking-tight">Consumer API Interface</h3>
+                            <h3 className="text-xl font-black uppercase tracking-tight">{t.technicalDocs.consumerApiInterface}</h3>
                         </div>
                         <button onClick={() => handleCopy(apiDocs)} className="bg-blue-600 text-white px-4 py-2 rounded-lg text-[10px] font-black uppercase flex items-center gap-2">
-                            <Copy size={14} /> {copied ? 'Copied!' : 'Copy Code'}
+                            <Copy size={14} /> {copied ? t.technicalDocs.copied : t.technicalDocs.copyCode}
                         </button>
                       </div>
                       
                       <div className="bg-blue-50 dark:bg-blue-900/10 p-4 rounded-xl border border-blue-100 dark:border-blue-800 flex gap-3">
                           <Info className="text-blue-500 shrink-0" size={18} />
                           <div className="text-xs text-blue-700 dark:text-blue-300">
-                              <p className="font-bold mb-1">Integration Scenario:</p>
-                              <p>The third software responsible for site turnstiles calls the **Verify Personnel** endpoint. CARS merges HR data, Medical validity, and Training results to return a single "GRANTED" or "BLOCKED" boolean status.</p>
+                              <p className="font-bold mb-1">{t.technicalDocs.integrationScenarioTitle}</p>
+                              <p>{t.technicalDocs.integrationScenarioDesc}</p>
                           </div>
                       </div>
 
@@ -289,9 +292,9 @@ FOR ALL USING (
               {activeSection === 'security' && (
                   <div className="space-y-4 animate-fade-in">
                       <div className="flex justify-between items-center">
-                        <h3 className="text-xl font-black uppercase tracking-tight">Row Level Security (RLS)</h3>
+                        <h3 className="text-xl font-black uppercase tracking-tight">{t.technicalDocs.rowLevelSecurity}</h3>
                         <button onClick={() => handleCopy(securitySchema)} className="bg-indigo-600 text-white px-4 py-2 rounded-lg text-[10px] font-black uppercase flex items-center gap-2">
-                            <Copy size={14} /> {copied ? 'Copied!' : 'Copy Code'}
+                            <Copy size={14} /> {copied ? t.technicalDocs.copied : t.technicalDocs.copyCode}
                         </button>
                       </div>
                       <pre className="bg-slate-950 text-indigo-400 p-6 rounded-2xl text-[11px] font-mono overflow-x-auto shadow-inner border border-slate-800">

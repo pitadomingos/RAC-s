@@ -36,19 +36,19 @@ export const PERMISSION_KEYS = ['EMI_PTS', 'APR_ART', 'DONO_AREA_PTS', 'EXEC'];
 export const RAC_KEYS = ['RAC01', 'RAC02', 'RAC03', 'RAC04', 'RAC05', 'RAC06', 'RAC07', 'RAC08', 'RAC09', 'RAC10', 'RAC11', 'PTS', 'ART'];
 
 export const INITIAL_RAC_DEFINITIONS: RacDef[] = [
-    { id: 'rac1', code: 'RAC01', name: 'RAC 01 - Working at Height', validityMonths: 24, requiresPractical: true },
-    { id: 'rac2', code: 'RAC02', name: 'RAC 02 - Vehicles and Mobile Equipment', validityMonths: 24, requiresDriverLicense: true, requiresPractical: true },
-    { id: 'rac3', code: 'RAC03', name: 'RAC 03 - Energy Isolation (LOTO)', validityMonths: 24, requiresPractical: true },
-    { id: 'rac4', code: 'RAC04', name: 'RAC 04 - Machine Guarding', validityMonths: 24, requiresPractical: true },
-    { id: 'rac5', code: 'RAC05', name: 'RAC 05 - Confined Spaces', validityMonths: 24, requiresPractical: true },
-    { id: 'rac6', code: 'RAC06', name: 'RAC 06 - Lifting Operations', validityMonths: 24, requiresPractical: true },
-    { id: 'rac7', code: 'RAC07', name: 'RAC 07 - Slope Stabilization', validityMonths: 24, requiresPractical: true },
-    { id: 'rac8', code: 'RAC08', name: 'RAC 08 - Electrical Safety', validityMonths: 24, requiresPractical: true },
-    { id: 'rac9', code: 'RAC09', name: 'RAC 09 - Explosives Control', validityMonths: 24, requiresPractical: true },
-    { id: 'rac10', code: 'RAC10', name: 'RAC 10 - Molten Metal Safety', validityMonths: 24, requiresPractical: true },
-    { id: 'rac11', code: 'RAC11', name: 'RAC 11 - Mine Traffic Rules', validityMonths: 24, requiresDriverLicense: true, requiresPractical: true },
-    { id: 'pts', code: 'PTS', name: 'PTS - Work Permit Issuer', validityMonths: 24, requiresPractical: true },
-    { id: 'art', code: 'ART', name: 'ART - Risk Assessment', validityMonths: 24, requiresPractical: true }
+    { id: 'rac1', code: 'RAC01', name: 'RAC 01 - Working at Height', validityMonths: 24, requiresPractical: true, passScore: 70 },
+    { id: 'rac2', code: 'RAC02', name: 'RAC 02 - Vehicles and Mobile Equipment', validityMonths: 24, requiresDriverLicense: true, requiresPractical: true, passScore: 70 },
+    { id: 'rac3', code: 'RAC03', name: 'RAC 03 - Energy Isolation (LOTO)', validityMonths: 24, requiresPractical: true, passScore: 70 },
+    { id: 'rac4', code: 'RAC04', name: 'RAC 04 - Machine Guarding', validityMonths: 24, requiresPractical: true, passScore: 70 },
+    { id: 'rac5', code: 'RAC05', name: 'RAC 05 - Confined Spaces', validityMonths: 24, requiresPractical: true, passScore: 70 },
+    { id: 'rac6', code: 'RAC06', name: 'RAC 06 - Lifting Operations', validityMonths: 24, requiresPractical: true, passScore: 70 },
+    { id: 'rac7', code: 'RAC07', name: 'RAC 07 - Slope Stabilization', validityMonths: 24, requiresPractical: true, passScore: 70 },
+    { id: 'rac8', code: 'RAC08', name: 'RAC 08 - Electrical Safety', validityMonths: 24, requiresPractical: true, passScore: 70 },
+    { id: 'rac9', code: 'RAC09', name: 'RAC 09 - Explosives Control', validityMonths: 24, requiresPractical: true, passScore: 70 },
+    { id: 'rac10', code: 'RAC10', name: 'RAC 10 - Molten Metal Safety', validityMonths: 24, requiresPractical: true, passScore: 70 },
+    { id: 'rac11', code: 'RAC11', name: 'RAC 11 - Mine Traffic Rules', validityMonths: 24, requiresDriverLicense: true, requiresPractical: true, passScore: 70 },
+    { id: 'pts', code: 'PTS', name: 'PTS - Work Permit Issuer', validityMonths: 24, requiresPractical: true, passScore: 70 },
+    { id: 'art', code: 'ART', name: 'ART - Risk Assessment', validityMonths: 24, requiresPractical: true, passScore: 70 }
 ];
 
 const getFutureDate = (daysToAdd: number) => {

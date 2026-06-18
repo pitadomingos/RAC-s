@@ -130,14 +130,14 @@ const VerificationPage: React.FC<VerificationPageProps> = ({
     const isActive = employee.isActive ?? true;
 
     if (!isActive) {
-        issues.push("Employee is marked as Inactive in the registry.");
+        issues.push(t.verification.inactiveEmployee);
         return issues;
     }
 
     if (!req.asoExpiryDate) {
-        issues.push("ASO Medical record is missing.");
+        issues.push(t.verification.asoMissing);
     } else if (req.asoExpiryDate < today) {
-        issues.push(`ASO Medical expired on ${req.asoExpiryDate}.`);
+        issues.push(t.verification.asoExpired.replace('{date}', req.asoExpiryDate));
     }
 
     const drivingRacs = racDefinitions.filter(d => d.requiresDriverLicense).map(d => d.code);
@@ -148,10 +148,12 @@ const VerificationPage: React.FC<VerificationPageProps> = ({
         const key = def.code;
         if (!req.requiredRacs[key]) return;
 
+        const defName = t.racDefs[key as keyof typeof t.racDefs] || def.name;
+
         if (drivingRacs.includes(key)) {
             if (isDlExpired) {
                 if (!isMultiskilled) {
-                    issues.push(`Driver's license is expired or missing (required for ${key} / ${def.name}).`);
+                    issues.push(t.verification.dlExpiredOrMissing.replace('{key}', key).replace('{name}', defName));
                 }
             } else {
                 const passedBookings = bookings.filter(b => {
@@ -163,11 +165,11 @@ const VerificationPage: React.FC<VerificationPageProps> = ({
                 passedBookings.sort((a, b) => new Date(b.expiryDate || '1970-01-01').getTime() - new Date(a.expiryDate || '1970-01-01').getTime());
                 const latest = passedBookings[0];
                 if (!latest) {
-                    issues.push(`Missing training record for ${key} (${def.name}).`);
+                    issues.push(t.verification.missingTraining.replace('{key}', key).replace('{name}', defName));
                 } else if (!latest.expiryDate) {
-                    issues.push(`Training expiry date is missing for ${key} (${def.name}).`);
+                    issues.push(t.verification.expiryDateMissing.replace('{key}', key).replace('{name}', defName));
                 } else if (latest.expiryDate < today) {
-                    issues.push(`Training for ${key} (${def.name}) expired on ${latest.expiryDate}.`);
+                    issues.push(t.verification.trainingExpired.replace('{key}', key).replace('{name}', defName).replace('{date}', latest.expiryDate));
                 }
             }
         } else {
@@ -180,11 +182,11 @@ const VerificationPage: React.FC<VerificationPageProps> = ({
             passedBookings.sort((a, b) => new Date(b.expiryDate || '1970-01-01').getTime() - new Date(a.expiryDate || '1970-01-01').getTime());
             const latest = passedBookings[0];
             if (!latest) {
-                issues.push(`Missing training record for ${key} (${def.name}).`);
+                issues.push(t.verification.missingTraining.replace('{key}', key).replace('{name}', defName));
             } else if (!latest.expiryDate) {
-                issues.push(`Training expiry date is missing for ${key} (${def.name}).`);
+                issues.push(t.verification.expiryDateMissing.replace('{key}', key).replace('{name}', defName));
             } else if (latest.expiryDate < today) {
-                issues.push(`Training for ${key} (${def.name}) expired on ${latest.expiryDate}.`);
+                issues.push(t.verification.trainingExpired.replace('{key}', key).replace('{name}', defName).replace('{date}', latest.expiryDate));
             }
         }
     });
@@ -281,7 +283,7 @@ const VerificationPage: React.FC<VerificationPageProps> = ({
                     {complianceIssues.length > 0 && (
                         <div className="border-t border-gray-100 pt-4 mt-2">
                             <h3 className="text-xs font-black uppercase tracking-wider text-rose-500 mb-2 flex items-center gap-1.5">
-                                <AlertTriangle size={14} /> Compliance Issues
+                                <AlertTriangle size={14} /> {t.verification.complianceIssues}
                             </h3>
                             <ul className="text-xs text-rose-600 dark:text-rose-400 space-y-1.5 font-medium bg-rose-50 dark:bg-rose-950/20 p-3.5 rounded-2xl border border-rose-100 dark:border-rose-900/30">
                                 {complianceIssues.map((issue, idx) => (
@@ -298,7 +300,7 @@ const VerificationPage: React.FC<VerificationPageProps> = ({
 
             <div className="bg-slate-50 p-4 text-center border-t border-gray-100">
                  <p className="text-[10px] text-gray-400">
-                     System Verification ID: {Math.random().toString(36).substring(7).toUpperCase()}
+                     {t.verification.systemVerificationId}: {Math.random().toString(36).substring(7).toUpperCase()}
                  </p>
             </div>
         </div>

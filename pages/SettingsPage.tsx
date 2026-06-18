@@ -59,7 +59,7 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
   const [newTrainer, setNewTrainer] = useState<{name: string, racs: string[], siteId: string}>({ 
       name: '', racs: [], siteId: currentSiteId !== 'all' ? currentSiteId : (sites[0]?.id || '') 
   });
-  const [newRac, setNewRac] = useState({ code: '', name: '', validityMonths: 24, requiresDriverLicense: false, requiresPractical: true });
+  const [newRac, setNewRac] = useState({ code: '', name: '', validityMonths: 24, requiresDriverLicense: false, requiresPractical: true, passScore: 70 });
   const [newCompany, setNewCompany] = useState<Partial<Company>>({ name: '', appName: '', status: 'Active', defaultLanguage: 'en', parentId: undefined });
   
   const [editingTrainer, setEditingTrainer] = useState<Trainer | null>(null);
@@ -134,8 +134,8 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
 
   const handleAddRac = () => { 
       if (!newRac.code || !newRac.name) return;
-      onUpdateRacs([...racDefinitions, { id: uuidv4(), companyId: myCompany?.id, code: newRac.code.toUpperCase(), name: newRac.name, validityMonths: newRac.validityMonths, requiresDriverLicense: newRac.requiresDriverLicense, requiresPractical: newRac.requiresPractical }]); 
-      setNewRac({ code: '', name: '', validityMonths: 24, requiresDriverLicense: false, requiresPractical: true }); 
+      onUpdateRacs([...racDefinitions, { id: uuidv4(), companyId: myCompany?.id, code: newRac.code.toUpperCase(), name: newRac.name, validityMonths: newRac.validityMonths, requiresDriverLicense: newRac.requiresDriverLicense, requiresPractical: newRac.requiresPractical, passScore: newRac.passScore }]); 
+      setNewRac({ code: '', name: '', validityMonths: 24, requiresDriverLicense: false, requiresPractical: true, passScore: 70 }); 
       setActiveModal('NONE');
   };
 
@@ -156,10 +156,10 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
           defaultLanguage: newCompany.defaultLanguage as any || 'en',
           parentId: newCompany.parentId,
           tier: newCompany.parentId ? 'Sub' : 'Prime',
-          features: { alcohol: false }
+          features: { alcohol: !!newCompany.features?.alcohol }
       };
       onUpdateCompanies([...companies, created]);
-      setNewCompany({ name: '', appName: '', status: 'Active', defaultLanguage: 'en', parentId: undefined });
+      setNewCompany({ name: '', appName: '', status: 'Active', defaultLanguage: 'en', parentId: undefined, features: { alcohol: false } });
       setActiveModal('NONE');
       addNotification({ id: uuidv4(), type: 'success', title: 'Enterprise Node Created', message: `${created.name} has been provisioned.`, timestamp: new Date(), isRead: false });
   };
@@ -218,6 +218,8 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
                     <button 
                         onClick={() => setActiveCategory('HUB')}
                         className="p-2 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-full transition-colors text-slate-500"
+                        title="Back to Hub"
+                        aria-label="Back to Hub"
                     >
                         <ArrowLeft size={24} />
                     </button>
@@ -285,6 +287,8 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
                                 className="w-full p-4 rounded-xl border-2 border-slate-100 dark:border-slate-700 dark:bg-slate-900 font-bold outline-none focus:border-blue-500 transition-all"
                                 value={brandDraft.appName || ''}
                                 onChange={e => setBrandDraft({...brandDraft, appName: e.target.value})}
+                                title="App Display Name"
+                                placeholder="CARS Manager"
                             />
                         </div>
                         <div className="space-y-4">
@@ -293,6 +297,8 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
                                 className="w-full p-4 rounded-xl border-2 border-slate-100 dark:border-slate-700 dark:bg-slate-900 font-bold appearance-none outline-none focus:border-blue-500"
                                 value={brandDraft.defaultLanguage}
                                 onChange={e => setBrandDraft({...brandDraft, defaultLanguage: e.target.value as any})}
+                                title="Portal Language"
+                                aria-label="Portal Language"
                             >
                                 <option value="en">English (Global)</option>
                                 <option value="pt">Português (Moçambique)</option>
@@ -308,7 +314,7 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
                                 onClick={() => logoRef.current?.click()}
                             >
                                 {brandDraft.logoUrl ? (
-                                    <img src={brandDraft.logoUrl} className="h-24 object-contain" />
+                                    <img src={brandDraft.logoUrl} className="h-24 object-contain" alt="Corporate Logo" />
                                 ) : (
                                     <div className="text-center">
                                         <Upload size={32} className="mx-auto text-slate-400 mb-2" />
@@ -316,7 +322,7 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
                                     </div>
                                 )}
                             </div>
-                            <input type="file" ref={logoRef} className="hidden" accept="image/*" onChange={(e) => handleLogoUpload(e, 'corporate')} />
+                            <input type="file" ref={logoRef} className="hidden" accept="image/*" onChange={(e) => handleLogoUpload(e, 'corporate')} title="Upload Corporate Logo" />
                         </div>
                         <div className="space-y-3">
                             <h4 className="font-bold text-slate-700 dark:text-slate-300">Safety Badge</h4>
@@ -325,7 +331,7 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
                                 onClick={() => safetyLogoRef.current?.click()}
                             >
                                 {brandDraft.safetyLogoUrl ? (
-                                    <img src={brandDraft.safetyLogoUrl} className="h-24 w-24 object-contain" />
+                                    <img src={brandDraft.safetyLogoUrl} className="h-24 w-24 object-contain" alt="Safety Badge" />
                                 ) : (
                                     <div className="text-center">
                                         <ShieldCheck size={32} className="mx-auto text-slate-400 mb-2" />
@@ -333,7 +339,7 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
                                     </div>
                                 )}
                             </div>
-                            <input type="file" ref={safetyLogoRef} className="hidden" accept="image/*" onChange={(e) => handleLogoUpload(e, 'safety')} />
+                            <input type="file" ref={safetyLogoRef} className="hidden" accept="image/*" onChange={(e) => handleLogoUpload(e, 'safety')} title="Upload Safety Badge" />
                         </div>
                     </div>
 
@@ -370,7 +376,7 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
                                 <p className="text-xs text-slate-500">Default period for certifications</p>
                             </div>
                             <div className="flex items-center gap-2">
-                                <input type="number" defaultValue={24} className="w-20 p-2 text-center font-black bg-white dark:bg-slate-800 border rounded-lg outline-none" />
+                                <input type="number" defaultValue={24} className="w-20 p-2 text-center font-black bg-white dark:bg-slate-800 border rounded-lg outline-none" title="Standard Validity Months" placeholder="24" />
                                 <span className="text-xs font-bold text-slate-400">MONTHS</span>
                             </div>
                         </div>
@@ -380,7 +386,7 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
                                 <p className="text-xs text-slate-500">Minimum score to authorize</p>
                             </div>
                             <div className="flex items-center gap-2">
-                                <input type="number" defaultValue={70} className="w-20 p-2 text-center font-black bg-white dark:bg-slate-800 border rounded-lg outline-none" />
+                                <input type="number" defaultValue={70} className="w-20 p-2 text-center font-black bg-white dark:bg-slate-800 border rounded-lg outline-none" title="Pass Score Requirement Percentage" placeholder="70" />
                                 <span className="text-xs font-bold text-slate-400">% SCORE</span>
                             </div>
                         </div>
@@ -401,7 +407,7 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
                                 <p className="text-xs text-slate-400 font-bold">{s.location}</p>
                             </div>
                         </div>
-                        <button onClick={() => deleteSite(s.id, s.name)} className="p-2 text-slate-300 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-all opacity-0 group-hover:opacity-100"><Trash2 size={18}/></button>
+                        <button onClick={() => deleteSite(s.id, s.name)} className="p-2 text-slate-300 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-all opacity-0 group-hover:opacity-100" title="Delete Site" aria-label="Delete Site"><Trash2 size={18}/></button>
                     </div>
                 ))}
             </div>
@@ -414,7 +420,7 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
                     <div key={r.id} className="bg-white dark:bg-slate-800 p-6 rounded-2xl border border-slate-100 dark:border-slate-700 flex flex-col group">
                         <div className="flex justify-between items-start mb-4">
                             <div className="w-10 h-10 rounded-lg bg-orange-50 dark:bg-orange-900/30 text-orange-600 flex items-center justify-center shadow-inner"><Home size={20}/></div>
-                            <button onClick={() => onUpdateRooms(rooms.filter(rm => rm.id !== r.id))} className="text-slate-300 hover:text-red-500 transition-all opacity-0 group-hover:opacity-100"><Trash2 size={16}/></button>
+                            <button onClick={() => onUpdateRooms(rooms.filter(rm => rm.id !== r.id))} className="text-slate-300 hover:text-red-500 transition-all opacity-0 group-hover:opacity-100" title="Delete Venue" aria-label="Delete Venue"><Trash2 size={16}/></button>
                         </div>
                         <h4 className="font-black text-slate-900 dark:text-white uppercase tracking-tight text-sm mb-1">{r.name}</h4>
                         <div className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-2">{sites.find(s => s.id === r.siteId)?.name || 'Central Hub'}</div>
@@ -441,8 +447,8 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
                                 </div>
                             </div>
                             <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                <button onClick={() => setEditingTrainer(t)} className="p-2 text-slate-300 hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg"><Edit size={16}/></button>
-                                <button onClick={() => deleteTrainer(t.id, t.name)} className="p-2 text-slate-300 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg"><Trash2 size={16}/></button>
+                                <button onClick={() => setEditingTrainer(t)} className="p-2 text-slate-300 hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg" title="Edit Instructor Certification" aria-label="Edit Instructor Certification"><Edit size={16}/></button>
+                                <button onClick={() => deleteTrainer(t.id, t.name)} className="p-2 text-slate-300 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg" title="Delete Instructor" aria-label="Delete Instructor"><Trash2 size={16}/></button>
                             </div>
                         </div>
                         <div className="space-y-3">
@@ -480,10 +486,14 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
                             </div>
                         </div>
                         <h4 className="font-black text-slate-900 dark:text-white text-md tracking-tight leading-tight mb-4">{rac.name}</h4>
-                        <div className="grid grid-cols-2 gap-2 border-t border-slate-50 dark:border-slate-700 pt-4">
+                        <div className="grid grid-cols-3 gap-2 border-t border-slate-50 dark:border-slate-700 pt-4">
                             <div className="text-center">
                                 <div className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Validity</div>
                                 <div className="text-xs font-black text-slate-700 dark:text-slate-300">{rac.validityMonths}M</div>
+                            </div>
+                            <div className="text-center">
+                                <div className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Pass Score</div>
+                                <div className="text-xs font-black text-slate-700 dark:text-slate-300">{rac.passScore || 70}%</div>
                             </div>
                             <div className="text-center">
                                 <div className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Type</div>
@@ -500,11 +510,12 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
             <div className="space-y-4 animate-fade-in-up">
                 {companies.map(c => {
                     const parent = companies.find(p => p.id === c.parentId);
+                    const isAlcoholEnabled = !!c.features?.alcohol;
                     return (
-                        <div key={c.id} className="bg-white dark:bg-slate-800 p-6 rounded-[2.5rem] border border-slate-100 dark:border-slate-700 shadow-sm flex justify-between items-center group hover:border-blue-500/50 transition-all">
+                        <div key={c.id} className="bg-white dark:bg-slate-800 p-6 rounded-[2.5rem] border border-slate-100 dark:border-slate-700 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4 group hover:border-blue-500/50 transition-all">
                             <div className="flex items-center gap-6">
                                 <div className="w-16 h-16 rounded-2xl bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-700 flex items-center justify-center overflow-hidden p-2 shadow-inner">
-                                    {c.logoUrl ? <img src={c.logoUrl} className="w-full h-full object-contain" /> : <Building2 className="text-slate-300" size={32} />}
+                                    {c.logoUrl ? <img src={c.logoUrl} className="w-full h-full object-contain" alt={`${c.name} Logo`} /> : <Building2 className="text-slate-300" size={32} />}
                                 </div>
                                 <div>
                                     <div className="flex items-center gap-3">
@@ -517,7 +528,46 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
                                     </p>
                                 </div>
                             </div>
-                            <button onClick={() => onUpdateCompanies && onUpdateCompanies(companies.filter(cmp => cmp.id !== c.id))} className="p-3 text-slate-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-all"><Trash2 size={18}/></button>
+                            
+                            <div className="flex items-center gap-6 justify-between md:justify-end">
+                                <div className="flex items-center gap-3 bg-slate-50 dark:bg-slate-900 px-5 py-2.5 rounded-2xl border border-slate-100 dark:border-slate-700">
+                                    <Wine size={16} className={isAlcoholEnabled ? "text-emerald-500 animate-pulse" : "text-slate-400"} />
+                                    <div className="flex flex-col text-left">
+                                        <span className="text-[10px] font-black uppercase text-slate-400 tracking-wider">{t.settings.breathalyzer}</span>
+                                        <span className={`text-xs font-bold ${isAlcoholEnabled ? 'text-emerald-500' : 'text-slate-400'}`}>
+                                            {isAlcoholEnabled ? t.settings.enabled : t.settings.disabled}
+                                        </span>
+                                    </div>
+                                    <button 
+                                        onClick={() => {
+                                            if (!onUpdateCompanies) return;
+                                            const updated = companies.map(cmp => cmp.id === c.id ? {
+                                                ...cmp,
+                                                features: {
+                                                    ...cmp.features,
+                                                    alcohol: !isAlcoholEnabled
+                                                }
+                                            } : cmp);
+                                            onUpdateCompanies(updated);
+                                            addNotification({
+                                                id: uuidv4(),
+                                                type: 'success',
+                                                title: t.settings.featureUpdated,
+                                                message: (!isAlcoholEnabled ? t.settings.featureEnabledMsg : t.settings.featureDisabledMsg).replace('{name}', c.name),
+                                                timestamp: new Date(),
+                                                isRead: false
+                                            });
+                                        }}
+                                        className={`p-1 rounded-full transition-all ml-2 ${isAlcoholEnabled ? 'text-emerald-500 hover:bg-emerald-500/10' : 'text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'}`}
+                                        title={isAlcoholEnabled ? 'Deactivate Breathalyzer' : 'Activate Breathalyzer'}
+                                        aria-label="Toggle Breathalyzer Feature"
+                                    >
+                                        {isAlcoholEnabled ? <ToggleRight size={28} /> : <ToggleLeft size={28} />}
+                                    </button>
+                                </div>
+
+                                <button onClick={() => onUpdateCompanies && onUpdateCompanies(companies.filter(cmp => cmp.id !== c.id))} className="p-3 text-slate-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-all rounded-xl hover:bg-red-50 dark:hover:bg-red-900/10" title="Delete Company Node" aria-label="Delete Company Node"><Trash2 size={18}/></button>
+                            </div>
                         </div>
                     );
                 })}
@@ -536,7 +586,7 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
                             {activeModal === 'ADD_RAC' && 'Deploy Safety Module'}
                             {activeModal === 'ADD_COMPANY' && 'Provision Enterprise Node'}
                         </h3>
-                        <button onClick={() => setActiveModal('NONE')} className="p-2 hover:bg-white dark:hover:bg-slate-700 rounded-full transition-colors text-slate-400"><X size={24} /></button>
+                        <button onClick={() => setActiveModal('NONE')} className="p-2 hover:bg-white dark:hover:bg-slate-700 rounded-full transition-colors text-slate-400" title="Close Modal" aria-label="Close Modal"><X size={24} /></button>
                     </div>
 
                     <div className="p-8 space-y-6">
@@ -553,7 +603,7 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
                                 <input className="w-full bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-xl p-4 font-bold outline-none focus:ring-2 focus:ring-blue-500" placeholder="Room Name (e.g. Auditorium A)" value={newRoom.name} onChange={e => setNewRoom({...newRoom, name: e.target.value})} />
                                 <div className="grid grid-cols-2 gap-4">
                                     <input type="number" className="w-full bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-xl p-4 font-bold outline-none focus:ring-2 focus:ring-blue-500" placeholder="Capacity" value={newRoom.capacity} onChange={e => setNewRoom({...newRoom, capacity: e.target.value})} />
-                                    <select className="w-full bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-xl p-4 font-bold" value={newRoom.siteId} onChange={e => setNewRoom({...newRoom, siteId: e.target.value})}>
+                                    <select className="w-full bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-xl p-4 font-bold" value={newRoom.siteId} onChange={e => setNewRoom({...newRoom, siteId: e.target.value})} title="Select Site" aria-label="Select Site">
                                         <option value="">Select Site</option>
                                         {sites.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
                                     </select>
@@ -566,7 +616,7 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
                             <div className="space-y-6">
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     <input className="w-full bg-slate-50 dark:bg-slate-700 border border-slate-200 border-slate-600 rounded-xl p-4 font-bold" placeholder="Full Name" value={newTrainer.name} onChange={e => setNewTrainer({...newTrainer, name: e.target.value})} />
-                                    <select className="w-full bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-xl p-4 font-bold" value={newTrainer.siteId} onChange={e => setNewTrainer({...newTrainer, siteId: e.target.value})}>
+                                    <select className="w-full bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-xl p-4 font-bold" value={newTrainer.siteId} onChange={e => setNewTrainer({...newTrainer, siteId: e.target.value})} title="Select Site" aria-label="Select Site">
                                         {sites.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
                                     </select>
                                 </div>
@@ -590,9 +640,19 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
                                     <input className="w-full bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-xl p-4 font-bold uppercase" placeholder="Code (RAC01)" value={newRac.code} onChange={e => setNewRac({...newRac, code: e.target.value})} />
                                     <input className="col-span-2 w-full bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-xl p-4 font-bold" placeholder="Module Description" value={newRac.name} onChange={e => setNewRac({...newRac, name: e.target.value})} />
                                 </div>
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 block">Standard Validity (Months)</label>
+                                        <input type="number" className="w-full bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-xl p-4 font-bold outline-none focus:ring-2 focus:ring-purple-500" value={newRac.validityMonths} onChange={e => setNewRac({...newRac, validityMonths: parseInt(e.target.value) || 24})} title="Standard Validity Months" placeholder="24" />
+                                    </div>
+                                    <div>
+                                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 block">Pass Score Requirement (%)</label>
+                                        <input type="number" className="w-full bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-xl p-4 font-bold outline-none focus:ring-2 focus:ring-purple-500" value={newRac.passScore} onChange={e => setNewRac({...newRac, passScore: parseInt(e.target.value) || 70})} title="Pass Score Requirement Percentage" placeholder="70" />
+                                    </div>
+                                </div>
                                 <div className="flex gap-4">
-                                    <button onClick={() => setNewRac({...newRac, requiresDriverLicense: !newRac.requiresDriverLicense})} className={`flex-1 p-4 rounded-xl border-2 font-bold text-xs transition-all ${newRac.requiresDriverLicense ? 'border-blue-500 bg-blue-50 text-blue-700' : 'border-slate-200 text-slate-400'}`}>DRIVER LICENSE REQUIRED</button>
-                                    <button onClick={() => setNewRac({...newRac, requiresPractical: !newRac.requiresPractical})} className={`flex-1 p-4 rounded-xl border-2 font-bold text-xs transition-all ${newRac.requiresPractical ? 'border-blue-500 bg-blue-50 text-blue-700' : 'border-slate-200 text-slate-400'}`}>PRACTICAL EVAL REQUIRED</button>
+                                    <button onClick={() => setNewRac({...newRac, requiresDriverLicense: !newRac.requiresDriverLicense})} className={`flex-1 p-4 rounded-xl border-2 font-bold text-xs transition-all ${newRac.requiresDriverLicense ? 'border-purple-500 bg-purple-50 dark:bg-purple-900/20 text-purple-700 dark:text-purple-300' : 'border-slate-100 dark:border-slate-700 text-slate-400 bg-white dark:bg-slate-800'}`}>DRIVER LICENSE REQUIRED</button>
+                                    <button onClick={() => setNewRac({...newRac, requiresPractical: !newRac.requiresPractical})} className={`flex-1 p-4 rounded-xl border-2 font-bold text-xs transition-all ${newRac.requiresPractical ? 'border-purple-500 bg-purple-50 dark:bg-purple-900/20 text-purple-700 dark:text-purple-300' : 'border-slate-100 dark:border-slate-700 text-slate-400 bg-white dark:bg-slate-800'}`}>PRACTICAL EVAL REQUIRED</button>
                                 </div>
                                 <button onClick={handleAddRac} className="w-full bg-purple-600 text-white py-4 rounded-2xl font-black shadow-lg uppercase tracking-tight">REGISTER MODULE</button>
                             </div>
@@ -603,14 +663,36 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
                                 <input className="w-full bg-slate-50 dark:bg-slate-900 border-2 border-slate-100 dark:border-slate-700 rounded-xl p-4 font-bold" placeholder="Enterprise Name" value={newCompany.name} onChange={e => setNewCompany({...newCompany, name: e.target.value})} />
                                 <input className="w-full bg-slate-50 dark:bg-slate-900 border-2 border-slate-100 dark:border-slate-700 rounded-xl p-4 font-bold" placeholder="App Display Name (Alias)" value={newCompany.appName} onChange={e => setNewCompany({...newCompany, appName: e.target.value})} />
                                 <div className="grid grid-cols-2 gap-4">
-                                    <select className="w-full bg-slate-50 dark:bg-slate-900 border-2 border-slate-100 dark:border-slate-700 rounded-xl p-4 font-bold" value={newCompany.defaultLanguage} onChange={e => setNewCompany({...newCompany, defaultLanguage: e.target.value as any})}>
+                                    <select className="w-full bg-slate-50 dark:bg-slate-900 border-2 border-slate-100 dark:border-slate-700 rounded-xl p-4 font-bold" value={newCompany.defaultLanguage} onChange={e => setNewCompany({...newCompany, defaultLanguage: e.target.value as any})} title="Default Language" aria-label="Default Language">
                                         <option value="en">English (Global)</option>
                                         <option value="pt">Português (Mozambique)</option>
                                     </select>
-                                    <select className="w-full bg-slate-50 dark:bg-slate-900 border-2 border-slate-100 dark:border-slate-700 rounded-xl p-4 font-bold" value={newCompany.parentId || ''} onChange={e => setNewCompany({...newCompany, parentId: e.target.value || undefined})}>
+                                    <select className="w-full bg-slate-50 dark:bg-slate-900 border-2 border-slate-100 dark:border-slate-700 rounded-xl p-4 font-bold" value={newCompany.parentId || ''} onChange={e => setNewCompany({...newCompany, parentId: e.target.value || undefined})} title="Parent Company" aria-label="Parent Company">
                                         <option value="">Main Contractor (None)</option>
                                         {companies.filter(c => !c.parentId).map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
                                     </select>
+                                </div>
+                                <div className="flex items-center gap-3 p-4 bg-slate-50 dark:bg-slate-900 border-2 border-slate-100 dark:border-slate-700 rounded-xl">
+                                    <button
+                                        type="button"
+                                        onClick={() => setNewCompany(prev => ({ 
+                                            ...prev, 
+                                            features: { 
+                                                alcohol: !prev.features?.alcohol 
+                                            } 
+                                        }))}
+                                        className={`p-1 rounded-full transition-all ${newCompany.features?.alcohol ? 'text-emerald-500' : 'text-slate-400'}`}
+                                        title="Toggle default breathalyzer integration"
+                                    >
+                                        {newCompany.features?.alcohol ? <ToggleRight size={28} /> : <ToggleLeft size={28} />}
+                                    </button>
+                                    <div className="flex flex-col text-left">
+                                        <span className="text-xs font-bold text-slate-700 dark:text-slate-200 flex items-center gap-1.5">
+                                            <Wine size={14} className={newCompany.features?.alcohol ? "text-emerald-500" : "text-slate-400"} />
+                                            {t.settings.enableAlcoholLabel}
+                                        </span>
+                                        <span className="text-[10px] text-slate-400">{t.settings.enableAlcoholDesc}</span>
+                                    </div>
                                 </div>
                                 <button onClick={handleAddCompany} className="w-full bg-slate-900 text-white py-4 rounded-2xl font-black shadow-lg">PROVISION NODE</button>
                             </div>
@@ -632,7 +714,7 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
                                 <p className="text-xs text-slate-500 font-bold uppercase tracking-widest">Update Instructor Authorization</p>
                             </div>
                         </div>
-                        <button onClick={() => setEditingTrainer(null)} className="p-2 hover:bg-white dark:hover:bg-slate-700 rounded-full transition-colors text-slate-400"><X size={24} /></button>
+                        <button onClick={() => setEditingTrainer(null)} className="p-2 hover:bg-white dark:hover:bg-slate-700 rounded-full transition-colors text-slate-400" title="Close Modal" aria-label="Close Modal"><X size={24} /></button>
                     </div>
                     <div className="flex-1 overflow-y-auto p-8 space-y-6">
                         <div>
@@ -671,24 +753,30 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
                                 <p className="text-xs text-slate-500 font-bold uppercase tracking-widest">Update parameters for {editingRac.code}</p>
                             </div>
                         </div>
-                        <button onClick={() => setEditingRac(null)} className="p-2 hover:bg-white dark:hover:bg-slate-700 rounded-full transition-colors text-slate-400"><X size={24} /></button>
+                        <button onClick={() => setEditingRac(null)} className="p-2 hover:bg-white dark:hover:bg-slate-700 rounded-full transition-colors text-slate-400" title="Close Modal" aria-label="Close Modal"><X size={24} /></button>
                     </div>
                     
                     <div className="p-8 space-y-6">
                         <div className="grid grid-cols-3 gap-4">
                             <div>
                                 <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 block">Module Code</label>
-                                <input className="w-full bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-xl p-4 font-bold uppercase outline-none focus:ring-2 focus:ring-purple-500" value={editingRac.code} onChange={e => setEditingRac({...editingRac, code: e.target.value.toUpperCase()})} />
+                                <input className="w-full bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-xl p-4 font-bold uppercase outline-none focus:ring-2 focus:ring-purple-500" value={editingRac.code} onChange={e => setEditingRac({...editingRac, code: e.target.value.toUpperCase()})} title="Module Code" placeholder="RAC01" />
                             </div>
                             <div className="col-span-2">
                                 <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 block">Full Description</label>
-                                <input className="w-full bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-xl p-4 font-bold outline-none focus:ring-2 focus:ring-purple-500" value={editingRac.name} onChange={e => setEditingRac({...editingRac, name: e.target.value})} />
+                                <input className="w-full bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-xl p-4 font-bold outline-none focus:ring-2 focus:ring-purple-500" value={editingRac.name} onChange={e => setEditingRac({...editingRac, name: e.target.value})} title="Full Description" placeholder="Description" />
                             </div>
                         </div>
                         
-                        <div>
-                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 block">Standard Validity (Months)</label>
-                            <input type="number" className="w-full bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-xl p-4 font-bold outline-none focus:ring-2 focus:ring-purple-500" value={editingRac.validityMonths || 24} onChange={e => setEditingRac({...editingRac, validityMonths: parseInt(e.target.value) || 24})} />
+                        <div className="grid grid-cols-2 gap-4">
+                            <div>
+                                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 block">Standard Validity (Months)</label>
+                                <input type="number" className="w-full bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-xl p-4 font-bold outline-none focus:ring-2 focus:ring-purple-500" value={editingRac.validityMonths || 24} onChange={e => setEditingRac({...editingRac, validityMonths: parseInt(e.target.value) || 24})} title="Standard Validity Months" placeholder="24" />
+                            </div>
+                            <div>
+                                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 block">Pass Score Requirement (%)</label>
+                                <input type="number" className="w-full bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-xl p-4 font-bold outline-none focus:ring-2 focus:ring-purple-500" value={editingRac.passScore || 70} onChange={e => setEditingRac({...editingRac, passScore: parseInt(e.target.value) || 70})} title="Pass Score Requirement Percentage" placeholder="70" />
+                            </div>
                         </div>
 
                         <div className="flex gap-4">

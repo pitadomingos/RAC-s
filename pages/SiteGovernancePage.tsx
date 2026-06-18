@@ -73,11 +73,11 @@ const SiteGovernancePage: React.FC<SiteGovernancePageProps> = ({
 
       setTimeout(() => {
           setIsSaving(false);
-          alert(`Policy updated for ${selectedSite.name}. Requirements pushed to ${siteEmployees.size} employees.`);
+          alert(t.governance.policyUpdated.replace('{siteName}', selectedSite.name).replace('{count}', String(siteEmployees.size)));
       }, 800);
   };
 
-  if (!selectedSite) return <div className="p-8">Please select a site.</div>;
+  if (!selectedSite) return <div className="p-8">{t.governance.pleaseSelectSite}</div>;
 
   return (
     <div className="space-y-6 pb-24 animate-fade-in-up h-full">
@@ -90,10 +90,10 @@ const SiteGovernancePage: React.FC<SiteGovernancePageProps> = ({
                 <div>
                     <h1 className="text-3xl font-black tracking-tight flex items-center gap-3">
                         <Shield size={32} className="text-indigo-400" />
-                        Site Governance
+                        {t.governance.title}
                     </h1>
                     <p className="text-indigo-200 mt-2 max-w-xl">
-                        Define mandatory safety training policies per location. Changes here automatically update the requirements matrix for all site employees.
+                        {t.governance.subtitle}
                     </p>
                 </div>
             </div>
@@ -104,7 +104,7 @@ const SiteGovernancePage: React.FC<SiteGovernancePageProps> = ({
             {/* Sidebar: Site Selector */}
             <div className="lg:w-80 space-y-4">
                 <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 p-4">
-                    <h3 className="text-sm font-bold text-slate-500 uppercase tracking-wider mb-4 px-2">Select Operation Site</h3>
+                    <h3 className="text-sm font-bold text-slate-500 uppercase tracking-wider mb-4 px-2">{t.governance.selectSite}</h3>
                     <div className="space-y-2">
                         {sites.map(site => (
                             <button
@@ -134,11 +134,11 @@ const SiteGovernancePage: React.FC<SiteGovernancePageProps> = ({
                 <div className="flex justify-between items-center mb-6 pb-6 border-b border-slate-100 dark:border-slate-700">
                     <div>
                         <h2 className="text-2xl font-black text-slate-800 dark:text-white">{selectedSite.name}</h2>
-                        <p className="text-sm text-slate-500">Configure Mandatory RACs</p>
+                        <p className="text-sm text-slate-500">{t.governance.configureMandatory}</p>
                     </div>
                     <div className="flex items-center gap-2 px-4 py-2 bg-yellow-50 dark:bg-yellow-900/10 text-yellow-700 dark:text-yellow-400 rounded-lg text-xs font-bold border border-yellow-200 dark:border-yellow-800">
                         <AlertCircle size={16} />
-                        Changes affect all site personnel
+                        {t.governance.changesAffectAll}
                     </div>
                 </div>
 
@@ -180,7 +180,7 @@ const SiteGovernancePage: React.FC<SiteGovernancePageProps> = ({
                         }`}
                     >
                         {isSaving ? <RefreshCw size={20} className="animate-spin"/> : <Save size={20} />}
-                        <span>{isSaving ? 'Applying Policy...' : 'Save & Push Policy'}</span>
+                        <span>{isSaving ? t.governance.applyingPolicy : t.governance.savePolicy}</span>
                     </button>
                 </div>
             </div>

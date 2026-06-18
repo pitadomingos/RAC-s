@@ -1,6 +1,7 @@
 
 import React from 'react';
 import { AlertTriangle } from 'lucide-react';
+import { useLanguage } from '../contexts/LanguageContext';
 
 interface ConfirmModalProps {
   isOpen: boolean;
@@ -15,8 +16,12 @@ interface ConfirmModalProps {
 
 const ConfirmModal: React.FC<ConfirmModalProps> = ({ 
   isOpen, onClose, onConfirm, title, message, 
-  confirmText = 'Confirm', cancelText = 'Cancel', isDestructive = false 
+  confirmText, cancelText, isDestructive = false 
 }) => {
+  const { t } = useLanguage();
+  const displayConfirm = confirmText || t.common.confirm;
+  const displayCancel = cancelText || t.common.cancel;
+
   if (!isOpen) return null;
 
   return (
@@ -45,13 +50,13 @@ const ConfirmModal: React.FC<ConfirmModalProps> = ({
             onClick={onClose}
             className="px-4 py-2 text-sm font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-lg transition-colors"
           >
-            {cancelText}
+            {displayCancel}
           </button>
           <button 
             onClick={() => { onConfirm(); onClose(); }}
             className={`px-6 py-2 text-sm font-bold text-white rounded-lg shadow-md transition-all transform hover:-translate-y-0.5 ${isDestructive ? 'bg-red-600 hover:bg-red-500' : 'bg-blue-600 hover:bg-blue-500'}`}
           >
-            {confirmText}
+            {displayConfirm}
           </button>
         </div>
       </div>

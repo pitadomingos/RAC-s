@@ -387,6 +387,8 @@ const ScheduleTraining: React.FC<ScheduleTrainingProps> = ({
                           value={itemsPerPage}
                           onChange={handlePageSizeChange}
                           className="text-sm font-bold bg-transparent outline-none text-slate-800 dark:text-white cursor-pointer"
+                          title="Rows per page"
+                          aria-label="Rows per page"
                       >
                           <option value={10}>10</option>
                           <option value={20}>20</option>
@@ -598,8 +600,8 @@ const ScheduleTraining: React.FC<ScheduleTrainingProps> = ({
                       </div>
                       
                       <div className="flex gap-2 border-l border-slate-200 dark:border-slate-700 pl-4">
-                          <button onClick={() => goToPage(currentPage - 1)} disabled={currentPage === 1} className="p-2 rounded-lg border border-slate-200 dark:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-700 disabled:opacity-50 transition-colors text-slate-600 dark:text-slate-300"><ChevronLeft size={16} /></button>
-                          <button onClick={() => goToPage(currentPage + 1)} disabled={currentPage === totalPages} className="p-2 rounded-lg border border-slate-200 dark:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-700 disabled:opacity-50 transition-colors text-slate-600 dark:text-slate-300"><ChevronRight size={16} /></button>
+                          <button onClick={() => goToPage(currentPage - 1)} disabled={currentPage === 1} className="p-2 rounded-lg border border-slate-200 dark:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-700 disabled:opacity-50 transition-colors text-slate-600 dark:text-slate-300" title="Previous Page" aria-label="Previous Page"><ChevronLeft size={16} /></button>
+                          <button onClick={() => goToPage(currentPage + 1)} disabled={currentPage === totalPages} className="p-2 rounded-lg border border-slate-200 dark:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-700 disabled:opacity-50 transition-colors text-slate-600 dark:text-slate-300" title="Next Page" aria-label="Next Page"><ChevronRight size={16} /></button>
                       </div>
                   </div>
               </div>
@@ -625,7 +627,7 @@ const ScheduleTraining: React.FC<ScheduleTrainingProps> = ({
                         <h3 className="text-xl font-black text-slate-900 dark:text-white tracking-tight">{t.schedule.modal.title}</h3>
                         <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Create a new training slot.</p>
                     </div>
-                    <button onClick={() => setIsModalOpen(false)} className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-2 rounded-full hover:bg-white dark:hover:bg-slate-700 transition-colors">
+                    <button onClick={() => setIsModalOpen(false)} className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-2 rounded-full hover:bg-white dark:hover:bg-slate-700 transition-colors" title="Close Modal" aria-label="Close Modal">
                         <X size={20} />
                     </button>
                 </div>
@@ -638,6 +640,8 @@ const ScheduleTraining: React.FC<ScheduleTrainingProps> = ({
                                 className="w-full bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 text-slate-900 dark:text-white rounded-xl p-4 text-sm font-bold focus:ring-2 focus:ring-blue-500 outline-none appearance-none transition-all hover:bg-slate-100 dark:hover:bg-slate-600"
                                 value={String(newSession.racType)}
                                 onChange={e => setNewSession({...newSession, racType: e.target.value})}
+                                title="Select RAC Type"
+                                aria-label="Select RAC Type"
                             >
                                 {racDefinitions.map(rac => (
                                     <option key={rac.id} value={rac.name}>{rac.name}</option>
@@ -657,6 +661,8 @@ const ScheduleTraining: React.FC<ScheduleTrainingProps> = ({
                                 className="w-full bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-xl p-3 text-sm font-semibold focus:ring-2 focus:ring-blue-500 outline-none text-slate-800 dark:text-white transition-all"
                                 value={String(newSession.date)}
                                 onChange={e => setNewSession({...newSession, date: e.target.value})}
+                                title="Date"
+                                placeholder="YYYY-MM-DD"
                             />
                         </div>
                         <div>
@@ -666,6 +672,8 @@ const ScheduleTraining: React.FC<ScheduleTrainingProps> = ({
                                 className="w-full bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-xl p-3 text-sm font-semibold focus:ring-2 focus:ring-blue-500 outline-none text-slate-800 dark:text-white transition-all"
                                 value={String(newSession.startTime)}
                                 onChange={e => setNewSession({...newSession, startTime: e.target.value})}
+                                title="Start Time"
+                                placeholder="HH:MM"
                             />
                         </div>
                     </div>
@@ -685,6 +693,8 @@ const ScheduleTraining: React.FC<ScheduleTrainingProps> = ({
                                             capacity: selectedRoom ? selectedRoom.capacity : 0
                                         });
                                     }}
+                                    title="Select Room"
+                                    aria-label="Select Room"
                                 >
                                     <option value="">Select Room</option>
                                     {rooms.map(room => (
@@ -702,6 +712,8 @@ const ScheduleTraining: React.FC<ScheduleTrainingProps> = ({
                                     className="w-full bg-slate-100 dark:bg-slate-600 border border-slate-200 dark:border-slate-500 rounded-xl p-3 text-sm font-bold text-slate-500 dark:text-slate-300 cursor-not-allowed outline-none text-center"
                                     value={String(newSession.capacity)}
                                     readOnly
+                                    title="Capacity"
+                                    placeholder="Capacity"
                                 />
                             </div>
                         </div>
@@ -715,6 +727,8 @@ const ScheduleTraining: React.FC<ScheduleTrainingProps> = ({
                                     className="w-full bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-xl p-3 text-sm font-medium focus:ring-2 focus:ring-blue-500 outline-none text-slate-800 dark:text-white appearance-none"
                                     value={String(newSession.instructor)}
                                     onChange={e => setNewSession({...newSession, instructor: e.target.value})}
+                                    title="Select Instructor"
+                                    aria-label="Select Instructor"
                                 >
                                     <option value="">Select Instructor</option>
                                     {trainers.map(trainer => (
@@ -733,6 +747,8 @@ const ScheduleTraining: React.FC<ScheduleTrainingProps> = ({
                                     className="w-full bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-xl p-3 text-sm font-medium focus:ring-2 focus:ring-blue-500 outline-none text-slate-800 dark:text-white appearance-none"
                                     value={String(newSession.sessionLanguage)}
                                     onChange={e => setNewSession({...newSession, sessionLanguage: e.target.value as any})}
+                                    title="Select Language"
+                                    aria-label="Select Language"
                                 >
                                     <option value="Portuguese">{t.schedule.modal.portuguese}</option>
                                     <option value="English">{t.schedule.modal.english}</option>

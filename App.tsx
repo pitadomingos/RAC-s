@@ -1,34 +1,37 @@
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, lazy, Suspense } from 'react';
 import { HashRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import Layout from './components/Layout';
-import Dashboard from './pages/Dashboard';
-import DatabasePage from './pages/DatabasePage';
-import ReportsPage from './pages/ReportsPage';
-import BookingForm from './pages/BookingForm';
-import CardsPage from './pages/CardsPage';
-import VerificationPage from './pages/VerificationPage';
-import IntegrationHub from './pages/IntegrationHub';
-import PresentationPage from './pages/PresentationPage';
-import TrainerInputPage from './pages/TrainerInputPage';
-import RequestCardsPage from './pages/RequestCardsPage';
-import MessageLogPage from './pages/MessageLogPage';
-import UserManagement from './pages/UserManagement';
-import ScheduleTraining from './pages/ScheduleTraining';
-import SiteGovernancePage from './pages/SiteGovernancePage';
-import LogsPage from './pages/LogsPage';
-import UserManualsPage from './pages/UserManualsPage';
-import TechnicalDocs from './pages/TechnicalDocs';
-import SystemTechnicalManual from './pages/SystemTechnicalManual';
-import LoginPage from './pages/LoginPage';
-import ResultsPage from './pages/ResultsPage';
-import SettingsPage from './pages/SettingsPage';
-import AlcoholIntegration from './pages/AlcoholIntegration';
-import EnterpriseDashboard from './pages/EnterpriseDashboard';
+
+// Lazy load page components for route-based code-splitting
+const Dashboard = lazy(() => import('./pages/Dashboard'));
+const DatabasePage = lazy(() => import('./pages/DatabasePage'));
+const ReportsPage = lazy(() => import('./pages/ReportsPage'));
+const BookingForm = lazy(() => import('./pages/BookingForm'));
+const CardsPage = lazy(() => import('./pages/CardsPage'));
+const VerificationPage = lazy(() => import('./pages/VerificationPage'));
+const IntegrationHub = lazy(() => import('./pages/IntegrationHub'));
+const PresentationPage = lazy(() => import('./pages/PresentationPage'));
+const TrainerInputPage = lazy(() => import('./pages/TrainerInputPage'));
+const RequestCardsPage = lazy(() => import('./pages/RequestCardsPage'));
+const MessageLogPage = lazy(() => import('./pages/MessageLogPage'));
+const UserManagement = lazy(() => import('./pages/UserManagement'));
+const ScheduleTraining = lazy(() => import('./pages/ScheduleTraining'));
+const SiteGovernancePage = lazy(() => import('./pages/SiteGovernancePage'));
+const LogsPage = lazy(() => import('./pages/LogsPage'));
+const UserManualsPage = lazy(() => import('./pages/UserManualsPage'));
+const TechnicalDocs = lazy(() => import('./pages/TechnicalDocs'));
+const SystemTechnicalManual = lazy(() => import('./pages/SystemTechnicalManual'));
+const LoginPage = lazy(() => import('./pages/LoginPage'));
+const ResultsPage = lazy(() => import('./pages/ResultsPage'));
+const SettingsPage = lazy(() => import('./pages/SettingsPage'));
+const AlcoholIntegration = lazy(() => import('./pages/AlcoholIntegration'));
+const EnterpriseDashboard = lazy(() => import('./pages/EnterpriseDashboard'));
 import GeminiAdvisor from './components/GeminiAdvisor';
 import { AdvisorProvider } from './contexts/AdvisorContext';
 import { MessageProvider } from './contexts/MessageContext';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
+import { useLanguage } from './contexts/LanguageContext';
 import { db } from './services/databaseService';
 import { isSupabaseConfigured, supabase } from './services/supabaseClient';
 import { UserRole, Booking, EmployeeRequirement, TrainingSession, RacDef, Site, Company, SystemNotification, Employee, User, Room, Trainer, BookingStatus } from './types';
@@ -64,8 +67,20 @@ const RoleBasedHome: React.FC<{
     return <Dashboard {...dashboardProps} />;
 };
 
+const PageLoadingFallback: React.FC = () => {
+  const { t } = useLanguage();
+  return (
+    <div className="h-screen w-screen bg-slate-950 flex flex-col items-center justify-center text-white">
+        <Loader2 size={80} className="text-blue-500 animate-spin" />
+        <h2 className="text-2xl font-black uppercase mt-8 animate-pulse text-slate-200">{t.app.loadingModule}</h2>
+        <p className="text-slate-500 text-xs mt-2 uppercase tracking-widest">{t.app.fetchingResources}</p>
+    </div>
+  );
+};
+
 const AppContent: React.FC = () => {
   const { isAuthenticated, user, logout } = useAuth();
+  const { t } = useLanguage();
   const [isLoading, setIsLoading] = useState(true);
   const [isCloudSyncing, setIsCloudSyncing] = useState(false);
   
@@ -178,8 +193,8 @@ const AppContent: React.FC = () => {
           addNotification({
               id: uuidv4(),
               type: 'success',
-              title: 'Infrastructure Updated',
-              message: 'Enterprise hierarchy and tenant settings pushed to cloud.',
+              title: t.app.infraUpdated,
+              message: t.app.infraUpdatedMsg,
               timestamp: new Date(),
               isRead: false
           });
@@ -188,7 +203,7 @@ const AppContent: React.FC = () => {
           addNotification({
               id: uuidv4(),
               type: 'alert',
-              title: 'Infrastructure Fault',
+              title: t.app.infraFault,
               message: stringifyError(err),
               timestamp: new Date(),
               isRead: false
@@ -400,8 +415,8 @@ const AppContent: React.FC = () => {
   if (isLoading) return (
       <div className="h-screen w-screen bg-slate-950 flex flex-col items-center justify-center text-white">
           <Loader2 size={80} className="text-blue-500 animate-spin" />
-          <h2 className="text-2xl font-black uppercase mt-8 animate-pulse">Establishing Logic Gate</h2>
-          <p className="text-slate-500 text-xs mt-2 uppercase tracking-widest">Checking Production Sync Status...</p>
+          <h2 className="text-2xl font-black uppercase mt-8 animate-pulse">{t.app.establishingGate}</h2>
+          <p className="text-slate-500 text-xs mt-2 uppercase tracking-widest">{t.app.checkingSync}</p>
       </div>
   );
 
@@ -414,48 +429,50 @@ const AppContent: React.FC = () => {
           {isCloudSyncing && (
               <div className="fixed inset-0 z-[1000] bg-slate-950/80 backdrop-blur-md flex flex-col items-center justify-center text-white font-mono">
                   <RefreshCw size={64} className="text-blue-500 animate-spin mb-6" />
-                  <h3 className="text-xl font-black tracking-tighter">CLOUD SYNCHRONIZATION ACTIVE</h3>
-                  <p className="text-slate-400 text-[10px] uppercase tracking-[0.3em] mt-2">Writing parsed data to Superbase cluster...</p>
+                  <h3 className="text-xl font-black tracking-tighter">{t.app.syncActive}</h3>
+                  <p className="text-slate-400 text-[10px] uppercase tracking-[0.3em] mt-2">{t.app.writingToSupabase}</p>
               </div>
           )}
           {user?.role === UserRole.SYSTEM_ADMIN && missingTables.length > 0 && (
               <div className="fixed top-0 left-0 right-0 z-[100] bg-indigo-600 text-white p-2 flex items-center justify-center gap-4 shadow-xl">
                   <Database size={16} className="animate-pulse" />
-                  <span className="text-xs font-bold uppercase tracking-wider">Setup Required: {missingTables.length} tables missing in Supabase.</span>
-                  <button onClick={() => window.location.hash = '#/tech-docs'} className="bg-white text-indigo-600 px-3 py-1 rounded-full text-[10px] font-black hover:bg-indigo-50 transition-colors">GET SQL PATCH</button>
+                  <span className="text-xs font-bold uppercase tracking-wider">{t.app.setupRequired.replace('{count}', String(missingTables.length))}</span>
+                  <button onClick={() => window.location.hash = '#/tech-docs'} className="bg-white text-indigo-600 px-3 py-1 rounded-full text-[10px] font-black hover:bg-indigo-50 transition-colors">{t.app.getSqlPatch}</button>
               </div>
           )}
-          <Routes>
-            <Route path="/presentation" element={<PresentationPage />} />
-            <Route path="/verify/:recordId" element={<VerificationPage bookings={bookings} requirements={requirements} racDefinitions={racDefinitions} sessions={sessions} employees={employees} />} />
-            <Route path="/print-cards" element={<CardsPage bookings={bookings} requirements={requirements} racDefinitions={racDefinitions} sessions={sessions} userRole={user?.role} companies={companies} />} />
-            <Route path="*" element={
-              <Layout userRole={user?.role || UserRole.USER} setUserRole={() => {}} notifications={notifications} clearNotifications={() => setNotifications([])} sites={sites} currentSiteId={currentSiteId} setCurrentSiteId={setCurrentSiteId} companies={companies}>
-                <Routes>
-                  <Route path="/" element={<RoleBasedHome userRole={user?.role || UserRole.USER} dashboardProps={{ bookings, requirements, sessions, userRole: user?.role, racDefinitions, currentSiteId, companies }} />} />
-                  <Route path="/database" element={<DatabasePage employees={employees} bookings={bookings} requirements={requirements} updateRequirements={handleUpdateRequirement} sessions={sessions} onUpdateEmployee={handleUpdateEmployee} onDeleteEmployee={handleDeleteEmployee} racDefinitions={racDefinitions} addNotification={addNotification} currentSiteId={currentSiteId} companies={companies} />} />
-                  <Route path="/booking" element={<BookingForm addBookings={handleAddBookings} sessions={sessions} userRole={user?.role || UserRole.USER} existingBookings={bookings} addNotification={addNotification} racDefinitions={racDefinitions} companies={companies} />} />
-                  <Route path="/results" element={<ResultsPage bookings={bookings} updateBookingStatus={handleUpdateBookingStatus} importBookings={handleImportBookings} userRole={user?.role || UserRole.USER} sessions={sessions} requirements={requirements} sites={sites} racDefinitions={racDefinitions} addNotification={addNotification} currentSiteId={currentSiteId} onRefresh={refreshData} />} />
-                  <Route path="/users" element={<UserManagement users={users} onUpdateUser={handleUpdateUser} onDeleteUser={handleDeleteUser} addNotification={addNotification} sites={sites} currentSiteId={currentSiteId} companies={companies} />} />
-                  <Route path="/settings" element={<SettingsPage racDefinitions={racDefinitions} onUpdateRacs={handleUpdateRacs} rooms={rooms} onUpdateRooms={handleUpdateRooms} trainers={trainers} onUpdateTrainers={handleUpdateTrainers} sites={sites} onUpdateSites={handleUpdateSites} companies={companies} onUpdateCompanies={handleUpdateCompanies} userRole={user?.role} addNotification={addNotification} currentSiteId={currentSiteId} />} />
-                  <Route path="/schedule" element={<ScheduleTraining sessions={sessions} setSessions={setSessions} rooms={rooms} trainers={trainers} racDefinitions={racDefinitions} addNotification={addNotification} currentSiteId={currentSiteId} bookings={bookings} employees={employees} requirements={requirements} onAddBookings={handleAddBookings} />} />
-                  <Route path="/trainer-input" element={<TrainerInputPage bookings={bookings} updateBookings={handleTrainerUpdateBookings} sessions={sessions} userRole={user?.role} currentUserName={user?.name} racDefinitions={racDefinitions} />} />
-                  <Route path="/manuals" element={<UserManualsPage userRole={user?.role || UserRole.USER} />} />
-                  <Route path="/tech-docs" element={<TechnicalDocs />} />
-                  <Route path="/system-blueprint" element={<SystemTechnicalManual />} />
-                  <Route path="/logs" element={<LogsPage />} />
-                  <Route path="/request-cards" element={<RequestCardsPage bookings={bookings} requirements={requirements} racDefinitions={racDefinitions} sessions={sessions} userRole={user?.role || UserRole.USER} currentSiteId={currentSiteId} companies={companies} />} />
-                  <Route path="/integration" element={<IntegrationHub userRole={user?.role || UserRole.USER} />} />
-                  <Route path="/reports" element={<ReportsPage bookings={bookings} sessions={sessions} requirements={requirements} sites={sites} currentSiteId={currentSiteId} racDefinitions={racDefinitions} companies={companies} />} />
-                  <Route path="/enterprise-dashboard" element={<EnterpriseDashboard sites={sites} bookings={bookings} requirements={requirements} userRole={user?.role} racDefinitions={racDefinitions} />} />
-                  <Route path="/alcohol-control" element={<AlcoholIntegration addNotification={addNotification} />} />
-                  <Route path="/messages" element={<MessageLogPage />} />
-                  <Route path="/site-governance" element={<SiteGovernancePage sites={sites} setSites={setSites} racDefinitions={racDefinitions} bookings={bookings} requirements={requirements} updateRequirements={handleUpdateRequirement} />} />
-                </Routes>
-                <GeminiAdvisor />
-              </Layout>
-            } />
-          </Routes>
+          <Suspense fallback={<PageLoadingFallback />}>
+            <Routes>
+              <Route path="/presentation" element={<PresentationPage />} />
+              <Route path="/verify/:recordId" element={<VerificationPage bookings={bookings} requirements={requirements} racDefinitions={racDefinitions} sessions={sessions} employees={employees} />} />
+              <Route path="/print-cards" element={<CardsPage bookings={bookings} requirements={requirements} racDefinitions={racDefinitions} sessions={sessions} userRole={user?.role} companies={companies} />} />
+              <Route path="*" element={
+                <Layout userRole={user?.role || UserRole.USER} setUserRole={() => {}} notifications={notifications} clearNotifications={() => setNotifications([])} sites={sites} currentSiteId={currentSiteId} setCurrentSiteId={setCurrentSiteId} companies={companies}>
+                  <Routes>
+                    <Route path="/" element={<RoleBasedHome userRole={user?.role || UserRole.USER} dashboardProps={{ bookings, requirements, sessions, userRole: user?.role, racDefinitions, currentSiteId, companies }} />} />
+                    <Route path="/database" element={<DatabasePage employees={employees} bookings={bookings} requirements={requirements} updateRequirements={handleUpdateRequirement} sessions={sessions} onUpdateEmployee={handleUpdateEmployee} onDeleteEmployee={handleDeleteEmployee} racDefinitions={racDefinitions} addNotification={addNotification} currentSiteId={currentSiteId} companies={companies} />} />
+                    <Route path="/booking" element={<BookingForm addBookings={handleAddBookings} sessions={sessions} userRole={user?.role || UserRole.USER} existingBookings={bookings} addNotification={addNotification} racDefinitions={racDefinitions} companies={companies} />} />
+                    <Route path="/results" element={<ResultsPage bookings={bookings} updateBookingStatus={handleUpdateBookingStatus} importBookings={handleImportBookings} userRole={user?.role || UserRole.USER} sessions={sessions} requirements={requirements} sites={sites} racDefinitions={racDefinitions} addNotification={addNotification} currentSiteId={currentSiteId} onRefresh={refreshData} />} />
+                    <Route path="/users" element={<UserManagement users={users} onUpdateUser={handleUpdateUser} onDeleteUser={handleDeleteUser} addNotification={addNotification} sites={sites} currentSiteId={currentSiteId} companies={companies} />} />
+                    <Route path="/settings" element={<SettingsPage racDefinitions={racDefinitions} onUpdateRacs={handleUpdateRacs} rooms={rooms} onUpdateRooms={handleUpdateRooms} trainers={trainers} onUpdateTrainers={handleUpdateTrainers} sites={sites} onUpdateSites={handleUpdateSites} companies={companies} onUpdateCompanies={handleUpdateCompanies} userRole={user?.role} addNotification={addNotification} currentSiteId={currentSiteId} />} />
+                    <Route path="/schedule" element={<ScheduleTraining sessions={sessions} setSessions={setSessions} rooms={rooms} trainers={trainers} racDefinitions={racDefinitions} addNotification={addNotification} currentSiteId={currentSiteId} bookings={bookings} employees={employees} requirements={requirements} onAddBookings={handleAddBookings} />} />
+                    <Route path="/trainer-input" element={<TrainerInputPage bookings={bookings} updateBookings={handleTrainerUpdateBookings} sessions={sessions} userRole={user?.role} currentUserName={user?.name} racDefinitions={racDefinitions} />} />
+                    <Route path="/manuals" element={<UserManualsPage userRole={user?.role || UserRole.USER} />} />
+                    <Route path="/tech-docs" element={<TechnicalDocs />} />
+                    <Route path="/system-blueprint" element={<SystemTechnicalManual />} />
+                    <Route path="/logs" element={<LogsPage />} />
+                    <Route path="/request-cards" element={<RequestCardsPage bookings={bookings} requirements={requirements} racDefinitions={racDefinitions} sessions={sessions} userRole={user?.role || UserRole.USER} currentSiteId={currentSiteId} companies={companies} />} />
+                    <Route path="/integration" element={<IntegrationHub userRole={user?.role || UserRole.USER} />} />
+                    <Route path="/reports" element={<ReportsPage bookings={bookings} sessions={sessions} requirements={requirements} sites={sites} currentSiteId={currentSiteId} racDefinitions={racDefinitions} companies={companies} />} />
+                    <Route path="/enterprise-dashboard" element={<EnterpriseDashboard sites={sites} bookings={bookings} requirements={requirements} userRole={user?.role} racDefinitions={racDefinitions} />} />
+                    <Route path="/alcohol-control" element={<AlcoholIntegration addNotification={addNotification} />} />
+                    <Route path="/messages" element={<MessageLogPage />} />
+                    <Route path="/site-governance" element={<SiteGovernancePage sites={sites} setSites={setSites} racDefinitions={racDefinitions} bookings={bookings} requirements={requirements} updateRequirements={handleUpdateRequirement} />} />
+                  </Routes>
+                  <GeminiAdvisor />
+                </Layout>
+              } />
+            </Routes>
+          </Suspense>
         </Router>
       </MessageProvider>
     </AdvisorProvider>

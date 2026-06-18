@@ -484,42 +484,151 @@ const PresentationPage: React.FC = () => {
       </div>
   );
 
-  const FinancialsSlide = () => (
-      <div className="flex flex-col justify-center min-h-[70vh] max-w-5xl mx-auto px-4 relative z-10 animate-fade-in-up py-12">
-          <h2 className="text-4xl md:text-6xl font-black text-white mb-12 text-center tracking-tight">{t.proposal.financials.title}</h2>
-          <div className="bg-slate-900/60 rounded-[3rem] border border-slate-700 overflow-hidden shadow-2xl backdrop-blur-3xl">
-              <div className="divide-y divide-slate-800">
-                  <div className="grid grid-cols-12 p-4 bg-slate-800/80 text-xs font-bold text-slate-400 uppercase tracking-wider">
-                      <div className="col-span-1 text-center font-mono">#</div>
-                      <div className="col-span-8">{t.proposal.financials.headers.desc}</div>
-                      <div className="col-span-3 text-right pr-4">{t.proposal.financials.headers.cost}</div>
-                  </div>
-                  {[
-                      { name: t.proposal.financials.items.item1, cost: '$12,000.00' },
-                      { name: t.proposal.financials.items.item2, cost: '$6,000.00' },
-                      { name: t.proposal.financials.items.item3, cost: '$2,500.00' },
-                      { name: t.proposal.financials.items.item4, cost: '$1,500.00' }
-                  ].map((item, i) => (
-                      <div key={i} className="grid grid-cols-12 p-6 hover:bg-white/5 transition-all items-center">
-                          <div className="col-span-1 text-center font-mono text-slate-600 text-sm">{i+1}</div>
-                          <div className="col-span-8 text-white font-bold text-lg tracking-tight">{item.name}</div>
-                          <div className="col-span-3 text-right font-mono text-xl text-yellow-500 font-black pr-4">{item.cost}</div>
+  const FinancialsSlide = () => {
+      const models = (t.proposal.financials as any).models || {
+          title: 'Strategic Delivery Models',
+          buyout: {
+            title: '1. Corporate Buyout',
+            cost: '$22,000.00 One-time',
+            desc: 'On-premises installation with complete ownership. Covers software, user, and IT team training.',
+            badge: 'CapEx Buyout',
+            features: [
+              'Full Source Code & Database Ownership',
+              'Corporate Server Deployment',
+              'IT & End-User Training Included'
+            ]
+          },
+          managed: {
+            title: '2a. Managed On-Premises',
+            cost: '$4,000.00 / Month',
+            desc: 'Runs on corporate servers for absolute data residency. DigiSols manages updates & support.',
+            badge: 'Recommended Model',
+            setup: '$18,000 Setup',
+            features: [
+              'Absolute Health Data Residency',
+              'DigiSols Handles Maintenance & Updates',
+              'User Support & Continuous Training'
+            ]
+          },
+          saas: {
+            title: '2b. Hosted Cloud SaaS',
+            cost: '$5,000.00 / Month',
+            desc: 'Turnkey hosted solution. DigiSols manages infrastructure, domain, and data security.',
+            badge: 'Zero IT Strain',
+            setup: '$18,000 Setup',
+            features: [
+              'Zero Infrastructure / IT Overhead',
+              'Managed Security, Domain & Backups',
+              'Continuous Software Deployment'
+            ]
+          }
+      };
+
+      return (
+      <div className="flex flex-col justify-center min-h-[75vh] max-w-[1600px] mx-auto px-6 relative z-10 animate-fade-in-up py-8">
+          <div className="text-center mb-10">
+              <h2 className="text-4xl md:text-5xl font-black text-white tracking-tight">{t.proposal.financials.title}</h2>
+              <p className="text-indigo-400 font-bold mt-2 uppercase tracking-widest text-sm">{models.title}</p>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-stretch">
+              
+              {/* Option 1: Corporate Buyout */}
+              <div className="bg-slate-900/60 rounded-[2.5rem] border border-slate-800 p-8 flex flex-col justify-between hover:border-slate-700 transition-all hover:bg-slate-900/80 shadow-2xl relative overflow-hidden group">
+                  <div className="absolute top-0 right-0 p-8 opacity-5 group-hover:scale-110 transition-transform"><ServerIcon size={120} /></div>
+                  <div>
+                      <div className="flex justify-between items-start mb-6">
+                          <span className="text-[10px] font-black tracking-widest uppercase px-3 py-1 bg-slate-800 text-slate-400 rounded-full border border-slate-700/50">{models.buyout.badge}</span>
                       </div>
-                  ))}
-              </div>
-              <div className="bg-gradient-to-r from-slate-950 to-indigo-950 p-10 flex flex-col md:flex-row justify-between items-stretch text-white relative overflow-hidden gap-6 border-t border-slate-700">
-                  <div className="flex-1 bg-slate-900/80 p-5 rounded-2xl border border-emerald-500/30 relative">
-                      <div className="text-[10px] uppercase font-black text-emerald-500 mb-1 tracking-widest">{t.proposal.financials.initialInvest}</div>
-                      <div className="text-3xl font-black font-mono text-white">$18,000.00</div>
+                      <h3 className="text-2xl font-black text-white mb-2">{models.buyout.title}</h3>
+                      <div className="text-3xl font-black font-mono text-yellow-500 mb-4">{models.buyout.cost}</div>
+                      <p className="text-sm text-slate-400 leading-relaxed font-light mb-6">{models.buyout.desc}</p>
                   </div>
-                  <div className="flex-1 bg-slate-900/80 p-5 rounded-2xl border border-blue-500/30 relative">
-                      <div className="text-[10px] uppercase font-black text-blue-500 mb-1 tracking-widest">{t.proposal.financials.recurring}</div>
-                      <div className="text-3xl font-black font-mono text-white">$4,000.00</div>
+                  <div className="pt-6 border-t border-slate-800/80">
+                      <ul className="text-xs text-slate-400 space-y-2.5">
+                          {(models.buyout.features || [
+                              'Full Source Code & Database Ownership',
+                              'Corporate Server Deployment',
+                              'IT & End-User Training Included'
+                          ]).map((feature: string, idx: number) => (
+                              <li key={idx} className="flex items-center gap-2">
+                                  <CheckCircle size={14} className="text-slate-500" />
+                                  <span>{feature}</span>
+                              </li>
+                          ))}
+                      </ul>
                   </div>
               </div>
+
+              {/* Option 2a: Managed On-Premises (Recommended) */}
+              <div className="bg-indigo-950/20 rounded-[2.5rem] border-2 border-indigo-500/80 p-8 flex flex-col justify-between hover:border-indigo-400 transition-all hover:bg-indigo-950/30 shadow-2xl relative overflow-hidden group">
+                  <div className="absolute -inset-1 bg-gradient-to-br from-indigo-500/10 to-transparent opacity-30 blur-2xl"></div>
+                  <div className="absolute top-0 right-0 p-8 opacity-5 group-hover:scale-110 transition-transform text-indigo-400"><ShieldCheck size={120} /></div>
+                  <div className="relative z-10">
+                      <div className="flex justify-between items-start mb-6">
+                          <span className="text-[10px] font-black tracking-widest uppercase px-3 py-1 bg-indigo-500/20 text-indigo-300 rounded-full border border-indigo-500/30 animate-pulse">{models.managed.badge}</span>
+                          <span className="text-[10px] font-black font-mono text-slate-200 tracking-wider uppercase px-2 py-0.5 bg-slate-800 border border-slate-700 rounded">{models.managed.setup}</span>
+                      </div>
+                      <h3 className="text-2xl font-black text-white mb-2">{models.managed.title}</h3>
+                      <div className="text-4xl font-black font-mono text-emerald-400 mb-1">{models.managed.cost}</div>
+                      <div className="text-sm font-bold font-mono text-slate-400 mb-4 flex items-center gap-1.5">
+                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                          {models.managed.setup}
+                      </div>
+                      <p className="text-sm text-slate-300 leading-relaxed font-light mb-6">{models.managed.desc}</p>
+                  </div>
+                  <div className="pt-6 border-t border-indigo-500/30 relative z-10">
+                      <ul className="text-xs text-slate-300 space-y-2.5">
+                          {(models.managed.features || [
+                              'Absolute Health Data Residency',
+                              'DigiSols Handles Maintenance & Updates',
+                              'User Support & Continuous Training'
+                          ]).map((feature: string, idx: number) => (
+                              <li key={idx} className="flex items-center gap-2">
+                                  <CheckCircle size={14} className="text-emerald-400" />
+                                  <span className={idx === 0 ? "font-bold" : ""}>{feature}</span>
+                              </li>
+                          ))}
+                      </ul>
+                  </div>
+              </div>
+
+              {/* Option 2b: Hosted Cloud SaaS */}
+              <div className="bg-slate-900/60 rounded-[2.5rem] border border-slate-800 p-8 flex flex-col justify-between hover:border-slate-700 transition-all hover:bg-slate-900/80 shadow-2xl relative overflow-hidden group">
+                  <div className="absolute top-0 right-0 p-8 opacity-5 group-hover:scale-110 transition-transform"><Cloud size={120} /></div>
+                  <div>
+                      <div className="flex justify-between items-start mb-6">
+                          <span className="text-[10px] font-black tracking-widest uppercase px-3 py-1 bg-slate-800 text-slate-400 rounded-full border border-slate-700/50">{models.saas.badge}</span>
+                          <span className="text-[10px] font-black font-mono text-slate-200 tracking-wider uppercase px-2 py-0.5 bg-slate-800 border border-slate-700 rounded">{models.saas.setup}</span>
+                      </div>
+                      <h3 className="text-2xl font-black text-white mb-2">{models.saas.title}</h3>
+                      <div className="text-3xl font-black font-mono text-blue-400 mb-1">{models.saas.cost}</div>
+                      <div className="text-sm font-bold font-mono text-slate-400 mb-4 flex items-center gap-1.5">
+                          <span className="w-1.5 h-1.5 rounded-full bg-blue-500"></span>
+                          {models.saas.setup}
+                      </div>
+                      <p className="text-sm text-slate-400 leading-relaxed font-light mb-6">{models.saas.desc}</p>
+                  </div>
+                  <div className="pt-6 border-t border-slate-800/80">
+                      <ul className="text-xs text-slate-400 space-y-2.5">
+                          {(models.saas.features || [
+                              'Zero Infrastructure / IT Overhead',
+                              'Managed Security, Domain & Backups',
+                              'Continuous Software Deployment'
+                          ]).map((feature: string, idx: number) => (
+                              <li key={idx} className="flex items-center gap-2">
+                                  <CheckCircle size={14} className="text-blue-400" />
+                                  <span>{feature}</span>
+                              </li>
+                          ))}
+                      </ul>
+                  </div>
+              </div>
+
           </div>
       </div>
-  );
+      );
+  };
 
   const ConclusionSlide = () => (
       <div className="flex flex-col items-center justify-center min-h-[70vh] text-center px-4 relative z-10 animate-fade-in-up">
@@ -572,23 +681,37 @@ const PresentationPage: React.FC = () => {
   );
 
   const OrganogramSlide = () => (
-      <div className="flex flex-col justify-center min-h-[70vh] max-w-5xl mx-auto px-4 relative z-10 animate-fade-in-up">
-          <h2 className="text-4xl md:text-6xl font-black text-white mb-16 text-center">{t.proposal.organogram.title}</h2>
-          <div className="flex flex-col items-center gap-8">
-              <div className="p-6 bg-slate-800 border border-blue-500 rounded-2xl w-64 text-center shadow-lg shadow-blue-500/20">
-                  <User size={32} className="mx-auto mb-2 text-blue-400" />
-                  <div className="font-bold text-white">Pita Domingos</div>
-                  <div className="text-blue-300 text-sm">Lead Architect</div>
+      <div className="flex flex-col justify-center min-h-[70vh] max-w-5xl mx-auto px-4 relative z-10 animate-fade-in-up py-8">
+          <div className="text-center mb-12">
+              <h2 className="text-4xl md:text-6xl font-black text-white tracking-tight">{t.proposal.organogram.title}</h2>
+              <div className="mt-4 max-w-3xl mx-auto px-6 py-3 bg-indigo-500/10 border border-indigo-500/20 rounded-2xl text-xs md:text-sm text-indigo-300 font-medium tracking-wide flex items-center justify-center gap-2.5 shadow-lg shadow-indigo-950/20">
+                  <span className="shrink-0 flex items-center justify-center w-5 h-5 rounded-full bg-indigo-500/20 text-indigo-400 font-bold">i</span>
+                  <span>{t.proposal.organogram.applicabilityNote}</span>
               </div>
-              <div className="h-8 w-0.5 bg-slate-600"></div>
+          </div>
+          <div className="flex flex-col items-center gap-6">
+              {/* Lead Architect */}
+              <div className="relative p-6 bg-slate-900/80 border-2 border-blue-500/80 rounded-3xl w-72 text-center shadow-[0_0_30px_rgba(59,130,246,0.15)] backdrop-blur-md hover:border-blue-400 transition-all hover:scale-102 duration-300 group">
+                  <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:scale-110 transition-transform"><User size={64} className="text-blue-500" /></div>
+                  <User size={36} className="mx-auto mb-3 text-blue-400" />
+                  <div className="font-black text-white text-lg tracking-tight">Pita Domingos</div>
+                  <div className="text-blue-300 text-xs font-black uppercase tracking-wider mt-1">Lead Architect</div>
+              </div>
+              
+              {/* Connector line */}
+              <div className="h-12 w-0.5 bg-gradient-to-b from-blue-500 to-indigo-500/50"></div>
+              
+              {/* Sub-roles */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-16">
-                  <div className="p-6 bg-slate-800/50 border border-slate-600 rounded-2xl w-64 text-center">
-                      <Code size={24} className="mx-auto mb-2 text-purple-400" />
-                      <div className="font-bold text-white">{t.proposal.organogram.tech1}</div>
+                  <div className="relative p-6 bg-slate-900/60 border border-slate-800 rounded-3xl w-68 text-center hover:border-purple-500/50 hover:bg-slate-900/80 transition-all duration-300 group">
+                      <div className="absolute top-0 right-0 p-3 opacity-5 group-hover:scale-110 transition-transform"><Code size={48} className="text-purple-500" /></div>
+                      <Code size={28} className="mx-auto mb-3 text-purple-400" />
+                      <div className="font-black text-white text-md tracking-tight">{t.proposal.organogram.tech1}</div>
                   </div>
-                  <div className="p-6 bg-slate-800/50 border border-slate-600 rounded-2xl w-64 text-center">
-                      <ServerIcon size={24} className="mx-auto mb-2 text-green-400" />
-                      <div className="font-bold text-white">{t.proposal.organogram.tech2}</div>
+                  <div className="relative p-6 bg-slate-900/60 border border-slate-800 rounded-3xl w-68 text-center hover:border-green-500/50 hover:bg-slate-900/80 transition-all duration-300 group">
+                      <div className="absolute top-0 right-0 p-3 opacity-5 group-hover:scale-110 transition-transform"><ServerIcon size={48} className="text-green-500" /></div>
+                      <ServerIcon size={28} className="mx-auto mb-3 text-green-400" />
+                      <div className="font-black text-white text-md tracking-tight">{t.proposal.organogram.tech2}</div>
                   </div>
               </div>
           </div>
@@ -692,6 +815,10 @@ const PresentationPage: React.FC = () => {
                   <p className="text-lg text-slate-300 leading-relaxed font-light">{t.proposal.futureUpdates.moduleBDesc}</p>
               </div>
           </div>
+          <div className="mt-12 max-w-4xl mx-auto px-6 py-4 bg-amber-500/10 border border-amber-500/20 rounded-[2rem] text-sm md:text-base text-amber-300 font-medium tracking-wide flex items-center justify-center gap-3.5 shadow-lg shadow-amber-950/20">
+              <span className="shrink-0 flex items-center justify-center w-6 h-6 rounded-full bg-amber-500/20 text-amber-400 font-bold border border-amber-500/30 font-mono text-sm">!</span>
+              <span>{(t.proposal.futureUpdates as any).optionalNotice}</span>
+          </div>
       </div>
   );
 
@@ -740,6 +867,11 @@ const PresentationPage: React.FC = () => {
 
   return (
     <div className="fixed inset-0 z-[100] bg-slate-950 text-white overflow-hidden font-sans select-none flex flex-col">
+        <style>{`
+          .presentation-progress-bar {
+            width: ${((currentSlide + 1) / slides.length) * 100}%;
+          }
+        `}</style>
         <div className="absolute inset-0 z-0">
             <div className="absolute inset-0 bg-gradient-to-br from-slate-950 via-[#020617] to-slate-900"></div>
             <div className="absolute top-[-10%] left-[-10%] w-[45%] h-[45%] bg-blue-900/10 rounded-full blur-[150px] animate-pulse-slow"></div>
@@ -749,18 +881,18 @@ const PresentationPage: React.FC = () => {
             <div className="h-32 w-full shrink-0"></div>
         </div>
         <div className="fixed bottom-8 left-1/2 -translate-x-1/2 h-20 bg-slate-900/60 backdrop-blur-3xl border border-white/10 rounded-full flex items-center px-4 shadow-2xl z-50 ring-1 ring-white/5 transition-all hover:bg-slate-900/80">
-            <button onClick={prevSlide} disabled={currentSlide === 0} className="w-12 h-12 md:w-14 md:h-14 rounded-full flex items-center justify-center hover:bg-white/10 disabled:opacity-30 text-white transition-all active:scale-90"><ChevronLeft size={32} /></button>
+            <button onClick={prevSlide} disabled={currentSlide === 0} className="w-12 h-12 md:w-14 md:h-14 rounded-full flex items-center justify-center hover:bg-white/10 disabled:opacity-30 text-white transition-all active:scale-90" title="Previous Slide"><ChevronLeft size={32} /></button>
             <div className="px-6 md:px-12 flex flex-col items-center min-w-[160px] md:min-w-[220px]">
                 <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] mb-1">Slide Track</span>
                 <span className="text-xl md:text-2xl font-mono font-bold text-white leading-none">{currentSlide + 1} <span className="text-slate-600 font-light">/</span> {slides.length}</span>
             </div>
-            <button onClick={nextSlide} disabled={currentSlide === slides.length - 1} className="w-12 h-12 md:w-14 md:h-14 rounded-full flex items-center justify-center hover:bg-white/10 disabled:opacity-30 text-white transition-all active:scale-90"><ChevronRight size={32} /></button>
+            <button onClick={nextSlide} disabled={currentSlide === slides.length - 1} className="w-12 h-12 md:w-14 md:h-14 rounded-full flex items-center justify-center hover:bg-white/10 disabled:opacity-30 text-white transition-all active:scale-90" title="Next Slide"><ChevronRight size={32} /></button>
             <div className="w-px h-10 bg-white/10 mx-4 hidden md:block"></div>
             <button onClick={() => setSkipFinancials(!skipFinancials)} className={`w-12 h-12 rounded-full flex items-center justify-center transition-all ${skipFinancials ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/30' : 'hover:bg-white/10 text-slate-400'}`} title={skipFinancials ? "Showing Audience Mode (Privacy ON)" : "Showing Enterprise Mode (Privacy OFF)"}>{skipFinancials ? <EyeOff size={24} /> : <Eye size={24} />}</button>
-            <button onClick={toggleFullScreen} className="w-12 h-12 rounded-full flex items-center justify-center hover:bg-white/10 text-slate-400 hover:text-white transition-all ml-2">{isFullscreen ? <Minimize size={24} /> : <Maximize size={24} />}</button>
-            <button onClick={() => navigate('/')} className="w-12 h-12 rounded-full flex items-center justify-center hover:bg-red-500/20 text-red-400 hover:text-red-500 transition-all ml-2"><X size={24} /></button>
+            <button onClick={toggleFullScreen} className="w-12 h-12 rounded-full flex items-center justify-center hover:bg-white/10 text-slate-400 hover:text-white transition-all ml-2" title={isFullscreen ? "Exit Fullscreen" : "Enter Fullscreen"}>{isFullscreen ? <Minimize size={24} /> : <Maximize size={24} />}</button>
+            <button onClick={() => navigate('/')} className="w-12 h-12 rounded-full flex items-center justify-center hover:bg-red-500/20 text-red-400 hover:text-red-500 transition-all ml-2" title="Close Presentation"><X size={24} /></button>
         </div>
-        <div className="fixed top-0 left-0 h-1.5 bg-gradient-to-r from-yellow-500 via-orange-500 to-red-500 transition-all duration-700 ease-in-out z-[110] shadow-[0_0_15px_rgba(245,158,11,0.4)]" style={{ width: `${((currentSlide + 1) / slides.length) * 100}%` }}></div>
+        <div className="presentation-progress-bar fixed top-0 left-0 h-1.5 bg-gradient-to-r from-yellow-500 via-orange-500 to-red-500 transition-all duration-700 ease-in-out z-[110] shadow-[0_0_15px_rgba(245,158,11,0.4)]"></div>
     </div>
   );
 };

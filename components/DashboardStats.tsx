@@ -54,8 +54,8 @@ const DashboardStats: React.FC<DashboardStatsProps> = memo(({ bookings, requirem
   let asoCompliant = 0;
   let asoMissing = 0;
   
-  // Dynamically initialize stats from racDefinitions instead of hardcoded RAC_KEYS
-  const racCodes = racDefinitions.map(d => d.code.toUpperCase());
+  // Dynamically initialize stats from unique racDefinitions codes instead of hardcoded RAC_KEYS
+  const racCodes = Array.from(new Set(racDefinitions.map(d => d.code.toUpperCase())));
   const racComplianceStats: Record<string, { required: number, compliant: number, missing: number }> = {};
   racCodes.forEach(code => racComplianceStats[code] = { required: 0, compliant: 0, missing: 0 });
 
@@ -201,12 +201,15 @@ const DashboardStats: React.FC<DashboardStatsProps> = memo(({ bookings, requirem
           <h3 className="text-lg font-bold text-slate-800 dark:text-white mb-4">{t.dashboard.charts.complianceTitle}</h3>
           <div className="flex-1 w-full min-h-[300px] min-w-0">
             <ResponsiveContainer width="100%" height="100%">
-          <BarChart data={racStackData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+              <BarChart data={racStackData} margin={{ top: 20, right: 30, left: 20, bottom: 25 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
                 <XAxis 
                     dataKey="name" 
                     interval={0} 
-                    tick={{ fill: '#64748b', fontSize: 10, fontWeight: 700 }} 
+                    tick={{ fill: '#64748b', fontSize: 8, fontWeight: 700 }} 
+                    angle={-45}
+                    textAnchor="end"
+                    height={45}
                     axisLine={{ stroke: '#cbd5e1' }} 
                     tickLine={false} 
                 />

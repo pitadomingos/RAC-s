@@ -323,7 +323,7 @@ const DatabasePage: React.FC<DatabasePageProps> = ({ employees = [], bookings, r
                                 <div className="flex justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                                     <button aria-label="View QR code" onClick={() => setQrEmployee(emp)} className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-xl transition-all" title="View Verification QR"><QrCode size={18}/></button>
                                     <button aria-label="Edit employee" onClick={() => setEditingEmployee(emp)} className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded-xl transition-all" title="Edit Employee"><Edit size={18}/></button>
-                                    <button aria-label="Delete employee" onClick={() => setConfirmState({ isOpen: true, title: 'Delete Employee', message: `Permanently remove ${emp.name} (${emp.recordId}) from the registry? This cannot be undone.`, isDestructive: true, onConfirm: () => { onDeleteEmployee(emp.id); setConfirmState(s => ({ ...s, isOpen: false })); } })} className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-900/20 rounded-xl transition-all" title="Delete Employee"><Trash2 size={18}/></button>
+                                    <button aria-label="Delete employee" onClick={() => setConfirmState({ isOpen: true, title: t.database.deleteEmployee, message: t.database.deleteEmployeeConfirm.replace('{name}', emp.name).replace('{recordId}', emp.recordId), isDestructive: true, onConfirm: () => { onDeleteEmployee(emp.id); setConfirmState(s => ({ ...s, isOpen: false })); } })} className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-900/20 rounded-xl transition-all" title="Delete Employee"><Trash2 size={18}/></button>
                                 </div>
                             </td>
                         </tr>
@@ -369,7 +369,9 @@ const DatabasePage: React.FC<DatabasePageProps> = ({ employees = [], bookings, r
             title={confirmState.title}
             message={confirmState.message}
             onConfirm={confirmState.onConfirm}
-            onCancel={() => setConfirmState(s => ({ ...s, isOpen: false }))}
+            onClose={() => setConfirmState(s => ({ ...s, isOpen: false }))}
+            confirmText={confirmState.isDestructive ? t.common.delete : t.common.confirm}
+            cancelText={t.common.cancel}
             isDestructive={confirmState.isDestructive}
         />
 
