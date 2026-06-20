@@ -27,6 +27,8 @@ import {
   DataConnector,
   SystemNotification,
   RacDef,
+  RecruitmentStatus,
+  RecruitmentProcess
 } from './types';
 
 // ─── Helpers ────────────────────────────────────────────────
@@ -553,3 +555,121 @@ export const DEMO_COMPANY_COMPLIANCE = [
   { company: 'Escopil Engineering', employees: 3, compliance: 88 },
   { company: 'Jachris Services', employees: 3, compliance: 80 },
 ];
+
+export const DEMO_RECRUITMENT_PROCESSES: RecruitmentProcess[] = [
+  {
+    id: 'rp-1',
+    candidateName: 'Mateus Nhaca',
+    candidateEmail: 'mateus.nhaca@gmail.com',
+    candidatePhone: '+258 84 883 9102',
+    company: 'Vulcan Resources Mozambique',
+    department: 'Mine Operations',
+    role: 'Haul Truck Operator',
+    requiredRacs: ['RAC02', 'RAC11'],
+    status: RecruitmentStatus.AM_REQUESTED,
+    requestedBy: 'Hélio Tembe',
+    requestedAt: new Date(Date.now() - 3600000 * 2).toISOString(),
+    documents: [],
+    nudgeCount: 0
+  },
+  {
+    id: 'rp-2',
+    candidateName: 'Joana Mabunda',
+    candidateEmail: 'joana.mabunda@outlook.com',
+    candidatePhone: '+258 82 402 9384',
+    company: 'Vulcan Resources Mozambique',
+    department: 'Plant Maintenance',
+    role: 'Electrician',
+    requiredRacs: ['RAC01', 'RAC08'],
+    status: RecruitmentStatus.SECURITY_PENDING,
+    requestedBy: 'Grace Matsinhe',
+    requestedAt: new Date(Date.now() - 3600000 * 24).toISOString(),
+    documents: [
+      { name: 'joana_id.pdf', type: 'ID', uploadedAt: new Date(Date.now() - 3600000 * 22).toISOString(), fileSize: '1.2 MB', status: 'Verified' },
+      { name: 'joana_passport.pdf', type: 'Passport', uploadedAt: new Date(Date.now() - 3600000 * 22).toISOString(), fileSize: '3.4 MB', status: 'Verified' }
+    ],
+    nudgeCount: 1,
+    lastNudgeAt: new Date(Date.now() - 3600000 * 2).toISOString()
+  },
+  {
+    id: 'rp-3',
+    candidateName: 'Afonso Macamo',
+    candidateEmail: 'afonso.macamo@gmail.com',
+    candidatePhone: '+258 85 554 0092',
+    company: 'Mota-Engil Africa',
+    department: 'Mine Operations',
+    role: 'Operator',
+    requiredRacs: ['RAC01', 'RAC02', 'RAC11'],
+    status: RecruitmentStatus.CLINIC_PENDING,
+    requestedBy: 'Domingos Guambe',
+    requestedAt: new Date(Date.now() - 3600000 * 48).toISOString(),
+    documents: [
+      { name: 'afonso_passport.pdf', type: 'Passport', uploadedAt: new Date(Date.now() - 3600000 * 46).toISOString(), fileSize: '2.8 MB', status: 'Verified' },
+      { name: 'afonso_work_permit.pdf', type: 'Work Permit', uploadedAt: new Date(Date.now() - 3600000 * 45).toISOString(), fileSize: '1.5 MB', status: 'Verified' }
+    ],
+    temporaryBadgeNumber: 'TEMP-ACCESS-8830',
+    nudgeCount: 0
+  },
+  {
+    id: 'rp-4',
+    candidateName: 'Beatriz Langa',
+    candidateEmail: 'beatriz.langa@yahoo.com',
+    candidatePhone: '+258 84 100 2938',
+    company: 'Vulcan Resources Mozambique',
+    department: 'HSE',
+    role: 'Safety Officer',
+    requiredRacs: ['RAC01', 'RAC05', 'PTS', 'ART'],
+    status: RecruitmentStatus.TRAINING_PENDING,
+    requestedBy: 'Carlos Macuácua',
+    requestedAt: new Date(Date.now() - 3600000 * 96).toISOString(),
+    documents: [
+      { name: 'beatriz_id.pdf', type: 'ID', uploadedAt: new Date(Date.now() - 3600000 * 94).toISOString(), fileSize: '1.1 MB', status: 'Verified' }
+    ],
+    temporaryBadgeNumber: 'TEMP-ACCESS-4029',
+    medicalExam: {
+      bloodPressure: '120/80',
+      heartRate: 72,
+      visionTest: 'Pass',
+      drugScreen: 'Negative',
+      fitForWork: true,
+      checkedAt: new Date(Date.now() - 3600000 * 90).toISOString(),
+      comments: 'Vitals excellent. Fit for active duties.'
+    },
+    inductionDate: new Date(Date.now() - 3600000 * 80).toISOString(),
+    inductionConfirmed: true,
+    nudgeCount: 0
+  },
+  {
+    id: 'rp-5',
+    candidateName: 'Filipe Mapande',
+    candidateEmail: 'filipe.mapande@gmail.com',
+    candidatePhone: '+258 84 990 0011',
+    company: 'Belabel Logistics',
+    department: 'Logistics',
+    role: 'Driver',
+    requiredRacs: ['RAC02', 'RAC11'],
+    status: RecruitmentStatus.COMPLETED,
+    requestedBy: 'Hélio Tembe',
+    requestedAt: new Date(Date.now() - 3600000 * 120).toISOString(),
+    documents: [
+      { name: 'filipe_id.pdf', type: 'ID', uploadedAt: new Date(Date.now() - 3600000 * 118).toISOString(), fileSize: '1.4 MB', status: 'Verified' }
+    ],
+    temporaryBadgeNumber: 'TEMP-ACCESS-2940',
+    medicalExam: {
+      bloodPressure: '118/75',
+      heartRate: 68,
+      visionTest: 'Pass',
+      drugScreen: 'Negative',
+      fitForWork: true,
+      checkedAt: new Date(Date.now() - 3600000 * 115).toISOString(),
+      comments: 'Fit for heavy machinery driving operations.'
+    },
+    inductionDate: new Date(Date.now() - 3600000 * 110).toISOString(),
+    inductionConfirmed: true,
+    trainingCompletedAt: new Date(Date.now() - 3600000 * 10).toISOString(),
+    nudgeCount: 0,
+    employeeId: 'emp-filipe-mapande',
+    recordId: 'VUL-NEW-2940'
+  }
+];
+

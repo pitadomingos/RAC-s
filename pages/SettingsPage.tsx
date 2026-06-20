@@ -16,6 +16,7 @@ import ConfirmModal from '../components/ConfirmModal';
 import RacIcon from '../components/RacIcon';
 import { db } from '../services/databaseService';
 import { useAuth } from '../contexts/AuthContext';
+import { isCompanyDescendant, isAlcoholFeatureEnabled } from '../utils/companyUtils';
 
 interface SettingsPageProps {
     racDefinitions: RacDef[];
@@ -510,7 +511,8 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
             <div className="space-y-4 animate-fade-in-up">
                 {companies.map(c => {
                     const parent = companies.find(p => p.id === c.parentId);
-                    const isAlcoholEnabled = !!c.features?.alcohol;
+                    const isAlcoholInherited = c.parentId ? isAlcoholFeatureEnabled(c.parentId, companies) : false;
+                    const isAlcoholEnabled = !!c.features?.alcohol || isAlcoholInherited;
                     return (
                         <div key={c.id} className="bg-white dark:bg-slate-800 p-6 rounded-[2.5rem] border border-slate-100 dark:border-slate-700 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4 group hover:border-blue-500/50 transition-all">
                             <div className="flex items-center gap-6">
@@ -535,17 +537,19 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
                                     <div className="flex flex-col text-left">
                                         <span className="text-[10px] font-black uppercase text-slate-400 tracking-wider">{t.settings.breathalyzer}</span>
                                         <span className={`text-xs font-bold ${isAlcoholEnabled ? 'text-emerald-500' : 'text-slate-400'}`}>
-                                            {isAlcoholEnabled ? t.settings.enabled : t.settings.disabled}
+                                            {isAlcoholEnabled ? (isAlcoholInherited ? 'Enabled (Inherited)' : t.settings.enabled) : t.settings.disabled}
                                         </span>
                                     </div>
                                     <button 
                                         onClick={() => {
+                                            if (isAlcoholInherited) return;
                                             if (!onUpdateCompanies) return;
+                                            const originalStatus = !!c.features?.alcohol;
                                             const updated = companies.map(cmp => cmp.id === c.id ? {
                                                 ...cmp,
                                                 features: {
                                                     ...cmp.features,
-                                                    alcohol: !isAlcoholEnabled
+                                                    alcohol: !originalStatus
                                                 }
                                             } : cmp);
                                             onUpdateCompanies(updated);
@@ -553,14 +557,15 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
                                                 id: uuidv4(),
                                                 type: 'success',
                                                 title: t.settings.featureUpdated,
-                                                message: (!isAlcoholEnabled ? t.settings.featureEnabledMsg : t.settings.featureDisabledMsg).replace('{name}', c.name),
+                                                message: (!originalStatus ? t.settings.featureEnabledMsg : t.settings.featureDisabledMsg).replace('{name}', c.name),
                                                 timestamp: new Date(),
                                                 isRead: false
                                             });
                                         }}
-                                        className={`p-1 rounded-full transition-all ml-2 ${isAlcoholEnabled ? 'text-emerald-500 hover:bg-emerald-500/10' : 'text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'}`}
-                                        title={isAlcoholEnabled ? 'Deactivate Breathalyzer' : 'Activate Breathalyzer'}
+                                        className={`p-1 rounded-full transition-all ml-2 ${isAlcoholEnabled ? 'text-emerald-500 hover:bg-emerald-500/10' : 'text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'} ${isAlcoholInherited ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                        title={isAlcoholInherited ? 'Inherited from parent company' : (isAlcoholEnabled ? 'Deactivate Breathalyzer' : 'Activate Breathalyzer')}
                                         aria-label="Toggle Breathalyzer Feature"
+                                        disabled={isAlcoholInherited}
                                     >
                                         {isAlcoholEnabled ? <ToggleRight size={28} /> : <ToggleLeft size={28} />}
                                     </button>
@@ -669,7 +674,7 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
                                     </select>
                                     <select className="w-full bg-slate-50 dark:bg-slate-900 border-2 border-slate-100 dark:border-slate-700 rounded-xl p-4 font-bold" value={newCompany.parentId || ''} onChange={e => setNewCompany({...newCompany, parentId: e.target.value || undefined})} title="Parent Company" aria-label="Parent Company">
                                         <option value="">Main Contractor (None)</option>
-                                        {companies.filter(c => !c.parentId).map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                                        {companies.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
                                     </select>
                                 </div>
                                 <div className="flex items-center gap-3 p-4 bg-slate-50 dark:bg-slate-900 border-2 border-slate-100 dark:border-slate-700 rounded-xl">

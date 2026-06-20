@@ -1,5 +1,6 @@
 import React, { useMemo, useState } from 'react';
-import { Site, Booking, EmployeeRequirement, BookingStatus, UserRole } from '../types';
+import { Site, Booking, EmployeeRequirement, BookingStatus, UserRole, Company } from '../types';
+import { isCompanyDescendant } from '../utils/companyUtils';
 import { 
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, 
   Cell, PieChart, Pie, Legend
@@ -19,9 +20,10 @@ interface EnterpriseDashboardProps {
   bookings: Booking[];
   requirements: EmployeeRequirement[];
   userRole?: UserRole;
+  companies?: Company[];
 }
 
-const EnterpriseDashboard: React.FC<EnterpriseDashboardProps> = ({ sites, bookings, requirements, userRole }) => {
+const EnterpriseDashboard: React.FC<EnterpriseDashboardProps> = ({ sites, bookings, requirements, userRole, companies = [] }) => {
   const { language, t } = useLanguage();
   
   // --- Filters State ---
@@ -33,14 +35,17 @@ const EnterpriseDashboard: React.FC<EnterpriseDashboardProps> = ({ sites, bookin
   const [isGenerating, setIsGenerating] = useState(false);
   const [aiReport, setAiReport] = useState<string | null>(null);
 
-  // Fix: Compute available companies dynamically from the actual data since constant is missing
+  // Fix: Compute available companies dynamically or from the companies list
   const availableCompanies = useMemo(() => {
+      if (companies && companies.length > 0) {
+          return companies.map(c => c.name).sort();
+      }
       const comps = new Set<string>();
       bookings.forEach(b => {
           if (b.employee.company) comps.add(b.employee.company);
       });
       return Array.from(comps).sort();
-  }, [bookings]);
+  }, [bookings, companies]);
 
   // --- FILTERING LOGIC ---
   // 1. Get filtered employees (unique) based on criteria
@@ -53,7 +58,13 @@ const EnterpriseDashboard: React.FC<EnterpriseDashboardProps> = ({ sites, bookin
           const eSiteId = b.employee.siteId || 's1';
           
           const matchesSite = selectedSiteId === 'All' || eSiteId === selectedSiteId;
-          const matchesComp = selectedCompany === 'All' || b.employee.company === selectedCompany;
+          
+          const companyObj = companies.find(c => c.name === b.employee.company);
+          const parentFilterObj = companies.find(c => c.name === selectedCompany);
+          const matchesComp = selectedCompany === 'All' || 
+                              b.employee.company === selectedCompany || 
+                              (companyObj && parentFilterObj && isCompanyDescendant(companyObj.id, parentFilterObj.id, companies));
+                              
           const matchesDept = selectedDept === 'All' || b.employee.department === selectedDept;
 
           if (matchesSite && matchesComp && matchesDept) {
@@ -68,7 +79,7 @@ const EnterpriseDashboard: React.FC<EnterpriseDashboardProps> = ({ sites, bookin
           }
       });
       return Array.from(empMap.values());
-  }, [bookings, selectedSiteId, selectedCompany, selectedDept]);
+  }, [bookings, selectedSiteId, selectedCompany, selectedDept, companies]);
 
   // 2. Calculate Compliance for Filtered Set
   const complianceStats = useMemo(() => {

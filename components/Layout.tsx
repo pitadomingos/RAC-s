@@ -54,6 +54,7 @@ import { useLanguage } from '../contexts/LanguageContext';
 import { useTheme } from '../contexts/ThemeContext';
 import { useAuth } from '../contexts/AuthContext';
 import { isSupabaseConfigured } from '../services/supabaseClient';
+import { isAlcoholFeatureEnabled } from '../utils/companyUtils';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -69,6 +70,8 @@ interface LayoutProps {
   simulatedDept?: string;
   setSimulatedDept?: (dept: string) => void;
   companies?: Company[]; 
+  activeModule?: 'mobilization' | 'training' | null;
+  onSwitchModule?: (module: 'mobilization' | 'training' | null) => void;
 }
 
 const Layout: React.FC<LayoutProps> = ({ 
@@ -84,7 +87,9 @@ const Layout: React.FC<LayoutProps> = ({
   setSimulatedJobTitle = (_t: string) => {},
   simulatedDept = 'Operations',
   setSimulatedDept = (_d: string) => {},
-  companies = []
+  companies = [],
+  activeModule = null,
+  onSwitchModule
 }) => {
   const [isSidebarOpen, setSidebarOpen] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(false);
@@ -108,7 +113,7 @@ const Layout: React.FC<LayoutProps> = ({
 
   const canViewAlcoholDashboard = (): boolean => {
       if (userRole === UserRole.SYSTEM_ADMIN) return true;
-      const isFeatureEnabled = !!currentCompany?.features?.alcohol;
+      const isFeatureEnabled = currentCompany ? isAlcoholFeatureEnabled(currentCompany.id, companies) : false;
       if (!isFeatureEnabled) return false;
       if (userRole === UserRole.ENTERPRISE_ADMIN) return true;
       const allowedTitles = ['Manager', 'Supervisor', 'Superintendent', 'Director', 'Head'];
@@ -141,7 +146,11 @@ const Layout: React.FC<LayoutProps> = ({
       }
   };
 
-  const allNavItems = [
+  const allNavItems = activeModule === 'mobilization' ? [
+    { path: '/recruitment', label: 'Mobilization Flow', icon: Users, visible: true },
+    { path: '/messages', label: t.nav.communications, icon: Send, visible: true },
+    { path: '/manuals', label: t.nav.manuals, icon: BookOpen, visible: true },
+  ] : [
     { path: '/presentation', label: t.nav.presentation, icon: Rocket, visible: userRole === UserRole.SYSTEM_ADMIN },
     { path: '/system-blueprint', label: 'System Blueprint', icon: Compass, visible: userRole === UserRole.SYSTEM_ADMIN },
     { path: '/', label: t.nav.dashboard, icon: LayoutDashboard, visible: ![UserRole.USER, UserRole.RAC_TRAINER].includes(userRole) },
@@ -212,7 +221,16 @@ const Layout: React.FC<LayoutProps> = ({
           })}
         </nav>
 
-        <div className="w-full p-4 border-t border-slate-700 dark:border-slate-800 bg-slate-900 dark:bg-slate-950">
+        <div className="w-full p-4 border-t border-slate-700 dark:border-slate-800 bg-slate-900 dark:bg-slate-950 space-y-3">
+            {activeModule && (
+              <button 
+                onClick={() => onSwitchModule && onSwitchModule(null)}
+                className="w-full flex items-center justify-center gap-2 bg-indigo-600/15 hover:bg-indigo-600 border border-indigo-500/20 hover:border-indigo-500 text-indigo-400 hover:text-white text-xs font-black uppercase tracking-widest py-3 px-4 rounded-xl transition-all shadow-md active:scale-95"
+              >
+                <Compass size={16} />
+                {!isCollapsed && <span>Switch Module</span>}
+              </button>
+            )}
             <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-xl bg-slate-800 border border-slate-700 flex items-center justify-center text-yellow-500 font-black">{user?.name.charAt(0) || 'U'}</div>
                 {!isCollapsed && (
@@ -251,9 +269,15 @@ const Layout: React.FC<LayoutProps> = ({
 
              <div className="flex items-center gap-3">
                 <h1 className="text-xl font-bold text-slate-800 dark:text-white truncate">{pageTitle}</h1>
-                <div className={`flex items-center gap-1.5 px-2 py-0.5 rounded-full border text-[10px] font-black uppercase tracking-widest ${isSupabaseConfigured ? 'bg-emerald-50 text-emerald-600 border-emerald-200 animate-pulse' : 'bg-orange-50 text-orange-600 border-orange-200'}`}>
-                    {isSupabaseConfigured ? <Cloud size={12} /> : <CloudOff size={12} />}
-                    {isSupabaseConfigured ? 'Live Cloud' : 'Local Mock'}
+                <div className={`flex items-center gap-1.5 px-2 py-0.5 rounded-full border text-[10px] font-black uppercase tracking-widest ${
+                  activeModule === 'mobilization' 
+                  ? 'bg-indigo-50 text-indigo-600 border-indigo-200' 
+                  : isSupabaseConfigured 
+                  ? 'bg-emerald-50 text-emerald-600 border-emerald-200 animate-pulse' 
+                  : 'bg-orange-50 text-orange-600 border-orange-200'
+                }`}>
+                    {activeModule === 'mobilization' ? <Users size={12} /> : isSupabaseConfigured ? <Cloud size={12} /> : <CloudOff size={12} />}
+                    {activeModule === 'mobilization' ? 'Mobilization' : isSupabaseConfigured ? 'Live Cloud' : 'Local Mock'}
                 </div>
              </div>
           </div>

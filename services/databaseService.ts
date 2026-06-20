@@ -29,6 +29,75 @@ const saveLocalStorageJson = (key: string, val: any) => {
     try {
         if (typeof window !== 'undefined') {
             localStorage.setItem(key, JSON.stringify(val));
+            // Ensure bookings have employeeId populated for mobile app compatibility
+            const mappedBookings = FALLBACK_BOOKINGS.map(b => ({
+                ...b,
+                employeeId: (b as any).employeeId || b.employee?.id
+            }));
+            
+            // Map structured requirements back to server's flat requirements format
+            const today = new Date().toISOString().split('T')[0];
+            const flatRequirements: any[] = [];
+            FALLBACK_REQUIREMENTS.forEach(r => {
+                const trueRacs = Object.entries(r.requiredRacs || {})
+                    .filter(([_, val]) => val === true)
+                    .map(([k]) => k);
+                
+                const isAsoValid = !!(r.asoExpiryDate && r.asoExpiryDate >= today);
+                
+                if (trueRacs.length === 0) {
+                    flatRequirements.push({
+                        id: `req-aso-${r.employeeId}`,
+                        employeeId: r.employeeId,
+                        racCode: '',
+                        status: 'Valid',
+                        expiryDate: '',
+                        medicalStatus: isAsoValid ? 'Valid' : 'Expired',
+                        medicalExpiry: r.asoExpiryDate || ''
+                    });
+                } else {
+                    trueRacs.forEach(code => {
+                        // Determine RAC validity based on booking history
+                        const bookingsForEmp = FALLBACK_BOOKINGS.filter(b => ((b as any).employeeId || b.employee?.id) === r.employeeId);
+                        const passedBooking = bookingsForEmp.find(b => {
+                            if ((b.status as any) === 'Passed' || (b.status as any) === BookingStatus.PASSED) {
+                                const sess = FALLBACK_SESSIONS.find(s => s.id === b.sessionId);
+                                const bRacCode = sess?.racType?.split(' - ')[0] || b.sessionId?.split('-')[0] || '';
+                                return bRacCode.toUpperCase() === code.toUpperCase();
+                            }
+                            return false;
+                        });
+                        const isRacValid = !!(passedBooking && passedBooking.expiryDate && passedBooking.expiryDate >= today);
+                        
+                        flatRequirements.push({
+                            id: `req-${r.employeeId}-${code}`,
+                            employeeId: r.employeeId,
+                            racCode: code,
+                            status: isRacValid ? 'Valid' : 'Expired',
+                            expiryDate: passedBooking?.expiryDate || '2026-05-10',
+                            medicalStatus: isAsoValid ? 'Valid' : 'Expired',
+                            medicalExpiry: r.asoExpiryDate || ''
+                        });
+                    });
+                }
+            });
+
+            // Synchronize with shared Node server
+            fetch('http://localhost:5000/api/save', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    companies: FALLBACK_COMPANIES,
+                    sites: FALLBACK_SITES,
+                    employees: FALLBACK_EMPLOYEES,
+                    bookings: mappedBookings,
+                    sessions: FALLBACK_SESSIONS,
+                    requirements: flatRequirements,
+                    rooms: FALLBACK_ROOMS,
+                    trainers: FALLBACK_TRAINERS,
+                    users: FALLBACK_USERS
+                })
+            }).catch(() => {});
         }
     } catch (e) {
         console.error("Failed to save to localStorage", e);
@@ -80,6 +149,109 @@ export const isUUID = (str: string | undefined): boolean => {
 };
 
 export const db = {
+    async syncFromLocalServer() {
+        try {
+            const res = await fetch('http://localhost:5000/api/db');
+            if (res.ok) {
+                const data = await res.json();
+                if (data.companies) {
+                    FALLBACK_COMPANIES = data.companies;
+                    localStorage.setItem('fallback_companies', JSON.stringify(FALLBACK_COMPANIES));
+                }
+                if (data.sites) {
+                    FALLBACK_SITES = data.sites;
+                    localStorage.setItem('fallback_sites', JSON.stringify(FALLBACK_SITES));
+                }
+                if (data.employees) {
+                    FALLBACK_EMPLOYEES = data.employees;
+                    localStorage.setItem('fallback_employees', JSON.stringify(FALLBACK_EMPLOYEES));
+                }
+                if (data.bookings) {
+                    // Populate employee object and ensure sessionId / employeeId are mapped correctly
+                    FALLBACK_BOOKINGS = data.bookings.map((b: any) => {
+                        const empId = b.employeeId || b.employee?.id || 'emp-paulo';
+                        const empObj = (data.employees || []).find((e: any) => e.id === empId) || FALLBACK_EMPLOYEES.find((e: any) => e.id === empId) || {
+                            id: empId,
+                            recordId: 'VUL-UNKNOWN',
+                            name: 'Unknown Employee',
+                            company: 'Vulcan Resources Mozambique',
+                            department: 'HSE',
+                            role: 'Operator'
+                        };
+                        return {
+                            ...b,
+                            employeeId: empId,
+                            employee: b.employee || empObj,
+                            sessionId: b.sessionId || 'sess-1'
+                        };
+                    });
+                    localStorage.setItem('fallback_bookings', JSON.stringify(FALLBACK_BOOKINGS));
+                }
+                if (data.sessions) {
+                    FALLBACK_SESSIONS = data.sessions.map((s: any) => {
+                        const racCode = s.racCode || s.rac_code || s.racType?.split(' - ')[0] || 'RAC01';
+                        const racDef = FALLBACK_RAC_DEFS.find(r => r.code === racCode);
+                        const racType = s.racType || (racDef ? `${racCode} - ${racDef.name}` : `${racCode} - Safety Module`);
+                        return {
+                            ...s,
+                            racCode,
+                            racType,
+                            startTime: s.startTime || s.start_time || '09:00',
+                            sessionLanguage: s.sessionLanguage || s.session_language || 'English',
+                            siteId: s.siteId || s.site_id || 's-moatize'
+                        };
+                    });
+                    localStorage.setItem('fallback_sessions', JSON.stringify(FALLBACK_SESSIONS));
+                }
+                if (data.requirements) {
+                    // Map flat server requirements back to client EmployeeRequirement[] format
+                    const reqMap = new Map<string, { employeeId: string, asoExpiryDate: string, requiredRacs: Record<string, boolean> }>();
+                    
+                    data.requirements.forEach((r: any) => {
+                        const empId = r.employeeId || r.employee_id;
+                        if (!empId) return;
+                        
+                        if (!reqMap.has(empId)) {
+                            reqMap.set(empId, {
+                                employeeId: empId,
+                                asoExpiryDate: r.medicalExpiry || r.medical_expiry || r.asoExpiryDate || '',
+                                requiredRacs: {}
+                            });
+                        }
+                        
+                        const current = reqMap.get(empId)!;
+                        if (r.racCode || r.rac_code) {
+                            const code = r.racCode || r.rac_code;
+                            current.requiredRacs[code] = true;
+                        }
+                        
+                        const medExp = r.medicalExpiry || r.medical_expiry || r.asoExpiryDate;
+                        if (medExp) {
+                            current.asoExpiryDate = medExp;
+                        }
+                    });
+                    
+                    FALLBACK_REQUIREMENTS = Array.from(reqMap.values());
+                    localStorage.setItem('fallback_requirements', JSON.stringify(FALLBACK_REQUIREMENTS));
+                }
+                if (data.rooms) {
+                    FALLBACK_ROOMS = data.rooms;
+                    localStorage.setItem('fallback_rooms', JSON.stringify(FALLBACK_ROOMS));
+                }
+                if (data.trainers) {
+                    FALLBACK_TRAINERS = data.trainers;
+                    localStorage.setItem('fallback_trainers', JSON.stringify(FALLBACK_TRAINERS));
+                }
+                if (data.users) {
+                    FALLBACK_USERS = data.users;
+                    localStorage.setItem('fallback_users', JSON.stringify(FALLBACK_USERS));
+                }
+            }
+        } catch (e) {
+            // Ignore offline
+        }
+    },
+
     async safeQuery<T>(tableName: string, query: any, fallback: T): Promise<T> {
         if (!isSupabaseConfigured || !supabase) return fallback;
         try {
@@ -420,58 +592,242 @@ export const db = {
     },
 
     async syncExternalData(connectorId: string, rawData: any[], includeModules: boolean = false): Promise<{ added: number, updated: number }> {
-        if (!isSupabaseConfigured || !supabase) {
-            return { added: rawData.length, updated: 0 };
+        // --- 1. AUTO PROVISION COMPANIES AND HIERARCHY ---
+        const existingCompanies = await this.getCompanies();
+        const primeCompany = existingCompanies.find(c => 
+            c.name.toLowerCase() === 'vulcan' || 
+            c.name.toLowerCase() === 'vulcan resources mozambique' || 
+            c.id === 'c1' || 
+            c.tier === 'Prime' || 
+            !c.parentId
+        );
+        const primeCompanyId = primeCompany?.id || 'c1';
+
+        // Extract all unique company names from rawData
+        const rawCompanyNames = Array.from(new Set(rawData.map(item => {
+            if (connectorId === 'sf-hr') return item.company || 'Vulcan';
+            return item.company || 'Unknown';
+        }).filter(Boolean))) as string[];
+
+        // Filter for companies that do not exist yet (case-insensitive)
+        const companiesToCreate = rawCompanyNames.filter(name => {
+            return !existingCompanies.some(c => c.name.toLowerCase() === name.toLowerCase());
+        });
+
+        if (companiesToCreate.length > 0) {
+            // Split into contractors and subcontractors
+            const contractors = companiesToCreate.filter(name => !name.toLowerCase().startsWith('sub-'));
+            const subcontractors = companiesToCreate.filter(name => name.toLowerCase().startsWith('sub-'));
+            
+            const currentCompanies = [...existingCompanies];
+
+            // 1a. Provision Contractors
+            for (const name of contractors) {
+                const newCompany: Company = {
+                    id: uuidv4(),
+                    name: name,
+                    appName: name,
+                    status: 'Active',
+                    defaultLanguage: 'en',
+                    parentId: primeCompanyId,
+                    tier: 'Sub',
+                    features: { alcohol: false }
+                };
+                
+                if (isSupabaseConfigured && supabase) {
+                    await supabase.from('companies').upsert({
+                        id: newCompany.id,
+                        name: newCompany.name,
+                        app_name: newCompany.appName,
+                        status: newCompany.status,
+                        default_language: newCompany.defaultLanguage,
+                        parent_id: newCompany.parentId,
+                        tier: newCompany.tier,
+                        features: newCompany.features
+                    });
+                } else {
+                    FALLBACK_COMPANIES.push(newCompany);
+                }
+                currentCompanies.push(newCompany);
+            }
+
+            if (!isSupabaseConfigured || !supabase) {
+                saveLocalStorageJson('fallback_companies', FALLBACK_COMPANIES);
+            }
+
+            // 1b. Provision Subcontractors
+            for (const name of subcontractors) {
+                // Resolve parent company from the current list (which now contains newly added contractors)
+                const getTokens = (n: string) => {
+                    let clean = n.toLowerCase();
+                    if (clean.startsWith('sub-')) {
+                        clean = clean.substring(4);
+                    } else if (clean.startsWith('sub ')) {
+                        clean = clean.substring(4);
+                    }
+                    return clean
+                        .replace(/[^a-z0-9\s]/g, ' ')
+                        .split(/\s+/)
+                        .filter(t => t.length > 0);
+                };
+
+                const subTokens = getTokens(name);
+                let matchedParent: Company | undefined = undefined;
+
+                if (subTokens.length > 0) {
+                    const firstSubToken = subTokens[0];
+                    const genericWords = new Set(['engineering', 'services', 'logistics', 'construction', 'africa', 'mozambique', 'group', 'ltd', 'co', 'corporation', 'limitada', 'lda', 'sa', 'inc', 'unknown']);
+                    const isFirstTokenGeneric = genericWords.has(firstSubToken);
+
+                    // Try to match the first token of the subcontractor with the first token of a contractor
+                    if (!isFirstTokenGeneric) {
+                        matchedParent = currentCompanies.find(c => {
+                            const cTokens = getTokens(c.name);
+                            return cTokens.length > 0 && cTokens[0] === firstSubToken;
+                        });
+                    }
+
+                    // Fallback to sharing any non-generic token
+                    if (!matchedParent) {
+                        matchedParent = currentCompanies.find(c => {
+                            const cTokens = getTokens(c.name);
+                            return subTokens.some(st => !genericWords.has(st) && cTokens.includes(st));
+                        });
+                    }
+                }
+
+                const parentId = matchedParent ? matchedParent.id : primeCompanyId;
+
+                const newCompany: Company = {
+                    id: uuidv4(),
+                    name: name,
+                    appName: name,
+                    status: 'Active',
+                    defaultLanguage: 'en',
+                    parentId: parentId,
+                    tier: 'Sub',
+                    features: { alcohol: false }
+                };
+
+                if (isSupabaseConfigured && supabase) {
+                    await supabase.from('companies').upsert({
+                        id: newCompany.id,
+                        name: newCompany.name,
+                        app_name: newCompany.appName,
+                        status: newCompany.status,
+                        default_language: newCompany.defaultLanguage,
+                        parent_id: newCompany.parentId,
+                        tier: newCompany.tier,
+                        features: newCompany.features
+                    });
+                } else {
+                    FALLBACK_COMPANIES.push(newCompany);
+                }
+                currentCompanies.push(newCompany);
+            }
+
+            if (!isSupabaseConfigured || !supabase) {
+                saveLocalStorageJson('fallback_companies', FALLBACK_COMPANIES);
+            }
         }
 
+        // --- 2. UPSERT EMPLOYEES AND REQUIREMENTS ---
         let added = 0;
         let updated = 0;
 
         for (const item of rawData) {
+            const companyName = item.company || (connectorId === 'sf-hr' ? 'Vulcan' : 'Unknown');
             const normalizedEmp: Partial<Employee> = {
                 id: uuidv4(),
                 recordId: item.id,
                 name: item.name,
-                company: item.company || (connectorId === 'sf-hr' ? 'Vulcan' : 'Unknown'),
+                company: companyName,
                 department: item.dept || 'Operations',
                 role: item.role || 'Personnel',
                 isActive: true,
                 siteId: 's1'
             };
 
-            const { data: existing } = await supabase
-                .from('employees')
-                .select('id')
-                .eq('record_id', normalizedEmp.recordId)
-                .maybeSingle();
-
-            let targetEmployeeId = '';
-
-            if (existing) {
-                targetEmployeeId = existing.id;
-                const { error } = await supabase.from('employees').update(this.mapEmployeeToDb(normalizedEmp)).eq('id', existing.id);
-                if (!error) updated++;
-            } else {
-                const { data: created, error } = await supabase.from('employees').insert(this.mapEmployeeToDb(normalizedEmp)).select('id').single();
-                if (!error && created) {
-                    targetEmployeeId = created.id;
+            // In mock mode:
+            if (!isSupabaseConfigured || !supabase) {
+                const existingIdx = FALLBACK_EMPLOYEES.findIndex(e => e.recordId === normalizedEmp.recordId);
+                let targetId = '';
+                if (existingIdx >= 0) {
+                    targetId = FALLBACK_EMPLOYEES[existingIdx].id;
+                    FALLBACK_EMPLOYEES[existingIdx] = {
+                        ...FALLBACK_EMPLOYEES[existingIdx],
+                        ...normalizedEmp,
+                        id: targetId // keep existing ID
+                    };
+                    updated++;
+                } else {
+                    targetId = normalizedEmp.id!;
+                    FALLBACK_EMPLOYEES.push(normalizedEmp as Employee);
                     added++;
                 }
-            }
 
-            if (includeModules && targetEmployeeId && item.aso_expiry) {
-                const racMatrix: Record<string, boolean> = {};
-                if (Array.isArray(item.rac_flags)) {
-                    item.rac_flags.forEach((f: string) => racMatrix[f] = true);
+                if (includeModules && item.aso_expiry) {
+                    const racMatrix: Record<string, boolean> = {};
+                    if (Array.isArray(item.rac_flags)) {
+                        item.rac_flags.forEach((f: string) => racMatrix[f] = true);
+                    }
+
+                    const reqPayload: EmployeeRequirement = {
+                        employeeId: targetId,
+                        asoExpiryDate: item.aso_expiry,
+                        requiredRacs: racMatrix
+                    };
+
+                    const existingReqIdx = FALLBACK_REQUIREMENTS.findIndex(r => r.employeeId === targetId);
+                    if (existingReqIdx >= 0) {
+                        FALLBACK_REQUIREMENTS[existingReqIdx] = reqPayload;
+                    } else {
+                        FALLBACK_REQUIREMENTS.push(reqPayload);
+                    }
+                }
+            } else {
+                // Supabase mode:
+                const { data: existing } = await supabase
+                    .from('employees')
+                    .select('id')
+                    .eq('record_id', normalizedEmp.recordId)
+                    .maybeSingle();
+
+                let targetEmployeeId = '';
+
+                if (existing) {
+                    targetEmployeeId = existing.id;
+                    const { error } = await supabase.from('employees').update(this.mapEmployeeToDb(normalizedEmp)).eq('id', existing.id);
+                    if (!error) updated++;
+                } else {
+                    const { data: created, error } = await supabase.from('employees').insert(this.mapEmployeeToDb(normalizedEmp)).select('id').single();
+                    if (!error && created) {
+                        targetEmployeeId = created.id;
+                        added++;
+                    }
                 }
 
-                const requirementPayload = {
-                    employee_id: targetEmployeeId,
-                    aso_expiry_date: item.aso_expiry,
-                    required_racs: racMatrix
-                };
+                if (includeModules && targetEmployeeId && item.aso_expiry) {
+                    const racMatrix: Record<string, boolean> = {};
+                    if (Array.isArray(item.rac_flags)) {
+                        item.rac_flags.forEach((f: string) => racMatrix[f] = true);
+                    }
 
-                await supabase.from('employee_requirements').upsert(requirementPayload);
+                    const requirementPayload = {
+                        employee_id: targetEmployeeId,
+                        aso_expiry_date: item.aso_expiry,
+                        required_racs: racMatrix
+                    };
+
+                    await supabase.from('employee_requirements').upsert(requirementPayload);
+                }
+            }
+        }
+
+        if (!isSupabaseConfigured || !supabase) {
+            saveLocalStorageJson('fallback_employees', FALLBACK_EMPLOYEES);
+            if (includeModules) {
+                saveLocalStorageJson('fallback_requirements', FALLBACK_REQUIREMENTS);
             }
         }
 

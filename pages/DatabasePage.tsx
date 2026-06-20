@@ -12,6 +12,7 @@ import RacIcon from '../components/RacIcon';
 import { parseCsv } from '../utils/csvParser';
 import { db } from '../services/databaseService';
 import { useAuth } from '../contexts/AuthContext';
+import { isCompanyDescendant } from '../utils/companyUtils';
 
 interface DatabasePageProps {
   employees: Employee[];
@@ -93,7 +94,7 @@ const DatabasePage: React.FC<DatabasePageProps> = ({ employees = [], bookings, r
             const companyObj = companies.find(c => c.name === item.emp.company);
             const parentFilterObj = companies.find(c => c.name === selectedCompany);
             if (item.emp.company === selectedCompany) return true;
-            if (companyObj && parentFilterObj && companyObj.parentId === parentFilterObj.id) return true;
+            if (companyObj && parentFilterObj && isCompanyDescendant(companyObj.id, parentFilterObj.id, companies)) return true;
             return false;
         }
 

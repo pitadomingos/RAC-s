@@ -21,7 +21,8 @@ export const RAW_CONTRACTOR_SOURCE = [
     { id: '9006', name: 'Rui Vilanculos', company: 'Belabel', dept: 'Logistics', role: 'Driver', aso_expiry: '2025-04-15', rac_flags: ['RAC02', 'RAC11'] },
     { id: '9007', name: 'Sara Tamele', company: 'Belabel', dept: 'Logistics', role: 'Driver', aso_expiry: '2025-12-10', rac_flags: ['RAC02', 'RAC11'] },
     { id: '9008', name: 'Telma Sambo', company: 'Escopil', dept: 'Plant Maintenance', role: 'Mechanic', aso_expiry: '2025-10-05', rac_flags: ['RAC01', 'RAC03', 'RAC08'] },
-    { id: '9009', name: 'Ursio Raposo', company: 'Escopil', dept: 'Plant Maintenance', role: 'Electrician', aso_expiry: '2025-11-20', rac_flags: ['RAC01', 'RAC08'] }
+    { id: '9009', name: 'Ursio Raposo', company: 'Escopil', dept: 'Plant Maintenance', role: 'Electrician', aso_expiry: '2025-11-20', rac_flags: ['RAC01', 'RAC08'] },
+    { id: '9010', name: 'Test Subcontractor Employee', company: 'Sub-Mota Engineering', dept: 'Mine Operations', role: 'Sub-Contractor Tech', aso_expiry: '2027-12-31', rac_flags: ['RAC01'] }
 ];
 
 export const OPS_KEYS = [

@@ -151,6 +151,9 @@ export class ErrorBoundary extends React.Component<Props, State> {
 
       try {
           sessionStorage.clear();
+          localStorage.removeItem('fallback_requirements');
+          localStorage.removeItem('fallback_sessions');
+          localStorage.removeItem('fallback_bookings');
       } catch(e) { /* ignore */ }
 
       // Fix: Access setState from the inherited React.Component class to transition to the repaired state.

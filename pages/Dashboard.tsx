@@ -63,13 +63,13 @@ const Dashboard: React.FC<DashboardProps> = ({
 
           mappedRacs.forEach((key) => {
               const validBooking = bookings.find(b => {
-                  if (b.employee.id !== emp.id) return false;
+                  if (!b.employee || b.employee.id !== emp.id) return false;
                   if (b.status === BookingStatus.PASSED) {
                       if (!b.expiryDate || b.expiryDate <= today) return false;
                       let bRacCode = '';
                       const s = sessions.find(s => s.id === b.sessionId);
-                      if (s) bRacCode = s.racType.split(' - ')[0].replace(/\s+/g, '').toUpperCase();
-                      else bRacCode = b.sessionId.split('-')[0].replace(/\s+/g, '').toUpperCase();
+                      if (s && s.racType) bRacCode = s.racType.split(' - ')[0].replace(/\s+/g, '').toUpperCase();
+                      else if (b.sessionId) bRacCode = b.sessionId.split('-')[0].replace(/\s+/g, '').toUpperCase();
                       return bRacCode === key.toUpperCase();
                   }
                   return false;
@@ -221,7 +221,7 @@ const Dashboard: React.FC<DashboardProps> = ({
             {upcomingSessions.map((session) => (
                 <div key={session.id} className="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-900/50 rounded-2xl border border-slate-100 dark:border-slate-800 group hover:border-indigo-200 dark:hover:border-indigo-800 transition-all">
                     <div className="flex items-center gap-4">
-                        <RacIcon racCode={session.racType.split(' - ')[0]} size={24} />
+                        <RacIcon racCode={session.racType ? session.racType.split(' - ')[0] : 'RAC01'} size={24} />
                         <div>
                             <div className="text-sm font-bold text-slate-900 dark:text-white group-hover:text-indigo-600 transition-colors">{session.racType}</div>
                             <div className="text-[10px] text-slate-400 font-bold uppercase tracking-widest flex items-center gap-2">

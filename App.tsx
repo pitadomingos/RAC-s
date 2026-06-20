@@ -27,6 +27,8 @@ const ResultsPage = lazy(() => import('./pages/ResultsPage'));
 const SettingsPage = lazy(() => import('./pages/SettingsPage'));
 const AlcoholIntegration = lazy(() => import('./pages/AlcoholIntegration'));
 const EnterpriseDashboard = lazy(() => import('./pages/EnterpriseDashboard'));
+const MobilizationDashboard = lazy(() => import('./pages/MobilizationDashboard'));
+const PortalGateway = lazy(() => import('./pages/PortalGateway'));
 import GeminiAdvisor from './components/GeminiAdvisor';
 import { AdvisorProvider } from './contexts/AdvisorContext';
 import { MessageProvider } from './contexts/MessageContext';
@@ -84,6 +86,25 @@ const AppContent: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [isCloudSyncing, setIsCloudSyncing] = useState(false);
   
+  const [activeModule, setActiveModule] = useState<'mobilization' | 'training' | null>(() => {
+    return localStorage.getItem('cars_active_module') as any || null;
+  });
+
+  const handleSelectModule = (mod: 'mobilization' | 'training' | null) => {
+    setActiveModule(mod);
+    if (mod) {
+        localStorage.setItem('cars_active_module', mod);
+        if (mod === 'mobilization') {
+            window.location.hash = '#/recruitment';
+        } else {
+            window.location.hash = '#/';
+        }
+    } else {
+        localStorage.removeItem('cars_active_module');
+        window.location.hash = '#/';
+    }
+  };
+  
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [requirements, setRequirements] = useState<EmployeeRequirement[]>([]);
   const [sessions, setSessions] = useState<TrainingSession[]>([]);
@@ -101,6 +122,9 @@ const AppContent: React.FC = () => {
 
   const refreshData = async () => {
     try {
+      // Sync from shared local database server first
+      await db.syncFromLocalServer();
+
       const [c, s, sess, b, req, uList, racs, rms, trns, emps] = await Promise.all([
           db.getCompanies(),
           db.getSites(),
@@ -128,6 +152,21 @@ const AppContent: React.FC = () => {
       console.error("Critical refresh failure:", err);
     }
   };
+
+  // Background polling to sync real-time changes from the employee mobile app
+  useEffect(() => {
+      if (!isAuthenticated) return;
+      
+      const interval = setInterval(async () => {
+          try {
+              await refreshData();
+          } catch (e) {
+              // Server offline, ignore
+          }
+      }, 3000); // Poll every 3 seconds
+
+      return () => clearInterval(interval);
+  }, [isAuthenticated]);
 
   useEffect(() => {
       const initApp = async () => {
@@ -420,6 +459,18 @@ const AppContent: React.FC = () => {
       </div>
   );
 
+  if (activeModule === null) {
+      return (
+          <Suspense fallback={
+              <div className="h-screen w-screen bg-slate-950 flex flex-col items-center justify-center text-white">
+                  <Loader2 size={80} className="text-blue-500 animate-spin" />
+              </div>
+          }>
+              <PortalGateway onSelectModule={handleSelectModule} />
+          </Suspense>
+      );
+  }
+
   const missingTables = dbHealth.filter(h => h.status === 'missing');
 
   return (
@@ -446,9 +497,10 @@ const AppContent: React.FC = () => {
               <Route path="/verify/:recordId" element={<VerificationPage bookings={bookings} requirements={requirements} racDefinitions={racDefinitions} sessions={sessions} employees={employees} />} />
               <Route path="/print-cards" element={<CardsPage bookings={bookings} requirements={requirements} racDefinitions={racDefinitions} sessions={sessions} userRole={user?.role} companies={companies} />} />
               <Route path="*" element={
-                <Layout userRole={user?.role || UserRole.USER} setUserRole={() => {}} notifications={notifications} clearNotifications={() => setNotifications([])} sites={sites} currentSiteId={currentSiteId} setCurrentSiteId={setCurrentSiteId} companies={companies}>
+                <Layout userRole={user?.role || UserRole.USER} setUserRole={() => {}} notifications={notifications} clearNotifications={() => setNotifications([])} sites={sites} currentSiteId={currentSiteId} setCurrentSiteId={setCurrentSiteId} companies={companies} activeModule={activeModule} onSwitchModule={handleSelectModule}>
                   <Routes>
                     <Route path="/" element={<RoleBasedHome userRole={user?.role || UserRole.USER} dashboardProps={{ bookings, requirements, sessions, userRole: user?.role, racDefinitions, currentSiteId, companies }} />} />
+                    <Route path="/recruitment" element={<MobilizationDashboard />} />
                     <Route path="/database" element={<DatabasePage employees={employees} bookings={bookings} requirements={requirements} updateRequirements={handleUpdateRequirement} sessions={sessions} onUpdateEmployee={handleUpdateEmployee} onDeleteEmployee={handleDeleteEmployee} racDefinitions={racDefinitions} addNotification={addNotification} currentSiteId={currentSiteId} companies={companies} />} />
                     <Route path="/booking" element={<BookingForm addBookings={handleAddBookings} sessions={sessions} userRole={user?.role || UserRole.USER} existingBookings={bookings} addNotification={addNotification} racDefinitions={racDefinitions} companies={companies} />} />
                     <Route path="/results" element={<ResultsPage bookings={bookings} updateBookingStatus={handleUpdateBookingStatus} importBookings={handleImportBookings} userRole={user?.role || UserRole.USER} sessions={sessions} requirements={requirements} sites={sites} racDefinitions={racDefinitions} addNotification={addNotification} currentSiteId={currentSiteId} onRefresh={refreshData} />} />
@@ -463,7 +515,7 @@ const AppContent: React.FC = () => {
                     <Route path="/request-cards" element={<RequestCardsPage bookings={bookings} requirements={requirements} racDefinitions={racDefinitions} sessions={sessions} userRole={user?.role || UserRole.USER} currentSiteId={currentSiteId} companies={companies} />} />
                     <Route path="/integration" element={<IntegrationHub userRole={user?.role || UserRole.USER} />} />
                     <Route path="/reports" element={<ReportsPage bookings={bookings} sessions={sessions} requirements={requirements} sites={sites} currentSiteId={currentSiteId} racDefinitions={racDefinitions} companies={companies} />} />
-                    <Route path="/enterprise-dashboard" element={<EnterpriseDashboard sites={sites} bookings={bookings} requirements={requirements} userRole={user?.role} racDefinitions={racDefinitions} />} />
+                    <Route path="/enterprise-dashboard" element={<EnterpriseDashboard sites={sites} bookings={bookings} requirements={requirements} userRole={user?.role} racDefinitions={racDefinitions} companies={companies} />} />
                     <Route path="/alcohol-control" element={<AlcoholIntegration addNotification={addNotification} />} />
                     <Route path="/messages" element={<MessageLogPage />} />
                     <Route path="/site-governance" element={<SiteGovernancePage sites={sites} setSites={setSites} racDefinitions={racDefinitions} bookings={bookings} requirements={requirements} updateRequirements={handleUpdateRequirement} />} />

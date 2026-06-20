@@ -212,3 +212,57 @@ export interface SyncResult {
   status: 'Success' | 'Partial' | 'Failed';
   log: string[];
 }
+
+export enum RecruitmentStatus {
+  AM_REQUESTED = 'AM Requested',
+  HR_PENDING = 'HR Pending',
+  SECURITY_PENDING = 'Security Pending',
+  CLINIC_PENDING = 'Clinic Pending',
+  INDUCTION_PENDING = 'Induction Pending',
+  TRAINING_PENDING = 'Training Pending',
+  COMPLETED = 'Completed',
+  RECEIVED = 'Received'
+}
+
+export interface RecruitDocument {
+  name: string;
+  type: 'ID' | 'Passport' | 'Work Permit';
+  uploadedAt: string;
+  fileSize: string;
+  status: 'Pending' | 'Verified' | 'Rejected';
+}
+
+export interface MedicalExam {
+  bloodPressure: string;
+  heartRate: number;
+  visionTest: 'Pass' | 'Fail';
+  drugScreen: 'Negative' | 'Positive';
+  fitForWork: boolean;
+  checkedAt?: string;
+  comments?: string;
+}
+
+export interface RecruitmentProcess {
+  id: string;
+  candidateName: string;
+  candidateEmail: string;
+  candidatePhone: string;
+  company: string;
+  department: string;
+  role: string;
+  requiredRacs: string[];
+  status: RecruitmentStatus;
+  requestedBy: string;
+  requestedAt: string;
+  documents: RecruitDocument[];
+  temporaryBadgeNumber?: string;
+  medicalExam?: MedicalExam;
+  inductionDate?: string;
+  inductionConfirmed?: boolean;
+  trainingCompletedAt?: string;
+  receivedAt?: string;
+  nudgeCount?: number;
+  lastNudgeAt?: string;
+  employeeId?: string;
+  recordId?: string;
+}
