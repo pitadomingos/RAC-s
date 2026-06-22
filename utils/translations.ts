@@ -535,7 +535,7 @@ export const translations = {
                     title: 'Strategic Delivery Models',
                     buyout: {
                         title: '1. Corporate Buyout',
-                        cost: '$22,000.00 One-time',
+                        cost: '$33,000.00 One-time',
                         desc: 'On-premises installation with complete ownership. Covers software, user, and IT team training.',
                         badge: 'CapEx Buyout',
                         features: [
@@ -546,10 +546,10 @@ export const translations = {
                     },
                     managed: {
                         title: '2a. Managed On-Premises',
-                        cost: '$4,000.00 / Month',
+                        cost: '$6,000.00 / Month',
                         desc: 'Runs on corporate servers for absolute data residency. Pita Domingos manages updates & support.',
                         badge: 'Recommended Model',
-                        setup: '$18,000 Setup',
+                        setup: '$27,000 Setup',
                         features: [
                             'Absolute Health Data Residency',
                             'Pita Domingos Handles Maintenance & Updates',
@@ -558,10 +558,10 @@ export const translations = {
                     },
                     saas: {
                         title: '2b. Hosted Cloud SaaS',
-                        cost: '$5,000.00 / Month',
+                        cost: '$7,500.00 / Month',
                         desc: 'Turnkey hosted solution. Pita Domingos manages infrastructure, domain, and data security.',
                         badge: 'Zero IT Strain',
-                        setup: '$18,000 Setup',
+                        setup: '$27,000 Setup',
                         features: [
                             'Zero Infrastructure / IT Overhead',
                             'Managed Security, Domain & Backups',
@@ -603,6 +603,133 @@ export const translations = {
             conclusion: {
                 title: 'The Path Forward',
                 text: 'CARS is not just a training tool; it is an operational safeguard. It ensures that only those who are fit, trained, and authorized can enter the risk zone.'
+            },
+            switcher: {
+                demoSwitcher: 'Demo Switcher',
+                console: 'Presentation Console',
+                activePersona: 'Switch Active Persona',
+                activeProfile: 'Active Profile',
+                guestUser: 'Guest User',
+                noRole: 'No Role',
+                slidesDeck: 'Slides Deck',
+                exitSwitcher: 'Exit Switcher',
+                switchedTo: 'Switched to'
+            },
+            mobilization: {
+                title: 'Mobilization & Onboarding',
+                subtitle: '6-Stage Autonomous Readiness Control System',
+                newRequest: 'New Requisition',
+                fastTrackAll: 'Fast-Track All',
+                resetDemo: 'Reset Demo',
+                pipeline: 'Onboarding Pipeline',
+                allCandidates: 'All Candidates',
+                selectCandidate: 'Select a candidate to manage',
+                stage: 'Stage',
+                of: 'of',
+                requestedBy: 'Requested by',
+                since: 'Since',
+                bottleneck: 'Current Bottleneck',
+                nudgeDept: 'Nudge Department',
+                fastTrack: 'Fast-Track',
+                commsLog: 'Communications Log',
+                tabs: {
+                    AM: 'Area Manager',
+                    HR: 'HR Dept',
+                    Security: 'Security',
+                    Clinic: 'Med Clinic',
+                    Environment: 'Env / HSE'
+                },
+                statuses: {
+                    'AM Requested': 'Requisition Submitted',
+                    'HR Pending': 'HR Verification',
+                    'Security Pending': 'Badge Issuance',
+                    'Clinic Pending': 'Medical Clearance',
+                    'Induction Pending': 'HSE Induction',
+                    'Training Pending': 'RAC Training',
+                    'Completed': 'Certification Ready',
+                    'Received': 'Mobilized'
+                },
+                am: {
+                    title: 'Area Manager Requisition',
+                    subtitle: 'Manage and track all recruitment pipeline requests',
+                    name: 'Full Name',
+                    email: 'Email Address',
+                    phone: 'Phone Number',
+                    company: 'Company',
+                    department: 'Department',
+                    role: 'Job Role',
+                    requiredRacs: 'Required RAC Modules',
+                    submitRequest: 'Submit Recruitment Request',
+                    candidateName: 'Candidate Name',
+                    nudgeCount: 'Nudge Count',
+                    status: 'Status',
+                    requestedAt: 'Requested At'
+                },
+                hr: {
+                    title: 'HR Document Upload & Verification',
+                    subtitle: 'Upload and verify required recruitment documentation',
+                    acceptRequisition: 'Accept Requisition',
+                    nationalId: 'National ID Document',
+                    passport: 'Passport (Copy)',
+                    workPermit: 'Work Permit',
+                    upload: 'Upload',
+                    uploading: 'Uploading...',
+                    verified: 'Verified',
+                    completeHR: 'Complete HR Stage',
+                    documentsRequired: 'Please upload at least one document to proceed.'
+                },
+                security: {
+                    title: 'Security Badge Issuance',
+                    subtitle: 'Issue temporary site access for medical and induction',
+                    badgeNumber: 'Temporary Badge Number',
+                    badgePlaceholder: 'e.g. TEMP-2024-001',
+                    issueBadge: 'Issue Access Badge',
+                    badgeRequired: 'Please enter a Temporary Badge Number.'
+                },
+                clinic: {
+                    title: 'Occupational Health Medical Clearance',
+                    subtitle: 'Record medical examination results for fitness-for-work',
+                    bloodPressure: 'Blood Pressure',
+                    heartRate: 'Heart Rate (BPM)',
+                    visionTest: 'Vision Test',
+                    drugScreen: 'Drug Screen',
+                    fitForWork: 'Fit for Work',
+                    yes: 'Yes',
+                    no: 'No',
+                    pass: 'Pass',
+                    fail: 'Fail',
+                    negative: 'Negative',
+                    positive: 'Positive',
+                    comments: 'Clinical Comments',
+                    commentsPlaceholder: 'Additional medical notes...',
+                    inductionDate: 'HSE Induction Date',
+                    completeClinic: 'Clear for Induction',
+                    inductionRequired: 'Please specify a date for the Safety/Environment Induction.'
+                },
+                environment: {
+                    title: 'HSE Safety Induction Checklist',
+                    subtitle: 'Verify all orientation items before sign-off',
+                    generalSafety: 'General Safety Briefing',
+                    envRules: 'Environmental Awareness',
+                    evacuation: 'Evacuation Procedures',
+                    ppe: 'PPE Issuance & Usage',
+                    confirmInduction: 'Sign Off & Send to CARS Training',
+                    allRequired: 'All safety orientation steps must be verified and checked.'
+                },
+                training: {
+                    title: 'CARS RAC Training Completion',
+                    subtitle: 'Synchronize training certification from CARS system',
+                    requiredRacs: 'Required RAC Modules',
+                    simulateTraining: 'Simulate CARS Training Passed',
+                    confirmReceipt: 'Confirm Employee Receipt',
+                    downloadCertificate: 'Download Certificate',
+                    recordId: 'Record ID'
+                },
+                fastTrackConfirm: 'Fast-track all pending candidates to received status and activate them in CARS database?',
+                fastTrackSuccess: 'Successfully fast-tracked {count} pending candidates through all onboarding, medicals, HSE orientation, and RAC training certifications!',
+                resetConfirm: 'Reset mobilization workflow to demo defaults?',
+                deleteConfirm: 'Remove this candidate from the recruitment pipeline?',
+                confirmReceiptMsg: '{name} is now officially registered, active, and fully authorized in the CARS system!'
             },
             thankYou: {
                 title: 'Thank You',
@@ -961,6 +1088,55 @@ export const translations = {
             integrationScenarioTitle: 'Integration Scenario:',
             integrationScenarioDesc: 'The third software responsible for site turnstiles calls the Verify Personnel endpoint. RACS merges HR data, Medical validity, and Training results to return a single GRANTED or BLOCKED boolean status.',
             rowLevelSecurity: 'Row Level Security (RLS)'
+        },
+        subcontractors: {
+            title: 'Subcontractor Management',
+            subtitle: 'Manage sub-tier suppliers and their compliance status',
+            addSubcontractor: 'Add Subcontractor',
+            editSubcontractor: 'Edit Subcontractor',
+            deleteSubcontractor: 'Delete Subcontractor',
+            confirmDelete: 'Are you sure you want to remove this subcontractor?',
+            search: 'Search subcontractors...',
+            noResults: 'No subcontractors found.',
+            table: {
+                company: 'Company Name',
+                mainContractor: 'Main Contractor',
+                contact: 'Contact Person',
+                email: 'Contact Email',
+                phone: 'Phone',
+                status: 'Status',
+                compliance: 'Compliance',
+                employees: 'Employees',
+                actions: 'Actions'
+            },
+            modal: {
+                companyName: 'Company Name',
+                companyNamePlaceholder: 'e.g. Mota Engil Mozambique',
+                mainContractor: 'Main Contractor (Parent)',
+                selectParent: 'Select parent company...',
+                contactPerson: 'Contact Person',
+                contactPlaceholder: 'e.g. João Silva',
+                email: 'Email',
+                emailPlaceholder: 'contact@company.com',
+                phone: 'Phone Number',
+                phonePlaceholder: '+258 84 000 0000',
+                status: 'Status',
+                active: 'Active',
+                inactive: 'Inactive',
+                save: 'Save Subcontractor',
+                cancel: 'Cancel'
+            },
+            stats: {
+                total: 'Total Subcontractors',
+                active: 'Active',
+                compliant: 'Fully Compliant',
+                atRisk: 'At Risk'
+            },
+            compliance: {
+                compliant: 'Compliant',
+                atRisk: 'At Risk',
+                nonCompliant: 'Non-Compliant'
+            }
         }
     },
     pt: {
@@ -1486,7 +1662,7 @@ export const translations = {
                     title: 'Modelos Estratégicos de Entrega',
                     buyout: {
                         title: '1. Aquisição Corporativa',
-                        cost: '$22.000,00 Único',
+                        cost: '$33.000,00 Único',
                         desc: 'Instalação local com propriedade total. Inclui software, treinamento de usuários e equipe de TI.',
                         badge: 'Aquisição CapEx',
                         features: [
@@ -1497,10 +1673,10 @@ export const translations = {
                     },
                     managed: {
                         title: '2a. Local Gerenciado',
-                        cost: '$4.000,00 / Mês',
+                        cost: '$6.000,00 / Mês',
                         desc: 'Executado nos servidores corporativos para residência absoluta de dados. Pita Domingoss gerencia atualizações e suporte.',
                         badge: 'Modelo Recomendado',
-                        setup: '$18.000 Configuração',
+                        setup: '$27.000 Configuração',
                         features: [
                             'Residência Absoluta de Dados de Saúde',
                             'Pita Domingos Gere Manutenção e Atualizações',
@@ -1509,10 +1685,10 @@ export const translations = {
                     },
                     saas: {
                         title: '2b. SaaS Cloud Hospedado',
-                        cost: '$5.000,00 / Mês',
+                        cost: '$7.500,00 / Mês',
                         desc: 'Solução hospedada pronta a usar. Pita Domingos gerencia infraestrutura, domínio e segurança de dados.',
                         badge: 'Zero Esforço de TI',
-                        setup: '$18.000 Configuração',
+                        setup: '$27.000 Configuração',
                         features: [
                             'Zero Infraestrutura / Sem Esforço de TI',
                             'Segurança, Domínio e Backups Geridos',
@@ -1554,6 +1730,133 @@ export const translations = {
             conclusion: {
                 title: 'O Caminho em Frente',
                 text: 'O Sistema RACS não é apenas uma ferramenta de treino; é uma salvaguarda operacional. Garante que apenas quem está apto, treinado e autorizado possa entrar na zona de risco.'
+            },
+            switcher: {
+                demoSwitcher: 'Seletor de Demos',
+                console: 'Consola de Apresentação',
+                activePersona: 'Mudar Perfil Ativo',
+                activeProfile: 'Perfil Ativo',
+                guestUser: 'Utilizador Convidado',
+                noRole: 'Sem Função',
+                slidesDeck: 'Diapositivos',
+                exitSwitcher: 'Sair do Seletor',
+                switchedTo: 'Mudado para'
+            },
+            mobilization: {
+                title: 'Mobilização & Integração',
+                subtitle: 'Sistema de Controlo de Prontidão Autónomo de 6 Etapas',
+                newRequest: 'Nova Requisição',
+                fastTrackAll: 'Avançar Todos',
+                resetDemo: 'Repor Demo',
+                pipeline: 'Pipeline de Integração',
+                allCandidates: 'Todos os Candidatos',
+                selectCandidate: 'Selecione um candidato para gerir',
+                stage: 'Etapa',
+                of: 'de',
+                requestedBy: 'Solicitado por',
+                since: 'Desde',
+                bottleneck: 'Gargalo Atual',
+                nudgeDept: 'Notificar Departamento',
+                fastTrack: 'Avançar',
+                commsLog: 'Registo de Comunicações',
+                tabs: {
+                    AM: 'Gestor de Área',
+                    HR: 'Depto RH',
+                    Security: 'Segurança',
+                    Clinic: 'Clínica Médica',
+                    Environment: 'Ambiente / HSE'
+                },
+                statuses: {
+                    'AM Requested': 'Requisição Submetida',
+                    'HR Pending': 'Verificação RH',
+                    'Security Pending': 'Emissão de Crachá',
+                    'Clinic Pending': 'Exame Médico',
+                    'Induction Pending': 'Indução HSE',
+                    'Training Pending': 'Treino RAC',
+                    'Completed': 'Certificação Pronta',
+                    'Received': 'Mobilizado'
+                },
+                am: {
+                    title: 'Requisição do Gestor de Área',
+                    subtitle: 'Gerir e acompanhar todos os pedidos do pipeline de recrutamento',
+                    name: 'Nome Completo',
+                    email: 'Endereço de Email',
+                    phone: 'Número de Telefone',
+                    company: 'Empresa',
+                    department: 'Departamento',
+                    role: 'Função',
+                    requiredRacs: 'Módulos RAC Necessários',
+                    submitRequest: 'Submeter Pedido de Recrutamento',
+                    candidateName: 'Nome do Candidato',
+                    nudgeCount: 'Nº de Lembretes',
+                    status: 'Estado',
+                    requestedAt: 'Data do Pedido'
+                },
+                hr: {
+                    title: 'Carregamento e Verificação de Documentos RH',
+                    subtitle: 'Carregar e verificar a documentação de recrutamento necessária',
+                    acceptRequisition: 'Aceitar Requisição',
+                    nationalId: 'Bilhete de Identidade Nacional',
+                    passport: 'Passaporte (Cópia)',
+                    workPermit: 'Autorização de Trabalho',
+                    upload: 'Carregar',
+                    uploading: 'A carregar...',
+                    verified: 'Verificado',
+                    completeHR: 'Concluir Etapa RH',
+                    documentsRequired: 'Por favor, carregue pelo menos um documento para prosseguir.'
+                },
+                security: {
+                    title: 'Emissão de Crachá de Segurança',
+                    subtitle: 'Emitir acesso temporário ao local para exame médico e indução',
+                    badgeNumber: 'Número de Crachá Temporário',
+                    badgePlaceholder: 'ex: TEMP-2024-001',
+                    issueBadge: 'Emitir Crachá de Acesso',
+                    badgeRequired: 'Por favor, insira um Número de Crachá Temporário.'
+                },
+                clinic: {
+                    title: 'Exame Médico Ocupacional',
+                    subtitle: 'Registar resultados do exame de aptidão para o trabalho',
+                    bloodPressure: 'Pressão Arterial',
+                    heartRate: 'Frequência Cardíaca (BPM)',
+                    visionTest: 'Teste de Visão',
+                    drugScreen: 'Rastreio de Substâncias',
+                    fitForWork: 'Apto para Trabalhar',
+                    yes: 'Sim',
+                    no: 'Não',
+                    pass: 'Aprovado',
+                    fail: 'Reprovado',
+                    negative: 'Negativo',
+                    positive: 'Positivo',
+                    comments: 'Comentários Clínicos',
+                    commentsPlaceholder: 'Notas médicas adicionais...',
+                    inductionDate: 'Data de Indução HSE',
+                    completeClinic: 'Autorizar para Indução',
+                    inductionRequired: 'Por favor, especifique uma data para a Indução de Segurança/Ambiente.'
+                },
+                environment: {
+                    title: 'Lista de Verificação de Indução HSE',
+                    subtitle: 'Verificar todos os itens de orientação antes de assinar',
+                    generalSafety: 'Briefing Geral de Segurança',
+                    envRules: 'Consciência Ambiental',
+                    evacuation: 'Procedimentos de Evacuação',
+                    ppe: 'Emissão e Uso de EPI',
+                    confirmInduction: 'Assinar e Enviar para Treino RACS',
+                    allRequired: 'Todos os passos de orientação de segurança devem ser verificados e confirmados.'
+                },
+                training: {
+                    title: 'Conclusão de Treino RAC no RACS',
+                    subtitle: 'Sincronizar certificação de treino do sistema RACS',
+                    requiredRacs: 'Módulos RAC Necessários',
+                    simulateTraining: 'Simular Treino RACS Aprovado',
+                    confirmReceipt: 'Confirmar Receção do Colaborador',
+                    downloadCertificate: 'Descarregar Certificado',
+                    recordId: 'ID de Registo'
+                },
+                fastTrackConfirm: 'Avançar todos os candidatos pendentes para o estado de recebido e ativá-los na base de dados RACS?',
+                fastTrackSuccess: 'Avançados com sucesso {count} candidatos pendentes por toda a integração, exames médicos, orientação HSE e certificações de treino RAC!',
+                resetConfirm: 'Repor o fluxo de mobilização para os valores de demonstração?',
+                deleteConfirm: 'Remover este candidato do pipeline de recrutamento?',
+                confirmReceiptMsg: '{name} está agora oficialmente registado, ativo e totalmente autorizado no sistema RACS!'
             },
             thankYou: {
                 title: 'Obrigado',
@@ -1903,6 +2206,55 @@ export const translations = {
             integrationScenarioTitle: 'Cenário de Integração:',
             integrationScenarioDesc: 'O software de terceiros responsável pelas catracas do site chama o endpoint Verificar Pessoal. Os RACS junta os dados de RH, validade Médica e resultados de Treino para retornar um único estado booleano AUTORIZADO ou BLOQUEADO.',
             rowLevelSecurity: 'Segurança ao Nível da Linha (RLS)'
+        },
+        subcontractors: {
+            title: 'Gestão de Subempreiteiros',
+            subtitle: 'Gerir fornecedores de segunda linha e o seu estado de conformidade',
+            addSubcontractor: 'Adicionar Subempreiteiro',
+            editSubcontractor: 'Editar Subempreiteiro',
+            deleteSubcontractor: 'Eliminar Subempreiteiro',
+            confirmDelete: 'Tem a certeza que pretende remover este subempreiteiro?',
+            search: 'Pesquisar subempreiteiros...',
+            noResults: 'Nenhum subempreiteiro encontrado.',
+            table: {
+                company: 'Nome da Empresa',
+                mainContractor: 'Empreiteiro Principal',
+                contact: 'Pessoa de Contato',
+                email: 'Email de Contato',
+                phone: 'Telefone',
+                status: 'Estado',
+                compliance: 'Conformidade',
+                employees: 'Colaboradores',
+                actions: 'Ações'
+            },
+            modal: {
+                companyName: 'Nome da Empresa',
+                companyNamePlaceholder: 'ex: Mota Engil Mozambique',
+                mainContractor: 'Empreiteiro Principal (Empresa Mãe)',
+                selectParent: 'Selecionar empresa mãe...',
+                contactPerson: 'Pessoa de Contato',
+                contactPlaceholder: 'ex: João Silva',
+                email: 'Email',
+                emailPlaceholder: 'contato@empresa.com',
+                phone: 'Número de Telefone',
+                phonePlaceholder: '+258 84 000 0000',
+                status: 'Estado',
+                active: 'Ativo',
+                inactive: 'Inativo',
+                save: 'Gravar Subempreiteiro',
+                cancel: 'Cancelar'
+            },
+            stats: {
+                total: 'Total de Subempreiteiros',
+                active: 'Ativos',
+                compliant: 'Totalmente Conformes',
+                atRisk: 'Em Risco'
+            },
+            compliance: {
+                compliant: 'Conforme',
+                atRisk: 'Em Risco',
+                nonCompliant: 'Não Conforme'
+            }
         }
     }
 };

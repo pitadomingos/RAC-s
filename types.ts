@@ -217,19 +217,23 @@ export enum RecruitmentStatus {
   AM_REQUESTED = 'AM Requested',
   HR_PENDING = 'HR Pending',
   SECURITY_PENDING = 'Security Pending',
+  PARALLEL_CLEARANCE_PENDING = 'Parallel Clearance Pending',
   CLINIC_PENDING = 'Clinic Pending',
   INDUCTION_PENDING = 'Induction Pending',
   TRAINING_PENDING = 'Training Pending',
   COMPLETED = 'Completed',
-  RECEIVED = 'Received'
+  RECEIVED = 'Received',
+  SAFETY_PENDING = 'Safety Pending',
+  FAILED = 'Failed'
 }
 
 export interface RecruitDocument {
   name: string;
-  type: 'ID' | 'Passport' | 'Work Permit';
+  type: 'ID' | 'Passport' | 'Work Permit' | 'Fitness Certificate' | 'AM ID Upload' | 'Contractor & Responsible Details' | 'DIRE';
   uploadedAt: string;
   fileSize: string;
   status: 'Pending' | 'Verified' | 'Rejected';
+  uploadedBy?: 'AM' | 'HR';
 }
 
 export interface MedicalExam {
@@ -240,6 +244,26 @@ export interface MedicalExam {
   fitForWork: boolean;
   checkedAt?: string;
   comments?: string;
+  hearing?: 'Normal' | 'Impaired';
+  musculoskeletal?: 'Normal' | 'Impaired';
+}
+
+export interface FitnessCertificate {
+  certificateNo: string;
+  issuedAt: string;
+  validUntil: string;
+  issuedBy: string;
+  examinationType: 'Pre-Employment' | 'Periodic' | 'Return-to-Work';
+  bloodPressure: string;
+  heartRate: number;
+  visionTest: 'Pass' | 'Fail';
+  drugScreen: 'Negative' | 'Positive';
+  bmi?: string;
+  hearing?: 'Normal' | 'Impaired';
+  musculoskeletal?: 'Normal' | 'Impaired';
+  fitForWork: boolean;
+  restrictions?: string;
+  comments?: string;
 }
 
 export interface RecruitmentProcess {
@@ -247,6 +271,9 @@ export interface RecruitmentProcess {
   candidateName: string;
   candidateEmail: string;
   candidatePhone: string;
+  workerType: 'Prime' | 'Contractor';
+  primeCompany: string;
+  contractorCompany?: string;
   company: string;
   department: string;
   role: string;
@@ -255,8 +282,12 @@ export interface RecruitmentProcess {
   requestedBy: string;
   requestedAt: string;
   documents: RecruitDocument[];
+  amDocuments?: RecruitDocument[];
   temporaryBadgeNumber?: string;
+  securityCleared?: boolean;
+  clinicFitnessCleared?: boolean;
   medicalExam?: MedicalExam;
+  fitnessCertificate?: FitnessCertificate;
   inductionDate?: string;
   inductionConfirmed?: boolean;
   trainingCompletedAt?: string;
@@ -265,4 +296,67 @@ export interface RecruitmentProcess {
   lastNudgeAt?: string;
   employeeId?: string;
   recordId?: string;
-}
+  
+  // Extended fields for Option 2 & 3
+  requestType?: 'Recruitment' | 'PersonnelAccess' | 'EquipmentAccess';
+  equipmentType?: string;
+  equipmentId?: string;
+  responsiblePersonName?: string;
+  responsiblePersonPhone?: string;
+  safetyInspectionCleared?: boolean;
+  safetyInspectionComments?: string;
+  safetyInspectionRecordId?: string;
+}
+// â”€â”€â”€ Safety Inspection Module â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+
+export type InspectionFieldType =
+  | 'checkbox'
+  | 'text'
+  | 'number'
+  | 'select'
+  | 'photo'
+  | 'date'
+  | 'textarea';
+
+export interface InspectionField {
+  id: string;
+  label: string;
+  type: InspectionFieldType;
+  required: boolean;
+  options?: string[];       // for select fields
+  description?: string;
+}
+
+export interface InspectionTemplate {
+  id: string;
+  equipmentType: string;   // e.g. "Haul Truck", "Crane", "Excavator"
+  name: string;
+  createdBy: string;
+  createdAt: string;
+  fields: InspectionField[];
+  isActive: boolean;
+}
+
+export interface InspectionPhoto {
+  id: string;
+  fieldId: string;
+  dataUrl: string;          // base64 for in-browser storage
+  caption: string;
+  takenAt: string;
+}
+
+export interface InspectionRecord {
+  id: string;
+  templateId: string;
+  equipmentType: string;
+  equipmentId: string;      // e.g. "TRK-001"
+  inspectorName: string;
+  inspectedAt: string;
+  site?: string;
+  status: 'Pass' | 'Fail' | 'Conditional';
+  responses: Record<string, string | boolean>;
+  photos: InspectionPhoto[];
+  findings?: string;
+  correctiveAction?: string;
+  signedOff?: boolean;
+}

@@ -29,7 +29,13 @@ const AlcoholIntegration = lazy(() => import('./pages/AlcoholIntegration'));
 const EnterpriseDashboard = lazy(() => import('./pages/EnterpriseDashboard'));
 const MobilizationDashboard = lazy(() => import('./pages/MobilizationDashboard'));
 const PortalGateway = lazy(() => import('./pages/PortalGateway'));
+const SubcontractorPage = lazy(() => import('./pages/SubcontractorPage'));
+const SafetyInspectionPage = lazy(() => import('./pages/SafetyInspectionPage').then(m => ({ default: m.SafetyInspectionPage })));
+const HRPortalPage = lazy(() => import('./pages/HRPortalPage').then(m => ({ default: m.HRPortalPage })));
+const SecurityPortalPage = lazy(() => import('./pages/SecurityPortalPage').then(m => ({ default: m.SecurityPortalPage })));
+const ClinicPortalPage = lazy(() => import('./pages/ClinicPortalPage').then(m => ({ default: m.ClinicPortalPage })));
 import GeminiAdvisor from './components/GeminiAdvisor';
+import PresentationRoleSwitcher from './components/PresentationRoleSwitcher';
 import { AdvisorProvider } from './contexts/AdvisorContext';
 import { MessageProvider } from './contexts/MessageContext';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
@@ -492,6 +498,7 @@ const AppContent: React.FC = () => {
               </div>
           )}
           <Suspense fallback={<PageLoadingFallback />}>
+            <PresentationRoleSwitcher />
             <Routes>
               <Route path="/presentation" element={<PresentationPage />} />
               <Route path="/verify/:recordId" element={<VerificationPage bookings={bookings} requirements={requirements} racDefinitions={racDefinitions} sessions={sessions} employees={employees} />} />
@@ -500,7 +507,7 @@ const AppContent: React.FC = () => {
                 <Layout userRole={user?.role || UserRole.USER} setUserRole={() => {}} notifications={notifications} clearNotifications={() => setNotifications([])} sites={sites} currentSiteId={currentSiteId} setCurrentSiteId={setCurrentSiteId} companies={companies} activeModule={activeModule} onSwitchModule={handleSelectModule}>
                   <Routes>
                     <Route path="/" element={<RoleBasedHome userRole={user?.role || UserRole.USER} dashboardProps={{ bookings, requirements, sessions, userRole: user?.role, racDefinitions, currentSiteId, companies }} />} />
-                    <Route path="/recruitment" element={<MobilizationDashboard />} />
+                    <Route path="/recruitment" element={<MobilizationDashboard companies={companies} />} />
                     <Route path="/database" element={<DatabasePage employees={employees} bookings={bookings} requirements={requirements} updateRequirements={handleUpdateRequirement} sessions={sessions} onUpdateEmployee={handleUpdateEmployee} onDeleteEmployee={handleDeleteEmployee} racDefinitions={racDefinitions} addNotification={addNotification} currentSiteId={currentSiteId} companies={companies} />} />
                     <Route path="/booking" element={<BookingForm addBookings={handleAddBookings} sessions={sessions} userRole={user?.role || UserRole.USER} existingBookings={bookings} addNotification={addNotification} racDefinitions={racDefinitions} companies={companies} />} />
                     <Route path="/results" element={<ResultsPage bookings={bookings} updateBookingStatus={handleUpdateBookingStatus} importBookings={handleImportBookings} userRole={user?.role || UserRole.USER} sessions={sessions} requirements={requirements} sites={sites} racDefinitions={racDefinitions} addNotification={addNotification} currentSiteId={currentSiteId} onRefresh={refreshData} />} />
@@ -519,6 +526,11 @@ const AppContent: React.FC = () => {
                     <Route path="/alcohol-control" element={<AlcoholIntegration addNotification={addNotification} />} />
                     <Route path="/messages" element={<MessageLogPage />} />
                     <Route path="/site-governance" element={<SiteGovernancePage sites={sites} setSites={setSites} racDefinitions={racDefinitions} bookings={bookings} requirements={requirements} updateRequirements={handleUpdateRequirement} />} />
+                    <Route path="/subcontractors" element={<SubcontractorPage companies={companies} />} />
+                    <Route path="/safety-inspections" element={<SafetyInspectionPage />} />
+                    <Route path="/hr-portal" element={<HRPortalPage />} />
+                    <Route path="/security-portal" element={<SecurityPortalPage />} />
+                    <Route path="/clinic-portal" element={<ClinicPortalPage />} />
                   </Routes>
                   <GeminiAdvisor />
                 </Layout>

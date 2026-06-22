@@ -3,17 +3,18 @@ import {
     Users, Briefcase, FileText, ShieldAlert, CheckCircle2, AlertTriangle, 
     Send, Smartphone, Mail, Download, ShieldCheck, HelpCircle, 
     Upload, File, Check, RefreshCw, BadgeAlert, Plus, Trash2, Calendar, 
-    Heart, Eye, Activity, Info, Clock, CheckSquare, Square, ChevronRight, UserMinus
+    Heart, Eye, Activity, Info, Clock, CheckSquare, Square, ChevronRight, UserMinus,
+    BarChart2, FileCheck, FileScan, X, TrendingUp, Zap
 } from 'lucide-react';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useMessages } from '../contexts/MessageContext';
 import { useAuth } from '../contexts/AuthContext';
 import { db } from '../services/databaseService';
 import { DEMO_RECRUITMENT_PROCESSES } from '../mockData';
-import { RecruitmentProcess, RecruitmentStatus, RecruitDocument, MedicalExam, Employee, BookingStatus } from '../types';
+import { RecruitmentProcess, RecruitmentStatus, RecruitDocument, MedicalExam, FitnessCertificate, Employee, BookingStatus, Company } from '../types';
 import { v4 as uuidv4 } from 'uuid';
 
-const MobilizationDashboard: React.FC = () => {
+const MobilizationDashboard: React.FC<{ companies?: Company[] }> = ({ companies = [] }) => {
     const { t, language } = useLanguage();
     const { user } = useAuth();
     const { addMessage } = useMessages();
@@ -27,6 +28,60 @@ const MobilizationDashboard: React.FC = () => {
     // Active tab in Mobilization: 'AM' | 'HR' | 'Security' | 'Clinic' | 'Environment'
     const [activeTab, setActiveTab] = useState<'AM' | 'HR' | 'Security' | 'Clinic' | 'Environment'>('AM');
 
+    // Dynamically filter tabs based on active user privileges (Unified Role Access)
+    const allowedTabs = React.useMemo(() => {
+        if (!user) return ['AM'];
+        
+        // System and Enterprise/Site Admins have full access for presentation audits
+        if (user.role === 'System Admin' || user.role === 'Enterprise Admin' || user.role === 'Site Admin') {
+            return ['AM', 'HR', 'Security', 'Clinic', 'Environment'];
+        }
+        
+        const dept = (user.department || '').toLowerCase();
+        const title = (user.jobTitle || '').toLowerCase();
+        
+        const tabs: string[] = [];
+        
+        // Area Manager (Dept Admin, or supervisor/manager title)
+        if (user.role === 'Department Admin' || title.includes('supervisor') || title.includes('manager')) {
+            tabs.push('AM');
+        }
+        
+        // HR Dept
+        if (dept.includes('hr') || title.includes('hr') || title.includes('recruitment')) {
+            tabs.push('HR');
+        }
+        
+        // Security
+        if (dept.includes('security') || title.includes('security') || title.includes('guard')) {
+            tabs.push('Security');
+        }
+        
+        // Clinic / Medical
+        if (dept.includes('medical') || dept.includes('clinic') || title.includes('doctor') || title.includes('nurse')) {
+            tabs.push('Clinic');
+        }
+        
+        // Environment / HSE / Safety
+        if (dept.includes('hse') || title.includes('safety') || title.includes('environment')) {
+            tabs.push('Environment');
+            if (!tabs.includes('Security')) tabs.push('Security');
+        }
+        
+        if (tabs.length === 0) {
+            tabs.push('AM'); // Fallback
+        }
+        
+        return tabs;
+    }, [user]);
+
+    // Force activeTab to switch to first allowed tab if user switches to a role with restricted privileges
+    useEffect(() => {
+        if (!allowedTabs.includes(activeTab as any)) {
+            setActiveTab(allowedTabs[0] as any);
+        }
+    }, [allowedTabs, activeTab]);
+
     // UI States
     const [isAddRequestOpen, setIsAddRequestOpen] = useState(false);
     const [selectedProcessId, setSelectedProcessId] = useState<string | null>(null);
@@ -34,15 +89,60 @@ const MobilizationDashboard: React.FC = () => {
         candidateName: '',
         candidateEmail: '',
         candidatePhone: '',
-        company: 'Vulcan Resources Mozambique',
+        workerType: 'Prime' as 'Prime' | 'Contractor',
+        primeCompany: 'Vulcan Resources Mozambique',
+        contractorCompany: '',
         department: 'Mine Operations',
         role: 'Operator',
         requiredRacs: [] as string[]
     });
 
+    const [requestType, setRequestType] = useState<'Recruitment' | 'PersonnelAccess' | 'EquipmentAccess'>('Recruitment');
+    const [equipmentType, setEquipmentType] = useState('Excavator');
+    const [equipmentId, setEquipmentId] = useState('');
+    const [respPersonName, setRespPersonName] = useState('');
+    const [respPersonPhone, setRespPersonPhone] = useState('');
+
+    const primeCompanies = companies.filter(c => c.tier === 'Prime' || !c.tier);
+    const contractorCompanies = companies.filter(c => c.tier === 'Sub');
+
+    // Fallback lists if companies prop is empty (e.g. during lazy loading)
+    const FALLBACK_PRIME = ['Vulcan Resources Mozambique'];
+    const FALLBACK_CONTRACTORS = ['Mota-Engil Africa', 'Belabel Logistics', 'Escopil Engineering', 'Jachris Services', 'NBM Construction'];
+    const primeList = primeCompanies.length > 0 ? primeCompanies.map(c => c.name) : FALLBACK_PRIME;
+    const contractorList = contractorCompanies.length > 0 ? contractorCompanies.map(c => c.name) : FALLBACK_CONTRACTORS;
+
     // HR Upload Simulations State
     const [hrUploads, setHrUploads] = useState<{ id: boolean; passport: boolean; permit: boolean }>({ id: false, passport: false, permit: false });
     const [hrUploading, setHrUploading] = useState<{ id: boolean; passport: boolean; permit: boolean }>({ id: false, passport: false, permit: false });
+
+    // AM uploads for new request form (simulated file picker state)
+    const [amUploadState, setAmUploadState] = useState<{
+        candidateId: { uploaded: boolean; fileName: string; fileSize: string; uploading: boolean };
+        fitnessCert: { uploaded: boolean; fileName: string; fileSize: string; uploading: boolean };
+    }>({
+        candidateId: { uploaded: false, fileName: '', fileSize: '', uploading: false },
+        fitnessCert: { uploaded: false, fileName: '', fileSize: '', uploading: false },
+    });
+
+    const handleAmFileSelect = (docKey: 'candidateId' | 'fitnessCert', e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+        setAmUploadState(prev => ({ ...prev, [docKey]: { ...prev[docKey], uploading: true, fileName: file.name, fileSize: `${(file.size / 1024).toFixed(1)} KB` } }));
+        setTimeout(() => {
+            setAmUploadState(prev => ({ ...prev, [docKey]: { ...prev[docKey], uploading: false, uploaded: true } }));
+        }, 900);
+    };
+
+    const resetAmUploads = () => {
+        setAmUploadState({
+            candidateId: { uploaded: false, fileName: '', fileSize: '', uploading: false },
+            fitnessCert: { uploaded: false, fileName: '', fileSize: '', uploading: false },
+        });
+        setEquipmentId('');
+        setRespPersonName('');
+        setRespPersonPhone('');
+    };
 
     // Security State
     const [badgeNo, setBadgeNo] = useState('');
@@ -55,6 +155,12 @@ const MobilizationDashboard: React.FC = () => {
     const [medFit, setMedFit] = useState(true);
     const [medComments, setMedComments] = useState('');
     const [inductionDate, setInductionDate] = useState('');
+    // Extended contractor clinic fields
+    const [medBMI, setMedBMI] = useState('');
+    const [medHearing, setMedHearing] = useState<'Normal' | 'Impaired'>('Normal');
+    const [medMusculo, setMedMusculo] = useState<'Normal' | 'Impaired'>('Normal');
+    const [medRestrictions, setMedRestrictions] = useState('');
+    const [showFitnessCert, setShowFitnessCert] = useState(false);
 
     // Environment Induction Checklist
     const [indGeneral, setIndGeneral] = useState(false);
@@ -97,6 +203,8 @@ const MobilizationDashboard: React.FC = () => {
                 return { dept: 'HR Department', role: 'HR Specialist', bg: 'bg-blue-500/10 text-blue-500 border-blue-500/20' };
             case RecruitmentStatus.SECURITY_PENDING:
                 return { dept: 'Security Office', role: 'Security Controller', bg: 'bg-amber-500/10 text-amber-500 border-amber-500/20' };
+            case RecruitmentStatus.PARALLEL_CLEARANCE_PENDING:
+                return { dept: 'Security + Clinic', role: 'Security & Clinic (Parallel)', bg: 'bg-orange-500/10 text-orange-500 border-orange-500/20' };
             case RecruitmentStatus.CLINIC_PENDING:
                 return { dept: 'Occupational Clinic', role: 'Clinic Doctor', bg: 'bg-red-500/10 text-red-500 border-red-500/20' };
             case RecruitmentStatus.INDUCTION_PENDING:
@@ -107,6 +215,10 @@ const MobilizationDashboard: React.FC = () => {
                 return { dept: 'Area Manager', role: 'Area Manager (Receipt confirmation)', bg: 'bg-purple-500/10 text-purple-500 border-purple-500/20' };
             case RecruitmentStatus.RECEIVED:
                 return { dept: 'None', role: 'Mobilized', bg: 'bg-slate-500/10 text-slate-400 border-slate-500/10' };
+            case RecruitmentStatus.SAFETY_PENDING:
+                return { dept: 'Safety Team', role: 'Safety Inspector', bg: 'bg-orange-500/10 text-orange-500 border-orange-500/20' };
+            case RecruitmentStatus.FAILED:
+                return { dept: 'Safety Team', role: 'Inspection Failed (Access Denied)', bg: 'bg-red-500/10 text-red-500 border-red-500/20' };
         }
     };
 
@@ -116,66 +228,260 @@ const MobilizationDashboard: React.FC = () => {
             case RecruitmentStatus.AM_REQUESTED: return 1;
             case RecruitmentStatus.HR_PENDING: return 2;
             case RecruitmentStatus.SECURITY_PENDING: return 3;
+            case RecruitmentStatus.PARALLEL_CLEARANCE_PENDING: return 3;
             case RecruitmentStatus.CLINIC_PENDING: return 4;
-            case RecruitmentStatus.INDUCTION_PENDING: return 4; // Induction sits between clinic check and training
+            case RecruitmentStatus.INDUCTION_PENDING: return 4;
             case RecruitmentStatus.TRAINING_PENDING: return 5;
-            case RecruitmentStatus.COMPLETED: return 5; // Certificate passed, Stage 5 completed
-            case RecruitmentStatus.RECEIVED: return 6; // Confirmed receipt
+            case RecruitmentStatus.COMPLETED: return 5;
+            case RecruitmentStatus.RECEIVED: return 6;
+            case RecruitmentStatus.SAFETY_PENDING: return 2;
+            case RecruitmentStatus.FAILED: return 2;
+        }
+    };
+
+    const getPersonnelSteps = () => [
+        { step: 1, title: 'Requisition', desc: 'Submitted by AM', activeStatus: [] },
+        { step: 2, title: 'Security Review', desc: 'Access clearance', activeStatus: [RecruitmentStatus.SECURITY_PENDING] },
+        { step: 3, title: 'Access Granted', desc: 'Badge issued', activeStatus: [RecruitmentStatus.COMPLETED, RecruitmentStatus.RECEIVED] }
+    ];
+
+    const getPersonnelStageNumber = (status: RecruitmentStatus) => {
+        switch(status) {
+            case RecruitmentStatus.SECURITY_PENDING: return 2;
+            case RecruitmentStatus.COMPLETED: return 3;
+            case RecruitmentStatus.RECEIVED: return 3;
+            default: return 1;
+        }
+    };
+
+    const getEquipmentSteps = () => [
+        { step: 1, title: 'Requisition', desc: 'Submitted by AM', activeStatus: [] },
+        { step: 2, title: 'Safety Inspection', desc: 'Physical check', activeStatus: [RecruitmentStatus.SAFETY_PENDING, RecruitmentStatus.FAILED] },
+        { step: 3, title: 'Security Tag', desc: 'Permit & Tag issuance', activeStatus: [RecruitmentStatus.SECURITY_PENDING] },
+        { step: 4, title: 'Access Issued', desc: 'Authorized', activeStatus: [RecruitmentStatus.COMPLETED, RecruitmentStatus.RECEIVED] }
+    ];
+
+    const getEquipmentStageNumber = (status: RecruitmentStatus) => {
+        switch(status) {
+            case RecruitmentStatus.SAFETY_PENDING: return 2;
+            case RecruitmentStatus.FAILED: return 2;
+            case RecruitmentStatus.SECURITY_PENDING: return 3;
+            case RecruitmentStatus.COMPLETED: return 4;
+            case RecruitmentStatus.RECEIVED: return 4;
+            default: return 1;
+        }
+    };
+
+    const getProcessTimeline = (process: RecruitmentProcess) => {
+        const type = process.requestType || 'Recruitment';
+        if (type === 'PersonnelAccess') {
+            const stageNum = getPersonnelStageNumber(process.status);
+            const steps = getPersonnelSteps();
+            return { steps, stageNum };
+        } else if (type === 'EquipmentAccess') {
+            const stageNum = getEquipmentStageNumber(process.status);
+            const steps = getEquipmentSteps();
+            return { steps, stageNum };
+        } else {
+            const stageNum = getStageNumber(process.status);
+            const steps = [
+                { step: 1, title: 'Requisition', desc: 'Requested by AM', activeStatus: [RecruitmentStatus.AM_REQUESTED] },
+                { step: 2, title: 'HR Documents', desc: 'ID, Passport verified', activeStatus: [RecruitmentStatus.HR_PENDING] },
+                { step: 3, title: 'Access Card', desc: 'Temporary Access', activeStatus: [RecruitmentStatus.SECURITY_PENDING] },
+                { step: 4, title: 'Medicals', desc: 'Vitals & Fit Exam', activeStatus: [RecruitmentStatus.CLINIC_PENDING, RecruitmentStatus.INDUCTION_PENDING] },
+                { step: 5, title: 'Induction', desc: 'Safety Orientation', activeStatus: [RecruitmentStatus.TRAINING_PENDING] },
+                { step: 6, title: 'Mobilized', desc: 'CARS Active', activeStatus: [RecruitmentStatus.COMPLETED, RecruitmentStatus.RECEIVED] }
+            ];
+            return { steps, stageNum };
         }
     };
 
     // --- WORKFLOW ACTIONS ---
 
-    // Stage 1: Area Manager requests recruit
+    // Stage 1: Area Manager requests recruit / access / equipment
     const handleCreateRequest = (e: React.FormEvent) => {
         e.preventDefault();
-        if (!newRequest.candidateName || !newRequest.candidateEmail) return;
+        
+        // Validation check
+        if (requestType === 'Recruitment') {
+            if (!newRequest.candidateName || !newRequest.candidateEmail) return;
+            if (newRequest.workerType === 'Contractor') {
+                if (!amUploadState.candidateId.uploaded || !amUploadState.fitnessCert.uploaded) {
+                    alert('Please upload both the ID Document and Third-Party Fitness Certificate.');
+                    return;
+                }
+            }
+        } else if (requestType === 'PersonnelAccess') {
+            if (!newRequest.candidateName || !newRequest.candidateEmail) return;
+            if (!amUploadState.candidateId.uploaded) {
+                alert('Please upload National ID, Passport or DIRE document.');
+                return;
+            }
+        } else if (requestType === 'EquipmentAccess') {
+            if (!equipmentId || !respPersonName) return;
+            if (!amUploadState.candidateId.uploaded) {
+                alert('Please upload Contractor & Responsible Person Details.');
+                return;
+            }
+        }
 
+        const effectiveCompany = newRequest.workerType === 'Contractor' || requestType === 'EquipmentAccess'
+            ? newRequest.contractorCompany || newRequest.primeCompany
+            : newRequest.primeCompany;
+            
+        const recordPrefix = effectiveCompany.toLowerCase().includes('mota') ? 'ME'
+            : effectiveCompany.toLowerCase().includes('belabel') ? 'BL'
+            : effectiveCompany.toLowerCase().includes('escopil') ? 'ESC'
+            : effectiveCompany.toLowerCase().includes('jachris') ? 'JAC'
+            : 'VUL';
         const newEmpId = `emp-${uuidv4().slice(0, 8)}`;
-        const recordId = `VUL-${newRequest.company.toLowerCase().includes('mota') ? 'ME' : newRequest.company.toLowerCase().includes('belabel') ? 'BL' : 'VUL'}-${Math.floor(1000 + Math.random() * 9000)}`;
+        const recordId = `${recordPrefix}-${Math.floor(1000 + Math.random() * 9000)}`;
 
-        const requestObj: RecruitmentProcess = {
-            id: `rp-${uuidv4().slice(0, 8)}`,
-            candidateName: newRequest.candidateName,
-            candidateEmail: newRequest.candidateEmail,
-            candidatePhone: newRequest.candidatePhone || '+258 84 000 0000',
-            company: newRequest.company,
-            department: newRequest.department,
-            role: newRequest.role,
-            requiredRacs: newRequest.requiredRacs,
-            status: RecruitmentStatus.AM_REQUESTED, // Start at Stage 1: Requisition
-            requestedBy: user?.name || 'Area Manager',
-            requestedAt: new Date().toISOString(),
-            documents: [],
-            nudgeCount: 0,
-            employeeId: newEmpId,
-            recordId: recordId
-        };
+        const amDocs: RecruitDocument[] = [];
+        if (amUploadState.candidateId.uploaded) {
+            amDocs.push({
+                name: amUploadState.candidateId.fileName,
+                type: requestType === 'EquipmentAccess' ? 'Contractor & Responsible Details' : 'AM ID Upload',
+                uploadedAt: new Date().toISOString(),
+                fileSize: amUploadState.candidateId.fileSize,
+                status: 'Verified',
+                uploadedBy: 'AM'
+            });
+        }
+        if (requestType === 'Recruitment' && amUploadState.fitnessCert.uploaded) {
+            amDocs.push({
+                name: amUploadState.fitnessCert.fileName,
+                type: 'Fitness Certificate',
+                uploadedAt: new Date().toISOString(),
+                fileSize: amUploadState.fitnessCert.fileSize,
+                status: 'Verified',
+                uploadedBy: 'AM'
+            });
+        }
+
+        let requestObj: RecruitmentProcess;
+
+        if (requestType === 'Recruitment') {
+            requestObj = {
+                id: `rp-${uuidv4().slice(0, 8)}`,
+                candidateName: newRequest.candidateName,
+                candidateEmail: newRequest.candidateEmail,
+                candidatePhone: newRequest.candidatePhone || '+258 84 000 0000',
+                workerType: newRequest.workerType,
+                primeCompany: newRequest.primeCompany,
+                contractorCompany: newRequest.workerType === 'Contractor' ? effectiveCompany : undefined,
+                company: effectiveCompany,
+                department: newRequest.department,
+                role: newRequest.role,
+                requiredRacs: newRequest.requiredRacs,
+                status: RecruitmentStatus.AM_REQUESTED,
+                requestedBy: user?.name || 'Area Manager',
+                requestedAt: new Date().toISOString(),
+                documents: [],
+                amDocuments: amDocs,
+                nudgeCount: 0,
+                employeeId: newEmpId,
+                recordId: recordId,
+                requestType: 'Recruitment'
+            };
+        } else if (requestType === 'PersonnelAccess') {
+            requestObj = {
+                id: `rp-${uuidv4().slice(0, 8)}`,
+                candidateName: newRequest.candidateName,
+                candidateEmail: newRequest.candidateEmail,
+                candidatePhone: newRequest.candidatePhone || '+258 84 000 0000',
+                workerType: newRequest.workerType,
+                primeCompany: newRequest.primeCompany,
+                contractorCompany: newRequest.workerType === 'Contractor' ? effectiveCompany : undefined,
+                company: effectiveCompany,
+                department: newRequest.department,
+                role: 'Personnel Access (' + newRequest.role + ')',
+                requiredRacs: [],
+                status: RecruitmentStatus.SECURITY_PENDING, // Directly to Security
+                requestedBy: user?.name || 'Area Manager',
+                requestedAt: new Date().toISOString(),
+                documents: [],
+                amDocuments: amDocs,
+                nudgeCount: 0,
+                employeeId: newEmpId,
+                recordId: recordId,
+                requestType: 'PersonnelAccess'
+            };
+        } else { // EquipmentAccess
+            requestObj = {
+                id: `rp-${uuidv4().slice(0, 8)}`,
+                candidateName: `Equipment: ${equipmentType} (${equipmentId})`,
+                candidateEmail: 'equipment.access@vulcan.co.mz',
+                candidatePhone: respPersonPhone || '+258 84 000 0000',
+                workerType: 'Contractor',
+                primeCompany: newRequest.primeCompany,
+                contractorCompany: effectiveCompany,
+                company: effectiveCompany,
+                department: newRequest.department,
+                role: 'Equipment Access (' + equipmentType + ')',
+                requiredRacs: [],
+                status: RecruitmentStatus.SAFETY_PENDING, // Direct to Safety Inspection
+                requestedBy: user?.name || 'Area Manager',
+                requestedAt: new Date().toISOString(),
+                documents: [],
+                amDocuments: amDocs,
+                nudgeCount: 0,
+                recordId: recordId,
+                requestType: 'EquipmentAccess',
+                equipmentType: equipmentType,
+                equipmentId: equipmentId,
+                responsiblePersonName: respPersonName,
+                responsiblePersonPhone: respPersonPhone,
+                safetyInspectionCleared: false
+            };
+        }
 
         const updated = [requestObj, ...processes];
         setProcesses(updated);
         setSelectedProcessId(requestObj.id);
         setIsAddRequestOpen(false);
+        resetAmUploads();
         setNewRequest({
             candidateName: '',
             candidateEmail: '',
             candidatePhone: '',
-            company: 'Vulcan Resources Mozambique',
+            workerType: 'Prime',
+            primeCompany: primeList[0] || 'Vulcan Resources Mozambique',
+            contractorCompany: '',
             department: 'Mine Operations',
             role: 'Operator',
             requiredRacs: []
         });
 
-        // Trigger autonomous email notification from system to HR
-        addMessage({
-            type: 'EMAIL',
-            recipient: 'hr.specialist@vulcan.co.mz',
-            recipientName: 'HR Specialist',
-            subject: `ACTION REQUIRED: New Recruitment Requested - ${requestObj.candidateName}`,
-            content: `Dear HR Onboarding Team,\n\nArea Manager ${requestObj.requestedBy} has submitted a mobilization request for candidate ${requestObj.candidateName} as a ${requestObj.role} in ${requestObj.department}.\n\nPlease log in to the CARS Onboarding portal, accept the requisition, and start the recruitment process to verify documents.\n\nBest regards,\nCARS Automated Onboarding Gateway`
-        });
-
-        db.addLog('INFO', `RECRUITMENT_REQUISITION: ${requestObj.candidateName} requested by ${requestObj.requestedBy}`, user?.name || 'AM');
+        // Notifications
+        if (requestType === 'Recruitment') {
+            addMessage({
+                type: 'EMAIL',
+                recipient: 'hr.specialist@vulcan.co.mz',
+                recipientName: 'HR Specialist',
+                subject: `ACTION REQUIRED: New Recruitment Requested - ${requestObj.candidateName}`,
+                content: `Dear HR Onboarding Team,\n\nArea Manager ${requestObj.requestedBy} has submitted a mobilization request for candidate ${requestObj.candidateName} as a ${requestObj.role} in ${requestObj.department}.\n\nBest regards,\nCARS Onboarding Gateway`
+            });
+            db.addLog('INFO', `RECRUITMENT_REQUISITION: ${requestObj.candidateName} requested by ${requestObj.requestedBy}`, user?.name || 'AM');
+        } else if (requestType === 'PersonnelAccess') {
+            addMessage({
+                type: 'EMAIL',
+                recipient: 'security.turnstiles@vulcan.co.mz',
+                recipientName: 'Security Team',
+                subject: `ACTION REQUIRED: Personnel Access Request - ${requestObj.candidateName}`,
+                content: `Dear Security Team,\n\nArea Manager ${requestObj.requestedBy} has submitted a Personnel Access Request for ${requestObj.candidateName}.\n\nBest regards,\nCARS Onboarding Gateway`
+            });
+            db.addLog('INFO', `PERSONNEL_ACCESS_REQUISITION: ${requestObj.candidateName} requested by ${requestObj.requestedBy}`, user?.name || 'AM');
+        } else {
+            addMessage({
+                type: 'EMAIL',
+                recipient: 'safety.inspections@vulcan.co.mz',
+                recipientName: 'Safety Team',
+                subject: `ACTION REQUIRED: Equipment Access Inspection - ${equipmentType} (${equipmentId})`,
+                content: `Dear Safety Team,\n\nArea Manager ${requestObj.requestedBy} has requested site access for equipment: ${equipmentType} (ID: ${equipmentId}).\n\nPlease conduct a physical safety inspection.\n\nBest regards,\nCARS Onboarding Gateway`
+            });
+            db.addLog('INFO', `EQUIPMENT_ACCESS_REQUISITION: ${equipmentType} (${equipmentId}) requested by ${requestObj.requestedBy}`, user?.name || 'AM');
+        }
     };
 
     // Nudge Action: Area Manager pushes responsible department
@@ -302,28 +608,46 @@ const MobilizationDashboard: React.FC = () => {
             return;
         }
 
+        // Contractors go to parallel Security + Clinic; Prime goes sequential to Security
+        const nextStatus = process.workerType === 'Contractor'
+            ? RecruitmentStatus.PARALLEL_CLEARANCE_PENDING
+            : RecruitmentStatus.SECURITY_PENDING;
+
         const updated = processes.map(p => {
             if (p.id === id) {
-                return {
-                    ...p,
-                    status: RecruitmentStatus.SECURITY_PENDING
-                };
+                return { ...p, status: nextStatus, securityCleared: false, clinicFitnessCleared: false };
             }
             return p;
         });
 
         setProcesses(updated);
 
-        // Trigger autonomous notification to Security
-        addMessage({
-            type: 'EMAIL',
-            recipient: 'security.turnstiles@vulcan.co.mz',
-            recipientName: 'Security Access Control',
-            subject: `ACTION REQUIRED: Issue Access Card - ${process.candidateName}`,
-            content: `Dear Security Department,\n\nHR documentation has been uploaded and verified for new recruit ${process.candidateName} (${process.company}).\n\nPlease log in to the CARS Security Portal to assign a Temporary Access Card / Badge Number to enable access for clinic checkups and HSE inductions.\n\nBest regards,\nCARS Automated Onboarding Gateway`
-        });
+        if (process.workerType === 'Contractor') {
+            addMessage({
+                type: 'EMAIL',
+                recipient: 'security.turnstiles@vulcan.co.mz',
+                recipientName: 'Security Access Control',
+                subject: `ACTION REQUIRED: Issue Access Card (Contractor) - ${process.candidateName}`,
+                content: `Dear Security Department,\n\nHR documentation has been verified for contractor ${process.candidateName} (${process.company}).\n\nThis is a CONTRACTOR request — both Security (access) and Clinic (fitness) must clear this candidate simultaneously before Induction.\n\nPlease issue a Temporary Access Card promptly.\n\nBest regards,\nCARS Automated Onboarding Gateway`
+            });
+            addMessage({
+                type: 'EMAIL',
+                recipient: 'mine.clinic@vulcan.co.mz',
+                recipientName: 'Occupational Health Clinic',
+                subject: `ACTION REQUIRED: Fitness Verification (Contractor) - ${process.candidateName}`,
+                content: `Dear Clinical Staff,\n\nHR documentation has been verified for contractor ${process.candidateName} (${process.company}).\n\nThis is a CONTRACTOR request — the candidate must undergo a full Pre-Employment fitness evaluation and receive a Fitness Certificate before proceeding to induction.\n\nBoth Security and Clinic clearances are required simultaneously.\n\nBest regards,\nCARS Automated Onboarding Gateway`
+            });
+        } else {
+            addMessage({
+                type: 'EMAIL',
+                recipient: 'security.turnstiles@vulcan.co.mz',
+                recipientName: 'Security Access Control',
+                subject: `ACTION REQUIRED: Issue Access Card - ${process.candidateName}`,
+                content: `Dear Security Department,\n\nHR documentation has been uploaded and verified for new recruit ${process.candidateName} (${process.company}).\n\nPlease assign a Temporary Access Card / Badge Number.\n\nBest regards,\nCARS Automated Onboarding Gateway`
+            });
+        }
 
-        db.addLog('INFO', `HR_STAGE_COMPLETED: Docs verified for ${process.candidateName}`, 'HR Department');
+        db.addLog('INFO', `HR_STAGE_COMPLETED: ${process.workerType} candidate ${process.candidateName} → ${nextStatus}`, 'HR Department');
     };
 
     // Stage 3: Security issues temporary badge
@@ -336,12 +660,20 @@ const MobilizationDashboard: React.FC = () => {
         const process = processes.find(p => p.id === id);
         if (!process) return;
 
+        const isParallel = process.status === RecruitmentStatus.PARALLEL_CLEARANCE_PENDING;
+
         const updated = processes.map(p => {
             if (p.id === id) {
+                const securityDone = true;
+                const clinicDone = p.clinicFitnessCleared || false;
+                const nextStatus = isParallel
+                    ? (clinicDone ? RecruitmentStatus.INDUCTION_PENDING : RecruitmentStatus.PARALLEL_CLEARANCE_PENDING)
+                    : RecruitmentStatus.CLINIC_PENDING;
                 return {
                     ...p,
-                    status: RecruitmentStatus.CLINIC_PENDING,
-                    temporaryBadgeNumber: badgeNo
+                    temporaryBadgeNumber: badgeNo,
+                    securityCleared: true,
+                    status: nextStatus
                 };
             }
             return p;
@@ -350,25 +682,27 @@ const MobilizationDashboard: React.FC = () => {
         setProcesses(updated);
         setBadgeNo('');
 
-        // Trigger autonomous message to Clinic
-        addMessage({
-            type: 'EMAIL',
-            recipient: 'mine.clinic@vulcan.co.mz',
-            recipientName: 'Occupational Health Clinic',
-            subject: `ACTION REQUIRED: Medical Clearance Request - ${process.candidateName}`,
-            content: `Dear Clinical Staff,\n\nTemporary site access badge (${badgeNo}) has been issued for recruit ${process.candidateName}.\n\nThe candidate is authorized to report to the Medical Center for physical suitability evaluation, drug screening, and vital checks.\n\nUpon examination, please log in to record fitness-for-work status and schedule the HSE/Environment induction.\n\nBest regards,\nCARS Onboarding Gateway`
-        });
+        const freshProcess = updated.find(p => p.id === id)!;
 
-        db.addLog('INFO', `SECURITY_ACCESS_GRANTED: Badge ${badgeNo} registered for ${process.candidateName}`, 'Security Department');
-    };
-
-    // Stage 4: Clinic clearance & Induction Booking
-    const handleCompleteClinic = (id: string) => {
-        if (!inductionDate) {
-            alert('Please specify a date for the Safety/Environment Induction.');
-            return;
+        if (isParallel && freshProcess.status === RecruitmentStatus.INDUCTION_PENDING) {
+            addMessage({
+                type: 'EMAIL', recipient: 'hse.inductions@vulcan.co.mz', recipientName: 'HSE Environment Team',
+                subject: `INDUCTION READY: Both Clearances Received - ${process.candidateName}`,
+                content: `Dear HSE Team,\n\nContractor ${process.candidateName} has cleared both Security and Clinic. Induction may now proceed.`
+            });
+        } else if (!isParallel) {
+            addMessage({
+                type: 'EMAIL', recipient: 'mine.clinic@vulcan.co.mz', recipientName: 'Occupational Health Clinic',
+                subject: `ACTION REQUIRED: Medical Clearance Request - ${process.candidateName}`,
+                content: `Dear Clinical Staff,\n\nTemporary site access badge (${badgeNo}) has been issued for recruit ${process.candidateName}.\n\nThe candidate is authorized to report to the Medical Center for physical suitability evaluation, drug screening, and vital checks.\n\nBest regards,\nCARS Onboarding Gateway`
+            });
         }
 
+        db.addLog('INFO', `SECURITY_ACCESS_GRANTED: Badge ${badgeNo} for ${process.candidateName} (parallel=${isParallel})`, 'Security Department');
+    };
+
+    // Stage 4: Clinic clearance — handles both CLINIC_PENDING (prime) and PARALLEL_CLEARANCE_PENDING (contractor)
+    const handleCompleteClinic = (id: string, isContractor = false) => {
         const process = processes.find(p => p.id === id);
         if (!process) return;
 
@@ -382,37 +716,71 @@ const MobilizationDashboard: React.FC = () => {
             comments: medComments || 'Vitals cleared by clinical doctor.'
         };
 
+        let fitnessCertificate: FitnessCertificate | undefined;
+        let nextStatus: RecruitmentStatus;
+
+        if (isContractor) {
+            // Generate Fitness Certificate for contractor
+            fitnessCertificate = {
+                certificateNo: `FIT-${process.recordId || uuidv4().slice(0, 8)}-${new Date().getFullYear()}`,
+                issuedAt: new Date().toISOString(),
+                validUntil: new Date(Date.now() + 365 * 24 * 3600000).toISOString(),
+                issuedBy: user?.name || 'Occupational Health Physician',
+                examinationType: 'Pre-Employment',
+                bloodPressure: medBP,
+                heartRate: Number(medHR),
+                visionTest: medVision,
+                drugScreen: medDrugs,
+                bmi: medBMI,
+                hearing: medHearing,
+                musculoskeletal: medMusculo,
+                fitForWork: medFit,
+                restrictions: medRestrictions || undefined,
+                comments: medComments || undefined
+            };
+            // In parallel: check if security already cleared
+            const securityDone = process.securityCleared || false;
+            nextStatus = securityDone ? RecruitmentStatus.INDUCTION_PENDING : RecruitmentStatus.PARALLEL_CLEARANCE_PENDING;
+        } else {
+            if (!inductionDate) {
+                alert('Please specify a date for the Safety/Environment Induction.');
+                return;
+            }
+            nextStatus = RecruitmentStatus.INDUCTION_PENDING;
+        }
+
         const updated = processes.map(p => {
             if (p.id === id) {
                 return {
                     ...p,
-                    status: RecruitmentStatus.INDUCTION_PENDING,
+                    status: nextStatus,
                     medicalExam,
-                    inductionDate
+                    fitnessCertificate,
+                    clinicFitnessCleared: true,
+                    inductionDate: isContractor ? undefined : inductionDate
                 };
             }
             return p;
         });
 
         setProcesses(updated);
-        setMedBP('120/80');
-        setMedHR(72);
-        setMedVision('Pass');
-        setMedDrugs('Negative');
-        setMedFit(true);
-        setMedComments('');
-        setInductionDate('');
+        setShowFitnessCert(isContractor);
+        setMedBP('120/80'); setMedHR(72); setMedVision('Pass');
+        setMedDrugs('Negative'); setMedFit(true); setMedComments('');
+        setMedBMI(''); setMedHearing('Normal'); setMedMusculo('Normal');
+        setMedRestrictions(''); setInductionDate('');
 
-        // Send simulated notification to HSE / Environment
-        addMessage({
-            type: 'EMAIL',
-            recipient: 'hse.inductions@vulcan.co.mz',
-            recipientName: 'HSE Environment Team',
-            subject: `ACTION REQUIRED: HSE Induction Scheduled - ${process.candidateName}`,
-            content: `Dear Environment & Safety Team,\n\nRecruit ${process.candidateName} has passed clinical evaluation (Medical clearance fit-for-work verified) and is scheduled for Site HSE Induction on ${inductionDate}.\n\nPlease coordinate the physical orientation session. Confirm safety guidelines compliance, environmental rules, and PPE issuance inside the Environment portal upon completion.\n\nBest regards,\nCARS Onboarding Coordinator`
-        });
+        const freshProcess = updated.find(p => p.id === id)!;
 
-        db.addLog('INFO', `CLINIC_EXAM_COMPLETED: Fit-for-work cleared for ${process.candidateName}`, 'Occupational Clinic');
+        if (freshProcess.status === RecruitmentStatus.INDUCTION_PENDING) {
+            addMessage({
+                type: 'EMAIL', recipient: 'hse.inductions@vulcan.co.mz', recipientName: 'HSE Environment Team',
+                subject: `ACTION REQUIRED: HSE Induction Ready - ${process.candidateName}`,
+                content: `Dear Environment & Safety Team,\n\nRecruit ${process.candidateName} has passed clinical evaluation and is ready for Site HSE Induction.\n\nPlease coordinate the physical orientation session.\n\nBest regards,\nCARS Onboarding Coordinator`
+            });
+        }
+
+        db.addLog('INFO', `CLINIC_EXAM_COMPLETED: ${isContractor ? 'Fitness Certificate issued' : 'Fit-for-work cleared'} for ${process.candidateName}`, 'Occupational Clinic');
     };
 
     // Stage 5a: Environment Induction sign-off
@@ -572,142 +940,15 @@ const MobilizationDashboard: React.FC = () => {
             });
 
             db.addLog('AUDIT', `EMPLOYEE_MOBILIZATION_SUCCESS: ${process.candidateName} fully onboarded and received`, 'Area Manager');
-            alert(`${process.candidateName} is now officially registered, active, and fully authorized in the CARS system!`);
+            alert(t.proposal.mobilization.confirmReceiptMsg.replace('{name}', process.candidateName));
         } catch (e) {
-            console.error('Error confirming receipt', e);
+             console.error('Error confirming receipt', e);
         }
-    };
-
-    // Fast-track selected recruit through all stages autonomously
-    const handleFastTrack = async (id: string) => {
-        const process = processes.find(p => p.id === id);
-        if (!process) return;
-
-        if (process.status === RecruitmentStatus.RECEIVED) return;
-
-        try {
-            // 1. Generate verified HR docs
-            const docs: RecruitDocument[] = process.documents.length > 0 ? process.documents : [
-                { name: `${process.candidateName.toLowerCase().replace(/\s+/g, '_')}_national_id.pdf`, type: 'ID', uploadedAt: new Date().toISOString(), fileSize: '1.4 MB', status: 'Verified' },
-                { name: `${process.candidateName.toLowerCase().replace(/\s+/g, '_')}_passport.pdf`, type: 'Passport', uploadedAt: new Date().toISOString(), fileSize: '2.9 MB', status: 'Verified' }
-            ];
-
-            // 2. Issue temporary Security Access badge
-            const badge = process.temporaryBadgeNumber || `TEMP-ACCESS-${Math.floor(1000 + Math.random() * 9000)}`;
-
-            // 3. Complete Occupational Clinic Medical checkup
-            const medicalExam: MedicalExam = process.medicalExam || {
-                bloodPressure: '120/80',
-                heartRate: 72,
-                visionTest: 'Pass',
-                drugScreen: 'Negative',
-                fitForWork: true,
-                checkedAt: new Date().toISOString(),
-                comments: 'Fit-for-work cleared automatically via fast track.'
-            };
-
-            const updatedProcessObj = {
-                ...process,
-                documents: docs,
-                temporaryBadgeNumber: badge,
-                medicalExam,
-                inductionConfirmed: true
-            };
-
-            const { empId, recordId } = await registerProcessInDatabase(updatedProcessObj);
-
-            // Add autonomous notification alerts
-            addMessage({
-                type: 'EMAIL',
-                recipient: 'hr.specialist@vulcan.co.mz',
-                recipientName: 'HR Specialist',
-                subject: `ACTION REQUIRED: New Recruitment Requested - ${process.candidateName}`,
-                content: `Area Manager Hélio Tembe requested mobilization for ${process.candidateName}.`
-            });
-            addMessage({
-                type: 'EMAIL',
-                recipient: 'security.turnstiles@vulcan.co.mz',
-                recipientName: 'Security Access Control',
-                subject: `ACTION REQUIRED: Issue Access Card - ${process.candidateName}`,
-                content: `HR documentation uploaded. Temporary Access Card assignment pending for ${process.candidateName}.`
-            });
-            addMessage({
-                type: 'EMAIL',
-                recipient: 'mine.clinic@vulcan.co.mz',
-                recipientName: 'Occupational Health Clinic',
-                subject: `ACTION REQUIRED: Medical Clearance Request - ${process.candidateName}`,
-                content: `Access Card ${badge} assigned. Medical evaluation pending for ${process.candidateName}.`
-            });
-            addMessage({
-                type: 'EMAIL',
-                recipient: 'hse.inductions@vulcan.co.mz',
-                recipientName: 'HSE Environment Team',
-                subject: `ACTION REQUIRED: HSE Induction Scheduled - ${process.candidateName}`,
-                content: `Medical cleared. Safety and environmental induction scheduled for ${process.candidateName}.`
-            });
-            addMessage({
-                type: 'EMAIL',
-                recipient: 'cars.training@vulcan.co.mz',
-                recipientName: 'CARS Training Coordinator',
-                subject: `ACTION REQUIRED: Initialize RAC Certification - ${process.candidateName}`,
-                content: `Site Induction passed. Certifying RAC compliance training for ${process.candidateName}.`
-            });
-            addMessage({
-                type: 'EMAIL',
-                recipient: 'area.manager@vulcan.co.mz',
-                recipientName: process.requestedBy,
-                subject: `SUCCESS: Onboarding & RAC Training Complete - ${process.candidateName}`,
-                content: `Dear ${process.requestedBy},\n\nWe are pleased to inform you that onboarding and compliance modules for ${process.candidateName} have been completed successfully. final credentials certificate is ready.`
-            });
-            addMessage({
-                type: 'SMS',
-                recipient: process.candidatePhone,
-                recipientName: process.candidateName,
-                content: `CARS ACCESS: Welcome ${process.candidateName}! Onboarding finalized. Badge ${badge} is now active.`
-            });
-
-            // 5. Update process state
-            setProcesses(prev => prev.map(p => {
-                if (p.id === id) {
-                    return {
-                        ...p,
-                        status: RecruitmentStatus.RECEIVED,
-                        documents: docs,
-                        temporaryBadgeNumber: badge,
-                        medicalExam,
-                        inductionConfirmed: true,
-                        trainingCompletedAt: new Date().toISOString(),
-                        receivedAt: new Date().toISOString(),
-                        employeeId: empId,
-                        recordId: recordId
-                    };
-                }
-                return p;
-            }));
-
-            db.addLog('AUDIT', `FAST_TRACK_ONBOARDING: ${process.candidateName} fully onboarded via automation`, 'System');
-        } catch (e) {
-            console.error('Error fast tracking candidate', e);
-        }
-    };
-
-    // Fast-track all pending candidates in list
-    const handleFastTrackAll = async () => {
-        if (!window.confirm('Fast-track all pending candidates to received status and activate them in CARS database?')) return;
-        
-        let count = 0;
-        for (const p of processes) {
-            if (p.status !== RecruitmentStatus.RECEIVED) {
-                await handleFastTrack(p.id);
-                count++;
-            }
-        }
-        alert(`Successfully fast-tracked ${count} pending candidates through all onboarding, medicals, HSE orientation, and RAC training certifications!`);
     };
 
     // Clean process (for presentation reset)
     const handleResetProcesses = () => {
-        if (window.confirm('Reset mobilization workflow to demo defaults?')) {
+        if (window.confirm(t.proposal.mobilization.resetConfirm)) {
             localStorage.removeItem('mobilization_processes');
             setProcesses(DEMO_RECRUITMENT_PROCESSES);
             setSelectedProcessId(DEMO_RECRUITMENT_PROCESSES[0].id);
@@ -716,7 +957,7 @@ const MobilizationDashboard: React.FC = () => {
 
     // Remove candidate
     const handleDeleteProcess = (id: string) => {
-        if (window.confirm('Remove this candidate from the recruitment pipeline?')) {
+        if (window.confirm(t.proposal.mobilization.deleteConfirm)) {
             const updated = processes.filter(p => p.id !== id);
             setProcesses(updated);
             if (selectedProcessId === id && updated.length > 0) {
@@ -725,6 +966,40 @@ const MobilizationDashboard: React.FC = () => {
                 setSelectedProcessId(null);
             }
         }
+    };
+
+    const isSubmitDisabled = () => {
+        if (requestType === 'Recruitment') {
+            if (!newRequest.candidateName || !newRequest.candidateEmail) return true;
+            if (newRequest.workerType === 'Contractor') {
+                return !amUploadState.candidateId.uploaded || !amUploadState.fitnessCert.uploaded;
+            }
+            return false;
+        } else if (requestType === 'PersonnelAccess') {
+            if (!newRequest.candidateName || !newRequest.candidateEmail) return true;
+            return !amUploadState.candidateId.uploaded;
+        } else if (requestType === 'EquipmentAccess') {
+            if (!equipmentId || !respPersonName) return true;
+            return !amUploadState.candidateId.uploaded;
+        }
+        return true;
+    };
+
+    const getSubmitButtonLabel = () => {
+        if (requestType === 'Recruitment') {
+            if (newRequest.workerType === 'Contractor' && (!amUploadState.candidateId.uploaded || !amUploadState.fitnessCert.uploaded)) {
+                return '⚠ Upload Documents First';
+            }
+        } else if (requestType === 'PersonnelAccess') {
+            if (!amUploadState.candidateId.uploaded) {
+                return '⚠ Upload ID Document First';
+            }
+        } else if (requestType === 'EquipmentAccess') {
+            if (!amUploadState.candidateId.uploaded) {
+                return '⚠ Upload Details First';
+            }
+        }
+        return 'Submit Request';
     };
 
     return (
@@ -738,30 +1013,30 @@ const MobilizationDashboard: React.FC = () => {
                             <Users size={32} />
                         </div>
                         <div>
-                            <h1 className="text-3xl font-black tracking-tight uppercase italic">Mobilization <span className="text-indigo-400">& Onboarding</span></h1>
-                            <p className="text-indigo-300 font-bold uppercase tracking-widest text-[10px]">6-Stage Autonomous Readiness Control System</p>
+                            <h1 className="text-3xl font-black tracking-tight uppercase italic">{t.proposal.mobilization.title.split(' & ')[0]} <span className="text-indigo-400">& {t.proposal.mobilization.title.split(' & ')[1]}</span></h1>
+                            <p className="text-indigo-300 font-bold uppercase tracking-widest text-[10px]">{t.proposal.mobilization.subtitle}</p>
                         </div>
                     </div>
 
                     {/* Department / View Switcher */}
                     <div className="flex flex-wrap gap-1 bg-slate-950 p-1.5 rounded-2xl border border-slate-800/60 shadow-inner">
                         {[
-                            { id: 'AM', label: 'Area Manager', color: 'indigo' },
-                            { id: 'HR', label: 'HR Dept', color: 'blue' },
-                            { id: 'Security', label: 'Security', color: 'amber' },
-                            { id: 'Clinic', label: 'Med Clinic', color: 'red' },
-                            { id: 'Environment', label: 'Env / HSE', color: 'emerald' }
-                        ].map(t => (
+                            { id: 'AM', label: t.proposal.mobilization.tabs.AM, color: 'indigo' },
+                            { id: 'HR', label: t.proposal.mobilization.tabs.HR, color: 'blue' },
+                            { id: 'Security', label: t.proposal.mobilization.tabs.Security, color: 'amber' },
+                            { id: 'Clinic', label: t.proposal.mobilization.tabs.Clinic, color: 'red' },
+                            { id: 'Environment', label: t.proposal.mobilization.tabs.Environment, color: 'emerald' }
+                        ].filter(tab => allowedTabs.includes(tab.id as any)).map(tab => (
                             <button
-                                key={t.id}
-                                onClick={() => setActiveTab(t.id as any)}
+                                key={tab.id}
+                                onClick={() => setActiveTab(tab.id as any)}
                                 className={`px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${
-                                    activeTab === t.id 
+                                    activeTab === tab.id 
                                     ? 'bg-indigo-600 text-white shadow-lg' 
                                     : 'text-slate-500 hover:text-slate-300'
                                 }`}
                             >
-                                {t.label}
+                                {tab.label}
                             </button>
                         ))}
                     </div>
@@ -779,19 +1054,19 @@ const MobilizationDashboard: React.FC = () => {
                         <div className="px-8 py-6 border-b border-slate-100 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-900/20 flex justify-between items-center">
                             <div className="flex items-center gap-3">
                                 <Briefcase className="text-indigo-600 dark:text-indigo-400" size={20} />
-                                <h3 className="font-black text-slate-800 dark:text-white uppercase tracking-tight">Active Recruitment pipeline</h3>
+                                <h3 className="font-black text-slate-800 dark:text-white uppercase tracking-tight">{t.proposal.mobilization.pipeline}</h3>
                             </div>
                             <div className="flex gap-2">
                                 <button 
                                     onClick={() => setIsAddRequestOpen(true)}
                                     className="bg-indigo-600 text-white px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest shadow hover:scale-105 transition-all flex items-center gap-1.5"
                                 >
-                                    <Plus size={14} /> New Request
+                                    <Plus size={14} /> {t.proposal.mobilization.newRequest}
                                 </button>
                                 <button 
                                     onClick={handleResetProcesses}
                                     className="border border-slate-200 dark:border-slate-600 text-slate-500 px-3 py-2 rounded-xl text-xs font-black uppercase hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
-                                    title="Reset Demo State"
+                                    title={t.proposal.mobilization.resetDemo}
                                 >
                                     <RefreshCw size={14} />
                                 </button>
@@ -834,20 +1109,24 @@ const MobilizationDashboard: React.FC = () => {
 
                                         {/* Stages Stepper Quick View */}
                                         <div className="flex items-center gap-1 bg-white dark:bg-slate-800 p-2 rounded-xl border border-slate-100 dark:border-slate-700">
-                                            {[1, 2, 3, 4, 5, 6].map(s => (
-                                                <div 
-                                                    key={s} 
-                                                    className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-black font-mono transition-all ${
-                                                        stageNum > s 
-                                                        ? 'bg-emerald-500 text-white' 
-                                                        : stageNum === s 
-                                                        ? 'bg-indigo-600 text-white animate-pulse' 
-                                                        : 'bg-slate-200 dark:bg-slate-700 text-slate-400 dark:text-slate-500'
-                                                    }`}
-                                                >
-                                                    {s}
-                                                </div>
-                                            ))}
+                                            {Array.from({ length: p.requestType === 'PersonnelAccess' ? 3 : p.requestType === 'EquipmentAccess' ? 4 : 6 }, (_, i) => i + 1).map(s => {
+                                                const currentStage = p.requestType === 'PersonnelAccess' ? getPersonnelStageNumber(p.status) : p.requestType === 'EquipmentAccess' ? getEquipmentStageNumber(p.status) : getStageNumber(p.status);
+                                                const isFailed = p.status === RecruitmentStatus.FAILED;
+                                                return (
+                                                    <div 
+                                                        key={s} 
+                                                        className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-black font-mono transition-all ${
+                                                            currentStage > s 
+                                                            ? 'bg-emerald-500 text-white' 
+                                                            : currentStage === s 
+                                                            ? isFailed ? 'bg-red-500 text-white shadow' : 'bg-indigo-600 text-white animate-pulse' 
+                                                            : 'bg-slate-200 dark:bg-slate-700 text-slate-400 dark:text-slate-500'
+                                                        }`}
+                                                    >
+                                                        {s}
+                                                    </div>
+                                                );
+                                            })}
                                         </div>
 
                                         {/* Status & Bottleneck Indicator */}
@@ -886,37 +1165,35 @@ const MobilizationDashboard: React.FC = () => {
                             </div>
 
                             {/* Detailed Step Progression Graph */}
-                            <div className="grid grid-cols-1 md:grid-cols-6 gap-4 relative">
-                                {[
-                                    { step: 1, title: 'Requisition', desc: 'Requested by AM', activeStatus: [RecruitmentStatus.AM_REQUESTED] },
-                                    { step: 2, title: 'HR Documents', desc: 'ID, Passport verified', activeStatus: [RecruitmentStatus.HR_PENDING] },
-                                    { step: 3, title: 'Access Card', desc: 'Temporary Access', activeStatus: [RecruitmentStatus.SECURITY_PENDING] },
-                                    { step: 4, title: 'Medicals', desc: 'Vitals & Fit Exam', activeStatus: [RecruitmentStatus.CLINIC_PENDING, RecruitmentStatus.INDUCTION_PENDING] },
-                                    { step: 5, title: 'Induction', desc: 'Safety Orientation', activeStatus: [RecruitmentStatus.TRAINING_PENDING] },
-                                    { step: 6, title: 'Mobilized', desc: 'CARS Active', activeStatus: [RecruitmentStatus.COMPLETED, RecruitmentStatus.RECEIVED] }
-                                ].map((s, idx) => {
-                                    const stageNum = getStageNumber(activeProcess.status);
-                                    const isComplete = stageNum > s.step || (s.step === 5 && activeProcess.inductionConfirmed && stageNum >= 5);
-                                    const isActive = stageNum === s.step;
-                                    
-                                    return (
-                                        <div key={idx} className="flex flex-col items-center text-center relative space-y-3">
-                                            <div className={`w-10 h-10 rounded-full border-2 flex items-center justify-center font-black transition-all ${
-                                                isComplete 
-                                                ? 'bg-emerald-500 border-emerald-500 text-white shadow-lg' 
-                                                : isActive 
-                                                ? 'bg-indigo-600 border-indigo-500 text-white animate-pulse shadow-lg ring-4 ring-indigo-500/20' 
-                                                : 'bg-slate-100 dark:bg-slate-900 border-slate-200 dark:border-slate-700 text-slate-400 dark:text-slate-500'
-                                            }`}>
-                                                {isComplete ? <Check size={20}/> : s.step}
+                            <div className="grid grid-cols-1 md:grid-cols-6 gap-4 relative justify-center">
+                                {(() => {
+                                    const { steps, stageNum } = getProcessTimeline(activeProcess);
+                                    const isFailed = activeProcess.status === RecruitmentStatus.FAILED;
+                                    return steps.map((s, idx) => {
+                                        const isComplete = stageNum > s.step || (activeProcess.requestType === 'Recruitment' && s.step === 5 && activeProcess.inductionConfirmed && stageNum >= 5);
+                                        const isActive = stageNum === s.step;
+                                        
+                                        return (
+                                            <div key={idx} className="flex flex-col items-center text-center relative space-y-3">
+                                                <div className={`w-10 h-10 rounded-full border-2 flex items-center justify-center font-black transition-all ${
+                                                    isFailed && isActive
+                                                    ? 'bg-red-500 border-red-500 text-white ring-4 ring-red-500/20 shadow'
+                                                    : isComplete 
+                                                    ? 'bg-emerald-500 border-emerald-500 text-white shadow-lg' 
+                                                    : isActive 
+                                                    ? 'bg-indigo-600 border-indigo-500 text-white animate-pulse shadow-lg ring-4 ring-indigo-500/20' 
+                                                    : 'bg-slate-100 dark:bg-slate-900 border-slate-200 dark:border-slate-700 text-slate-400 dark:text-slate-500'
+                                                }`}>
+                                                    {isComplete ? <Check size={20}/> : s.step}
+                                                </div>
+                                                <div>
+                                                    <div className={`text-xs font-black uppercase ${isActive ? (isFailed ? 'text-red-500' : 'text-indigo-600 dark:text-indigo-400') : 'text-slate-700 dark:text-slate-300'}`}>{s.title}</div>
+                                                    <div className="text-[9px] text-slate-400 font-medium leading-tight mt-0.5">{s.desc}</div>
+                                                </div>
                                             </div>
-                                            <div>
-                                                <div className={`text-xs font-black uppercase ${isActive ? 'text-indigo-600 dark:text-indigo-400' : 'text-slate-700 dark:text-slate-300'}`}>{s.title}</div>
-                                                <div className="text-[9px] text-slate-400 font-medium leading-tight mt-0.5">{s.desc}</div>
-                                            </div>
-                                        </div>
-                                    );
-                                })}
+                                        );
+                                    });
+                                })()}
                             </div>
 
                             {/* Action Card specific to AM view (Bottleneck Analysis) */}
@@ -947,12 +1224,6 @@ const MobilizationDashboard: React.FC = () => {
                                                 <Send size={14}/> Nudge Department
                                             </button>
                                         )}
-                                        <button 
-                                            onClick={() => handleFastTrack(activeProcess.id)}
-                                            className="bg-indigo-600 hover:bg-indigo-700 text-white font-black text-xs uppercase tracking-widest px-5 py-3 rounded-xl shadow-lg shadow-indigo-500/10 hover:shadow-indigo-500/20 active:scale-95 transition-all flex items-center gap-2"
-                                        >
-                                            <ShieldCheck size={14}/> Fast-Track Onboarding
-                                        </button>
                                     </div>
                                 )}
                             </div>
@@ -981,11 +1252,50 @@ const MobilizationDashboard: React.FC = () => {
                         <div className="p-6">
                             {/* --- AREA MANAGER PANEL --- */}
                             {activeTab === 'AM' && (
-                                <div className="space-y-6">
-                                    <div className="text-slate-500 text-xs leading-normal">
-                                        As the Area Manager, you can request new recruits for mobilization, view certificates, and confirm arrival.
+                                <div className="space-y-5">
+                                    {/* Pipeline Analytics Charts */}
+                                    <div className="bg-slate-50 dark:bg-slate-900/50 rounded-2xl border border-slate-100 dark:border-slate-800 p-4 space-y-3">
+                                        <div className="flex items-center gap-2 mb-1">
+                                            <BarChart2 size={15} className="text-indigo-500" />
+                                            <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Pipeline Overview</span>
+                                        </div>
+                                        {[
+                                            { label: 'Requisition', status: RecruitmentStatus.AM_REQUESTED, color: 'bg-blue-500', textColor: 'text-blue-600 dark:text-blue-400' },
+                                            { label: 'HR Docs', status: RecruitmentStatus.HR_PENDING, color: 'bg-indigo-500', textColor: 'text-indigo-600 dark:text-indigo-400' },
+                                            { label: 'Security', status: RecruitmentStatus.SECURITY_PENDING, color: 'bg-amber-500', textColor: 'text-amber-600 dark:text-amber-400' },
+                                            { label: 'Clinic', status: RecruitmentStatus.CLINIC_PENDING, color: 'bg-red-500', textColor: 'text-red-600 dark:text-red-400' },
+                                            { label: 'Induction', status: RecruitmentStatus.INDUCTION_PENDING, color: 'bg-emerald-500', textColor: 'text-emerald-600 dark:text-emerald-400' },
+                                            { label: 'Training', status: RecruitmentStatus.TRAINING_PENDING, color: 'bg-violet-500', textColor: 'text-violet-600 dark:text-violet-400' },
+                                            { label: 'Mobilized', status: RecruitmentStatus.RECEIVED, color: 'bg-slate-400', textColor: 'text-slate-500 dark:text-slate-400' },
+                                        ].map(({ label, status, color, textColor }) => {
+                                            const count = processes.filter(p => p.status === status).length;
+                                            const pct = processes.length > 0 ? Math.round((count / processes.length) * 100) : 0;
+                                            return (
+                                                <div key={status} className="flex items-center gap-2">
+                                                    <span className="text-[9px] font-black text-slate-400 uppercase w-14 shrink-0">{label}</span>
+                                                    <div className="flex-1 h-2 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
+                                                        <div className={`h-full rounded-full transition-all duration-700 ${color}`} style={{ width: `${pct}%` }} />
+                                                    </div>
+                                                    <span className={`text-[10px] font-black w-5 text-right ${count > 0 ? textColor : 'text-slate-300 dark:text-slate-600'}`}>{count}</span>
+                                                </div>
+                                            );
+                                        })}
                                     </div>
-                                    
+
+                                    {/* Summary Stats row */}
+                                    <div className="grid grid-cols-3 gap-2">
+                                        {[
+                                            { label: 'Total', value: processes.length, color: 'bg-indigo-50 dark:bg-indigo-950/30 text-indigo-600 dark:text-indigo-400 border-indigo-100 dark:border-indigo-900/40' },
+                                            { label: 'Active', value: processes.filter(p => p.status !== RecruitmentStatus.RECEIVED).length, color: 'bg-amber-50 dark:bg-amber-950/30 text-amber-600 dark:text-amber-400 border-amber-100 dark:border-amber-900/40' },
+                                            { label: 'Mobilized', value: processes.filter(p => p.status === RecruitmentStatus.RECEIVED).length, color: 'bg-emerald-50 dark:bg-emerald-950/30 text-emerald-600 dark:text-emerald-400 border-emerald-100 dark:border-emerald-900/40' },
+                                        ].map((s, i) => (
+                                            <div key={i} className={`rounded-xl border p-3 text-center ${s.color}`}>
+                                                <div className="text-xl font-black">{s.value}</div>
+                                                <div className="text-[9px] font-black uppercase tracking-widest opacity-70">{s.label}</div>
+                                            </div>
+                                        ))}
+                                    </div>
+
                                     {activeProcess && activeProcess.status === RecruitmentStatus.COMPLETED && (
                                         <div className="bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-900/30 p-5 rounded-2xl space-y-4">
                                             <div className="flex gap-3 text-emerald-800 dark:text-emerald-400">
@@ -1018,13 +1328,6 @@ const MobilizationDashboard: React.FC = () => {
                                     >
                                         <Plus size={18}/> Request New Recruitment
                                     </button>
-
-                                    <button 
-                                        onClick={handleFastTrackAll}
-                                        className="w-full bg-slate-900 hover:bg-slate-800 border border-slate-700 text-white py-4 rounded-2xl font-black text-sm uppercase tracking-widest flex items-center justify-center gap-2 transition-all shadow-md"
-                                    >
-                                        <ShieldCheck size={18} className="text-indigo-400" /> Auto-Onboard All Pending
-                                    </button>
                                 </div>
                             )}
 
@@ -1042,6 +1345,29 @@ const MobilizationDashboard: React.FC = () => {
                                                 <h5 className="font-bold text-sm text-slate-800 dark:text-white uppercase">{activeProcess.candidateName}</h5>
                                                 <p className="text-[10px] text-amber-500 uppercase font-black tracking-widest">New Onboarding Requisition</p>
                                             </div>
+
+                                            {/* AM Documents — read-only for HR review */}
+                                            {activeProcess.amDocuments && activeProcess.amDocuments.length > 0 && (
+                                                <div className="space-y-2 bg-blue-50 dark:bg-blue-950/20 p-4 rounded-2xl border border-blue-100 dark:border-blue-900/40">
+                                                    <div className="text-[10px] font-black text-blue-600 dark:text-blue-400 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                                                        <FileCheck size={12} /> AM-Uploaded Documents (Read-Only)
+                                                    </div>
+                                                    {activeProcess.amDocuments.map((doc, idx) => (
+                                                        <div key={idx} className="flex items-center justify-between p-2.5 bg-white dark:bg-slate-800 rounded-xl border border-blue-100 dark:border-blue-900/30">
+                                                            <div className="flex items-center gap-2">
+                                                                <FileScan size={13} className="text-blue-500 shrink-0" />
+                                                                <div>
+                                                                    <div className="text-[10px] font-black text-slate-700 dark:text-slate-200 truncate max-w-[130px]">{doc.name}</div>
+                                                                    <div className="text-[9px] text-slate-400">{doc.type} · {doc.fileSize}</div>
+                                                                </div>
+                                                            </div>
+                                                            <span className="text-[9px] bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 px-2 py-0.5 rounded-full font-black flex items-center gap-1">
+                                                                <Check size={9}/> Verified
+                                                            </span>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            )}
 
                                             <div className="space-y-3 bg-slate-50 dark:bg-slate-900/50 p-5 rounded-2xl border border-slate-100 dark:border-slate-800 text-xs">
                                                 <div className="text-[10px] font-black text-slate-400 uppercase tracking-wider mb-2">Requisition details</div>
@@ -1081,19 +1407,45 @@ const MobilizationDashboard: React.FC = () => {
                                                 <p className="text-[10px] text-indigo-400 uppercase font-black tracking-widest">{activeProcess.role}</p>
                                             </div>
 
-                                            {/* Document checklist */}
+                                            {/* AM Documents — read-only for HR */}
+                                            {activeProcess.amDocuments && activeProcess.amDocuments.length > 0 && (
+                                                <div className="space-y-2 bg-blue-50 dark:bg-blue-950/20 p-4 rounded-2xl border border-blue-100 dark:border-blue-900/40">
+                                                    <div className="text-[10px] font-black text-blue-600 dark:text-blue-400 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                                                        <FileCheck size={12} /> AM-Uploaded Documents
+                                                    </div>
+                                                    {activeProcess.amDocuments.map((doc, idx) => (
+                                                        <div key={idx} className="flex items-center justify-between p-2.5 bg-white dark:bg-slate-800 rounded-xl border border-blue-100 dark:border-blue-900/30">
+                                                            <div className="flex items-center gap-2">
+                                                                <FileScan size={13} className="text-blue-500 shrink-0" />
+                                                                <div>
+                                                                    <div className="text-[10px] font-black text-slate-700 dark:text-slate-200 truncate max-w-[130px]">{doc.name}</div>
+                                                                    <div className="text-[9px] text-slate-400">{doc.type} · {doc.fileSize}</div>
+                                                                </div>
+                                                            </div>
+                                                            <span className="text-[9px] bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 px-2 py-0.5 rounded-full font-black flex items-center gap-1">
+                                                                <Check size={9}/> AM Verified
+                                                            </span>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            )}
+
+                                            {/* HR Document checklist — enforces National ID */}
                                             <div className="space-y-3 bg-slate-50 dark:bg-slate-900/50 p-4 rounded-2xl border border-slate-100 dark:border-slate-800">
-                                                <div className="text-[10px] font-black text-slate-400 uppercase mb-2">Required Documentation</div>
+                                                <div className="text-[10px] font-black text-slate-400 uppercase mb-2">HR Document Verification</div>
                                                 
                                                 {[
-                                                    { key: 'id' as const, label: 'National ID card', typeMapped: 'ID' },
-                                                    { key: 'passport' as const, label: 'Valid Passport', typeMapped: 'Passport' },
-                                                    { key: 'permit' as const, label: 'Work Permit (Dire)', typeMapped: 'Work Permit' }
+                                                    { key: 'id' as const, label: 'National ID card', typeMapped: 'ID', required: true },
+                                                    { key: 'passport' as const, label: 'Valid Passport', typeMapped: 'Passport', required: false },
+                                                    { key: 'permit' as const, label: 'Work Permit (Dire)', typeMapped: 'Work Permit', required: false }
                                                 ].map(doc => {
                                                     const isUploaded = (activeProcess.documents || []).some(d => d.type === doc.typeMapped);
                                                     return (
                                                         <div key={doc.key} className="flex items-center justify-between p-3 bg-white dark:bg-slate-800 rounded-xl border border-slate-100 dark:border-slate-700">
-                                                            <span className="text-xs font-bold text-slate-600 dark:text-slate-300">{doc.label}</span>
+                                                            <div className="flex items-center gap-2">
+                                                                <span className="text-xs font-bold text-slate-600 dark:text-slate-300">{doc.label}</span>
+                                                                {doc.required && <span className="text-[9px] bg-red-100 text-red-500 px-1.5 py-0.5 rounded font-black uppercase">Required</span>}
+                                                            </div>
                                                             {isUploaded ? (
                                                                 <span className="text-[9px] bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full font-black uppercase flex items-center gap-1"><Check size={10}/> Uploaded</span>
                                                             ) : (
@@ -1112,9 +1464,13 @@ const MobilizationDashboard: React.FC = () => {
 
                                             <button 
                                                 onClick={() => handleCompleteHR(activeProcess.id)}
-                                                className="w-full bg-slate-950 text-white dark:bg-indigo-600 py-4 rounded-2xl font-black text-sm uppercase tracking-widest shadow-xl flex items-center justify-center gap-2 hover:bg-indigo-700 transition-all"
+                                                disabled={!(activeProcess.documents || []).some(d => d.type === 'ID')}
+                                                className="w-full bg-slate-950 text-white dark:bg-indigo-600 py-4 rounded-2xl font-black text-sm uppercase tracking-widest shadow-xl flex items-center justify-center gap-2 hover:bg-indigo-700 transition-all disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:scale-100"
                                             >
-                                                Complete HR Phase
+                                                {!(activeProcess.documents || []).some(d => d.type === 'ID') 
+                                                    ? '⚠ Upload National ID to Proceed'
+                                                    : 'Complete HR Phase'
+                                                }
                                             </button>
                                         </div>
                                     )}
@@ -1124,44 +1480,79 @@ const MobilizationDashboard: React.FC = () => {
                             {/* --- SECURITY DASHBOARD --- */}
                             {activeTab === 'Security' && (
                                 <div className="space-y-6">
-                                    {!activeProcess || activeProcess.status !== RecruitmentStatus.SECURITY_PENDING ? (
+                                    {!activeProcess || (
+                                        activeProcess.status !== RecruitmentStatus.SECURITY_PENDING &&
+                                        activeProcess.status !== RecruitmentStatus.PARALLEL_CLEARANCE_PENDING
+                                    ) ? (
                                         <div className="text-center p-8 text-slate-400 text-xs">
                                             <Info size={32} className="mx-auto mb-2 opacity-30" />
                                             No candidates currently pending temporary access badges.
                                         </div>
                                     ) : (
-                                        <div className="space-y-6">
+                                        <div className="space-y-5">
                                             <div className="space-y-1">
                                                 <h5 className="font-bold text-sm text-slate-800 dark:text-white uppercase">{activeProcess.candidateName}</h5>
                                                 <p className="text-[10px] text-amber-500 uppercase font-black tracking-widest">{activeProcess.company}</p>
                                             </div>
 
-                                            <div className="space-y-4">
-                                                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 block">Temporary Badge ID</label>
-                                                <input 
-                                                    type="text" 
-                                                    placeholder="e.g. TEMP-ACCESS-5509"
-                                                    value={badgeNo}
-                                                    onChange={e => setBadgeNo(e.target.value)}
-                                                    className="w-full bg-slate-50 dark:bg-slate-900 border-2 border-slate-100 dark:border-slate-700 rounded-2xl p-4 text-sm font-bold outline-none focus:border-amber-500 transition-all"
-                                                />
-                                            </div>
+                                            {/* Parallel clearance banner for contractors */}
+                                            {activeProcess.status === RecruitmentStatus.PARALLEL_CLEARANCE_PENDING && (
+                                                <div className="bg-orange-50 dark:bg-orange-950/30 border border-orange-200 dark:border-orange-900/50 rounded-2xl p-4 space-y-3">
+                                                    <div className="flex items-center gap-2 text-orange-600 dark:text-orange-400">
+                                                        <Zap size={14} className="shrink-0" />
+                                                        <span className="text-[10px] font-black uppercase tracking-widest">Parallel Contractor Clearance</span>
+                                                    </div>
+                                                    <p className="text-[10px] text-orange-700 dark:text-orange-300 leading-relaxed">
+                                                        This is a <strong>Contractor</strong> onboarding. Security and Clinic are clearing this candidate simultaneously. Both departments must complete before Induction begins.
+                                                    </p>
+                                                    <div className="flex gap-3 mt-2">
+                                                        <div className={`flex-1 rounded-xl p-2.5 text-center text-[9px] font-black uppercase ${activeProcess.securityCleared ? 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700' : 'bg-amber-100 dark:bg-amber-900/30 text-amber-700'}`}>
+                                                            🔐 Security: {activeProcess.securityCleared ? '✓ Done' : 'Pending'}
+                                                        </div>
+                                                        <div className={`flex-1 rounded-xl p-2.5 text-center text-[9px] font-black uppercase ${activeProcess.clinicFitnessCleared ? 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700' : 'bg-red-100 dark:bg-red-900/30 text-red-700'}`}>
+                                                            🏥 Clinic: {activeProcess.clinicFitnessCleared ? '✓ Done' : 'Pending'}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            )}
 
-                                            <button 
-                                                onClick={() => handleIssueBadge(activeProcess.id)}
-                                                className="w-full bg-amber-500 text-slate-950 py-4 rounded-2xl font-black text-sm uppercase tracking-widest shadow-xl shadow-amber-500/10 hover:bg-amber-400 transition-all flex items-center justify-center gap-2"
-                                            >
-                                                Issue Card & Grant Access
-                                            </button>
+                                            {activeProcess.temporaryBadgeNumber ? (
+                                                <div className="bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-900/50 rounded-2xl p-4 text-center">
+                                                    <div className="text-[9px] font-black text-emerald-600 uppercase tracking-widest mb-1">Badge Issued</div>
+                                                    <div className="text-xl font-black text-emerald-700 dark:text-emerald-400">{activeProcess.temporaryBadgeNumber}</div>
+                                                    <div className="text-[9px] text-emerald-500 mt-1">Access Granted — Awaiting Clinic</div>
+                                                </div>
+                                            ) : (
+                                                <div className="space-y-4">
+                                                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 block">Temporary Badge ID</label>
+                                                    <input 
+                                                        type="text" 
+                                                        placeholder="e.g. TEMP-ACCESS-5509"
+                                                        value={badgeNo}
+                                                        onChange={e => setBadgeNo(e.target.value)}
+                                                        className="w-full bg-slate-50 dark:bg-slate-900 border-2 border-slate-100 dark:border-slate-700 rounded-2xl p-4 text-sm font-bold outline-none focus:border-amber-500 transition-all"
+                                                    />
+                                                    <button 
+                                                        onClick={() => handleIssueBadge(activeProcess.id)}
+                                                        className="w-full bg-amber-500 text-slate-950 py-4 rounded-2xl font-black text-sm uppercase tracking-widest shadow-xl shadow-amber-500/10 hover:bg-amber-400 transition-all flex items-center justify-center gap-2"
+                                                    >
+                                                        <ShieldCheck size={16}/> Issue Badge &amp; Grant Access
+                                                    </button>
+                                                </div>
+                                            )}
                                         </div>
                                     )}
                                 </div>
                             )}
 
                             {/* --- CLINIC DASHBOARD --- */}
-                            {activeTab === 'Clinic' && (
+                            {activeTab === 'Clinic' && (() => {
+                                const isContractorParallel = activeProcess?.status === RecruitmentStatus.PARALLEL_CLEARANCE_PENDING;
+                                const isPrimePending = activeProcess?.status === RecruitmentStatus.CLINIC_PENDING;
+                                const showClinic = activeProcess && (isContractorParallel || isPrimePending);
+                                return (
                                 <div className="space-y-6">
-                                    {!activeProcess || activeProcess.status !== RecruitmentStatus.CLINIC_PENDING ? (
+                                    {!showClinic ? (
                                         <div className="text-center p-8 text-slate-400 text-xs">
                                             <Info size={32} className="mx-auto mb-2 opacity-30" />
                                             No candidates currently pending vital health exams.
@@ -1169,12 +1560,97 @@ const MobilizationDashboard: React.FC = () => {
                                     ) : (
                                         <div className="space-y-5">
                                             <div className="space-y-1">
-                                                <h5 className="font-bold text-sm text-slate-800 dark:text-white uppercase">{activeProcess.candidateName}</h5>
-                                                <p className="text-[10px] text-red-500 uppercase font-black tracking-widest">Medical Verification</p>
+                                                <h5 className="font-bold text-sm text-slate-800 dark:text-white uppercase">{activeProcess!.candidateName}</h5>
+                                                <p className={`text-[10px] uppercase font-black tracking-widest ${isContractorParallel ? 'text-orange-500' : 'text-red-500'}`}>
+                                                    {isContractorParallel ? '⚡ Contractor Fitness Verification' : 'Medical Verification'}
+                                                </p>
                                             </div>
 
-                                            {/* Medical inputs */}
+                                            {/* Parallel status for contractors */}
+                                            {isContractorParallel && (
+                                                <div className="bg-orange-50 dark:bg-orange-950/30 border border-orange-200 dark:border-orange-900/50 rounded-2xl p-4">
+                                                    <div className="flex gap-3">
+                                                        <div className={`flex-1 rounded-xl p-2.5 text-center text-[9px] font-black uppercase ${activeProcess!.securityCleared ? 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700' : 'bg-amber-100 dark:bg-amber-900/30 text-amber-700'}`}>
+                                                            🔐 Security: {activeProcess!.securityCleared ? '✓ Done' : 'Pending'}
+                                                        </div>
+                                                        <div className={`flex-1 rounded-xl p-2.5 text-center text-[9px] font-black uppercase ${activeProcess!.clinicFitnessCleared ? 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700' : 'bg-red-100 dark:bg-red-900/30 text-red-700'}`}>
+                                                            🏥 Clinic: {activeProcess!.clinicFitnessCleared ? '✓ Done' : 'Pending'}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            )}
+
+                                            {/* AM Documents visible to Clinic */}
+                                            {activeProcess!.amDocuments && activeProcess!.amDocuments.length > 0 && (
+                                                <div className="space-y-2 bg-rose-50 dark:bg-rose-950/20 p-4 rounded-2xl border border-rose-100 dark:border-rose-900/40">
+                                                    <div className="text-[10px] font-black text-rose-600 dark:text-rose-400 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                                                        <FileScan size={12} /> Pre-Employment Documents (AM Submitted)
+                                                    </div>
+                                                    {activeProcess!.amDocuments.map((doc, idx) => (
+                                                        <div key={idx} className="flex items-center justify-between p-2.5 bg-white dark:bg-slate-800 rounded-xl border border-rose-100 dark:border-rose-900/30">
+                                                            <div className="flex items-center gap-2">
+                                                                <FileCheck size={13} className={doc.type === 'Fitness Certificate' ? 'text-rose-500' : 'text-slate-400'} />
+                                                                <div>
+                                                                    <div className="text-[10px] font-black text-slate-700 dark:text-slate-200 truncate max-w-[130px]">{doc.name}</div>
+                                                                    <div className="text-[9px] text-slate-400">{doc.type} · {doc.fileSize}</div>
+                                                                </div>
+                                                            </div>
+                                                            <span className={`text-[9px] px-2 py-0.5 rounded-full font-black flex items-center gap-1 ${
+                                                                doc.type === 'Fitness Certificate'
+                                                                ? 'bg-rose-100 dark:bg-rose-900/30 text-rose-700 dark:text-rose-400'
+                                                                : 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400'
+                                                            }`}>
+                                                                <Check size={9}/> {doc.type === 'Fitness Certificate' ? 'Fitness Cert' : 'ID Verified'}
+                                                            </span>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            )}
+
+                                            {/* If clinic already done, show the generated certificate */}
+                                            {activeProcess!.fitnessCertificate && (
+                                                <div className="bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-800 rounded-2xl p-5 space-y-3">
+                                                    <div className="flex items-center justify-between">
+                                                        <div className="flex items-center gap-2 text-emerald-700 dark:text-emerald-400">
+                                                            <FileCheck size={16}/>
+                                                            <span className="text-xs font-black uppercase tracking-widest">Fitness Certificate Issued</span>
+                                                        </div>
+                                                        <span className="text-[9px] bg-emerald-600 text-white px-2 py-1 rounded-full font-black">
+                                                            {activeProcess!.fitnessCertificate.certificateNo}
+                                                        </span>
+                                                    </div>
+                                                    <div className="grid grid-cols-2 gap-2 text-[10px]">
+                                                        <div className="bg-white dark:bg-slate-800 rounded-lg p-2">
+                                                            <div className="text-slate-400 font-bold">BP</div>
+                                                            <div className="font-black">{activeProcess!.fitnessCertificate.bloodPressure}</div>
+                                                        </div>
+                                                        <div className="bg-white dark:bg-slate-800 rounded-lg p-2">
+                                                            <div className="text-slate-400 font-bold">HR</div>
+                                                            <div className="font-black">{activeProcess!.fitnessCertificate.heartRate} bpm</div>
+                                                        </div>
+                                                        <div className="bg-white dark:bg-slate-800 rounded-lg p-2">
+                                                            <div className="text-slate-400 font-bold">Vision</div>
+                                                            <div className={`font-black ${activeProcess!.fitnessCertificate.visionTest === 'Pass' ? 'text-emerald-600' : 'text-red-600'}`}>{activeProcess!.fitnessCertificate.visionTest}</div>
+                                                        </div>
+                                                        <div className="bg-white dark:bg-slate-800 rounded-lg p-2">
+                                                            <div className="text-slate-400 font-bold">Drug Screen</div>
+                                                            <div className={`font-black ${activeProcess!.fitnessCertificate.drugScreen === 'Negative' ? 'text-emerald-600' : 'text-red-600'}`}>{activeProcess!.fitnessCertificate.drugScreen}</div>
+                                                        </div>
+                                                    </div>
+                                                    <div className={`text-center py-2 rounded-xl font-black text-sm ${activeProcess!.fitnessCertificate.fitForWork ? 'bg-emerald-600 text-white' : 'bg-red-600 text-white'}`}>
+                                                        {activeProcess!.fitnessCertificate.fitForWork ? '✓ FIT FOR WORK' : '✗ NOT FIT FOR WORK'}
+                                                    </div>
+                                                    <div className="text-[9px] text-emerald-600 text-center">
+                                                        Valid until: {new Date(activeProcess!.fitnessCertificate.validUntil).toLocaleDateString()}
+                                                        &nbsp;·&nbsp;Issued by: {activeProcess!.fitnessCertificate.issuedBy}
+                                                    </div>
+                                                </div>
+                                            )}
+
+                                            {/* Medical form — only show if not yet cleared */}
+                                            {!activeProcess!.clinicFitnessCleared && (
                                             <div className="space-y-3 bg-slate-50 dark:bg-slate-900/50 p-4 rounded-2xl border border-slate-100 dark:border-slate-800">
+                                                <div className="text-[10px] font-black text-slate-400 uppercase mb-2">Vital Signs &amp; Examination</div>
                                                 <div className="grid grid-cols-2 gap-3">
                                                     <div>
                                                         <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1 block">Blood Pressure</label>
@@ -1185,40 +1661,88 @@ const MobilizationDashboard: React.FC = () => {
                                                         <input type="number" value={medHR} onChange={e => setMedHR(Number(e.target.value))} className="w-full p-2.5 bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-lg text-xs font-bold" />
                                                     </div>
                                                 </div>
-
                                                 <div className="grid grid-cols-2 gap-3">
                                                     <div>
                                                         <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1 block">Vision Test</label>
                                                         <select value={medVision} onChange={e => setMedVision(e.target.value as any)} className="w-full p-2.5 bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-lg text-xs font-bold">
-                                                            <option>Pass</option>
-                                                            <option>Fail</option>
+                                                            <option>Pass</option><option>Fail</option>
                                                         </select>
                                                     </div>
                                                     <div>
                                                         <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1 block">Drug Screen</label>
                                                         <select value={medDrugs} onChange={e => setMedDrugs(e.target.value as any)} className="w-full p-2.5 bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-lg text-xs font-bold">
-                                                            <option>Negative</option>
-                                                            <option>Positive</option>
+                                                            <option>Negative</option><option>Positive</option>
                                                         </select>
                                                     </div>
                                                 </div>
 
-                                                <div>
-                                                    <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1 block">Scheduled Induction Date</label>
-                                                    <input type="date" value={inductionDate} onChange={e => setInductionDate(e.target.value)} className="w-full p-2.5 bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-lg text-xs font-bold text-slate-800 dark:text-white" />
-                                                </div>
-                                            </div>
+                                                {/* Extended contractor-specific fields */}
+                                                {isContractorParallel && (
+                                                    <>
+                                                        <div className="grid grid-cols-3 gap-3">
+                                                            <div>
+                                                                <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1 block">BMI</label>
+                                                                <input type="text" placeholder="e.g. 22.5" value={medBMI} onChange={e => setMedBMI(e.target.value)} className="w-full p-2.5 bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-lg text-xs font-bold" />
+                                                            </div>
+                                                            <div>
+                                                                <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1 block">Hearing</label>
+                                                                <select value={medHearing} onChange={e => setMedHearing(e.target.value as any)} className="w-full p-2.5 bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-lg text-xs font-bold">
+                                                                    <option>Normal</option><option>Impaired</option>
+                                                                </select>
+                                                            </div>
+                                                            <div>
+                                                                <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1 block">Musculo.</label>
+                                                                <select value={medMusculo} onChange={e => setMedMusculo(e.target.value as any)} className="w-full p-2.5 bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-lg text-xs font-bold">
+                                                                    <option>Normal</option><option>Impaired</option>
+                                                                </select>
+                                                            </div>
+                                                        </div>
+                                                        <div>
+                                                            <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1 block">Restrictions (if any)</label>
+                                                            <input type="text" placeholder="e.g. No heavy lifting" value={medRestrictions} onChange={e => setMedRestrictions(e.target.value)} className="w-full p-2.5 bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-lg text-xs font-bold" />
+                                                        </div>
+                                                    </>
+                                                )}
 
+                                                <div>
+                                                    <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1 block">Fit for Work?</label>
+                                                    <div className="flex gap-2">
+                                                        <button onClick={() => setMedFit(true)} className={`flex-1 py-2 rounded-lg text-xs font-black border transition-all ${medFit ? 'bg-emerald-600 text-white border-emerald-600' : 'border-slate-200 dark:border-slate-700 text-slate-500'}`}>✓ FIT</button>
+                                                        <button onClick={() => setMedFit(false)} className={`flex-1 py-2 rounded-lg text-xs font-black border transition-all ${!medFit ? 'bg-red-600 text-white border-red-600' : 'border-slate-200 dark:border-slate-700 text-slate-500'}`}>✗ NOT FIT</button>
+                                                    </div>
+                                                </div>
+
+                                                <div>
+                                                    <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1 block">Comments</label>
+                                                    <textarea value={medComments} onChange={e => setMedComments(e.target.value)} rows={2} className="w-full p-2.5 bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-lg text-xs font-bold resize-none" placeholder="Clinical notes..." />
+                                                </div>
+
+                                                {!isContractorParallel && (
+                                                    <div>
+                                                        <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1 block">Scheduled Induction Date</label>
+                                                        <input type="date" value={inductionDate} onChange={e => setInductionDate(e.target.value)} className="w-full p-2.5 bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-lg text-xs font-bold text-slate-800 dark:text-white" />
+                                                    </div>
+                                                )}
+                                            </div>
+                                            )}
+
+                                            {!activeProcess!.clinicFitnessCleared && (
                                             <button 
-                                                onClick={() => handleCompleteClinic(activeProcess.id)}
-                                                className="w-full bg-red-600 text-white py-4 rounded-2xl font-black text-sm uppercase tracking-widest shadow-xl hover:bg-red-700 transition-all flex items-center justify-center gap-2"
+                                                onClick={() => handleCompleteClinic(activeProcess!.id, isContractorParallel)}
+                                                className={`w-full py-4 rounded-2xl font-black text-sm uppercase tracking-widest shadow-xl transition-all flex items-center justify-center gap-2 ${
+                                                    isContractorParallel 
+                                                    ? 'bg-orange-600 hover:bg-orange-700 text-white' 
+                                                    : 'bg-red-600 hover:bg-red-700 text-white'
+                                                }`}
                                             >
-                                                Cleared - Book Induction
+                                                {isContractorParallel ? '🏥 Issue Fitness Certificate' : 'Cleared — Book Induction'}
                                             </button>
+                                            )}
                                         </div>
                                     )}
                                 </div>
-                            )}
+                                );
+                            })()}
 
                             {/* --- ENVIRONMENT PORTAL --- */}
                             {activeTab === 'Environment' && (
@@ -1344,116 +1868,379 @@ const MobilizationDashboard: React.FC = () => {
                 <div className="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md animate-fade-in">
                     <form onSubmit={handleCreateRequest} className="bg-white dark:bg-slate-800 rounded-[2.5rem] shadow-2xl max-w-xl w-full overflow-hidden border border-slate-200 dark:border-slate-700">
                         <div className="p-8 bg-slate-50 dark:bg-slate-900/50 border-b border-slate-100 dark:border-slate-700 flex justify-between items-center">
-                            <h3 className="text-xl font-black text-slate-900 dark:text-white uppercase tracking-tight">Request Recruitment</h3>
+                            <h3 className="text-xl font-black text-slate-900 dark:text-white uppercase tracking-tight">
+                                {requestType === 'Recruitment' && 'Request Recruitment'}
+                                {requestType === 'PersonnelAccess' && 'Request Personnel Access'}
+                                {requestType === 'EquipmentAccess' && 'Request Equipment Access'}
+                            </h3>
                             <button type="button" onClick={() => setIsAddRequestOpen(false)} className="p-2 text-slate-400 hover:text-red-500 transition-colors"><UserMinus size={24} /></button>
                         </div>
                         
                         <div className="p-8 space-y-5 max-h-[450px] overflow-y-auto">
-                            <div className="grid grid-cols-2 gap-4">
-                                <div>
-                                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 mb-2 block">Candidate Name</label>
-                                    <input 
-                                        required 
-                                        type="text" 
-                                        placeholder="e.g. Mateus Nhaca"
-                                        value={newRequest.candidateName}
-                                        onChange={e => setNewRequest({...newRequest, candidateName: e.target.value})}
-                                        className="w-full bg-slate-50 dark:bg-slate-900 border-2 border-slate-100 dark:border-slate-700 rounded-2xl p-4 text-xs font-bold outline-none focus:border-indigo-500 transition-all"
-                                    />
-                                </div>
-                                <div>
-                                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 mb-2 block">Email Address</label>
-                                    <input 
-                                        required 
-                                        type="email" 
-                                        placeholder="candidate@work.com"
-                                        value={newRequest.candidateEmail}
-                                        onChange={e => setNewRequest({...newRequest, candidateEmail: e.target.value})}
-                                        className="w-full bg-slate-50 dark:bg-slate-900 border-2 border-slate-100 dark:border-slate-700 rounded-2xl p-4 text-xs font-bold outline-none focus:border-indigo-500 transition-all"
-                                    />
-                                </div>
-                            </div>
-
-                            <div className="grid grid-cols-2 gap-4">
-                                <div>
-                                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 mb-2 block">Phone Number</label>
-                                    <input 
-                                        type="text" 
-                                        placeholder="+258 84..."
-                                        value={newRequest.candidatePhone}
-                                        onChange={e => setNewRequest({...newRequest, candidatePhone: e.target.value})}
-                                        className="w-full bg-slate-50 dark:bg-slate-900 border-2 border-slate-100 dark:border-slate-700 rounded-2xl p-4 text-xs font-bold outline-none focus:border-indigo-500 transition-all"
-                                    />
-                                </div>
-                                <div>
-                                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 mb-2 block">Company Entity</label>
-                                    <select 
-                                        value={newRequest.company}
-                                        onChange={e => setNewRequest({...newRequest, company: e.target.value})}
-                                        className="w-full bg-slate-50 dark:bg-slate-900 border-2 border-slate-100 dark:border-slate-700 rounded-2xl p-4 text-xs font-bold outline-none focus:border-indigo-500 transition-all"
-                                    >
-                                        <option>Vulcan Resources Mozambique</option>
-                                        <option>Mota-Engil Africa</option>
-                                        <option>Belabel Logistics</option>
-                                        <option>Escopil Engineering</option>
-                                        <option>Jachris Services</option>
-                                    </select>
-                                </div>
-                            </div>
-
-                            <div className="grid grid-cols-2 gap-4">
-                                <div>
-                                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 mb-2 block">Department</label>
-                                    <select 
-                                        value={newRequest.department}
-                                        onChange={e => setNewRequest({...newRequest, department: e.target.value})}
-                                        className="w-full bg-slate-50 dark:bg-slate-900 border-2 border-slate-100 dark:border-slate-700 rounded-2xl p-4 text-xs font-bold outline-none focus:border-indigo-500 transition-all"
-                                    >
-                                        <option>Mine Operations</option>
-                                        <option>Plant Maintenance</option>
-                                        <option>HSE</option>
-                                        <option>Logistics</option>
-                                        <option>Administration</option>
-                                    </select>
-                                </div>
-                                <div>
-                                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 mb-2 block">Job Role</label>
-                                    <input 
-                                        type="text" 
-                                        placeholder="e.g. Haul Truck Driver"
-                                        value={newRequest.role}
-                                        onChange={e => setNewRequest({...newRequest, role: e.target.value})}
-                                        className="w-full bg-slate-50 dark:bg-slate-900 border-2 border-slate-100 dark:border-slate-700 rounded-2xl p-4 text-xs font-bold outline-none focus:border-indigo-500 transition-all"
-                                    />
-                                </div>
-                            </div>
-
-                            {/* Required RACS selector */}
+                            {/* Request Type Selector */}
                             <div>
-                                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 mb-3 block">Required RAC Training Modules</label>
-                                <div className="grid grid-cols-2 gap-2 bg-slate-50 dark:bg-slate-900/50 p-4 rounded-2xl border border-slate-100 dark:border-slate-800">
-                                    {AVAILABLE_RACS.map(rac => {
-                                        const isSelected = newRequest.requiredRacs.includes(rac.code);
-                                        return (
-                                            <div 
-                                                key={rac.code}
-                                                onClick={() => {
-                                                    const updated = isSelected 
-                                                        ? newRequest.requiredRacs.filter(r => r !== rac.code) 
-                                                        : [...newRequest.requiredRacs, rac.code];
-                                                    setNewRequest({...newRequest, requiredRacs: updated});
-                                                }}
-                                                className={`flex items-center gap-2 p-2 rounded-lg cursor-pointer text-xs font-bold ${
-                                                    isSelected 
-                                                    ? 'bg-indigo-600/10 border border-indigo-500/30 text-indigo-600 dark:text-indigo-400' 
-                                                    : 'hover:bg-white dark:hover:bg-slate-800 text-slate-600 dark:text-slate-400 border border-transparent'
-                                                }`}
-                                            >
-                                                <input type="checkbox" checked={isSelected} readOnly className="rounded border-slate-300 dark:border-slate-700 text-indigo-600 focus:ring-indigo-500" />
-                                                <span>{rac.code}</span>
+                                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 mb-2 block">Request Type</label>
+                                <div className="flex rounded-2xl overflow-hidden border-2 border-slate-100 dark:border-slate-700">
+                                    {[
+                                        { id: 'Recruitment', label: 'Recruitment' },
+                                        { id: 'PersonnelAccess', label: 'Personnel' },
+                                        { id: 'EquipmentAccess', label: 'Equipment' }
+                                    ].map(t => (
+                                        <button
+                                            key={t.id}
+                                            type="button"
+                                            onClick={() => {
+                                                setRequestType(t.id as any);
+                                                resetAmUploads();
+                                            }}
+                                            className={`flex-1 py-3 text-[10px] font-black uppercase tracking-wider transition-all ${
+                                                requestType === t.id
+                                                ? 'bg-indigo-600 text-white shadow-inner'
+                                                : 'bg-white dark:bg-slate-900 text-slate-400 hover:text-slate-600'
+                                            }`}
+                                        >
+                                            {t.label}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+
+                            {requestType !== 'EquipmentAccess' ? (
+                                <>
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div>
+                                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 mb-2 block">
+                                                {requestType === 'PersonnelAccess' ? 'Person Name' : 'Candidate Name'}
+                                            </label>
+                                            <input 
+                                                required 
+                                                type="text" 
+                                                placeholder={requestType === 'PersonnelAccess' ? 'e.g. Joaquim Chissano' : 'e.g. Mateus Nhaca'}
+                                                value={newRequest.candidateName}
+                                                onChange={e => setNewRequest({...newRequest, candidateName: e.target.value})}
+                                                className="w-full bg-slate-50 dark:bg-slate-900 border-2 border-slate-100 dark:border-slate-700 rounded-2xl p-4 text-xs font-bold outline-none focus:border-indigo-500 transition-all"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 mb-2 block">Email Address</label>
+                                            <input 
+                                                required 
+                                                type="email" 
+                                                placeholder="candidate@work.com"
+                                                value={newRequest.candidateEmail}
+                                                onChange={e => setNewRequest({...newRequest, candidateEmail: e.target.value})}
+                                                className="w-full bg-slate-50 dark:bg-slate-900 border-2 border-slate-100 dark:border-slate-700 rounded-2xl p-4 text-xs font-bold outline-none focus:border-indigo-500 transition-all"
+                                            />
+                                        </div>
+                                    </div>
+
+                                    {/* Phone Number */}
+                                    <div>
+                                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 mb-2 block">Phone Number</label>
+                                        <input 
+                                            type="text" 
+                                            placeholder="+258 84..."
+                                            value={newRequest.candidatePhone}
+                                            onChange={e => setNewRequest({...newRequest, candidatePhone: e.target.value})}
+                                            className="w-full bg-slate-50 dark:bg-slate-900 border-2 border-slate-100 dark:border-slate-700 rounded-2xl p-4 text-xs font-bold outline-none focus:border-indigo-500 transition-all"
+                                        />
+                                    </div>
+
+                                    {/* Worker Type + Company */}
+                                    <div className="space-y-4">
+                                        <div>
+                                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 mb-2 block">Worker Type</label>
+                                            <div className="flex rounded-2xl overflow-hidden border-2 border-slate-100 dark:border-slate-700">
+                                                {(['Prime', 'Contractor'] as const).map(wt => (
+                                                    <button
+                                                        key={wt}
+                                                        type="button"
+                                                        onClick={() => setNewRequest({ ...newRequest, workerType: wt, contractorCompany: '' })}
+                                                        className={`flex-1 py-3 text-xs font-black uppercase tracking-widest transition-all ${
+                                                            newRequest.workerType === wt
+                                                            ? wt === 'Prime'
+                                                                ? 'bg-indigo-600 text-white'
+                                                                : 'bg-amber-500 text-white'
+                                                            : 'bg-white dark:bg-slate-900 text-slate-400 hover:text-slate-600'
+                                                        }`}
+                                                    >
+                                                        {wt === 'Prime' ? '🏢 Prime Employee' : '🤝 Contractor'}
+                                                    </button>
+                                                ))}
                                             </div>
-                                        );
-                                    })}
+                                        </div>
+
+                                        <div>
+                                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 mb-2 block">Prime Company</label>
+                                            <select
+                                                value={newRequest.primeCompany}
+                                                onChange={e => setNewRequest({ ...newRequest, primeCompany: e.target.value })}
+                                                className="w-full bg-slate-50 dark:bg-slate-900 border-2 border-slate-100 dark:border-slate-700 rounded-2xl p-4 text-xs font-bold outline-none focus:border-indigo-500 transition-all"
+                                            >
+                                                {primeList.map(c => <option key={c}>{c}</option>)}
+                                            </select>
+                                        </div>
+
+                                        {newRequest.workerType === 'Contractor' && (
+                                            <div>
+                                                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 mb-2 block">Contractor Company</label>
+                                                <select
+                                                    required
+                                                    value={newRequest.contractorCompany}
+                                                    onChange={e => setNewRequest({ ...newRequest, contractorCompany: e.target.value })}
+                                                    className="w-full bg-slate-50 dark:bg-slate-900 border-2 border-amber-200 dark:border-amber-700 rounded-2xl p-4 text-xs font-bold outline-none focus:border-amber-500 transition-all"
+                                                >
+                                                    <option value="">— Select Contractor —</option>
+                                                    {contractorList.map(c => <option key={c}>{c}</option>)}
+                                                </select>
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div>
+                                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 mb-2 block">Department</label>
+                                            <select 
+                                                value={newRequest.department}
+                                                onChange={e => setNewRequest({...newRequest, department: e.target.value})}
+                                                className="w-full bg-slate-50 dark:bg-slate-900 border-2 border-slate-100 dark:border-slate-700 rounded-2xl p-4 text-xs font-bold outline-none focus:border-indigo-500 transition-all"
+                                            >
+                                                <option>Mine Operations</option>
+                                                <option>Plant Maintenance</option>
+                                                <option>HSE</option>
+                                                <option>Logistics</option>
+                                                <option>Administration</option>
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 mb-2 block">
+                                                {requestType === 'PersonnelAccess' ? 'Purpose of Access' : 'Job Role'}
+                                            </label>
+                                            <input 
+                                                type="text" 
+                                                placeholder={requestType === 'PersonnelAccess' ? 'e.g. Visitor, Audit, Tech Support' : 'e.g. Haul Truck Driver'}
+                                                value={newRequest.role}
+                                                onChange={e => setNewRequest({...newRequest, role: e.target.value})}
+                                                className="w-full bg-slate-50 dark:bg-slate-900 border-2 border-slate-100 dark:border-slate-700 rounded-2xl p-4 text-xs font-bold outline-none focus:border-indigo-500 transition-all"
+                                            />
+                                        </div>
+                                    </div>
+
+                                    {requestType === 'Recruitment' && (
+                                        <div>
+                                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 mb-3 block">Required RAC Training Modules</label>
+                                            <div className="grid grid-cols-2 gap-2 bg-slate-50 dark:bg-slate-900/50 p-4 rounded-2xl border border-slate-100 dark:border-slate-800">
+                                                {AVAILABLE_RACS.map(rac => {
+                                                    const isSelected = newRequest.requiredRacs.includes(rac.code);
+                                                    return (
+                                                        <div 
+                                                            key={rac.code}
+                                                            onClick={() => {
+                                                                const updated = isSelected 
+                                                                    ? newRequest.requiredRacs.filter(r => r !== rac.code) 
+                                                                    : [...newRequest.requiredRacs, rac.code];
+                                                                setNewRequest({...newRequest, requiredRacs: updated});
+                                                            }}
+                                                            className={`flex items-center gap-2 p-2 rounded-lg cursor-pointer text-xs font-bold ${
+                                                                isSelected 
+                                                                ? 'bg-indigo-600/10 border border-indigo-500/30 text-indigo-600 dark:text-indigo-400' 
+                                                                : 'hover:bg-white dark:hover:bg-slate-800 text-slate-600 dark:text-slate-400 border border-transparent'
+                                                            }`}
+                                                        >
+                                                            <input type="checkbox" checked={isSelected} readOnly className="rounded border-slate-300 dark:border-slate-700 text-indigo-600 focus:ring-indigo-500" />
+                                                            <span>{rac.code}</span>
+                                                        </div>
+                                                    );
+                                                })}
+                                            </div>
+                                        </div>
+                                    )}
+                                </>
+                            ) : (
+                                <>
+                                    {/* Equipment Access Form Fields */}
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div>
+                                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 mb-2 block">Equipment Type</label>
+                                            <select
+                                                value={equipmentType}
+                                                onChange={e => setEquipmentType(e.target.value)}
+                                                className="w-full bg-slate-50 dark:bg-slate-900 border-2 border-slate-100 dark:border-slate-700 rounded-2xl p-4 text-xs font-bold outline-none focus:border-indigo-500 transition-all"
+                                            >
+                                                <option>Excavator</option>
+                                                <option>Haul Truck</option>
+                                                <option>Crane</option>
+                                                <option>Light Vehicle</option>
+                                                <option>Bulldozer</option>
+                                                <option>Drill Rig</option>
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 mb-2 block">Equipment ID / Tag</label>
+                                            <input 
+                                                required 
+                                                type="text" 
+                                                placeholder="e.g. TRK-401 or EX-901"
+                                                value={equipmentId}
+                                                onChange={e => setEquipmentId(e.target.value)}
+                                                className="w-full bg-slate-50 dark:bg-slate-900 border-2 border-slate-100 dark:border-slate-700 rounded-2xl p-4 text-xs font-bold outline-none focus:border-indigo-500 transition-all"
+                                            />
+                                        </div>
+                                    </div>
+
+                                    {/* Contractor Company */}
+                                    <div>
+                                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 mb-2 block">Contractor Company (Owner)</label>
+                                        <select
+                                            required
+                                            value={newRequest.contractorCompany}
+                                            onChange={e => setNewRequest({ ...newRequest, contractorCompany: e.target.value })}
+                                            className="w-full bg-slate-50 dark:bg-slate-900 border-2 border-amber-200 dark:border-amber-700 rounded-2xl p-4 text-xs font-bold outline-none focus:border-amber-500 transition-all"
+                                        >
+                                            <option value="">— Select Contractor —</option>
+                                            {contractorList.map(c => <option key={c}>{c}</option>)}
+                                        </select>
+                                    </div>
+
+                                    {/* Responsible Person Name & Phone */}
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div>
+                                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 mb-2 block">Responsible Person</label>
+                                            <input 
+                                                required 
+                                                type="text" 
+                                                placeholder="e.g. Alberto Manjate"
+                                                value={respPersonName}
+                                                onChange={e => setRespPersonName(e.target.value)}
+                                                className="w-full bg-slate-50 dark:bg-slate-900 border-2 border-slate-100 dark:border-slate-700 rounded-2xl p-4 text-xs font-bold outline-none focus:border-indigo-500 transition-all"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 mb-2 block">Contact Phone</label>
+                                            <input 
+                                                required 
+                                                type="text" 
+                                                placeholder="+258 84..."
+                                                value={respPersonPhone}
+                                                onChange={e => setRespPersonPhone(e.target.value)}
+                                                className="w-full bg-slate-50 dark:bg-slate-900 border-2 border-slate-100 dark:border-slate-700 rounded-2xl p-4 text-xs font-bold outline-none focus:border-indigo-500 transition-all"
+                                            />
+                                        </div>
+                                    </div>
+
+                                    {/* Department */}
+                                    <div>
+                                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 mb-2 block">Department</label>
+                                        <select 
+                                            value={newRequest.department}
+                                            onChange={e => setNewRequest({...newRequest, department: e.target.value})}
+                                            className="w-full bg-slate-50 dark:bg-slate-900 border-2 border-slate-100 dark:border-slate-700 rounded-2xl p-4 text-xs font-bold outline-none focus:border-indigo-500 transition-all"
+                                        >
+                                            <option>Mine Operations</option>
+                                            <option>Plant Maintenance</option>
+                                            <option>HSE</option>
+                                            <option>Logistics</option>
+                                        </select>
+                                    </div>
+                                </>
+                            )}
+
+                            {/* ─── AM Required Documents ─── */}
+                            <div className="space-y-3">
+                                <div className="flex items-center gap-2">
+                                    <Upload size={13} className="text-indigo-500" />
+                                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                                        {requestType === 'Recruitment' && newRequest.workerType === 'Prime' ? 'Optional Documents' : 'Required Documents'}
+                                    </label>
+                                </div>
+
+                                <div className={`border rounded-2xl p-4 space-y-3 ${
+                                    (requestType === 'Recruitment' && newRequest.workerType === 'Prime')
+                                    ? 'bg-slate-50 dark:bg-slate-900/20 border-slate-200 dark:border-slate-700'
+                                    : 'bg-amber-50 dark:bg-amber-950/20 border-amber-100 dark:border-amber-900/40'
+                                }`}>
+                                    <p className="text-[10px] font-bold leading-normal">
+                                        {requestType === 'Recruitment' && newRequest.workerType === 'Contractor' && '⚠ Both National ID/Passport/DIRE and Fitness Certificate are mandatory for Contractors.'}
+                                        {requestType === 'Recruitment' && newRequest.workerType === 'Prime' && 'ℹ Uploading documents is optional for Prime employees.'}
+                                        {requestType === 'PersonnelAccess' && '⚠ National ID, Passport or DIRE is mandatory for Access Card clearance.'}
+                                        {requestType === 'EquipmentAccess' && '⚠ Contractor & Responsible Person details document is mandatory for physical safety inspection.'}
+                                    </p>
+
+                                    {/* Candidate National ID / Details */}
+                                    <div className="flex items-center justify-between p-3 bg-white dark:bg-slate-800 rounded-xl border border-slate-100 dark:border-slate-700">
+                                        <div className="flex items-center gap-2">
+                                            <FileScan size={16} className={amUploadState.candidateId.uploaded ? 'text-emerald-500' : 'text-slate-400'} />
+                                            <div>
+                                                <div className="text-xs font-black text-slate-700 dark:text-slate-200">
+                                                    {requestType === 'EquipmentAccess' ? 'Contractor & Responsible Details' : 'National ID, Passport or DIRE'}
+                                                </div>
+                                                {amUploadState.candidateId.uploaded ? (
+                                                    <div className="text-[9px] text-emerald-600 font-bold truncate max-w-[140px]">{amUploadState.candidateId.fileName}</div>
+                                                ) : (
+                                                    <div className="text-[9px] text-slate-400">PDF, JPG or PNG · max 10 MB</div>
+                                                )}
+                                            </div>
+                                        </div>
+                                        {amUploadState.candidateId.uploaded ? (
+                                            <span className="text-[9px] bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400 px-2 py-0.5 rounded-full font-black flex items-center gap-1">
+                                                <Check size={9}/> Uploaded
+                                            </span>
+                                        ) : (
+                                            <label className="cursor-pointer">
+                                                <input
+                                                    type="file"
+                                                    accept=".pdf,.jpg,.jpeg,.png"
+                                                    className="sr-only"
+                                                    onChange={e => handleAmFileSelect('candidateId', e)}
+                                                />
+                                                <span className={`text-[9px] px-3 py-1.5 rounded-lg font-black uppercase border transition-colors ${
+                                                    amUploadState.candidateId.uploading
+                                                    ? 'bg-slate-100 text-slate-400 border-slate-200 cursor-wait'
+                                                    : 'bg-indigo-50 hover:bg-indigo-100 text-indigo-600 border-indigo-100'
+                                                }`}>
+                                                    {amUploadState.candidateId.uploading ? 'Uploading...' : 'Upload'}
+                                                </span>
+                                            </label>
+                                        )}
+                                    </div>
+
+                                    {/* Third-Party Fitness Certificate */}
+                                    {requestType === 'Recruitment' && (
+                                        <div className="flex items-center justify-between p-3 bg-white dark:bg-slate-800 rounded-xl border border-slate-100 dark:border-slate-700">
+                                            <div className="flex items-center gap-2">
+                                                <FileCheck size={16} className={amUploadState.fitnessCert.uploaded ? 'text-emerald-500' : 'text-slate-400'} />
+                                                <div>
+                                                    <div className="text-xs font-black text-slate-700 dark:text-slate-200">Third-Party Fitness Certificate</div>
+                                                    {amUploadState.fitnessCert.uploaded ? (
+                                                        <div className="text-[9px] text-emerald-600 font-bold truncate max-w-[140px]">{amUploadState.fitnessCert.fileName}</div>
+                                                    ) : (
+                                                        <div className="text-[9px] text-slate-400">Issued by certified medical facility</div>
+                                                    )}
+                                                </div>
+                                            </div>
+                                            {amUploadState.fitnessCert.uploaded ? (
+                                                <span className="text-[9px] bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400 px-2 py-0.5 rounded-full font-black flex items-center gap-1">
+                                                    <Check size={9}/> Uploaded
+                                                </span>
+                                            ) : (
+                                                <label className="cursor-pointer">
+                                                    <input
+                                                        type="file"
+                                                        accept=".pdf,.jpg,.jpeg,.png"
+                                                        className="sr-only"
+                                                        onChange={e => handleAmFileSelect('fitnessCert', e)}
+                                                    />
+                                                    <span className={`text-[9px] px-3 py-1.5 rounded-lg font-black uppercase border transition-colors ${
+                                                        amUploadState.fitnessCert.uploading
+                                                        ? 'bg-slate-100 text-slate-400 border-slate-200 cursor-wait'
+                                                        : 'bg-indigo-50 hover:bg-indigo-100 text-indigo-600 border-indigo-100'
+                                                    }`}>
+                                                        {amUploadState.fitnessCert.uploading ? 'Uploading...' : 'Upload'}
+                                                    </span>
+                                                </label>
+                                            )}
+                                        </div>
+                                    )}
                                 </div>
                             </div>
                         </div>
@@ -1461,16 +2248,17 @@ const MobilizationDashboard: React.FC = () => {
                         <div className="p-6 bg-slate-50 dark:bg-slate-950 border-t border-slate-100 dark:border-slate-700 flex justify-end gap-3">
                             <button 
                                 type="button" 
-                                onClick={() => setIsAddRequestOpen(false)}
+                                onClick={() => { setIsAddRequestOpen(false); resetAmUploads(); }}
                                 className="px-6 py-3 border border-slate-200 dark:border-slate-600 text-slate-500 rounded-xl text-xs font-black uppercase tracking-widest hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
                             >
                                 Cancel
                             </button>
                             <button 
                                 type="submit" 
-                                className="px-10 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-black text-xs uppercase tracking-widest shadow shadow-indigo-600/20 active:scale-95 transition-all"
+                                disabled={isSubmitDisabled()}
+                                className="px-10 py-3 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-40 disabled:cursor-not-allowed text-white rounded-xl font-black text-xs uppercase tracking-widest shadow shadow-indigo-600/20 active:scale-95 transition-all"
                             >
-                                Submit Request
+                                {getSubmitButtonLabel()}
                             </button>
                         </div>
                     </form>

@@ -47,7 +47,10 @@ import {
   LogOut,
   Rocket,
   Code,
-  Compass
+  Compass,
+  Heart,
+  BadgeCheck,
+  Stethoscope
 } from 'lucide-react';
 import { UserRole, SystemNotification, Site, Company } from '../types';
 import { useLanguage } from '../contexts/LanguageContext';
@@ -148,6 +151,10 @@ const Layout: React.FC<LayoutProps> = ({
 
   const allNavItems = activeModule === 'mobilization' ? [
     { path: '/recruitment', label: 'Mobilization Flow', icon: Users, visible: true },
+    { path: '/hr-portal', label: 'HR Portal', icon: FileText, visible: true },
+    { path: '/security-portal', label: 'Security Portal', icon: Shield, visible: true },
+    { path: '/clinic-portal', label: 'Clinic Portal', icon: Heart, visible: true },
+    { path: '/safety-inspections', label: 'Safety Inspections', icon: ClipboardList, visible: true },
     { path: '/messages', label: t.nav.communications, icon: Send, visible: true },
     { path: '/manuals', label: t.nav.manuals, icon: BookOpen, visible: true },
   ] : [
@@ -160,6 +167,7 @@ const Layout: React.FC<LayoutProps> = ({
     { path: '/integration', label: t.nav.integration, icon: GitMerge, visible: [UserRole.SYSTEM_ADMIN, UserRole.ENTERPRISE_ADMIN].includes(userRole) },
     { path: '/reports', label: t.nav.reports, icon: FileBarChart, visible: [UserRole.SYSTEM_ADMIN, UserRole.ENTERPRISE_ADMIN, UserRole.SITE_ADMIN].includes(userRole) },
     { path: '/enterprise-dashboard', label: t.nav.enterpriseDashboard, icon: BarChart, visible: [UserRole.SYSTEM_ADMIN, UserRole.ENTERPRISE_ADMIN].includes(userRole) },
+    { path: '/subcontractors', label: t.subcontractors.title, icon: Briefcase, visible: [UserRole.SYSTEM_ADMIN, UserRole.ENTERPRISE_ADMIN, UserRole.SITE_ADMIN].includes(userRole) },
     { path: '/alcohol-control', label: t.nav.alcohol, icon: Wine, visible: showAlcoholLink },
     { path: '/request-cards', label: t.nav.requestCards, icon: Mail, visible: userRole !== UserRole.ENTERPRISE_ADMIN && userRole !== UserRole.RAC_TRAINER },
     { path: '/messages', label: t.nav.communications, icon: Send, visible: userRole === UserRole.SYSTEM_ADMIN },
@@ -170,6 +178,7 @@ const Layout: React.FC<LayoutProps> = ({
     { path: '/settings', label: t.nav.settings, icon: Settings, visible: [UserRole.SYSTEM_ADMIN, UserRole.ENTERPRISE_ADMIN, UserRole.SITE_ADMIN].includes(userRole) },
     { path: '/tech-docs', label: t.nav.techDocs, icon: FileCode, visible: [UserRole.SYSTEM_ADMIN, UserRole.ENTERPRISE_ADMIN].includes(userRole) },
     { path: '/logs', label: t.nav.logs, icon: ScrollText, visible: [UserRole.SYSTEM_ADMIN, UserRole.ENTERPRISE_ADMIN].includes(userRole) },
+    { path: '/safety-inspections', label: 'Safety Inspections', icon: Shield, visible: [UserRole.SYSTEM_ADMIN, UserRole.ENTERPRISE_ADMIN, UserRole.SITE_ADMIN].includes(userRole) },
     { path: '/manuals', label: t.nav.manuals, icon: BookOpen, visible: true },
   ];
 

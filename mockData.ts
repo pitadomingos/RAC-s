@@ -1,6 +1,6 @@
 /**
  * ============================================================
- *  CARS MANAGER — STAKEHOLDER PRESENTATION MOCK DATA
+ *  CARS MANAGER â€” STAKEHOLDER PRESENTATION MOCK DATA
  *  Covers: Companies, Sites, Rooms, Trainers, Users,
  *          Employees, Sessions, Bookings, Requirements,
  *          Feedback, BreathalyzerTests, IotDevices,
@@ -31,7 +31,7 @@ import {
   RecruitmentProcess
 } from './types';
 
-// ─── Helpers ────────────────────────────────────────────────
+// â”€â”€â”€ Helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 const d = (daysOffset: number) => {
   const date = new Date();
@@ -46,7 +46,7 @@ const ts = (daysOffset: number, hour = 9) => {
   return date.toISOString();
 };
 
-// ─── 1. Companies ────────────────────────────────────────────
+// â”€â”€â”€ 1. Companies â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export const DEMO_COMPANIES: Company[] = [
   {
@@ -105,7 +105,7 @@ export const DEMO_COMPANIES: Company[] = [
   },
 ];
 
-// ─── 2. Sites ────────────────────────────────────────────────
+// â”€â”€â”€ 2. Sites â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export const DEMO_SITES: Site[] = [
   {
@@ -138,7 +138,7 @@ export const DEMO_SITES: Site[] = [
   },
 ];
 
-// ─── 3. Rooms ────────────────────────────────────────────────
+// â”€â”€â”€ 3. Rooms â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export const DEMO_ROOMS: Room[] = [
   { id: 'rm-a', name: 'Training Room Alpha', capacity: 30, siteId: 's-maputo' },
@@ -148,17 +148,17 @@ export const DEMO_ROOMS: Room[] = [
   { id: 'rm-e', name: 'Mobile Training Unit #1', capacity: 15, siteId: 's-lichinga' },
 ];
 
-// ─── 4. Trainers ─────────────────────────────────────────────
+// â”€â”€â”€ 4. Trainers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export const DEMO_TRAINERS: Trainer[] = [
-  { id: 'tr-1', name: 'António Sitoe', racs: ['RAC01', 'RAC02', 'RAC06', 'RAC11', 'PTS', 'ART'], siteId: 's-moatize' },
+  { id: 'tr-1', name: 'AntÃ³nio Sitoe', racs: ['RAC01', 'RAC02', 'RAC06', 'RAC11', 'PTS', 'ART'], siteId: 's-moatize' },
   { id: 'tr-2', name: 'Felicidade Cossa', racs: ['RAC03', 'RAC04', 'RAC08', 'PTS'], siteId: 's-nacala' },
   { id: 'tr-3', name: 'Humberto Machava', racs: ['RAC05', 'RAC07', 'RAC09', 'ART'], siteId: 's-moatize' },
-  { id: 'tr-4', name: 'Inês Baloi', racs: ['RAC01', 'RAC10', 'PTS', 'ART'], siteId: 's-maputo' },
+  { id: 'tr-4', name: 'InÃªs Baloi', racs: ['RAC01', 'RAC10', 'PTS', 'ART'], siteId: 's-maputo' },
   { id: 'tr-5', name: 'Jorge Mondlane', racs: ['RAC02', 'RAC11'], siteId: 's-lichinga' },
 ];
 
-// ─── 5. RAC Definitions ──────────────────────────────────────
+// â”€â”€â”€ 5. RAC Definitions â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export const DEMO_RAC_DEFINITIONS: RacDef[] = [
   { id: 'rac1', code: 'RAC01', name: 'RAC 01 - Working at Height', validityMonths: 24, requiresPractical: true, passScore: 75 },
@@ -176,16 +176,16 @@ export const DEMO_RAC_DEFINITIONS: RacDef[] = [
   { id: 'art', code: 'ART', name: 'ART - Risk Assessment', validityMonths: 24, requiresPractical: true, passScore: 70 },
 ];
 
-// ─── 6. Users (Platform Accounts) ───────────────────────────
+// â”€â”€â”€ 6. Users (Platform Accounts) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export const DEMO_USERS: User[] = [
   { id: 1, name: 'Pita Domingos', email: 'p.domingos@vulcan.com', role: UserRole.SYSTEM_ADMIN, status: 'Active', company: 'Vulcan Resources Mozambique', jobTitle: 'Lead System Architect', siteId: 'all' },
-  { id: 2, name: 'Carlos Macuácua', email: 'c.macuacua@vulcan.com', role: UserRole.ENTERPRISE_ADMIN, status: 'Active', company: 'Vulcan Resources Mozambique', jobTitle: 'HSE Director', siteId: 'all' },
+  { id: 2, name: 'Carlos MacuÃ¡cua', email: 'c.macuacua@vulcan.com', role: UserRole.ENTERPRISE_ADMIN, status: 'Active', company: 'Vulcan Resources Mozambique', jobTitle: 'HSE Director', siteId: 'all' },
   { id: 3, name: 'Ana Bila', email: 'a.bila@vulcan.com', role: UserRole.SITE_ADMIN, status: 'Active', company: 'Vulcan Resources Mozambique', jobTitle: 'Site Safety Manager', siteId: 's-moatize' },
   { id: 4, name: 'Fernando Nhantumbo', email: 'f.nhantumbo@vulcan.com', role: UserRole.SITE_ADMIN, status: 'Active', company: 'Vulcan Resources Mozambique', jobTitle: 'Site Safety Manager', siteId: 's-nacala' },
   { id: 5, name: 'Grace Matsinhe', email: 'g.matsinhe@vulcan.com', role: UserRole.RAC_ADMIN, status: 'Active', company: 'Vulcan Resources Mozambique', jobTitle: 'Training Coordinator', siteId: 's-maputo' },
-  { id: 6, name: 'Hélio Tembe', email: 'h.tembe@vulcan.com', role: UserRole.DEPT_ADMIN, status: 'Active', company: 'Vulcan Resources Mozambique', jobTitle: 'Mine Ops Supervisor', siteId: 's-moatize' },
-  { id: 7, name: 'António Sitoe', email: 'a.sitoe@vulcan.com', role: UserRole.RAC_TRAINER, status: 'Active', company: 'Vulcan Resources Mozambique', jobTitle: 'Senior RAC Trainer', siteId: 's-moatize' },
+  { id: 6, name: 'HÃ©lio Tembe', email: 'h.tembe@vulcan.com', role: UserRole.DEPT_ADMIN, status: 'Active', company: 'Vulcan Resources Mozambique', jobTitle: 'Mine Ops Supervisor', siteId: 's-moatize' },
+  { id: 7, name: 'AntÃ³nio Sitoe', email: 'a.sitoe@vulcan.com', role: UserRole.RAC_TRAINER, status: 'Active', company: 'Vulcan Resources Mozambique', jobTitle: 'Senior RAC Trainer', siteId: 's-moatize' },
   { id: 8, name: 'Felicidade Cossa', email: 'f.cossa@vulcan.com', role: UserRole.RAC_TRAINER, status: 'Active', company: 'Vulcan Resources Mozambique', jobTitle: 'Electrical Safety Trainer', siteId: 's-nacala' },
   { id: 9, name: 'Jessica Bata', email: 'jessica@vulcan.com', role: UserRole.USER, status: 'Active', company: 'Vulcan Resources Mozambique', jobTitle: 'Safety Officer', siteId: 's-nacala' },
   { id: 10, name: 'Kelven Ubisse', email: 'kelven@vulcan.com', role: UserRole.USER, status: 'Active', company: 'Vulcan Resources Mozambique', jobTitle: 'Mining Engineer', siteId: 's-moatize' },
@@ -193,127 +193,127 @@ export const DEMO_USERS: User[] = [
   { id: 12, name: 'Domingos Guambe', email: 'd.guambe@motaengil.com', role: UserRole.DEPT_ADMIN, status: 'Active', company: 'Mota-Engil Africa', jobTitle: 'Civil Works Supervisor', siteId: 's-moatize' },
 ];
 
-// ─── 7. Employees ────────────────────────────────────────────
+// â”€â”€â”€ 7. Employees â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export const DEMO_EMPLOYEES: Employee[] = [
-  // Vulcan — Mine Operations
+  // Vulcan â€” Mine Operations
   { id: 'emp-001', name: 'Paulo Manjate', recordId: 'VUL-1001', company: 'Vulcan Resources Mozambique', department: 'Mine Operations', role: 'Operator', isActive: true, siteId: 's-moatize', driverLicenseNumber: 'DL-MZ-4412', driverLicenseClass: 'Heavy', driverLicenseExpiry: d(420) },
-  { id: 'emp-002', name: 'Rosário Chauque', recordId: 'VUL-1002', company: 'Vulcan Resources Mozambique', department: 'Mine Operations', role: 'Blasting Engineer', isActive: true, siteId: 's-moatize' },
+  { id: 'emp-002', name: 'RosÃ¡rio Chauque', recordId: 'VUL-1002', company: 'Vulcan Resources Mozambique', department: 'Mine Operations', role: 'Blasting Engineer', isActive: true, siteId: 's-moatize' },
   { id: 'emp-003', name: 'Sandro Duvane', recordId: 'VUL-1003', company: 'Vulcan Resources Mozambique', department: 'Mine Operations', role: 'Haul Truck Operator', isActive: true, siteId: 's-moatize', driverLicenseNumber: 'DL-MZ-8821', driverLicenseClass: 'Heavy', driverLicenseExpiry: d(180) },
   { id: 'emp-004', name: 'Teodora Fondo', recordId: 'VUL-1004', company: 'Vulcan Resources Mozambique', department: 'Mine Operations', role: 'Geologist', isActive: true, siteId: 's-moatize' },
   { id: 'emp-005', name: 'Umbe Gove', recordId: 'VUL-1005', company: 'Vulcan Resources Mozambique', department: 'Mine Operations', role: 'Excavator Operator', isActive: true, siteId: 's-moatize', driverLicenseNumber: 'DL-MZ-3305', driverLicenseClass: 'Heavy', driverLicenseExpiry: d(300) },
-  // Vulcan — Plant Maintenance
+  // Vulcan â€” Plant Maintenance
   { id: 'emp-006', name: 'Vasco Hunguana', recordId: 'VUL-2001', company: 'Vulcan Resources Mozambique', department: 'Plant Maintenance', role: 'Electrician', isActive: true, siteId: 's-nacala' },
   { id: 'emp-007', name: 'Wanda Jossias', recordId: 'VUL-2002', company: 'Vulcan Resources Mozambique', department: 'Plant Maintenance', role: 'Mechanical Fitter', isActive: true, siteId: 's-nacala' },
   { id: 'emp-008', name: 'Xavier Langa', recordId: 'VUL-2003', company: 'Vulcan Resources Mozambique', department: 'Plant Maintenance', role: 'Instrumentation Technician', isActive: true, siteId: 's-nacala' },
-  // Vulcan — HSE
+  // Vulcan â€” HSE
   { id: 'emp-009', name: 'Jessica Bata', recordId: 'VUL-3001', company: 'Vulcan Resources Mozambique', department: 'HSE', role: 'Safety Officer', isActive: true, siteId: 's-nacala' },
   { id: 'emp-010', name: 'Yara Maculuane', recordId: 'VUL-3002', company: 'Vulcan Resources Mozambique', department: 'HSE', role: 'Environment Specialist', isActive: true, siteId: 's-moatize' },
-  // Vulcan — Logistics
+  // Vulcan â€” Logistics
   { id: 'emp-011', name: 'Zito Nkosi', recordId: 'VUL-4001', company: 'Vulcan Resources Mozambique', department: 'Logistics', role: 'Driver', isActive: true, siteId: 's-lichinga', driverLicenseNumber: 'DL-MZ-9901', driverLicenseClass: 'Light', driverLicenseExpiry: d(550) },
   { id: 'emp-012', name: 'Anabela Ombe', recordId: 'VUL-4002', company: 'Vulcan Resources Mozambique', department: 'Logistics', role: 'Warehouse Manager', isActive: true, siteId: 's-lichinga' },
-  // Vulcan — Administration
+  // Vulcan â€” Administration
   { id: 'emp-013', name: 'Kelven Ubisse', recordId: 'VUL-5001', company: 'Vulcan Resources Mozambique', department: 'Administration', role: 'Mining Engineer', isActive: true, siteId: 's-moatize' },
   { id: 'emp-014', name: 'Latifa Uetela', recordId: 'VUL-5002', company: 'Vulcan Resources Mozambique', department: 'Administration', role: 'HR Specialist', isActive: true, siteId: 's-maputo' },
 
-  // Mota-Engil — Contractor
+  // Mota-Engil â€” Contractor
   { id: 'emp-015', name: 'Orlando Yacub', recordId: 'ME-001', company: 'Mota-Engil Africa', department: 'Mine Operations', role: 'Excavator Operator', isActive: true, siteId: 's-moatize', driverLicenseNumber: 'DL-MZ-7712', driverLicenseClass: 'Heavy', driverLicenseExpiry: d(210) },
   { id: 'emp-016', name: 'Paulo Vombe', recordId: 'ME-002', company: 'Mota-Engil Africa', department: 'Mine Operations', role: 'Civil Technician', isActive: true, siteId: 's-moatize' },
   { id: 'emp-017', name: 'Rui Tivane', recordId: 'ME-003', company: 'Mota-Engil Africa', department: 'Mine Operations', role: 'Drill Operator', isActive: true, siteId: 's-moatize', driverLicenseNumber: 'DL-MZ-5532', driverLicenseClass: 'Heavy', driverLicenseExpiry: d(120) },
-  { id: 'emp-018', name: 'Sónia Uaiene', recordId: 'ME-004', company: 'Mota-Engil Africa', department: 'Plant Maintenance', role: 'Mechanic', isActive: true, siteId: 's-moatize' },
-  { id: 'emp-019', name: 'Tomás Vumo', recordId: 'ME-005', company: 'Mota-Engil Africa', department: 'HSE', role: 'Safety Rep', isActive: true, siteId: 's-moatize' },
+  { id: 'emp-018', name: 'SÃ³nia Uaiene', recordId: 'ME-004', company: 'Mota-Engil Africa', department: 'Plant Maintenance', role: 'Mechanic', isActive: true, siteId: 's-moatize' },
+  { id: 'emp-019', name: 'TomÃ¡s Vumo', recordId: 'ME-005', company: 'Mota-Engil Africa', department: 'HSE', role: 'Safety Rep', isActive: true, siteId: 's-moatize' },
 
-  // Belabel — Logistics Contractor
+  // Belabel â€” Logistics Contractor
   { id: 'emp-020', name: 'Quim Wate', recordId: 'BEL-001', company: 'Belabel Logistics', department: 'Logistics', role: 'Driver', isActive: true, siteId: 's-lichinga', driverLicenseNumber: 'DL-MZ-2291', driverLicenseClass: 'Light', driverLicenseExpiry: d(90) },
   { id: 'emp-021', name: 'Rui Vilanculos', recordId: 'BEL-002', company: 'Belabel Logistics', department: 'Logistics', role: 'Driver', isActive: false, siteId: 's-lichinga', driverLicenseNumber: 'DL-MZ-4401', driverLicenseClass: 'Light', driverLicenseExpiry: d(-30) },
   { id: 'emp-022', name: 'Sara Tamele', recordId: 'BEL-003', company: 'Belabel Logistics', department: 'Logistics', role: 'Driver', isActive: true, siteId: 's-lichinga', driverLicenseNumber: 'DL-MZ-6611', driverLicenseClass: 'Heavy', driverLicenseExpiry: d(365) },
 
-  // Escopil — Engineering Contractor
+  // Escopil â€” Engineering Contractor
   { id: 'emp-023', name: 'Telma Sambo', recordId: 'ESC-001', company: 'Escopil Engineering', department: 'Plant Maintenance', role: 'Mechanic', isActive: true, siteId: 's-nacala' },
   { id: 'emp-024', name: 'Ursio Raposo', recordId: 'ESC-002', company: 'Escopil Engineering', department: 'Plant Maintenance', role: 'Electrician', isActive: true, siteId: 's-nacala' },
   { id: 'emp-025', name: 'Valentina Sueia', recordId: 'ESC-003', company: 'Escopil Engineering', department: 'Plant Maintenance', role: 'Plumber', isActive: true, siteId: 's-nacala' },
 
-  // Jachris — Catering & Services
+  // Jachris â€” Catering & Services
   { id: 'emp-026', name: 'Manuel Xadreque', recordId: 'JAC-001', company: 'Jachris Services', department: 'Administration', role: 'Catering Supervisor', isActive: true, siteId: 's-moatize' },
   { id: 'emp-027', name: 'Nuno Zaqueu', recordId: 'JAC-002', company: 'Jachris Services', department: 'Logistics', role: 'General Helper', isActive: true, siteId: 's-moatize' },
   { id: 'emp-028', name: 'Odete Zunguze', recordId: 'JAC-003', company: 'Jachris Services', department: 'Administration', role: 'Cleaner', isActive: true, siteId: 's-nacala' },
 
-  // ── DEMO CHAMPIONS — fully compliant for card issuance demo ──
+  // â”€â”€ DEMO CHAMPIONS â€” fully compliant for card issuance demo â”€â”€
   { id: 'emp-029', name: 'Daniela Cossa', recordId: 'VUL-DEMO-01', company: 'Vulcan Resources Mozambique', department: 'HSE', role: 'HSE Coordinator', isActive: true, siteId: 's-maputo' },
   { id: 'emp-030', name: 'Edgar Massinga', recordId: 'VUL-DEMO-02', company: 'Vulcan Resources Mozambique', department: 'Plant Maintenance', role: 'Maintenance Engineer', isActive: true, siteId: 's-nacala' },
 ];
 
-// ─── 8. Training Sessions ────────────────────────────────────
+// â”€â”€â”€ 8. Training Sessions â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export const DEMO_SESSIONS: TrainingSession[] = [
   // Past sessions
-  { id: 'S-P01', racType: 'RAC 01 - Working at Height', date: d(-90), startTime: '08:00', location: 'Training Room Alpha', instructor: 'Inês Baloi', capacity: 30, sessionLanguage: 'English', siteId: 's-maputo' },
-  { id: 'S-P02', racType: 'RAC 02 - Vehicles and Mobile Equipment', date: d(-75), startTime: '08:00', location: 'Moatize Field Classroom', instructor: 'António Sitoe', capacity: 20, sessionLanguage: 'Portuguese', siteId: 's-moatize' },
+  { id: 'S-P01', racType: 'RAC 01 - Working at Height', date: d(-90), startTime: '08:00', location: 'Training Room Alpha', instructor: 'InÃªs Baloi', capacity: 30, sessionLanguage: 'English', siteId: 's-maputo' },
+  { id: 'S-P02', racType: 'RAC 02 - Vehicles and Mobile Equipment', date: d(-75), startTime: '08:00', location: 'Moatize Field Classroom', instructor: 'AntÃ³nio Sitoe', capacity: 20, sessionLanguage: 'Portuguese', siteId: 's-moatize' },
   { id: 'S-P03', racType: 'RAC 09 - Explosives Control', date: d(-60), startTime: '07:30', location: 'Moatize Field Classroom', instructor: 'Humberto Machava', capacity: 15, sessionLanguage: 'Portuguese', siteId: 's-moatize' },
   { id: 'S-P04', racType: 'RAC 08 - Electrical Safety', date: d(-45), startTime: '09:00', location: 'Nacala Safety Hall', instructor: 'Felicidade Cossa', capacity: 25, sessionLanguage: 'English', siteId: 's-nacala' },
-  { id: 'S-P05', racType: 'RAC 11 - Mine Traffic Rules', date: d(-30), startTime: '07:30', location: 'Moatize Field Classroom', instructor: 'António Sitoe', capacity: 25, sessionLanguage: 'Portuguese', siteId: 's-moatize' },
-  { id: 'S-P06', racType: 'PTS - Work Permit Issuer', date: d(-20), startTime: '09:00', location: 'Training Room Bravo', instructor: 'Inês Baloi', capacity: 20, sessionLanguage: 'English', siteId: 's-maputo' },
+  { id: 'S-P05', racType: 'RAC 11 - Mine Traffic Rules', date: d(-30), startTime: '07:30', location: 'Moatize Field Classroom', instructor: 'AntÃ³nio Sitoe', capacity: 25, sessionLanguage: 'Portuguese', siteId: 's-moatize' },
+  { id: 'S-P06', racType: 'PTS - Work Permit Issuer', date: d(-20), startTime: '09:00', location: 'Training Room Bravo', instructor: 'InÃªs Baloi', capacity: 20, sessionLanguage: 'English', siteId: 's-maputo' },
   { id: 'S-P07', racType: 'ART - Risk Assessment', date: d(-14), startTime: '09:00', location: 'Nacala Safety Hall', instructor: 'Felicidade Cossa', capacity: 20, sessionLanguage: 'Portuguese', siteId: 's-nacala' },
-  { id: 'S-P08', racType: 'RAC 06 - Lifting Operations', date: d(-7), startTime: '08:00', location: 'Moatize Field Classroom', instructor: 'António Sitoe', capacity: 18, sessionLanguage: 'Portuguese', siteId: 's-moatize' },
+  { id: 'S-P08', racType: 'RAC 06 - Lifting Operations', date: d(-7), startTime: '08:00', location: 'Moatize Field Classroom', instructor: 'AntÃ³nio Sitoe', capacity: 18, sessionLanguage: 'Portuguese', siteId: 's-moatize' },
 
   // Current / upcoming sessions
-  { id: 'S-U01', racType: 'RAC 01 - Working at Height', date: d(3), startTime: '08:00', location: 'Training Room Alpha', instructor: 'Inês Baloi', capacity: 30, sessionLanguage: 'English', siteId: 's-maputo' },
+  { id: 'S-U01', racType: 'RAC 01 - Working at Height', date: d(3), startTime: '08:00', location: 'Training Room Alpha', instructor: 'InÃªs Baloi', capacity: 30, sessionLanguage: 'English', siteId: 's-maputo' },
   { id: 'S-U02', racType: 'RAC 03 - Energy Isolation (LOTO)', date: d(7), startTime: '09:00', location: 'Nacala Safety Hall', instructor: 'Felicidade Cossa', capacity: 20, sessionLanguage: 'English', siteId: 's-nacala' },
   { id: 'S-U03', racType: 'RAC 05 - Confined Spaces', date: d(10), startTime: '08:00', location: 'Moatize Field Classroom', instructor: 'Humberto Machava', capacity: 15, sessionLanguage: 'Portuguese', siteId: 's-moatize' },
-  { id: 'S-U04', racType: 'RAC 02 - Vehicles and Mobile Equipment', date: d(14), startTime: '07:30', location: 'Moatize Field Classroom', instructor: 'António Sitoe', capacity: 20, sessionLanguage: 'Portuguese', siteId: 's-moatize' },
+  { id: 'S-U04', racType: 'RAC 02 - Vehicles and Mobile Equipment', date: d(14), startTime: '07:30', location: 'Moatize Field Classroom', instructor: 'AntÃ³nio Sitoe', capacity: 20, sessionLanguage: 'Portuguese', siteId: 's-moatize' },
   { id: 'S-U05', racType: 'RAC 11 - Mine Traffic Rules', date: d(18), startTime: '07:30', location: 'Mobile Training Unit #1', instructor: 'Jorge Mondlane', capacity: 12, sessionLanguage: 'Portuguese', siteId: 's-lichinga' },
   { id: 'S-U06', racType: 'RAC 07 - Slope Stabilization', date: d(21), startTime: '08:00', location: 'Moatize Field Classroom', instructor: 'Humberto Machava', capacity: 20, sessionLanguage: 'Portuguese', siteId: 's-moatize' },
-  { id: 'S-U07', racType: 'PTS - Work Permit Issuer', date: d(28), startTime: '09:00', location: 'Training Room Alpha', instructor: 'Inês Baloi', capacity: 25, sessionLanguage: 'English', siteId: 's-maputo' },
-  { id: 'S-U08', racType: 'ART - Risk Assessment', date: d(35), startTime: '09:00', location: 'Training Room Bravo', instructor: 'Inês Baloi', capacity: 25, sessionLanguage: 'English', siteId: 's-maputo' },
+  { id: 'S-U07', racType: 'PTS - Work Permit Issuer', date: d(28), startTime: '09:00', location: 'Training Room Alpha', instructor: 'InÃªs Baloi', capacity: 25, sessionLanguage: 'English', siteId: 's-maputo' },
+  { id: 'S-U08', racType: 'ART - Risk Assessment', date: d(35), startTime: '09:00', location: 'Training Room Bravo', instructor: 'InÃªs Baloi', capacity: 25, sessionLanguage: 'English', siteId: 's-maputo' },
 ];
 
-// ─── 9. Bookings ─────────────────────────────────────────────
+// â”€â”€â”€ 9. Bookings â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 const mkEmployee = (id: string) => DEMO_EMPLOYEES.find(e => e.id === id)!;
 
 export const DEMO_BOOKINGS: Booking[] = [
-  // ── Passed records (historical) ──
-  { id: 'bk-001', sessionId: 'S-P01', employee: mkEmployee('emp-001'), status: BookingStatus.PASSED, resultDate: d(-90), expiryDate: d(630), attendance: true, theoryScore: 88, practicalScore: 91, trainerName: 'Inês Baloi' },
-  { id: 'bk-002', sessionId: 'S-P01', employee: mkEmployee('emp-009'), status: BookingStatus.PASSED, resultDate: d(-90), expiryDate: d(630), attendance: true, theoryScore: 95, practicalScore: 96, trainerName: 'Inês Baloi' },
-  { id: 'bk-003', sessionId: 'S-P01', employee: mkEmployee('emp-014'), status: BookingStatus.PASSED, resultDate: d(-90), expiryDate: d(630), attendance: true, theoryScore: 82, practicalScore: 85, trainerName: 'Inês Baloi' },
-  { id: 'bk-004', sessionId: 'S-P01', employee: mkEmployee('emp-026'), status: BookingStatus.PASSED, resultDate: d(-90), expiryDate: d(630), attendance: true, theoryScore: 79, practicalScore: 80, trainerName: 'Inês Baloi' },
+  // â”€â”€ Passed records (historical) â”€â”€
+  { id: 'bk-001', sessionId: 'S-P01', employee: mkEmployee('emp-001'), status: BookingStatus.PASSED, resultDate: d(-90), expiryDate: d(630), attendance: true, theoryScore: 88, practicalScore: 91, trainerName: 'InÃªs Baloi' },
+  { id: 'bk-002', sessionId: 'S-P01', employee: mkEmployee('emp-009'), status: BookingStatus.PASSED, resultDate: d(-90), expiryDate: d(630), attendance: true, theoryScore: 95, practicalScore: 96, trainerName: 'InÃªs Baloi' },
+  { id: 'bk-003', sessionId: 'S-P01', employee: mkEmployee('emp-014'), status: BookingStatus.PASSED, resultDate: d(-90), expiryDate: d(630), attendance: true, theoryScore: 82, practicalScore: 85, trainerName: 'InÃªs Baloi' },
+  { id: 'bk-004', sessionId: 'S-P01', employee: mkEmployee('emp-026'), status: BookingStatus.PASSED, resultDate: d(-90), expiryDate: d(630), attendance: true, theoryScore: 79, practicalScore: 80, trainerName: 'InÃªs Baloi' },
 
-  { id: 'bk-005', sessionId: 'S-P02', employee: mkEmployee('emp-001'), status: BookingStatus.PASSED, resultDate: d(-75), expiryDate: d(645), attendance: true, theoryScore: 90, practicalScore: 93, driverLicenseVerified: true, trainerName: 'António Sitoe' },
-  { id: 'bk-006', sessionId: 'S-P02', employee: mkEmployee('emp-003'), status: BookingStatus.PASSED, resultDate: d(-75), expiryDate: d(645), attendance: true, theoryScore: 84, practicalScore: 88, driverLicenseVerified: true, trainerName: 'António Sitoe' },
-  { id: 'bk-007', sessionId: 'S-P02', employee: mkEmployee('emp-005'), status: BookingStatus.PASSED, resultDate: d(-75), expiryDate: d(645), attendance: true, theoryScore: 87, practicalScore: 89, driverLicenseVerified: true, trainerName: 'António Sitoe' },
-  { id: 'bk-008', sessionId: 'S-P02', employee: mkEmployee('emp-015'), status: BookingStatus.FAILED, resultDate: d(-75), attendance: true, theoryScore: 55, practicalScore: 48, driverLicenseVerified: true, trainerName: 'António Sitoe', comments: 'Failed practical — re-booking required' },
-  { id: 'bk-009', sessionId: 'S-P02', employee: mkEmployee('emp-022'), status: BookingStatus.PASSED, resultDate: d(-75), expiryDate: d(645), attendance: true, theoryScore: 91, practicalScore: 92, driverLicenseVerified: true, trainerName: 'António Sitoe' },
+  { id: 'bk-005', sessionId: 'S-P02', employee: mkEmployee('emp-001'), status: BookingStatus.PASSED, resultDate: d(-75), expiryDate: d(645), attendance: true, theoryScore: 90, practicalScore: 93, driverLicenseVerified: true, trainerName: 'AntÃ³nio Sitoe' },
+  { id: 'bk-006', sessionId: 'S-P02', employee: mkEmployee('emp-003'), status: BookingStatus.PASSED, resultDate: d(-75), expiryDate: d(645), attendance: true, theoryScore: 84, practicalScore: 88, driverLicenseVerified: true, trainerName: 'AntÃ³nio Sitoe' },
+  { id: 'bk-007', sessionId: 'S-P02', employee: mkEmployee('emp-005'), status: BookingStatus.PASSED, resultDate: d(-75), expiryDate: d(645), attendance: true, theoryScore: 87, practicalScore: 89, driverLicenseVerified: true, trainerName: 'AntÃ³nio Sitoe' },
+  { id: 'bk-008', sessionId: 'S-P02', employee: mkEmployee('emp-015'), status: BookingStatus.FAILED, resultDate: d(-75), attendance: true, theoryScore: 55, practicalScore: 48, driverLicenseVerified: true, trainerName: 'AntÃ³nio Sitoe', comments: 'Failed practical â€” re-booking required' },
+  { id: 'bk-009', sessionId: 'S-P02', employee: mkEmployee('emp-022'), status: BookingStatus.PASSED, resultDate: d(-75), expiryDate: d(645), attendance: true, theoryScore: 91, practicalScore: 92, driverLicenseVerified: true, trainerName: 'AntÃ³nio Sitoe' },
 
   { id: 'bk-010', sessionId: 'S-P03', employee: mkEmployee('emp-002'), status: BookingStatus.PASSED, resultDate: d(-60), expiryDate: d(660), attendance: true, theoryScore: 93, practicalScore: 95, trainerName: 'Humberto Machava' },
-  { id: 'bk-011', sessionId: 'S-P03', employee: mkEmployee('emp-013'), status: BookingStatus.ABSENT, resultDate: d(-60), attendance: false, trainerName: 'Humberto Machava', comments: 'No show — emergency shift change' },
+  { id: 'bk-011', sessionId: 'S-P03', employee: mkEmployee('emp-013'), status: BookingStatus.ABSENT, resultDate: d(-60), attendance: false, trainerName: 'Humberto Machava', comments: 'No show â€” emergency shift change' },
 
   { id: 'bk-012', sessionId: 'S-P04', employee: mkEmployee('emp-006'), status: BookingStatus.PASSED, resultDate: d(-45), expiryDate: d(675), attendance: true, theoryScore: 89, practicalScore: 90, trainerName: 'Felicidade Cossa' },
   { id: 'bk-013', sessionId: 'S-P04', employee: mkEmployee('emp-007'), status: BookingStatus.PASSED, resultDate: d(-45), expiryDate: d(675), attendance: true, theoryScore: 78, practicalScore: 80, trainerName: 'Felicidade Cossa' },
   { id: 'bk-014', sessionId: 'S-P04', employee: mkEmployee('emp-023'), status: BookingStatus.PASSED, resultDate: d(-45), expiryDate: d(675), attendance: true, theoryScore: 86, practicalScore: 88, trainerName: 'Felicidade Cossa' },
   { id: 'bk-015', sessionId: 'S-P04', employee: mkEmployee('emp-024'), status: BookingStatus.PASSED, resultDate: d(-45), expiryDate: d(675), attendance: true, theoryScore: 92, practicalScore: 94, trainerName: 'Felicidade Cossa' },
 
-  { id: 'bk-016', sessionId: 'S-P05', employee: mkEmployee('emp-001'), status: BookingStatus.PASSED, resultDate: d(-30), expiryDate: d(690), attendance: true, theoryScore: 96, practicalScore: 97, driverLicenseVerified: true, trainerName: 'António Sitoe' },
-  { id: 'bk-017', sessionId: 'S-P05', employee: mkEmployee('emp-017'), status: BookingStatus.PASSED, resultDate: d(-30), expiryDate: d(690), attendance: true, theoryScore: 88, practicalScore: 90, driverLicenseVerified: true, trainerName: 'António Sitoe' },
-  { id: 'bk-018', sessionId: 'S-P05', employee: mkEmployee('emp-020'), status: BookingStatus.PASSED, resultDate: d(-30), expiryDate: d(690), attendance: true, theoryScore: 84, practicalScore: 85, driverLicenseVerified: true, trainerName: 'António Sitoe' },
-  { id: 'bk-019', sessionId: 'S-P05', employee: mkEmployee('emp-022'), status: BookingStatus.PASSED, resultDate: d(-30), expiryDate: d(690), attendance: true, theoryScore: 91, practicalScore: 93, driverLicenseVerified: true, trainerName: 'António Sitoe' },
+  { id: 'bk-016', sessionId: 'S-P05', employee: mkEmployee('emp-001'), status: BookingStatus.PASSED, resultDate: d(-30), expiryDate: d(690), attendance: true, theoryScore: 96, practicalScore: 97, driverLicenseVerified: true, trainerName: 'AntÃ³nio Sitoe' },
+  { id: 'bk-017', sessionId: 'S-P05', employee: mkEmployee('emp-017'), status: BookingStatus.PASSED, resultDate: d(-30), expiryDate: d(690), attendance: true, theoryScore: 88, practicalScore: 90, driverLicenseVerified: true, trainerName: 'AntÃ³nio Sitoe' },
+  { id: 'bk-018', sessionId: 'S-P05', employee: mkEmployee('emp-020'), status: BookingStatus.PASSED, resultDate: d(-30), expiryDate: d(690), attendance: true, theoryScore: 84, practicalScore: 85, driverLicenseVerified: true, trainerName: 'AntÃ³nio Sitoe' },
+  { id: 'bk-019', sessionId: 'S-P05', employee: mkEmployee('emp-022'), status: BookingStatus.PASSED, resultDate: d(-30), expiryDate: d(690), attendance: true, theoryScore: 91, practicalScore: 93, driverLicenseVerified: true, trainerName: 'AntÃ³nio Sitoe' },
 
-  { id: 'bk-020', sessionId: 'S-P06', employee: mkEmployee('emp-009'), status: BookingStatus.PASSED, resultDate: d(-20), expiryDate: d(700), attendance: true, theoryScore: 97, practicalScore: 98, trainerName: 'Inês Baloi' },
-  { id: 'bk-021', sessionId: 'S-P06', employee: mkEmployee('emp-010'), status: BookingStatus.PASSED, resultDate: d(-20), expiryDate: d(700), attendance: true, theoryScore: 90, practicalScore: 91, trainerName: 'Inês Baloi' },
-  { id: 'bk-022', sessionId: 'S-P06', employee: mkEmployee('emp-016'), status: BookingStatus.FAILED, resultDate: d(-20), attendance: true, theoryScore: 60, practicalScore: 55, trainerName: 'Inês Baloi', comments: 'Below pass threshold — 70% required' },
+  { id: 'bk-020', sessionId: 'S-P06', employee: mkEmployee('emp-009'), status: BookingStatus.PASSED, resultDate: d(-20), expiryDate: d(700), attendance: true, theoryScore: 97, practicalScore: 98, trainerName: 'InÃªs Baloi' },
+  { id: 'bk-021', sessionId: 'S-P06', employee: mkEmployee('emp-010'), status: BookingStatus.PASSED, resultDate: d(-20), expiryDate: d(700), attendance: true, theoryScore: 90, practicalScore: 91, trainerName: 'InÃªs Baloi' },
+  { id: 'bk-022', sessionId: 'S-P06', employee: mkEmployee('emp-016'), status: BookingStatus.FAILED, resultDate: d(-20), attendance: true, theoryScore: 60, practicalScore: 55, trainerName: 'InÃªs Baloi', comments: 'Below pass threshold â€” 70% required' },
 
   { id: 'bk-023', sessionId: 'S-P07', employee: mkEmployee('emp-006'), status: BookingStatus.PASSED, resultDate: d(-14), expiryDate: d(706), attendance: true, theoryScore: 88, practicalScore: 90, trainerName: 'Felicidade Cossa' },
   { id: 'bk-024', sessionId: 'S-P07', employee: mkEmployee('emp-019'), status: BookingStatus.PASSED, resultDate: d(-14), expiryDate: d(706), attendance: true, theoryScore: 82, practicalScore: 84, trainerName: 'Felicidade Cossa' },
   { id: 'bk-025', sessionId: 'S-P07', employee: mkEmployee('emp-025'), status: BookingStatus.PASSED, resultDate: d(-14), expiryDate: d(706), attendance: true, theoryScore: 79, practicalScore: 81, trainerName: 'Felicidade Cossa' },
 
-  { id: 'bk-026', sessionId: 'S-P08', employee: mkEmployee('emp-005'), status: BookingStatus.PASSED, resultDate: d(-7), expiryDate: d(713), attendance: true, theoryScore: 86, practicalScore: 88, trainerName: 'António Sitoe' },
-  { id: 'bk-027', sessionId: 'S-P08', employee: mkEmployee('emp-015'), status: BookingStatus.PASSED, resultDate: d(-7), expiryDate: d(713), attendance: true, theoryScore: 81, practicalScore: 83, trainerName: 'António Sitoe' },
-  { id: 'bk-028', sessionId: 'S-P08', employee: mkEmployee('emp-018'), status: BookingStatus.ABSENT, resultDate: d(-7), attendance: false, trainerName: 'António Sitoe', comments: 'Equipment breakdown — rescheduled to S-U04' },
+  { id: 'bk-026', sessionId: 'S-P08', employee: mkEmployee('emp-005'), status: BookingStatus.PASSED, resultDate: d(-7), expiryDate: d(713), attendance: true, theoryScore: 86, practicalScore: 88, trainerName: 'AntÃ³nio Sitoe' },
+  { id: 'bk-027', sessionId: 'S-P08', employee: mkEmployee('emp-015'), status: BookingStatus.PASSED, resultDate: d(-7), expiryDate: d(713), attendance: true, theoryScore: 81, practicalScore: 83, trainerName: 'AntÃ³nio Sitoe' },
+  { id: 'bk-028', sessionId: 'S-P08', employee: mkEmployee('emp-018'), status: BookingStatus.ABSENT, resultDate: d(-7), attendance: false, trainerName: 'AntÃ³nio Sitoe', comments: 'Equipment breakdown â€” rescheduled to S-U04' },
 
-  // ── Pending (upcoming sessions) ──
-  { id: 'bk-029', sessionId: 'S-U01', employee: mkEmployee('emp-004'), status: BookingStatus.PENDING, trainerName: 'Inês Baloi' },
-  { id: 'bk-030', sessionId: 'S-U01', employee: mkEmployee('emp-012'), status: BookingStatus.PENDING, trainerName: 'Inês Baloi' },
-  { id: 'bk-031', sessionId: 'S-U01', employee: mkEmployee('emp-027'), status: BookingStatus.PENDING, trainerName: 'Inês Baloi' },
-  { id: 'bk-032', sessionId: 'S-U01', employee: mkEmployee('emp-028'), status: BookingStatus.PENDING, trainerName: 'Inês Baloi' },
+  // â”€â”€ Pending (upcoming sessions) â”€â”€
+  { id: 'bk-029', sessionId: 'S-U01', employee: mkEmployee('emp-004'), status: BookingStatus.PENDING, trainerName: 'InÃªs Baloi' },
+  { id: 'bk-030', sessionId: 'S-U01', employee: mkEmployee('emp-012'), status: BookingStatus.PENDING, trainerName: 'InÃªs Baloi' },
+  { id: 'bk-031', sessionId: 'S-U01', employee: mkEmployee('emp-027'), status: BookingStatus.PENDING, trainerName: 'InÃªs Baloi' },
+  { id: 'bk-032', sessionId: 'S-U01', employee: mkEmployee('emp-028'), status: BookingStatus.PENDING, trainerName: 'InÃªs Baloi' },
 
   { id: 'bk-033', sessionId: 'S-U02', employee: mkEmployee('emp-008'), status: BookingStatus.PENDING, trainerName: 'Felicidade Cossa' },
   { id: 'bk-034', sessionId: 'S-U02', employee: mkEmployee('emp-023'), status: BookingStatus.PENDING, trainerName: 'Felicidade Cossa' },
@@ -321,9 +321,9 @@ export const DEMO_BOOKINGS: Booking[] = [
   { id: 'bk-035', sessionId: 'S-U03', employee: mkEmployee('emp-002'), status: BookingStatus.PENDING, trainerName: 'Humberto Machava' },
   { id: 'bk-036', sessionId: 'S-U03', employee: mkEmployee('emp-019'), status: BookingStatus.PENDING, trainerName: 'Humberto Machava' },
 
-  { id: 'bk-037', sessionId: 'S-U04', employee: mkEmployee('emp-015'), status: BookingStatus.PENDING, trainerName: 'António Sitoe', isAutoBooked: true, comments: 'Re-booked after RAC02 failure on S-P02' },
-  { id: 'bk-038', sessionId: 'S-U04', employee: mkEmployee('emp-017'), status: BookingStatus.PENDING, trainerName: 'António Sitoe' },
-  { id: 'bk-039', sessionId: 'S-U04', employee: mkEmployee('emp-018'), status: BookingStatus.PENDING, trainerName: 'António Sitoe', isAutoBooked: true, comments: 'Rescheduled from S-P08' },
+  { id: 'bk-037', sessionId: 'S-U04', employee: mkEmployee('emp-015'), status: BookingStatus.PENDING, trainerName: 'AntÃ³nio Sitoe', isAutoBooked: true, comments: 'Re-booked after RAC02 failure on S-P02' },
+  { id: 'bk-038', sessionId: 'S-U04', employee: mkEmployee('emp-017'), status: BookingStatus.PENDING, trainerName: 'AntÃ³nio Sitoe' },
+  { id: 'bk-039', sessionId: 'S-U04', employee: mkEmployee('emp-018'), status: BookingStatus.PENDING, trainerName: 'AntÃ³nio Sitoe', isAutoBooked: true, comments: 'Rescheduled from S-P08' },
 
   { id: 'bk-040', sessionId: 'S-U05', employee: mkEmployee('emp-020'), status: BookingStatus.PENDING, trainerName: 'Jorge Mondlane' },
   { id: 'bk-041', sessionId: 'S-U05', employee: mkEmployee('emp-021'), status: BookingStatus.PENDING, trainerName: 'Jorge Mondlane' },
@@ -334,20 +334,20 @@ export const DEMO_BOOKINGS: Booking[] = [
   { id: 'bk-044', sessionId: 'S-U01', employee: mkEmployee('emp-011'), status: BookingStatus.WAITLISTED },
 
   // Expiring soon (within 60 days)
-  { id: 'bk-045', sessionId: 'S-P01', employee: mkEmployee('emp-016'), status: BookingStatus.PASSED, resultDate: d(-670), expiryDate: d(50), attendance: true, theoryScore: 74, practicalScore: 76, trainerName: 'Inês Baloi' },
-  { id: 'bk-046', sessionId: 'S-P02', employee: mkEmployee('emp-021'), status: BookingStatus.PASSED, resultDate: d(-660), expiryDate: d(60), attendance: true, theoryScore: 80, practicalScore: 82, driverLicenseVerified: true, trainerName: 'António Sitoe' },
+  { id: 'bk-045', sessionId: 'S-P01', employee: mkEmployee('emp-016'), status: BookingStatus.PASSED, resultDate: d(-670), expiryDate: d(50), attendance: true, theoryScore: 74, practicalScore: 76, trainerName: 'InÃªs Baloi' },
+  { id: 'bk-046', sessionId: 'S-P02', employee: mkEmployee('emp-021'), status: BookingStatus.PASSED, resultDate: d(-660), expiryDate: d(60), attendance: true, theoryScore: 80, practicalScore: 82, driverLicenseVerified: true, trainerName: 'AntÃ³nio Sitoe' },
   { id: 'bk-047', sessionId: 'S-P03', employee: mkEmployee('emp-004'), status: BookingStatus.PASSED, resultDate: d(-640), expiryDate: d(80), attendance: true, theoryScore: 90, practicalScore: 92, trainerName: 'Humberto Machava' },
 
-  // ── DEMO CHAMPIONS: emp-029 (Daniela — requires RAC01+PTS) ──
-  { id: 'bk-048', sessionId: 'S-P01', employee: mkEmployee('emp-029'), status: BookingStatus.PASSED, resultDate: d(-90), expiryDate: d(630), attendance: true, theoryScore: 94, practicalScore: 96, trainerName: 'Inês Baloi' },
-  { id: 'bk-049', sessionId: 'S-P06', employee: mkEmployee('emp-029'), status: BookingStatus.PASSED, resultDate: d(-20), expiryDate: d(700), attendance: true, theoryScore: 98, practicalScore: 97, trainerName: 'Inês Baloi' },
+  // â”€â”€ DEMO CHAMPIONS: emp-029 (Daniela â€” requires RAC01+PTS) â”€â”€
+  { id: 'bk-048', sessionId: 'S-P01', employee: mkEmployee('emp-029'), status: BookingStatus.PASSED, resultDate: d(-90), expiryDate: d(630), attendance: true, theoryScore: 94, practicalScore: 96, trainerName: 'InÃªs Baloi' },
+  { id: 'bk-049', sessionId: 'S-P06', employee: mkEmployee('emp-029'), status: BookingStatus.PASSED, resultDate: d(-20), expiryDate: d(700), attendance: true, theoryScore: 98, practicalScore: 97, trainerName: 'InÃªs Baloi' },
 
-  // ── DEMO CHAMPIONS: emp-030 (Edgar — requires RAC01+RAC08) ──
-  { id: 'bk-050', sessionId: 'S-P01', employee: mkEmployee('emp-030'), status: BookingStatus.PASSED, resultDate: d(-90), expiryDate: d(630), attendance: true, theoryScore: 91, practicalScore: 93, trainerName: 'Inês Baloi' },
+  // â”€â”€ DEMO CHAMPIONS: emp-030 (Edgar â€” requires RAC01+RAC08) â”€â”€
+  { id: 'bk-050', sessionId: 'S-P01', employee: mkEmployee('emp-030'), status: BookingStatus.PASSED, resultDate: d(-90), expiryDate: d(630), attendance: true, theoryScore: 91, practicalScore: 93, trainerName: 'InÃªs Baloi' },
   { id: 'bk-051', sessionId: 'S-P04', employee: mkEmployee('emp-030'), status: BookingStatus.PASSED, resultDate: d(-45), expiryDate: d(675), attendance: true, theoryScore: 95, practicalScore: 96, trainerName: 'Felicidade Cossa' },
 ];
 
-// ─── 10. Employee Requirements ───────────────────────────────
+// â”€â”€â”€ 10. Employee Requirements â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export const DEMO_REQUIREMENTS: EmployeeRequirement[] = [
   { employeeId: 'emp-001', asoExpiryDate: d(180), requiredRacs: { RAC01: true, RAC02: true, RAC06: true, RAC11: true } },
@@ -379,14 +379,14 @@ export const DEMO_REQUIREMENTS: EmployeeRequirement[] = [
   { employeeId: 'emp-027', asoExpiryDate: d(80), requiredRacs: { RAC01: true } },
   { employeeId: 'emp-028', asoExpiryDate: d(200), requiredRacs: { RAC01: true } },
 
-  // ── DEMO CHAMPIONS — all requirements fully satisfied ──
-  // Daniela Cossa: RAC01 ✓ (bk-048) + PTS ✓ (bk-049), ASO valid 365 days
+  // â”€â”€ DEMO CHAMPIONS â€” all requirements fully satisfied â”€â”€
+  // Daniela Cossa: RAC01 âœ“ (bk-048) + PTS âœ“ (bk-049), ASO valid 365 days
   { employeeId: 'emp-029', asoExpiryDate: d(365), requiredRacs: { RAC01: true, PTS: true } },
-  // Edgar Massinga: RAC01 ✓ (bk-050) + RAC08 ✓ (bk-051), ASO valid 365 days
+  // Edgar Massinga: RAC01 âœ“ (bk-050) + RAC08 âœ“ (bk-051), ASO valid 365 days
   { employeeId: 'emp-030', asoExpiryDate: d(365), requiredRacs: { RAC01: true, RAC08: true } },
 ];
 
-// ─── 11. Breathalyzer Tests ──────────────────────────────────
+// â”€â”€â”€ 11. Breathalyzer Tests â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export const DEMO_BREATHALYZER_TESTS: BreathalyzerTest[] = [
   { id: 'bt-001', deviceId: 'IOT-BAC-01', employeeId: 'emp-001', employeeName: 'Paulo Manjate', date: d(-1), timestamp: ts(-1, 6), result: 0.00, status: 'PASS' },
@@ -394,24 +394,24 @@ export const DEMO_BREATHALYZER_TESTS: BreathalyzerTest[] = [
   { id: 'bt-003', deviceId: 'IOT-BAC-01', employeeId: 'emp-005', employeeName: 'Umbe Gove', date: d(-1), timestamp: ts(-1, 6), result: 0.00, status: 'PASS' },
   { id: 'bt-004', deviceId: 'IOT-BAC-02', employeeId: 'emp-015', employeeName: 'Orlando Yacub', date: d(-2), timestamp: ts(-2, 6), result: 0.04, status: 'FAIL', imageUrl: '' },
   { id: 'bt-005', deviceId: 'IOT-BAC-02', employeeId: 'emp-017', employeeName: 'Rui Tivane', date: d(-2), timestamp: ts(-2, 6), result: 0.00, status: 'PASS' },
-  { id: 'bt-006', deviceId: 'IOT-BAC-01', employeeId: 'emp-002', employeeName: 'Rosário Chauque', date: d(0), timestamp: ts(0, 6), result: 0.00, status: 'PASS' },
+  { id: 'bt-006', deviceId: 'IOT-BAC-01', employeeId: 'emp-002', employeeName: 'RosÃ¡rio Chauque', date: d(0), timestamp: ts(0, 6), result: 0.00, status: 'PASS' },
   { id: 'bt-007', deviceId: 'IOT-BAC-01', employeeId: 'emp-004', employeeName: 'Teodora Fondo', date: d(0), timestamp: ts(0, 6), result: 0.00, status: 'PASS' },
   { id: 'bt-008', deviceId: 'IOT-BAC-03', employeeId: 'emp-020', employeeName: 'Quim Wate', date: d(0), timestamp: ts(0, 5), result: 0.00, status: 'PASS' },
   { id: 'bt-009', deviceId: 'IOT-BAC-03', employeeId: 'emp-022', employeeName: 'Sara Tamele', date: d(0), timestamp: ts(0, 5), result: 0.00, status: 'PASS' },
   { id: 'bt-010', deviceId: 'IOT-BAC-02', employeeId: 'emp-016', employeeName: 'Paulo Vombe', date: d(-5), timestamp: ts(-5, 6), result: 0.02, status: 'FAIL', imageUrl: '' },
 ];
 
-// ─── 12. IoT Devices ─────────────────────────────────────────
+// â”€â”€â”€ 12. IoT Devices â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export const DEMO_IOT_DEVICES: IotDevice[] = [
-  { id: 'IOT-BAC-01', name: 'Breathalyzer Unit — Gate Alpha (Moatize)', location: 'Moatize Mine Entrance', status: 'Online', lastPing: ts(0, 5) },
-  { id: 'IOT-BAC-02', name: 'Breathalyzer Unit — Gate Bravo (Moatize)', location: 'Moatize East Access Road', status: 'Online', lastPing: ts(0, 5) },
-  { id: 'IOT-BAC-03', name: 'Breathalyzer Unit — Lichinga Hub Gate', location: 'Lichinga Logistics Entrance', status: 'Online', lastPing: ts(0, 5) },
-  { id: 'IOT-BAC-04', name: 'Breathalyzer Unit — Nacala Plant Gate', location: 'Nacala Processing Plant', status: 'Maintenance', lastPing: ts(-2, 14) },
-  { id: 'IOT-BAC-05', name: 'Breathalyzer Unit — Maputo HQ', location: 'Maputo HQ Reception', status: 'Offline', lastPing: ts(-5, 8) },
+  { id: 'IOT-BAC-01', name: 'Breathalyzer Unit â€” Gate Alpha (Moatize)', location: 'Moatize Mine Entrance', status: 'Online', lastPing: ts(0, 5) },
+  { id: 'IOT-BAC-02', name: 'Breathalyzer Unit â€” Gate Bravo (Moatize)', location: 'Moatize East Access Road', status: 'Online', lastPing: ts(0, 5) },
+  { id: 'IOT-BAC-03', name: 'Breathalyzer Unit â€” Lichinga Hub Gate', location: 'Lichinga Logistics Entrance', status: 'Online', lastPing: ts(0, 5) },
+  { id: 'IOT-BAC-04', name: 'Breathalyzer Unit â€” Nacala Plant Gate', location: 'Nacala Processing Plant', status: 'Maintenance', lastPing: ts(-2, 14) },
+  { id: 'IOT-BAC-05', name: 'Breathalyzer Unit â€” Maputo HQ', location: 'Maputo HQ Reception', status: 'Offline', lastPing: ts(-5, 8) },
 ];
 
-// ─── 13. Data Connectors ─────────────────────────────────────
+// â”€â”€â”€ 13. Data Connectors â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export const DEMO_CONNECTORS: DataConnector[] = [
   {
@@ -471,29 +471,29 @@ export const DEMO_CONNECTORS: DataConnector[] = [
   },
 ];
 
-// ─── 14. Feedback ─────────────────────────────────────────────
+// â”€â”€â”€ 14. Feedback â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export const DEMO_FEEDBACK: Feedback[] = [
   { id: 'fb-001', userId: 'user-9', userName: 'Jessica Bata', type: 'Bug', message: 'RAC02 booking form does not show driver license field on mobile browser (iOS Safari).', status: 'In Progress', isActionable: true, timestamp: ts(-5) },
   { id: 'fb-002', userId: 'user-10', userName: 'Kelven Ubisse', type: 'Improvement', message: 'Would be helpful to receive an SMS reminder 48 hours before a training session.', status: 'New', isActionable: true, timestamp: ts(-4) },
   { id: 'fb-003', userId: 'user-12', userName: 'Domingos Guambe', type: 'General', message: 'System is significantly faster than the previous paper-based system. Very satisfied.', status: 'Resolved', isActionable: false, timestamp: ts(-3) },
-  { id: 'fb-004', userId: 'user-7', userName: 'António Sitoe', type: 'Bug', message: 'Trainer input page does not retain practical score when navigating between employees.', status: 'In Progress', isActionable: true, timestamp: ts(-2) },
+  { id: 'fb-004', userId: 'user-7', userName: 'AntÃ³nio Sitoe', type: 'Bug', message: 'Trainer input page does not retain practical score when navigating between employees.', status: 'In Progress', isActionable: true, timestamp: ts(-2) },
   { id: 'fb-005', userId: 'user-3', userName: 'Ana Bila', type: 'Improvement', message: 'Reports page should allow filtering by contractor company, not only by site.', status: 'New', isActionable: true, timestamp: ts(-1) },
   { id: 'fb-006', userId: 'user-4', userName: 'Fernando Nhantumbo', type: 'Improvement', message: 'Verification QR code on RAC cards should also work offline for areas with no signal.', status: 'New', isActionable: true, timestamp: ts(-1) },
-  { id: 'fb-007', userId: 'user-6', userName: 'Hélio Tembe', type: 'General', message: 'Portuguese translation on a few labels is missing — appears in English.', status: 'New', isActionable: true, timestamp: ts(0) },
+  { id: 'fb-007', userId: 'user-6', userName: 'HÃ©lio Tembe', type: 'General', message: 'Portuguese translation on a few labels is missing â€” appears in English.', status: 'New', isActionable: true, timestamp: ts(0) },
 ];
 
-// ─── 15. System Notifications ────────────────────────────────
+// â”€â”€â”€ 15. System Notifications â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export const DEMO_NOTIFICATIONS: SystemNotification[] = [
   { id: 'notif-001', type: 'warning', title: 'Certifications Expiring', message: '3 employees have RAC certifications expiring within 60 days. Review required.', timestamp: new Date(), isRead: false },
-  { id: 'notif-002', type: 'alert', title: 'Breathalyzer FAIL Detected', message: 'Orlando Yacub (ME-001) failed breathalyzer at Gate Bravo — 2 days ago. Supervisor notified.', timestamp: new Date(Date.now() - 172800000), isRead: false },
-  { id: 'notif-003', type: 'info', title: 'IoT Device Offline', message: 'Breathalyzer Unit — Maputo HQ has been offline for 5 days. Check device connection.', timestamp: new Date(Date.now() - 432000000), isRead: true },
+  { id: 'notif-002', type: 'alert', title: 'Breathalyzer FAIL Detected', message: 'Orlando Yacub (ME-001) failed breathalyzer at Gate Bravo â€” 2 days ago. Supervisor notified.', timestamp: new Date(Date.now() - 172800000), isRead: false },
+  { id: 'notif-003', type: 'info', title: 'IoT Device Offline', message: 'Breathalyzer Unit â€” Maputo HQ has been offline for 5 days. Check device connection.', timestamp: new Date(Date.now() - 432000000), isRead: true },
   { id: 'notif-004', type: 'success', title: 'HR Sync Complete', message: 'SAP SuccessFactors sync completed: 14 employees updated, 2 added.', timestamp: new Date(Date.now() - 86400000), isRead: true },
   { id: 'notif-005', type: 'info', title: 'New Training Sessions Scheduled', message: '8 upcoming sessions scheduled for the next 35 days across 4 sites.', timestamp: new Date(Date.now() - 3600000), isRead: false },
 ];
 
-// ─── 16. KPI Summary (Computed for dashboard charts) ─────────
+// â”€â”€â”€ 16. KPI Summary (Computed for dashboard charts) â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 /** Pre-computed KPIs for presentation dashboards */
 export const DEMO_KPI = {
@@ -556,12 +556,15 @@ export const DEMO_COMPANY_COMPLIANCE = [
   { company: 'Jachris Services', employees: 3, compliance: 80 },
 ];
 
+
 export const DEMO_RECRUITMENT_PROCESSES: RecruitmentProcess[] = [
   {
     id: 'rp-1',
     candidateName: 'Mateus Nhaca',
     candidateEmail: 'mateus.nhaca@gmail.com',
     candidatePhone: '+258 84 883 9102',
+    workerType: 'Prime',
+    primeCompany: 'Vulcan Resources Mozambique',
     company: 'Vulcan Resources Mozambique',
     department: 'Mine Operations',
     role: 'Haul Truck Operator',
@@ -570,13 +573,16 @@ export const DEMO_RECRUITMENT_PROCESSES: RecruitmentProcess[] = [
     requestedBy: 'Hélio Tembe',
     requestedAt: new Date(Date.now() - 3600000 * 2).toISOString(),
     documents: [],
-    nudgeCount: 0
+    nudgeCount: 0,
+    requestType: 'Recruitment'
   },
   {
     id: 'rp-2',
     candidateName: 'Joana Mabunda',
     candidateEmail: 'joana.mabunda@outlook.com',
     candidatePhone: '+258 82 402 9384',
+    workerType: 'Prime',
+    primeCompany: 'Vulcan Resources Mozambique',
     company: 'Vulcan Resources Mozambique',
     department: 'Plant Maintenance',
     role: 'Electrician',
@@ -589,18 +595,22 @@ export const DEMO_RECRUITMENT_PROCESSES: RecruitmentProcess[] = [
       { name: 'joana_passport.pdf', type: 'Passport', uploadedAt: new Date(Date.now() - 3600000 * 22).toISOString(), fileSize: '3.4 MB', status: 'Verified' }
     ],
     nudgeCount: 1,
-    lastNudgeAt: new Date(Date.now() - 3600000 * 2).toISOString()
+    lastNudgeAt: new Date(Date.now() - 3600000 * 2).toISOString(),
+    requestType: 'Recruitment'
   },
   {
     id: 'rp-3',
     candidateName: 'Afonso Macamo',
     candidateEmail: 'afonso.macamo@gmail.com',
     candidatePhone: '+258 85 554 0092',
+    workerType: 'Contractor',
+    primeCompany: 'Vulcan Resources Mozambique',
+    contractorCompany: 'Mota-Engil Africa',
     company: 'Mota-Engil Africa',
     department: 'Mine Operations',
     role: 'Operator',
     requiredRacs: ['RAC01', 'RAC02', 'RAC11'],
-    status: RecruitmentStatus.CLINIC_PENDING,
+    status: RecruitmentStatus.PARALLEL_CLEARANCE_PENDING,
     requestedBy: 'Domingos Guambe',
     requestedAt: new Date(Date.now() - 3600000 * 48).toISOString(),
     documents: [
@@ -608,13 +618,18 @@ export const DEMO_RECRUITMENT_PROCESSES: RecruitmentProcess[] = [
       { name: 'afonso_work_permit.pdf', type: 'Work Permit', uploadedAt: new Date(Date.now() - 3600000 * 45).toISOString(), fileSize: '1.5 MB', status: 'Verified' }
     ],
     temporaryBadgeNumber: 'TEMP-ACCESS-8830',
-    nudgeCount: 0
+    securityCleared: true,
+    clinicFitnessCleared: false,
+    nudgeCount: 0,
+    requestType: 'Recruitment'
   },
   {
     id: 'rp-4',
     candidateName: 'Beatriz Langa',
     candidateEmail: 'beatriz.langa@yahoo.com',
     candidatePhone: '+258 84 100 2938',
+    workerType: 'Prime',
+    primeCompany: 'Vulcan Resources Mozambique',
     company: 'Vulcan Resources Mozambique',
     department: 'HSE',
     role: 'Safety Officer',
@@ -637,13 +652,17 @@ export const DEMO_RECRUITMENT_PROCESSES: RecruitmentProcess[] = [
     },
     inductionDate: new Date(Date.now() - 3600000 * 80).toISOString(),
     inductionConfirmed: true,
-    nudgeCount: 0
+    nudgeCount: 0,
+    requestType: 'Recruitment'
   },
   {
     id: 'rp-5',
     candidateName: 'Filipe Mapande',
     candidateEmail: 'filipe.mapande@gmail.com',
     candidatePhone: '+258 84 990 0011',
+    workerType: 'Contractor',
+    primeCompany: 'Vulcan Resources Mozambique',
+    contractorCompany: 'Belabel Logistics',
     company: 'Belabel Logistics',
     department: 'Logistics',
     role: 'Driver',
@@ -655,6 +674,8 @@ export const DEMO_RECRUITMENT_PROCESSES: RecruitmentProcess[] = [
       { name: 'filipe_id.pdf', type: 'ID', uploadedAt: new Date(Date.now() - 3600000 * 118).toISOString(), fileSize: '1.4 MB', status: 'Verified' }
     ],
     temporaryBadgeNumber: 'TEMP-ACCESS-2940',
+    securityCleared: true,
+    clinicFitnessCleared: true,
     medicalExam: {
       bloodPressure: '118/75',
       heartRate: 68,
@@ -664,12 +685,76 @@ export const DEMO_RECRUITMENT_PROCESSES: RecruitmentProcess[] = [
       checkedAt: new Date(Date.now() - 3600000 * 115).toISOString(),
       comments: 'Fit for heavy machinery driving operations.'
     },
+    fitnessCertificate: {
+      certificateNo: 'FIT-BL-2940-2026',
+      issuedAt: new Date(Date.now() - 3600000 * 115).toISOString(),
+      validUntil: new Date(Date.now() + 365 * 24 * 3600000).toISOString(),
+      issuedBy: 'Dr. António Sitoe',
+      examinationType: 'Pre-Employment',
+      bloodPressure: '118/75',
+      heartRate: 68,
+      visionTest: 'Pass',
+      drugScreen: 'Negative',
+      bmi: '23.4',
+      hearing: 'Normal',
+      musculoskeletal: 'Normal',
+      fitForWork: true,
+      comments: 'Pre-employment assessment passed. No restrictions.'
+    },
     inductionDate: new Date(Date.now() - 3600000 * 110).toISOString(),
     inductionConfirmed: true,
     trainingCompletedAt: new Date(Date.now() - 3600000 * 10).toISOString(),
     nudgeCount: 0,
     employeeId: 'emp-filipe-mapande',
-    recordId: 'VUL-NEW-2940'
+    recordId: 'BL-2940',
+    requestType: 'Recruitment'
+  },
+  {
+    id: 'rp-6',
+    candidateName: 'Joaquim Chissano',
+    candidateEmail: 'joaquim.chissano@contractor.com',
+    candidatePhone: '+258 84 112 3456',
+    workerType: 'Contractor',
+    primeCompany: 'Vulcan Resources Mozambique',
+    contractorCompany: 'Escopil Engineering',
+    company: 'Escopil Engineering',
+    department: 'Administration',
+    role: 'Visitor',
+    requiredRacs: [],
+    status: RecruitmentStatus.SECURITY_PENDING,
+    requestedBy: 'Hélio Tembe',
+    requestedAt: new Date(Date.now() - 3600000 * 3).toISOString(),
+    documents: [],
+    amDocuments: [
+      { name: 'joaquim_dire.pdf', type: 'DIRE', uploadedAt: new Date(Date.now() - 3600000 * 3).toISOString(), fileSize: '1.4 MB', status: 'Verified', uploadedBy: 'AM' }
+    ],
+    nudgeCount: 0,
+    requestType: 'PersonnelAccess'
+  },
+  {
+    id: 'rp-7',
+    candidateName: 'Haul Truck EX-901',
+    candidateEmail: 'trucks.maintenance@vulcan.com',
+    candidatePhone: '+258 84 998 8877',
+    workerType: 'Contractor',
+    primeCompany: 'Vulcan Resources Mozambique',
+    contractorCompany: 'Mota-Engil Africa',
+    company: 'Mota-Engil Africa',
+    department: 'Mine Operations',
+    role: 'Excavator',
+    requiredRacs: [],
+    status: RecruitmentStatus.SAFETY_PENDING,
+    requestedBy: 'Grace Matsinhe',
+    requestedAt: new Date(Date.now() - 3600000 * 5).toISOString(),
+    documents: [],
+    amDocuments: [
+      { name: 'truck_ex901_details.pdf', type: 'Contractor & Responsible Details', uploadedAt: new Date(Date.now() - 3600000 * 5).toISOString(), fileSize: '2.1 MB', status: 'Verified', uploadedBy: 'AM' }
+    ],
+    nudgeCount: 0,
+    requestType: 'EquipmentAccess',
+    equipmentType: 'Excavator',
+    equipmentId: 'EX-901',
+    responsiblePersonName: 'Alberto Manjate',
+    responsiblePersonPhone: '+258 84 102 9384'
   }
 ];
-

@@ -16,6 +16,7 @@ import {
 import { useNavigate, Navigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { UserRole } from '../types';
+import MobilizationDashboard from './MobilizationDashboard';
 
 const PresentationPage: React.FC = () => {
     const { t, language } = useLanguage();
@@ -25,8 +26,14 @@ const PresentationPage: React.FC = () => {
     const [isFullscreen, setIsFullscreen] = useState(false);
     const [skipFinancials, setSkipFinancials] = useState(false);
 
-    // Security Guard: Presentation is for System Admin eyes only.
-    if (!isAuthenticated || user?.role !== UserRole.SYSTEM_ADMIN) {
+    // Auto-set presentation_active to 'true' when mounting presentation page
+    useEffect(() => {
+        localStorage.setItem('presentation_active', 'true');
+    }, []);
+
+    // Security Guard: Presentation is for System Admin eyes only (unless in presentation demo mode).
+    const isPresentationActive = localStorage.getItem('presentation_active') === 'true';
+    if (!isAuthenticated || (user?.role !== UserRole.SYSTEM_ADMIN && !isPresentationActive)) {
         return <Navigate to="/" replace />;
     }
 
@@ -54,6 +61,7 @@ const PresentationPage: React.FC = () => {
         { id: 'waitlist', type: 'waitlist', title: t.proposal.waitlist.title },
         { id: 'autoScheduling', type: 'autoScheduling', title: t.proposal.autoScheduling.title },
         { id: 'mobilePortal', type: 'mobilePortal', title: (t.proposal as any).mobilePortal?.title || 'Mobile Portal' },
+        { id: 'mobilizationDemo', type: 'mobilizationDemo', title: t.proposal.mobilization.title },
         { id: 'organogram', type: 'organogram', title: t.proposal.organogram.title },
         { id: 'timeline', type: 'timeline', title: t.proposal.timeline.title },
         { id: 'tech', type: 'tech', title: t.proposal.techStack.title },
@@ -502,7 +510,7 @@ const PresentationPage: React.FC = () => {
             title: 'Strategic Delivery Models',
             buyout: {
                 title: '1. Corporate Buyout',
-                cost: '$22,000.00 One-time',
+                cost: '$33,000.00 One-time',
                 desc: 'On-premises installation with complete ownership. Covers software, user, and IT team training.',
                 badge: 'CapEx Buyout',
                 features: [
@@ -513,10 +521,10 @@ const PresentationPage: React.FC = () => {
             },
             managed: {
                 title: '2a. Managed On-Premises',
-                cost: '$4,000.00 / Month',
+                cost: '$6,000.00 / Month',
                 desc: 'Runs on corporate servers for absolute data residency. DigiSols manages updates & support.',
                 badge: 'Recommended Model',
-                setup: '$18,000 Setup',
+                setup: '$27,000 Setup',
                 features: [
                     'Absolute Health Data Residency',
                     'DigiSols Handles Maintenance & Updates',
@@ -525,10 +533,10 @@ const PresentationPage: React.FC = () => {
             },
             saas: {
                 title: '2b. Hosted Cloud SaaS',
-                cost: '$5,000.00 / Month',
+                cost: '$7,500.00 / Month',
                 desc: 'Turnkey hosted solution. DigiSols manages infrastructure, domain, and data security.',
                 badge: 'Zero IT Strain',
-                setup: '$18,000 Setup',
+                setup: '$27,000 Setup',
                 features: [
                     'Zero Infrastructure / IT Overhead',
                     'Managed Security, Domain & Backups',
@@ -664,6 +672,7 @@ const PresentationPage: React.FC = () => {
             case 'waitlist': return <WaitlistSlide />;
             case 'autoScheduling': return <AutoSchedulingSlide />;
             case 'mobilePortal': return <MobilePortalSlide />;
+            case 'mobilizationDemo': return <MobilizationDemoSlide />;
             case 'organogram': return <OrganogramSlide />;
             case 'timeline': return <TimelineSlide />;
             case 'tech': return <TechSlide />;
@@ -676,6 +685,14 @@ const PresentationPage: React.FC = () => {
             default: return <div className="flex items-center justify-center min-h-[70vh] text-slate-500 italic">Documentation Slide {currentSlide + 1} Content alignment check...</div>;
         }
     };
+
+    const MobilizationDemoSlide = () => (
+        <div className="flex flex-col min-h-[75vh] w-full max-w-[1600px] mx-auto px-6 relative z-10 animate-fade-in-up py-4 select-text">
+            <div className="bg-slate-900/60 rounded-[2.5rem] border border-slate-800 p-6 shadow-2xl backdrop-blur-md overflow-hidden flex-1 flex flex-col">
+                <MobilizationDashboard />
+            </div>
+        </div>
+    );
 
     const TechCard = ({ icon: Icon, title, desc, color }: any) => (
         <div className="flex items-center gap-6 p-8 bg-slate-900/60 rounded-3xl border border-slate-800 backdrop-blur-sm hover:border-slate-600 transition-all group">
