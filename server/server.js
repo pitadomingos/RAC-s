@@ -8,8 +8,8 @@ const DB_FILE = path.join(__dirname, 'db.json');
 // Seed Data
 const initialData = {
   companies: [
-    { id: 'c-vulcan', name: 'Vulcan Resources Mozambique', appName: 'CARS Manager', status: 'Active', defaultLanguage: 'en', tier: 'Prime', features: { alcohol: true } },
-    { id: 'c-motaengil', name: 'Mota-Engil Africa', appName: 'CARS Sub-Portal', status: 'Active', defaultLanguage: 'pt', parentId: 'c-vulcan', tier: 'Sub', features: { alcohol: false } },
+    { id: 'c-vulcan', name: 'Vulcan Resources Mozambique', appName: 'ZeroGate', status: 'Active', defaultLanguage: 'en', tier: 'Prime', features: { alcohol: true } },
+    { id: 'c-motaengil', name: 'Mota-Engil Africa', appName: 'ZeroGate Sub-Portal', status: 'Active', defaultLanguage: 'pt', parentId: 'c-vulcan', tier: 'Sub', features: { alcohol: false } },
     { id: 'c-jachris', name: 'Jachris Services', appName: 'Jachris Portal', status: 'Active', defaultLanguage: 'pt', parentId: 'c-vulcan', tier: 'Sub', features: { alcohol: false } },
     { id: 'c-belabel', name: 'Belabel Logistics', appName: 'Belabel Portal', status: 'Active', defaultLanguage: 'pt', parentId: 'c-vulcan', tier: 'Sub', features: { alcohol: false } }
   ],

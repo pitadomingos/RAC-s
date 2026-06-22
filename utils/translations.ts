@@ -14,7 +14,7 @@ export const formatDate = (dateString: string | undefined): string => {
 export const translations = {
     en: {
         common: {
-            vulcan: 'CARS',
+            vulcan: 'ZeroGate',
             all: 'All',
             search: 'Search...',
             rowsPerPage: 'Rows per page:',
@@ -68,8 +68,8 @@ export const translations = {
             }
         },
         login: {
-            title: 'CARS Manager',
-            subtitle: 'Safety Compliance Portal',
+            title: 'ZeroGate',
+            subtitle: 'Where Zero Harm begins.',
             usernameLabel: 'Username / Personnel ID',
             passwordLabel: 'Master Key',
             usernamePlaceholder: 'e.g. Pita Domingos',
@@ -1141,7 +1141,7 @@ export const translations = {
     },
     pt: {
         common: {
-            vulcan: 'RACS',
+            vulcan: 'ZeroGate',
             all: 'Todos',
             search: 'Pesquisar...',
             rowsPerPage: 'Linhas por página:',
@@ -1195,8 +1195,8 @@ export const translations = {
             }
         },
         login: {
-            title: 'Gestor RACS',
-            subtitle: 'Portal de Conformidade de Segurança',
+            title: 'ZeroGate',
+            subtitle: 'Onde o Zero Harm começa.',
             usernameLabel: 'Utilizador / ID de Pessoal',
             passwordLabel: 'Chave Mestra',
             usernamePlaceholder: 'ex: Pita Domingos',

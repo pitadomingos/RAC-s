@@ -52,7 +52,7 @@ export const DEMO_COMPANIES: Company[] = [
   {
     id: 'c-vulcan',
     name: 'Vulcan Resources Mozambique',
-    appName: 'CARS Manager',
+    appName: 'ZeroGate',
     status: 'Active',
     defaultLanguage: 'en',
     tier: 'Prime',

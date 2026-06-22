@@ -68,7 +68,7 @@ const LoginPage: React.FC = () => {
               <Shield size={44} className="text-yellow-500" />
             </div>
           </div>
-          <h1 className="text-4xl font-black tracking-tighter mb-2 uppercase">CARS <span className="text-yellow-500">MANAGER</span></h1>
+          <h1 className="text-4xl font-black tracking-tighter mb-2 uppercase">Zero<span className="text-yellow-500">Gate</span></h1>
           <p className="text-slate-400 text-sm font-bold uppercase tracking-[0.2em]">{t.login.subtitle}</p>
         </div>
 
