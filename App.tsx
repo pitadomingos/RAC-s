@@ -159,6 +159,14 @@ const AppContent: React.FC = () => {
     }
   };
 
+  // Reset active module when not authenticated (ensures landing page on login)
+  useEffect(() => {
+    if (!isAuthenticated) {
+      setActiveModule(null);
+      localStorage.removeItem('cars_active_module');
+    }
+  }, [isAuthenticated]);
+
   // Background polling to sync real-time changes from the employee mobile app
   useEffect(() => {
       if (!isAuthenticated) return;

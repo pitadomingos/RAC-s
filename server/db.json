@@ -1,0 +1,228 @@
+{
+  "companies": [
+    {
+      "id": "c-vulcan",
+      "name": "Vulcan Resources Mozambique",
+      "appName": "ZeroGate",
+      "status": "Active",
+      "defaultLanguage": "en",
+      "tier": "Prime",
+      "features": {
+        "alcohol": true
+      }
+    },
+    {
+      "id": "c-motaengil",
+      "name": "Mota-Engil Africa",
+      "appName": "ZeroGate Sub-Portal",
+      "status": "Active",
+      "defaultLanguage": "pt",
+      "parentId": "c-vulcan",
+      "tier": "Sub",
+      "features": {
+        "alcohol": false
+      }
+    },
+    {
+      "id": "c-jachris",
+      "name": "Jachris Services",
+      "appName": "Jachris Portal",
+      "status": "Active",
+      "defaultLanguage": "pt",
+      "parentId": "c-vulcan",
+      "tier": "Sub",
+      "features": {
+        "alcohol": false
+      }
+    },
+    {
+      "id": "c-belabel",
+      "name": "Belabel Logistics",
+      "appName": "Belabel Portal",
+      "status": "Active",
+      "defaultLanguage": "pt",
+      "parentId": "c-vulcan",
+      "tier": "Sub",
+      "features": {
+        "alcohol": false
+      }
+    }
+  ],
+  "sites": [
+    {
+      "id": "s-moatize",
+      "companyId": "c-vulcan",
+      "name": "Moatize Coal Mine",
+      "location": "Tete"
+    },
+    {
+      "id": "s-nacala",
+      "companyId": "c-vulcan",
+      "name": "Nacala Logistics Port",
+      "location": "Nampula"
+    }
+  ],
+  "employees": [
+    {
+      "id": "emp-paulo",
+      "name": "Paulo Manjate",
+      "recordId": "VUL-2049",
+      "siteId": "s-moatize",
+      "company": "Vulcan Resources Mozambique",
+      "department": "HSE Risk",
+      "role": "Operator",
+      "isActive": true,
+      "phoneNumber": "+258 84 123 4567",
+      "driverLicenseNumber": "MC-29402",
+      "driverLicenseClass": "C",
+      "driverLicenseExpiry": "2027-12-10"
+    },
+    {
+      "id": "emp-maria",
+      "name": "Maria Tembe",
+      "recordId": "MOT-8839",
+      "siteId": "s-nacala",
+      "company": "Mota-Engil Africa",
+      "department": "Operations",
+      "role": "Driver",
+      "isActive": true,
+      "phoneNumber": "+258 82 987 6543",
+      "driverLicenseNumber": "MC-40294",
+      "driverLicenseClass": "B",
+      "driverLicenseExpiry": "2026-05-15"
+    },
+    {
+      "id": "emp-celso",
+      "name": "Celso Alface",
+      "recordId": "JAC-0092",
+      "siteId": "s-moatize",
+      "company": "Jachris Services",
+      "department": "Maintenance",
+      "role": "Technician",
+      "isActive": true,
+      "phoneNumber": "+258 84 999 1122",
+      "driverLicenseNumber": "MC-11002",
+      "driverLicenseClass": "C",
+      "driverLicenseExpiry": "2028-08-20"
+    }
+  ],
+  "bookings": [
+    {
+      "id": "book-initial-1",
+      "employeeId": "emp-paulo",
+      "sessionId": "sess-1",
+      "status": "Pending",
+      "requestedAt": "2026-06-22T10:58:13.262Z",
+      "employee": {
+        "id": "emp-paulo",
+        "name": "Paulo Manjate",
+        "recordId": "VUL-2049",
+        "siteId": "s-moatize",
+        "company": "Vulcan Resources Mozambique",
+        "department": "HSE Risk",
+        "role": "Operator",
+        "isActive": true,
+        "phoneNumber": "+258 84 123 4567",
+        "driverLicenseNumber": "MC-29402",
+        "driverLicenseClass": "C",
+        "driverLicenseExpiry": "2027-12-10"
+      }
+    }
+  ],
+  "sessions": [
+    {
+      "id": "sess-1",
+      "racCode": "RAC01",
+      "date": "2026-06-25",
+      "startTime": "09:00",
+      "location": "Main Classroom",
+      "capacity": 15,
+      "instructor": "Pita Domingos",
+      "language": "en",
+      "companyId": "c-vulcan",
+      "siteId": "s-moatize",
+      "racType": "RAC01 - RAC 01 - Working at Height",
+      "sessionLanguage": "English"
+    },
+    {
+      "id": "sess-2",
+      "racCode": "RAC02",
+      "date": "2026-06-28",
+      "startTime": "10:00",
+      "location": "Auditorium B",
+      "capacity": 10,
+      "instructor": "Pita Domingos",
+      "language": "pt",
+      "companyId": "c-vulcan",
+      "siteId": "s-nacala",
+      "racType": "RAC02 - RAC 02 - Vehicles and Mobile Equipment",
+      "sessionLanguage": "English"
+    },
+    {
+      "id": "sess-3",
+      "racCode": "RAC01",
+      "date": "2026-07-02",
+      "startTime": "14:00",
+      "location": "Site Classroom 2",
+      "capacity": 12,
+      "instructor": "Pita Domingos",
+      "language": "pt",
+      "companyId": "c-vulcan",
+      "siteId": "s-moatize",
+      "racType": "RAC01 - RAC 01 - Working at Height",
+      "sessionLanguage": "English"
+    }
+  ],
+  "requirements": [
+    {
+      "id": "req-emp-paulo-RAC01",
+      "employeeId": "emp-paulo",
+      "racCode": "RAC01",
+      "status": "Expired",
+      "expiryDate": "2026-05-10",
+      "medicalStatus": "Valid",
+      "medicalExpiry": "2026-11-15"
+    },
+    {
+      "id": "req-emp-maria-RAC02",
+      "employeeId": "emp-maria",
+      "racCode": "RAC02",
+      "status": "Expired",
+      "expiryDate": "2026-05-10",
+      "medicalStatus": "Expired",
+      "medicalExpiry": "2026-05-01"
+    },
+    {
+      "id": "req-emp-celso-RAC01",
+      "employeeId": "emp-celso",
+      "racCode": "RAC01",
+      "status": "Expired",
+      "expiryDate": "2026-05-10",
+      "medicalStatus": "Valid",
+      "medicalExpiry": "2027-02-14"
+    }
+  ],
+  "logs": [
+    {
+      "id": "log-1",
+      "timestamp": "2026-06-22T09:58:13.266Z",
+      "employeeName": "Paulo Manjate",
+      "recordId": "VUL-2049",
+      "company": "Vulcan Resources Mozambique",
+      "site": "Moatize Coal Mine",
+      "module": "Breathalyzer",
+      "result": "Clean (0.00 BAC)",
+      "status": "Authorized"
+    }
+  ],
+  "notifications": [
+    {
+      "id": "notif-1",
+      "type": "info",
+      "title": "System Initialized",
+      "message": "CARS Shared Sync API active.",
+      "timestamp": "2026-06-22T10:58:13.266Z",
+      "isRead": false
+    }
+  ]
+}

@@ -28,7 +28,7 @@ const PortalGateway: React.FC<PortalGatewayProps> = ({ onSelectModule }) => {
                     </div>
                 </div>
                 <h1 className="text-4xl md:text-5xl font-black tracking-tighter mb-4 uppercase">
-                    CARS <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-amber-400">COMMAND PORTAL</span>
+                    ZeroGate <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-amber-400">COMMAND PORTAL</span>
                 </h1>
                 <p className="text-slate-400 text-sm md:text-base font-medium tracking-wide uppercase tracking-[0.15em] px-4">
                     Select the operational environment to continue
@@ -90,7 +90,7 @@ const PortalGateway: React.FC<PortalGatewayProps> = ({ onSelectModule }) => {
                                 Training & Certifications
                             </h3>
                             <p className="text-slate-400 text-xs mt-1 font-bold uppercase tracking-widest text-amber-400/80">
-                                CARS System
+                                ZeroGate System
                             </p>
                             <p className="text-slate-400 text-sm mt-3 font-medium leading-relaxed">
                                 Schedule training sessions, track student enrollments, input test scores, verify RAC cards, run compliance reporting, and configure site governance criteria.
@@ -122,7 +122,7 @@ const PortalGateway: React.FC<PortalGatewayProps> = ({ onSelectModule }) => {
                     </button>
                 </div>
                 <div className="text-[10px] font-bold text-slate-600 uppercase tracking-widest">
-                    CARS Platform v3.2.1-Live
+                    ZeroGate Platform v3.2.1-Live
                 </div>
             </div>
         </div>
