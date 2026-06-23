@@ -489,33 +489,22 @@ const AppContent: React.FC = () => {
 
 
   if (activeModule === null) {
-      // Allow direct access to presentation from the gateway link
-      if (currentHash === '#/presentation' || currentHash === '#/presentation/') {
+      // Allow direct access to presentation, verification, and print-cards routes
+      const isDirectRoute = currentHash.startsWith('#/presentation') || 
+                            currentHash.startsWith('#/verify/') || 
+                            currentHash.startsWith('#/print-cards');
+                            
+      if (!isDirectRoute) {
           return (
-              <AdvisorProvider>
-                  <MessageProvider>
-                      <Router>
-                          <Suspense fallback={
-                              <div className="h-screen w-screen bg-slate-950 flex flex-col items-center justify-center text-white">
-                                  <Loader2 size={80} className="text-blue-500 animate-spin" />
-                              </div>
-                          }>
-                              <PresentationPage />
-                          </Suspense>
-                      </Router>
-                  </MessageProvider>
-              </AdvisorProvider>
+              <Suspense fallback={
+                  <div className="h-screen w-screen bg-slate-950 flex flex-col items-center justify-center text-white">
+                      <Loader2 size={80} className="text-blue-500 animate-spin" />
+                  </div>
+              }>
+                  <PortalGateway onSelectModule={handleSelectModule} />
+              </Suspense>
           );
       }
-      return (
-          <Suspense fallback={
-              <div className="h-screen w-screen bg-slate-950 flex flex-col items-center justify-center text-white">
-                  <Loader2 size={80} className="text-blue-500 animate-spin" />
-              </div>
-          }>
-              <PortalGateway onSelectModule={handleSelectModule} />
-          </Suspense>
-      );
   }
 
 
