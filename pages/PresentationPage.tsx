@@ -339,7 +339,7 @@ const PresentationPage: React.FC = () => {
                             { name: 'MicroFin', sub: t.proposal.aboutMe.portfolio.microfin, icon: Wallet, color: 'amber' },
                             { name: 'Sentinel', sub: t.proposal.aboutMe.portfolio.sentinel, icon: Eye, color: 'blue' },
                         ].map((item, i) => (
-                            <div key={i} className={`group relative p-5 bg-slate-900/40 border border-slate-800 rounded-3xl backdrop-blur-sm hover:border-indigo-500/50 transition-all hover:bg-slate-900/80 shadow-lg flex flex-col justify-between ${item.spanTwo ? 'md:col-span-2' : ''}`}>
+                            <div key={i} className="group relative p-5 bg-slate-900/40 border border-slate-800 rounded-3xl backdrop-blur-sm hover:border-indigo-500/50 transition-all hover:bg-slate-900/80 shadow-lg flex flex-col justify-between">
                                 <div>
                                     <div className="flex justify-between items-start">
                                         <div className={`w-12 h-12 rounded-2xl bg-${item.color}-500/10 flex items-center justify-center text-${item.color}-400 mb-3 group-hover:scale-110 transition-transform shadow-inner`}>
