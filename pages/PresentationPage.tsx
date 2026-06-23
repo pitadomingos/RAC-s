@@ -15,8 +15,15 @@ import {
 } from 'lucide-react';
 import { useNavigate, Navigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { UserRole } from '../types';
+import { UserRole, BookingStatus } from '../types';
 import MobilizationDashboard from './MobilizationDashboard';
+import DatabasePage from './DatabasePage';
+import BookingForm from './BookingForm';
+import ResultsPage from './ResultsPage';
+import RequestCardsPage from './RequestCardsPage';
+import TrainerInputPage from './TrainerInputPage';
+import SettingsPage from './SettingsPage';
+import { db } from '../services/databaseService';
 
 const PresentationPage: React.FC = () => {
     const { t, language } = useLanguage();
@@ -24,12 +31,55 @@ const PresentationPage: React.FC = () => {
     const navigate = useNavigate();
     const [currentSlide, setCurrentSlide] = useState(0);
     const [isFullscreen, setIsFullscreen] = useState(false);
-    const [skipFinancials, setSkipFinancials] = useState(false);
+    const [skipFinancials, setSkipFinancials] = useState(true);
 
-    // Auto-set presentation_active to 'true' when mounting presentation page
+    // Live Training Simulation States
+    const [companies, setCompanies] = useState<any[]>([]);
+    const [sites, setSites] = useState<any[]>([]);
+    const [sessions, setSessions] = useState<any[]>([]);
+    const [bookings, setBookings] = useState<any[]>([]);
+    const [requirements, setRequirements] = useState<any[]>([]);
+    const [rooms, setRooms] = useState<any[]>([]);
+    const [trainers, setTrainers] = useState<any[]>([]);
+    const [employees, setEmployees] = useState<any[]>([]);
+    const [racDefinitions, setRacDefinitions] = useState<any[]>([]);
+    const [currentSiteId, setCurrentSiteId] = useState<string>('all');
+
+    const refreshTrainingData = async () => {
+        try {
+            const [c, s, sess, b, req, racs, rms, trns, emps] = await Promise.all([
+                db.getCompanies(),
+                db.getSites(),
+                db.getSessions(),
+                db.getBookings(),
+                db.getRequirements(),
+                db.getRacDefinitions(),
+                db.getRooms(),
+                db.getTrainers(),
+                db.getEmployees()
+            ]);
+            setCompanies(c);
+            setSites(s);
+            setSessions(sess);
+            setBookings(b);
+            setRequirements(req);
+            setRacDefinitions(racs);
+            setRooms(rms);
+            setTrainers(trns);
+            setEmployees(emps);
+        } catch (e) {
+            console.error("Presentation data refresh failed:", e);
+        }
+    };
+
     useEffect(() => {
-        localStorage.setItem('presentation_active', 'true');
+        refreshTrainingData();
     }, []);
+
+    // Auto-set presentation_active to 'true' to prevent redirect loop for non-admins
+    if (localStorage.getItem('presentation_active') !== 'true') {
+        localStorage.setItem('presentation_active', 'true');
+    }
 
     // Security Guard: Presentation is for System Admin eyes only (unless in presentation demo mode).
     const isPresentationActive = localStorage.getItem('presentation_active') === 'true';
@@ -50,7 +100,7 @@ const PresentationPage: React.FC = () => {
     }
 
     // Define Slides Structure
-    const slides = [
+    const rawSlides = [
         { id: 'title', type: 'title' },
         { id: 'aboutMe', type: 'aboutMe', title: t.proposal.aboutMe.title },
         { id: 'scenario', type: 'scenario', title: t.proposal.scenario.title },
@@ -62,6 +112,12 @@ const PresentationPage: React.FC = () => {
         { id: 'autoScheduling', type: 'autoScheduling', title: t.proposal.autoScheduling.title },
         { id: 'mobilePortal', type: 'mobilePortal', title: (t.proposal as any).mobilePortal?.title || 'Mobile Portal' },
         { id: 'mobilizationDemo', type: 'mobilizationDemo', title: t.proposal.mobilization.title },
+        { id: 'simDatabase', type: 'simDatabase', title: 'Simulation: Training Database' },
+        { id: 'simBooking', type: 'simBooking', title: 'Simulation: Training Requests' },
+        { id: 'simResults', type: 'simResults', title: 'Simulation: Training Records' },
+        { id: 'simCards', type: 'simCards', title: 'Simulation: Card Requests' },
+        { id: 'simTrainer', type: 'simTrainer', title: 'Simulation: Instructor Portal' },
+        { id: 'simSettings', type: 'simSettings', title: 'Simulation: Training Settings' },
         { id: 'organogram', type: 'organogram', title: t.proposal.organogram.title },
         { id: 'timeline', type: 'timeline', title: t.proposal.timeline.title },
         { id: 'tech', type: 'tech', title: t.proposal.techStack.title },
@@ -73,8 +129,7 @@ const PresentationPage: React.FC = () => {
         { id: 'thankYou', type: 'thankYou', title: t.proposal.thankYou.title },
     ];
 
-    const techIndex = slides.findIndex(s => s.id === 'tech');
-    const roadmapIndex = slides.findIndex(s => s.id === 'roadmap');
+    const slides = skipFinancials ? rawSlides.filter(s => s.id !== 'financials') : rawSlides;
 
     const toggleFullScreen = async () => {
         try {
@@ -102,27 +157,25 @@ const PresentationPage: React.FC = () => {
             }
             if (e.key === 'Escape') {
                 e.preventDefault();
-                navigate('/');
+                handleExit();
             }
         };
         window.addEventListener('keydown', handleKeyDown);
         return () => window.removeEventListener('keydown', handleKeyDown);
-    }, [currentSlide, skipFinancials, techIndex, roadmapIndex]);
+    }, [currentSlide, skipFinancials]);
 
     const nextSlide = () => {
-        if (currentSlide === techIndex && skipFinancials) { // If on Tech, and skip financials, go to Roadmap
-            setCurrentSlide(roadmapIndex);
-            return;
-        }
         if (currentSlide < slides.length - 1) setCurrentSlide(curr => curr + 1);
     };
 
     const prevSlide = () => {
-        if (currentSlide === roadmapIndex && skipFinancials) { // If on Roadmap, and skip financials, go back to Tech
-            setCurrentSlide(techIndex);
-            return;
-        }
         if (currentSlide > 0) setCurrentSlide(curr => curr - 1);
+    };
+
+    const handleExit = () => {
+        localStorage.removeItem('presentation_active');
+        navigate('/');
+        window.location.reload();
     };
 
     // --- Slide Components ---
@@ -673,6 +726,12 @@ const PresentationPage: React.FC = () => {
             case 'autoScheduling': return <AutoSchedulingSlide />;
             case 'mobilePortal': return <MobilePortalSlide />;
             case 'mobilizationDemo': return <MobilizationDemoSlide />;
+            case 'simDatabase': return <SimDatabaseSlide />;
+            case 'simBooking': return <SimBookingSlide />;
+            case 'simResults': return <SimResultsSlide />;
+            case 'simCards': return <SimCardsSlide />;
+            case 'simTrainer': return <SimTrainerSlide />;
+            case 'simSettings': return <SimSettingsSlide />;
             case 'organogram': return <OrganogramSlide />;
             case 'timeline': return <TimelineSlide />;
             case 'tech': return <TechSlide />;
@@ -692,6 +751,173 @@ const PresentationPage: React.FC = () => {
                 <MobilizationDashboard />
             </div>
         </div>
+    );
+
+    const SimulationFrame = ({ title, children }: { title: string; children: React.ReactNode }) => (
+        <div className="flex flex-col min-h-[75vh] w-full max-w-[1600px] mx-auto px-6 relative z-10 animate-fade-in-up py-4 select-text h-[75vh]">
+            <div className="bg-slate-900 rounded-[2.5rem] border border-slate-800 shadow-2xl overflow-hidden flex-1 flex flex-col h-full">
+                {/* Browser window header */}
+                <div className="bg-slate-950 px-6 py-4 flex items-center justify-between border-b border-slate-800/80 shrink-0">
+                    <div className="flex items-center gap-2">
+                        <div className="w-3.5 h-3.5 rounded-full bg-rose-500 shadow-[0_0_10px_rgba(239,68,68,0.4)]"></div>
+                        <div className="w-3.5 h-3.5 rounded-full bg-amber-500 shadow-[0_0_10px_rgba(245,158,11,0.4)]"></div>
+                        <div className="w-3.5 h-3.5 rounded-full bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.4)]"></div>
+                        <div className="ml-4 bg-slate-900 px-4 py-1.5 rounded-full border border-slate-800 text-xs font-mono text-slate-400 select-all min-w-[280px]">
+                            cars-gateway.vulcan.mz/{title.toLowerCase().replace(/\s+/g, '-')}
+                        </div>
+                    </div>
+                    <div className="text-xs font-black text-slate-500 uppercase tracking-widest flex items-center gap-2">
+                        <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping"></span>
+                        Live Simulation Portal
+                    </div>
+                </div>
+                {/* Interactive page body */}
+                <div className="p-6 overflow-y-auto flex-1 bg-slate-950 text-slate-200">
+                    {children}
+                </div>
+            </div>
+        </div>
+    );
+
+    const SimDatabaseSlide = () => (
+        <SimulationFrame title="Training Database">
+            <DatabasePage
+                employees={employees}
+                bookings={bookings}
+                requirements={requirements}
+                updateRequirements={async (req) => {
+                    await db.updateRequirement(req);
+                    await refreshTrainingData();
+                }}
+                sessions={sessions}
+                onUpdateEmployee={async (emp) => {
+                    await db.upsertEmployee(emp);
+                    await refreshTrainingData();
+                }}
+                onDeleteEmployee={async (id) => {
+                    await db.deleteEmployee(id);
+                    await refreshTrainingData();
+                }}
+                racDefinitions={racDefinitions}
+                addNotification={() => {}}
+                currentSiteId={currentSiteId}
+                companies={companies}
+            />
+        </SimulationFrame>
+    );
+
+    const SimBookingSlide = () => (
+        <SimulationFrame title="Training Requests">
+            <BookingForm
+                addBookings={async (newBookings) => {
+                    await Promise.all(newBookings.map(b => db.saveBooking(b)));
+                    await refreshTrainingData();
+                }}
+                sessions={sessions}
+                userRole={UserRole.SYSTEM_ADMIN}
+                existingBookings={bookings}
+                addNotification={() => {}}
+                racDefinitions={racDefinitions}
+                companies={companies}
+            />
+        </SimulationFrame>
+    );
+
+    const SimResultsSlide = () => (
+        <SimulationFrame title="Training Records">
+            <ResultsPage
+                bookings={bookings}
+                updateBookingStatus={async (bookingId, status, score, comments) => {
+                    const booking = bookings.find(b => b.id === bookingId);
+                    if (booking) {
+                        await db.saveBooking({
+                            ...booking,
+                            status: status as BookingStatus,
+                            testScore: score,
+                            trainerComments: comments
+                        });
+                        await refreshTrainingData();
+                    }
+                }}
+                importBookings={async (imported) => {
+                    await Promise.all(imported.map(b => db.saveBooking(b)));
+                    await refreshTrainingData();
+                }}
+                userRole={UserRole.SYSTEM_ADMIN}
+                sessions={sessions}
+                requirements={requirements}
+                sites={sites}
+                racDefinitions={racDefinitions}
+                addNotification={() => {}}
+                currentSiteId={currentSiteId}
+                onRefresh={refreshTrainingData}
+            />
+        </SimulationFrame>
+    );
+
+    const SimCardsSlide = () => (
+        <SimulationFrame title="Card Requests">
+            <RequestCardsPage
+                bookings={bookings}
+                requirements={requirements}
+                racDefinitions={racDefinitions}
+                sessions={sessions}
+                userRole={UserRole.SYSTEM_ADMIN}
+                currentSiteId={currentSiteId}
+                companies={companies}
+            />
+        </SimulationFrame>
+    );
+
+    const SimTrainerSlide = () => (
+        <SimulationFrame title="Trainer Input Portal">
+            <TrainerInputPage
+                bookings={bookings}
+                updateBookings={async (updatedBookings) => {
+                    await Promise.all(updatedBookings.map(b => db.saveBooking(b)));
+                    await refreshTrainingData();
+                }}
+                sessions={sessions}
+                userRole={UserRole.SYSTEM_ADMIN}
+                currentUserName={user?.name}
+                racDefinitions={racDefinitions}
+            />
+        </SimulationFrame>
+    );
+
+    const SimSettingsSlide = () => (
+        <SimulationFrame title="Training Settings">
+            <SettingsPage
+                racDefinitions={racDefinitions}
+                onUpdateRacs={async (updated) => {
+                    await Promise.all(updated.map(r => db.saveRacDefinition(r)));
+                    await refreshTrainingData();
+                }}
+                rooms={rooms}
+                onUpdateRooms={async (updated) => {
+                    await Promise.all(updated.map(r => db.saveRoom(r)));
+                    await refreshTrainingData();
+                }}
+                trainers={trainers}
+                onUpdateTrainers={async (updated) => {
+                    await Promise.all(updated.map(t => db.saveTrainer(t)));
+                    await refreshTrainingData();
+                }}
+                sites={sites}
+                onUpdateSites={async (updated) => {
+                    await Promise.all(updated.map(s => db.saveSite(s)));
+                    await refreshTrainingData();
+                }}
+                companies={companies}
+                onUpdateCompanies={async (updated) => {
+                    await Promise.all(updated.map(c => db.saveCompany(c)));
+                    await refreshTrainingData();
+                }}
+                userRole={UserRole.SYSTEM_ADMIN}
+                addNotification={() => {}}
+                currentSiteId={currentSiteId}
+            />
+        </SimulationFrame>
     );
 
     const TechCard = ({ icon: Icon, title, desc, color }: any) => (
@@ -1078,21 +1304,32 @@ const PresentationPage: React.FC = () => {
                 <div className="absolute inset-0 bg-gradient-to-br from-slate-950 via-[#020617] to-slate-900"></div>
                 <div className="absolute top-[-10%] left-[-10%] w-[45%] h-[45%] bg-blue-900/10 rounded-full blur-[150px] animate-pulse-slow"></div>
             </div>
-            <div className="relative z-10 flex-1 overflow-y-auto overflow-x-hidden scrollbar-hide flex flex-col" style={{ overscrollBehavior: 'none' }}>
+            <div className="relative z-10 flex-1 overflow-y-auto overflow-x-hidden scrollbar-hide flex flex-col overscroll-none">
                 <div className="flex-1 w-full flex flex-col justify-start px-4 md:px-12 py-16">{renderSlide()}</div>
                 <div className="h-32 w-full shrink-0"></div>
             </div>
             <div className="fixed bottom-8 left-1/2 -translate-x-1/2 h-20 bg-slate-900/60 backdrop-blur-3xl border border-white/10 rounded-full flex items-center px-4 shadow-2xl z-50 ring-1 ring-white/5 transition-all hover:bg-slate-900/80">
                 <button onClick={prevSlide} disabled={currentSlide === 0} className="w-12 h-12 md:w-14 md:h-14 rounded-full flex items-center justify-center hover:bg-white/10 disabled:opacity-30 text-white transition-all active:scale-90" title="Previous Slide"><ChevronLeft size={32} /></button>
-                <div className="px-6 md:px-12 flex flex-col items-center min-w-[160px] md:min-w-[220px]">
-                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] mb-1">Slide Track</span>
-                    <span className="text-xl md:text-2xl font-mono font-bold text-white leading-none">{currentSlide + 1} <span className="text-slate-600 font-light">/</span> {slides.length}</span>
+                <div className="px-6 md:px-12 flex flex-col items-center min-w-[200px] md:min-w-[280px]">
+                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] mb-1">Jump to Slide</span>
+                    <select
+                        value={currentSlide}
+                        onChange={(e) => setCurrentSlide(Number(e.target.value))}
+                        title="Select Slide"
+                        className="bg-slate-950/90 text-white text-xs md:text-sm font-bold font-mono rounded-lg border border-white/10 px-3 py-1 focus:outline-none focus:ring-1 focus:ring-yellow-500 max-w-[180px] md:max-w-[240px] truncate"
+                    >
+                        {slides.map((s, idx) => (
+                            <option key={idx} value={idx} className="bg-slate-950 text-white">
+                                {idx + 1}. {s.title || (s.id.charAt(0).toUpperCase() + s.id.slice(1))}
+                            </option>
+                        ))}
+                    </select>
                 </div>
                 <button onClick={nextSlide} disabled={currentSlide === slides.length - 1} className="w-12 h-12 md:w-14 md:h-14 rounded-full flex items-center justify-center hover:bg-white/10 disabled:opacity-30 text-white transition-all active:scale-90" title="Next Slide"><ChevronRight size={32} /></button>
                 <div className="w-px h-10 bg-white/10 mx-4 hidden md:block"></div>
                 <button onClick={() => setSkipFinancials(!skipFinancials)} className={`w-12 h-12 rounded-full flex items-center justify-center transition-all ${skipFinancials ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/30' : 'hover:bg-white/10 text-slate-400'}`} title={skipFinancials ? "Showing Audience Mode (Privacy ON)" : "Showing Enterprise Mode (Privacy OFF)"}>{skipFinancials ? <EyeOff size={24} /> : <Eye size={24} />}</button>
                 <button onClick={toggleFullScreen} className="w-12 h-12 rounded-full flex items-center justify-center hover:bg-white/10 text-slate-400 hover:text-white transition-all ml-2" title={isFullscreen ? "Exit Fullscreen" : "Enter Fullscreen"}>{isFullscreen ? <Minimize size={24} /> : <Maximize size={24} />}</button>
-                <button onClick={() => navigate('/')} className="w-12 h-12 rounded-full flex items-center justify-center hover:bg-red-500/20 text-red-400 hover:text-red-500 transition-all ml-2" title="Close Presentation"><X size={24} /></button>
+                <button onClick={handleExit} className="w-12 h-12 rounded-full flex items-center justify-center hover:bg-red-500/20 text-red-400 hover:text-red-500 transition-all ml-2" title="Close Presentation"><X size={24} /></button>
             </div>
             <div className="presentation-progress-bar fixed top-0 left-0 h-1.5 bg-gradient-to-r from-yellow-500 via-orange-500 to-red-500 transition-all duration-700 ease-in-out z-[110] shadow-[0_0_15px_rgba(245,158,11,0.4)]"></div>
         </div>

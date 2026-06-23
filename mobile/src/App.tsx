@@ -3,7 +3,8 @@ import {
   Shield, QrCode, BookOpen, User, Lock, Activity,
   Wine, CheckCircle2, XCircle, AlertTriangle, LogOut, RefreshCw, 
   Building2, MapPin, Calendar, ShieldAlert, Check, Wifi,
-  BookCheck, ShieldCheck, UserCheck, Flame
+  BookCheck, ShieldCheck, UserCheck, Flame, ClipboardList,
+  ArrowRight, Circle
 } from 'lucide-react';
 
 // Types mimicking the main app
@@ -72,6 +73,196 @@ interface Site {
 
 const API_URL = 'http://localhost:5000/api';
 
+// I18n translations helper
+const text = {
+  en: {
+    title: 'CARS Mobile Portal',
+    subtitle: 'Safety Access Passport',
+    offlineAlert: 'Sync server offline. Running in local sandbox.',
+    selectEmp: 'Select Employee profile',
+    enter: 'Log In',
+    passport: 'Passport',
+    bookings: 'Bookings',
+    gate: 'Turnstile',
+    profile: 'Profile',
+    auth: 'Authorized',
+    blocked: 'Access Blocked',
+    asoText: 'ASO Occupational Medical Exam',
+    validUntil: 'Valid until',
+    expiredOn: 'Expired on',
+    noBookings: 'No booking history.',
+    requested: 'Requested on',
+    status: 'Status',
+    availableTraining: 'Available Training',
+    bookButton: 'Request Enrollment',
+    alreadyBooked: 'Requested',
+    scanTitle: 'Site Access Gate',
+    scanDesc: 'Scan safety passport QR code to open the turnstile.',
+    scanButton: 'SCAN SAFETY QR PASSPORT',
+    scanningText: 'Scanning QR Code...',
+    validatingText: 'Validating safety requisitions & ASO...',
+    breathalyzerTitle: 'Breathalyzer Check Required',
+    breathalyzerDesc: 'Your company requires a blood alcohol concentration test to pass this turnstile.',
+    blowButton: 'HOLD TO BLOW',
+    blowingText: 'Blowing... Keep going!',
+    processingText: 'Analyzing BAC levels...',
+    gateOpen: 'GATE ACCESS GRANTED',
+    gateClosed: 'GATE ACCESS DENIED',
+    retry: 'Retry Access Sequence',
+    simulatePass: 'Simulate Clear BAC (0.00%)',
+    simulateFail: 'Simulate Positive BAC (>0.00%)',
+    signout: 'Log Out Profile',
+    department: 'Department',
+    node: 'Enterprise Node',
+    role: 'Job Role',
+    langToggle: 'Mudar para Português',
+    empId: 'Record ID',
+    chooseProfile: 'Choose profile...',
+    passportStatus: 'Passport Status',
+    safetyRequisitions: 'Safety Requisitions',
+    requestedTrainings: 'Requested Trainings',
+    safetyCertification: 'Safety Certification',
+    moduleTraining: 'Module Training',
+    instructor: 'Instructor:',
+    testScenarioMode: 'Test Scenario Mode',
+    reasonExpiredAso: 'Expired ASO Medical Exam',
+    reasonExpiredRac: 'Expired RAC Safety Certification',
+    reasonNoRacs: 'No RAC requirements registered',
+    reasonAllValid: 'All Credentials Valid',
+    reasonNoUser: 'No User',
+    accessAuthorized: 'Credentials approved. Access authorized.',
+    failedBacTest: 'Failed BAC Test: {bac}% (Limit 0.00%)',
+    cleanBacTest: 'Clean test (0.00% BAC). Gate authorized.',
+    operationalGate: 'Operational Gate',
+    statuses: {
+      Pending: 'Pending',
+      Approved: 'Approved',
+      Waitlisted: 'Waitlisted',
+      Rejected: 'Rejected'
+    } as Record<string, string>,
+    onboarding: 'Onboarding',
+    onboardingTitle: 'Mobilization Pipeline',
+    onboardingSubtitle: 'Your onboarding progress at the site',
+    onboardingStage: 'Current Stage',
+    onboardingNoProcess: 'No active onboarding process found. Contact your Area Manager to initiate a recruitment request.',
+    onboardingStages: {
+      am_requested: 'AM Requisition',
+      hr_pending: 'HR Documents',
+      security_pending: 'Security Badge',
+      clinic_pending: 'Medical Clearance',
+      induction_pending: 'HSE Induction',
+      training_pending: 'RAC Training',
+      completed: 'Completed'
+    } as Record<string, string>,
+    onboardingStageDesc: {
+      am_requested: 'Your Area Manager has submitted a recruitment request.',
+      hr_pending: 'HR is reviewing your documents and personal information.',
+      security_pending: 'Security is processing your background check and access badge.',
+      clinic_pending: 'Awaiting your occupational health medical examination.',
+      induction_pending: 'HSE site induction training is being scheduled.',
+      training_pending: 'RAC safety certification training is in progress.',
+      completed: 'All onboarding steps are complete. You are cleared for site access.'
+    } as Record<string, string>,
+    onboardingProgress: 'Progress',
+    onboardingRequestedBy: 'Requested by',
+    onboardingRole: 'Position',
+    onboardingSite: 'Site'
+  },
+  pt: {
+    title: 'Portal Móvel CARS',
+    subtitle: 'Passaporte de Acesso Seguro',
+    offlineAlert: 'Servidor offline. A correr em modo local.',
+    selectEmp: 'Selecione o perfil do Colaborador',
+    enter: 'Entrar no Sistema',
+    passport: 'Passaporte',
+    bookings: 'Treinos',
+    gate: 'Portaria',
+    profile: 'Perfil',
+    auth: 'Autorizado',
+    blocked: 'Acesso Bloqueado',
+    asoText: 'Exame Médico Ocupacional ASO',
+    validUntil: 'Válido até',
+    expiredOn: 'Expirou em',
+    noBookings: 'Nenhum histórico de treinos.',
+    requested: 'Requisitado em',
+    status: 'Estado',
+    availableTraining: 'Formações Disponíveis',
+    bookButton: 'Requisitar Matrícula',
+    alreadyBooked: 'Requisitado',
+    scanTitle: 'Cancela de Acesso Físico',
+    scanDesc: 'Leia o QR code do seu passaporte para abrir a catraca.',
+    scanButton: 'LER QR CODE DO PASSAPORTE',
+    scanningText: 'A ler o QR Code...',
+    validatingText: 'A validar requisitos de segurança e ASO...',
+    breathalyzerTitle: 'Teste de Bafômetro Requerido',
+    breathalyzerDesc: 'A sua empresa exige um teste de álcool para passar por esta cancela.',
+    blowButton: 'CLIQUE E SEGURE PARA SOPRAR',
+    blowingText: 'A soprar... Continue!',
+    processingText: 'A analisar nível de alcoolemia...',
+    gateOpen: 'ACESSO AUTORIZADO',
+    gateClosed: 'ACESSO NEGADO',
+    retry: 'Reiniciar Sequência de Entrada',
+    simulatePass: 'Simular Teste Limpo (0.00%)',
+    simulateFail: 'Simular Teste Positivo (>0.00%)',
+    signout: 'Terminar Sessão',
+    department: 'Departamento',
+    node: 'Nó Corporativo',
+    role: 'Função',
+    langToggle: 'Switch to English',
+    empId: 'ID de Registo',
+    chooseProfile: 'Escolha o perfil...',
+    passportStatus: 'Estado do Passaporte',
+    safetyRequisitions: 'Requisitos de Segurança',
+    requestedTrainings: 'Treinos Solicitados',
+    safetyCertification: 'Certificação de Segurança',
+    moduleTraining: 'Formação do Módulo',
+    instructor: 'Instrutor:',
+    testScenarioMode: 'Modo de Cenário de Teste',
+    reasonExpiredAso: 'Exame Médico ASO Expirado',
+    reasonExpiredRac: 'Certificação de Segurança RAC Expirada',
+    reasonNoRacs: 'Nenhum requisito RAC registado',
+    reasonAllValid: 'Todas as Credenciais Válidas',
+    reasonNoUser: 'Sem Utilizador',
+    accessAuthorized: 'Credenciais aprovadas. Acesso autorizado.',
+    failedBacTest: 'Teste de TAS Positivo: {bac}% (Limite 0.00%)',
+    cleanBacTest: 'Teste limpo (0.00% TAS). Acesso autorizado.',
+    operationalGate: 'Portaria Operacional',
+    statuses: {
+      Pending: 'Pendente',
+      Approved: 'Aprovado',
+      Waitlisted: 'Lista de Espera',
+      Rejected: 'Rejeitado'
+    } as Record<string, string>,
+    onboarding: 'Integração',
+    onboardingTitle: 'Pipeline de Mobilização',
+    onboardingSubtitle: 'O seu progresso de integração no site',
+    onboardingStage: 'Fase Atual',
+    onboardingNoProcess: 'Nenhum processo de integração ativo. Contacte o seu Diretor de Área para iniciar uma requisição.',
+    onboardingStages: {
+      am_requested: 'Requisição do DA',
+      hr_pending: 'Documentos RH',
+      security_pending: 'Crachá de Segurança',
+      clinic_pending: 'Exame Médico',
+      induction_pending: 'Indução HSE',
+      training_pending: 'Formação RAC',
+      completed: 'Concluído'
+    } as Record<string, string>,
+    onboardingStageDesc: {
+      am_requested: 'O seu Diretor de Área submeteu uma requisição de recrutamento.',
+      hr_pending: 'O RH está a rever os seus documentos e dados pessoais.',
+      security_pending: 'A segurança está a processar a verificação de antecedentes e o crachá de acesso.',
+      clinic_pending: 'A aguardar o exame médico ocupacional.',
+      induction_pending: 'A formação de indução HSE do site está a ser agendada.',
+      training_pending: 'A certificação de segurança RAC está em curso.',
+      completed: 'Todas as etapas de integração estão concluídas. Está autorizado para o acesso ao site.'
+    } as Record<string, string>,
+    onboardingProgress: 'Progresso',
+    onboardingRequestedBy: 'Requisitado por',
+    onboardingRole: 'Cargo',
+    onboardingSite: 'Site'
+  }
+};
+
 export default function App() {
   // Authentication / Demo State
   const [employees, setEmployees] = useState<Employee[]>([]);
@@ -83,9 +274,10 @@ export default function App() {
   const [sites, setSites] = useState<Site[]>([]);
   
   // App UI State
-  const [activeTab, setActiveTab] = useState<'passport' | 'bookings' | 'gate' | 'profile'>('passport');
+  const [activeTab, setActiveTab] = useState<'passport' | 'bookings' | 'gate' | 'onboarding' | 'profile'>('passport');
   const [isServerOnline, setIsServerOnline] = useState(false);
   const [lang, setLang] = useState<'en' | 'pt'>('en');
+  const t = text[lang];
 
   // Gate simulation states
   const [gateStep, setGateStep] = useState<'idle' | 'scanning' | 'validation' | 'breathalyzer' | 'blowing' | 'processing' | 'result'>('idle');
@@ -156,7 +348,7 @@ export default function App() {
 
   // Check if ASO and RACs are valid for current user
   const getUserStatus = () => {
-    if (!currentUser) return { authorized: false, reason: 'No User' };
+    if (!currentUser) return { authorized: false, reason: t.reasonNoUser };
 
     // Find medical/ASO status
     const reqs = requirements.filter(r => r.employeeId === currentUser.id);
@@ -164,16 +356,16 @@ export default function App() {
     const hasExpiredRac = reqs.some(r => r.status === 'Expired');
 
     if (hasExpiredMedical) {
-      return { authorized: false, reason: lang === 'en' ? 'Expired ASO Medical Exam' : 'Exame Médico ASO Expirado' };
+      return { authorized: false, reason: t.reasonExpiredAso };
     }
     if (hasExpiredRac) {
-      return { authorized: false, reason: lang === 'en' ? 'Expired RAC Safety Certification' : 'Certificação de Segurança RAC Expirada' };
+      return { authorized: false, reason: t.reasonExpiredRac };
     }
     if (reqs.length === 0) {
-      return { authorized: false, reason: lang === 'en' ? 'No RAC requirements registered' : 'Nenhum requisito RAC registado' };
+      return { authorized: false, reason: t.reasonNoRacs };
     }
 
-    return { authorized: true, reason: lang === 'en' ? 'All Credentials Valid' : 'Todas as Credenciais Válidas' };
+    return { authorized: true, reason: t.reasonAllValid };
   };
 
   // Book session action
@@ -230,7 +422,7 @@ export default function App() {
           setGateStep('breathalyzer');
         } else {
           setGateAccessGranted(true);
-          setGateReason(lang === 'en' ? 'Credentials approved. Access authorized.' : 'Credenciais aprovadas. Acesso autorizado.');
+          setGateReason(t.accessAuthorized);
           setGateStep('result');
           logGateAccess('Clean (0.00 BAC)', 'Authorized');
         }
@@ -262,12 +454,12 @@ export default function App() {
       if (simulateFail) {
         const bac = parseFloat((0.15 + Math.random() * 0.15).toFixed(2)); // fail BAC
         setGateAccessGranted(false);
-        setGateReason(lang === 'en' ? `Failed BAC Test: ${bac}% (Limit 0.00%)` : `Teste de TAS Positivo: ${bac}% (Limite 0.00%)`);
+        setGateReason(t.failedBacTest.replace('{bac}', String(bac)));
         setGateStep('result');
         logGateAccess(`Positive BAC (${bac}%)`, 'Denied');
       } else {
         setGateAccessGranted(true);
-        setGateReason(lang === 'en' ? 'Clean test (0.00% BAC). Gate authorized.' : 'Teste limpo (0.00% TAS). Acesso autorizado.');
+        setGateReason(t.cleanBacTest);
         setGateStep('result');
         logGateAccess('Clean (0.00 BAC)', 'Authorized');
       }
@@ -277,7 +469,7 @@ export default function App() {
   // POST gate logs and notifications to the local server
   const logGateAccess = async (result: string, status: string) => {
     if (!currentUser) return;
-    const currentSite = sites.find(s => s.id === currentUser.siteId) || { name: 'Operational Gate' };
+    const currentSite = sites.find(s => s.id === currentUser.siteId) || { name: t.operationalGate };
     const logEntry = {
       id: 'log-' + Math.random().toString(36).substring(2, 9),
       timestamp: new Date().toISOString(),
@@ -301,97 +493,7 @@ export default function App() {
     }
   };
 
-  // I18n translations helper
-  const text = {
-    en: {
-      title: 'CARS Mobile Portal',
-      subtitle: 'Safety Access Passport',
-      offlineAlert: 'Sync server offline. Running in local sandbox.',
-      selectEmp: 'Select Employee profile',
-      enter: 'Log In',
-      passport: 'Passport',
-      bookings: 'Bookings',
-      gate: 'Turnstile',
-      profile: 'Profile',
-      auth: 'Authorized',
-      blocked: 'Access Blocked',
-      asoText: 'ASO Occupational Medical Exam',
-      validUntil: 'Valid until',
-      expiredOn: 'Expired on',
-      noBookings: 'No booking history.',
-      requested: 'Requested on',
-      status: 'Status',
-      availableTraining: 'Available Training',
-      bookButton: 'Request Enrollment',
-      alreadyBooked: 'Requested',
-      scanTitle: 'Site Access Gate',
-      scanDesc: 'Scan safety passport QR code to open the turnstile.',
-      scanButton: 'SCAN SAFETY QR PASSPORT',
-      scanningText: 'Scanning QR Code...',
-      validatingText: 'Validating safety requisitions & ASO...',
-      breathalyzerTitle: 'Breathalyzer Check Required',
-      breathalyzerDesc: 'Your company requires a blood alcohol concentration test to pass this turnstile.',
-      blowButton: 'HOLD TO BLOW',
-      blowingText: 'Blowing... Keep going!',
-      processingText: 'Analyzing BAC levels...',
-      gateOpen: 'GATE ACCESS GRANTED',
-      gateClosed: 'GATE ACCESS DENIED',
-      retry: 'Retry Access Sequence',
-      simulatePass: 'Simulate Clear BAC (0.00%)',
-      simulateFail: 'Simulate Positive BAC (>0.00%)',
-      signout: 'Log Out Profile',
-      department: 'Department',
-      node: 'Enterprise Node',
-      role: 'Job Role',
-      langToggle: 'Mudar para Português',
-      empId: 'Record ID'
-    },
-    pt: {
-      title: 'Portal Móvel CARS',
-      subtitle: 'Passaporte de Acesso Seguro',
-      offlineAlert: 'Servidor offline. A correr em modo local.',
-      selectEmp: 'Selecione o perfil do Colaborador',
-      enter: 'Entrar no Sistema',
-      passport: 'Passaporte',
-      bookings: 'Treinos',
-      gate: 'Portaria',
-      profile: 'Perfil',
-      auth: 'Autorizado',
-      blocked: 'Acesso Bloqueado',
-      asoText: 'Exame Médico Ocupacional ASO',
-      validUntil: 'Válido até',
-      expiredOn: 'Expirou em',
-      noBookings: 'Nenhum histórico de treinos.',
-      requested: 'Requisitado em',
-      status: 'Estado',
-      availableTraining: 'Formações Disponíveis',
-      bookButton: 'Requisitar Matrícula',
-      alreadyBooked: 'Requisitado',
-      scanTitle: 'Cancela de Acesso Físico',
-      scanDesc: 'Leia o QR code do seu passaporte para abrir a catraca.',
-      scanButton: 'LER QR CODE DO PASSAPORTE',
-      scanningText: 'A ler o QR Code...',
-      validatingText: 'A validar requisitos de segurança e ASO...',
-      breathalyzerTitle: 'Teste de Bafômetro Requerido',
-      breathalyzerDesc: 'A sua empresa exige um teste de álcool para passar por esta cancela.',
-      blowButton: 'CLIQUE E SEGURE PARA SOPRAR',
-      blowingText: 'A soprar... Continue!',
-      processingText: 'A analisar nível de alcoolemia...',
-      gateOpen: 'ACESSO AUTORIZADO',
-      gateClosed: 'ACESSO NEGADO',
-      retry: 'Reiniciar Sequência de Entrada',
-      simulatePass: 'Simular Teste Limpo (0.00%)',
-      simulateFail: 'Simular Teste Positivo (>0.00%)',
-      signout: 'Terminar Sessão',
-      department: 'Departamento',
-      node: 'Nó Corporativo',
-      role: 'Função',
-      langToggle: 'Switch to English',
-      empId: 'ID de Registo'
-    }
-  };
 
-  const t = text[lang];
 
   return (
     <div className="w-full flex justify-center items-center px-4">
@@ -444,9 +546,10 @@ export default function App() {
                   <select 
                     onChange={e => handleLogin(e.target.value)}
                     defaultValue=""
+                    aria-label={t.selectEmp}
                     className="w-full bg-slate-950 border border-slate-800 rounded-xl p-4 font-bold text-sm text-white focus:border-indigo-500 outline-none appearance-none"
                   >
-                    <option value="" disabled>{lang === 'en' ? 'Choose profile...' : 'Escolha um perfil...'}</option>
+                    <option value="" disabled>{t.chooseProfile}</option>
                     {employees.map(emp => (
                       <option key={emp.id} value={emp.id}>{emp.name} ({emp.company})</option>
                     ))}
@@ -485,7 +588,7 @@ export default function App() {
                       }`}>
                         <div className="flex justify-between items-start">
                           <div>
-                            <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">PASSPORT STATUS</span>
+                            <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">{t.passportStatus}</span>
                             <h2 className="text-xl font-black font-display tracking-tight text-white mt-1 uppercase">
                               {status.authorized ? t.auth : t.blocked}
                             </h2>
@@ -518,7 +621,7 @@ export default function App() {
 
                   {/* Requisition Status Matrix list */}
                   <div className="space-y-3">
-                    <h4 className="text-[10px] font-black uppercase tracking-wider text-slate-400 px-1">Safety Requisitions</h4>
+                    <h4 className="text-[10px] font-black uppercase tracking-wider text-slate-400 px-1">{t.safetyRequisitions}</h4>
                     
                     {/* ASO Medical Item */}
                     {(() => {
@@ -550,7 +653,7 @@ export default function App() {
                             <div className="flex items-center gap-3">
                               <Shield size={18} className={isExpired ? "text-red-400" : "text-emerald-400"} />
                               <div className="text-left">
-                                <div className="text-xs font-bold text-white">{req.racCode} Safety Certification</div>
+                                <div className="text-xs font-bold text-white">{req.racCode} {t.safetyCertification}</div>
                                 <div className="text-[10px] text-slate-500 font-medium mt-0.5">
                                   {isExpired ? `${t.expiredOn} ${req.expiryDate}` : `${t.validUntil} ${req.expiryDate}`}
                                 </div>
@@ -570,14 +673,14 @@ export default function App() {
                   
                   {/* My Bookings History */}
                   <div className="space-y-3">
-                    <h4 className="text-[10px] font-black uppercase tracking-wider text-slate-400 px-1">Requested Trainings</h4>
+                    <h4 className="text-[10px] font-black uppercase tracking-wider text-slate-400 px-1">{t.requestedTrainings}</h4>
                     
                     {bookings.filter(b => b.employeeId === currentUser.id).map(book => {
                       const session = sessions.find(s => s.id === book.sessionId) || { racCode: 'RAC', date: 'Upcoming', startTime: '' };
                       return (
                         <div key={book.id} className="bg-slate-900/50 border border-white/5 p-4 rounded-2xl flex justify-between items-center">
                           <div className="text-left">
-                            <div className="font-bold text-white text-xs">{session.racCode} Module Training</div>
+                            <div className="font-bold text-white text-xs">{session.racCode} {t.moduleTraining}</div>
                             <div className="text-[10px] text-slate-500 mt-1 flex items-center gap-1">
                               <Calendar size={12} /> {session.date} • {session.startTime}
                             </div>
@@ -590,7 +693,7 @@ export default function App() {
                             book.status === 'Rejected' ? 'bg-red-500/15 text-red-400 border-red-500/20' :
                             'bg-slate-800 text-slate-400 border-slate-700/50 animate-pulse'
                           }`}>
-                            {book.status}
+                            {t.statuses[book.status] || book.status}
                           </span>
                         </div>
                       );
@@ -621,7 +724,7 @@ export default function App() {
                                 <MapPin size={12} /> {sites.find(s => s.id === sess.siteId)?.name || 'Central Office'}
                               </div>
                             </div>
-                            <div className="text-[9px] font-bold text-slate-500">Instructor: {sess.instructor}</div>
+                            <div className="text-[9px] font-bold text-slate-500">{t.instructor} {sess.instructor}</div>
                           </div>
 
                           <button
@@ -702,7 +805,7 @@ export default function App() {
 
                       {/* BAC Simulator Config */}
                       <div className="bg-slate-900 border border-white/5 p-4 rounded-2xl max-w-xs mx-auto space-y-3">
-                        <span className="text-[9px] font-black uppercase text-slate-500 tracking-wider">Test Scenario Mode</span>
+                        <span className="text-[9px] font-black uppercase text-slate-500 tracking-wider">{t.testScenarioMode}</span>
                         <div className="flex flex-col gap-2">
                           <button 
                             onClick={() => setSimulateFail(false)}
@@ -747,8 +850,7 @@ export default function App() {
                         <p className="text-sm text-slate-300 font-bold">{t.blowingText}</p>
                         <div className="w-full bg-slate-900 h-3.5 rounded-full border border-slate-800 mt-4 overflow-hidden p-0.5">
                           <div 
-                            className="bg-gradient-to-r from-amber-500 to-orange-500 h-full rounded-full transition-all duration-200"
-                            style={{ width: `${blowProgress}%` }}
+                            className={`bg-gradient-to-r from-amber-500 to-orange-500 h-full rounded-full transition-all duration-200 w-pct-${blowProgress}`}
                           ></div>
                         </div>
                       </div>
@@ -846,6 +948,147 @@ export default function App() {
                 </div>
               )}
 
+              {/* TAB: Onboarding Pipeline */}
+              {activeTab === 'onboarding' && (
+                <div className="space-y-5 animate-fade-in">
+                  {/* Header */}
+                  <div className="bg-slate-900/60 border border-white/5 p-5 rounded-[2rem] relative overflow-hidden shadow-md">
+                    <div className="absolute top-0 right-0 p-4 opacity-5"><ClipboardList size={80} /></div>
+                    <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">{t.onboardingTitle}</span>
+                    <h2 className="text-lg font-black text-white mt-1">{t.onboardingSubtitle}</h2>
+                  </div>
+
+                  {/* Pipeline View */}
+                  {(() => {
+                    // Load mobilization processes from localStorage (shared with portals)
+                    let processes: any[] = [];
+                    try {
+                      const saved = localStorage.getItem('mobilization_processes');
+                      if (saved) processes = JSON.parse(saved);
+                    } catch {}
+
+                    // Find process matching current user by name (best effort match)
+                    const myProcess = processes.find((p: any) =>
+                      currentUser && (
+                        p.candidateName?.toLowerCase() === currentUser.name?.toLowerCase() ||
+                        p.candidateId === currentUser.recordId
+                      )
+                    );
+
+                    if (!myProcess) {
+                      return (
+                        <div className="text-center py-10 bg-slate-900/20 rounded-2xl border border-dashed border-slate-800">
+                          <ClipboardList size={40} className="mx-auto text-slate-700 mb-3" />
+                          <p className="text-xs text-slate-500 font-bold max-w-[240px] mx-auto leading-relaxed">{t.onboardingNoProcess}</p>
+                        </div>
+                      );
+                    }
+
+                    // Define pipeline stages and their order
+                    const STAGES = [
+                      { key: 'am_requested', status: 'AM_REQUESTED' },
+                      { key: 'hr_pending', status: 'HR_PENDING' },
+                      { key: 'security_pending', status: 'SECURITY_PENDING' },
+                      { key: 'clinic_pending', status: 'CLINIC_PENDING' },
+                      { key: 'induction_pending', status: 'INDUCTION_PENDING' },
+                      { key: 'training_pending', status: 'TRAINING_PENDING' },
+                      { key: 'completed', status: 'COMPLETED' },
+                    ];
+
+                    // Determine current stage index
+                    const currentStatus = myProcess.status || 'AM_REQUESTED';
+                    const currentIdx = STAGES.findIndex(s => s.status === currentStatus);
+                    const progressPct = currentStatus === 'COMPLETED' ? 100 : Math.round(((currentIdx) / (STAGES.length - 1)) * 100);
+
+                    return (
+                      <div className="space-y-4">
+                        {/* Process Info Card */}
+                        <div className="bg-slate-900/40 border border-white/5 p-4 rounded-2xl space-y-2">
+                          <div className="flex justify-between text-xs">
+                            <span className="text-slate-400 font-medium">{t.onboardingRole}</span>
+                            <span className="font-bold text-white">{myProcess.role}</span>
+                          </div>
+                          <div className="flex justify-between text-xs">
+                            <span className="text-slate-400 font-medium">{t.onboardingSite}</span>
+                            <span className="font-bold text-white">{myProcess.site || myProcess.company}</span>
+                          </div>
+                          {myProcess.requestedBy && (
+                            <div className="flex justify-between text-xs">
+                              <span className="text-slate-400 font-medium">{t.onboardingRequestedBy}</span>
+                              <span className="font-bold text-white">{myProcess.requestedBy}</span>
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Progress Bar */}
+                        <div className="bg-slate-900/40 border border-white/5 p-4 rounded-2xl">
+                          <div className="flex justify-between items-center mb-2">
+                            <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">{t.onboardingProgress}</span>
+                            <span className="text-[10px] font-black text-indigo-400">{progressPct}%</span>
+                          </div>
+                          <div className="w-full bg-slate-800 h-2.5 rounded-full overflow-hidden">
+                            <div
+                              className={`h-full rounded-full transition-all duration-700 ${
+                                progressPct === 100
+                                  ? 'bg-gradient-to-r from-emerald-500 to-emerald-400'
+                                  : 'bg-gradient-to-r from-indigo-600 to-indigo-400'
+                              } w-pct-${progressPct}`}
+                            />
+                          </div>
+                        </div>
+
+                        {/* Stage List */}
+                        <div className="space-y-0">
+                          {STAGES.map((stage, idx) => {
+                            const isCompleted = idx < currentIdx || currentStatus === 'COMPLETED';
+                            const isCurrent = idx === currentIdx && currentStatus !== 'COMPLETED';
+                            const isPending = idx > currentIdx && currentStatus !== 'COMPLETED';
+                            const stageName = (t as any).onboardingStages[stage.key] || stage.key;
+                            const stageDesc = (t as any).onboardingStageDesc[stage.key] || '';
+
+                            return (
+                              <div key={stage.key} className="flex gap-3">
+                                {/* Vertical Line + Circle */}
+                                <div className="flex flex-col items-center w-7 shrink-0">
+                                  <div className={`w-6 h-6 rounded-full flex items-center justify-center border-2 shrink-0 ${
+                                    isCompleted
+                                      ? 'bg-emerald-500/20 border-emerald-500 text-emerald-400'
+                                      : isCurrent
+                                        ? 'bg-indigo-500/20 border-indigo-500 text-indigo-400 ring-4 ring-indigo-500/10'
+                                        : 'bg-slate-800 border-slate-700 text-slate-600'
+                                  }`}>
+                                    {isCompleted ? <Check size={12} /> : isCurrent ? <ArrowRight size={12} /> : <Circle size={8} />}
+                                  </div>
+                                  {idx < STAGES.length - 1 && (
+                                    <div className={`w-0.5 flex-1 min-h-[20px] ${
+                                      isCompleted ? 'bg-emerald-500/40' : 'bg-slate-800'
+                                    }`} />
+                                  )}
+                                </div>
+
+                                {/* Content */}
+                                <div className={`pb-4 pt-0.5 flex-1 ${
+                                  isCurrent ? '' : isPending ? 'opacity-40' : ''
+                                }`}>
+                                  <div className={`text-xs font-bold ${
+                                    isCompleted ? 'text-emerald-400' : isCurrent ? 'text-white' : 'text-slate-500'
+                                  }`}>
+                                    {stageName}
+                                  </div>
+                                  {isCurrent && (
+                                    <p className="text-[10px] text-slate-400 mt-1 leading-relaxed">{stageDesc}</p>
+                                  )}
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    );
+                  })()}
+                </div>
+              )}
+
             </div>
           )}
 
@@ -880,6 +1123,15 @@ export default function App() {
             >
               <Wine size={20} />
               <span>{t.gate}</span>
+            </button>
+            <button 
+              onClick={() => { setActiveTab('onboarding'); resetGate(); }}
+              className={`flex flex-col items-center gap-1 text-[9px] font-black uppercase tracking-wider transition-all ${
+                activeTab === 'onboarding' ? 'text-indigo-400 scale-105' : 'text-slate-500 hover:text-slate-300'
+              }`}
+            >
+              <ClipboardList size={20} />
+              <span>{t.onboarding}</span>
             </button>
             <button 
               onClick={() => { setActiveTab('profile'); resetGate(); }}

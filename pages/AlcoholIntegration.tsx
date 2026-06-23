@@ -4,7 +4,7 @@ import { useLanguage } from '../contexts/LanguageContext';
 import { 
   Wine, Activity, Wifi, Lock, UserX, AlertTriangle, 
   FileCode, Mail, Smartphone, XCircle, TrendingUp, BarChart3, PieChart as PieIcon,
-  Map as MapIcon, Filter, Calendar
+  Map as MapIcon, Filter, Calendar, ChevronLeft, ChevronRight
 } from 'lucide-react';
 import { 
   AreaChart, Area, Tooltip, ResponsiveContainer, XAxis, YAxis, CartesianGrid, 
@@ -39,6 +39,10 @@ const AlcoholIntegration: React.FC<AlcoholIntegrationProps> = ({ addNotification
   ]);
   const [activeAlert, setActiveAlert] = useState<BreathalyzerTest | null>(null);
   const [isReporting, setIsReporting] = useState(false);
+
+  // Pagination State
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(20);
 
   // --- INITIAL DATA GENERATION (History) ---
   useEffect(() => {
@@ -163,6 +167,17 @@ const AlcoholIntegration: React.FC<AlcoholIntegrationProps> = ({ addNotification
       return { total, positives, passRate, avgPerHour };
   }, [filteredData, dateFilter]);
 
+  const totalPages = Math.ceil(filteredData.length / itemsPerPage);
+  useEffect(() => {
+      if (currentPage > totalPages) {
+          setCurrentPage(totalPages > 0 ? totalPages : 1);
+      }
+  }, [filteredData.length, itemsPerPage, totalPages, currentPage]);
+
+  useEffect(() => {
+      setCurrentPage(1);
+  }, [dateFilter, deviceFilter, statusFilter]);
+
   // Chart Data: Hourly Trend
   const trendData = useMemo(() => {
       const grouped: Record<string, { time: string, tests: number, violations: number }> = {};
@@ -273,6 +288,7 @@ const AlcoholIntegration: React.FC<AlcoholIntegrationProps> = ({ addNotification
                       <select 
                           value={dateFilter} 
                           onChange={(e) => setDateFilter(e.target.value as any)}
+                          title="Filter by Date"
                           className="bg-transparent text-sm font-bold text-slate-700 dark:text-slate-200 outline-none cursor-pointer"
                       >
                           <option value="Today">Today</option>
@@ -286,6 +302,7 @@ const AlcoholIntegration: React.FC<AlcoholIntegrationProps> = ({ addNotification
                       <select 
                           value={deviceFilter} 
                           onChange={(e) => setDeviceFilter(e.target.value)}
+                          title="Filter by Device"
                           className="bg-transparent text-sm font-bold text-slate-700 dark:text-slate-200 outline-none cursor-pointer"
                       >
                           <option value="All">All Devices</option>
@@ -298,6 +315,7 @@ const AlcoholIntegration: React.FC<AlcoholIntegrationProps> = ({ addNotification
                       <select 
                           value={statusFilter} 
                           onChange={(e) => setStatusFilter(e.target.value as any)}
+                          title="Filter by Status"
                           className="bg-transparent text-sm font-bold text-slate-700 dark:text-slate-200 outline-none cursor-pointer"
                       >
                           <option value="All">All Results</option>
@@ -373,7 +391,7 @@ const AlcoholIntegration: React.FC<AlcoholIntegrationProps> = ({ addNotification
                           <TrendingUp size={20} className="text-indigo-500" /> 
                           {dateFilter === 'Today' ? t.alcohol.dashboard.hourlyTrend : t.alcohol.dashboard.dailyTrend}
                       </h3>
-                      <div className="h-64 w-full" style={{ minWidth: 0 }}>
+                      <div className="h-64 w-full min-w-0">
                           <ResponsiveContainer width="100%" height="100%">
                               <AreaChart data={trendData}>
                                   <defs>
@@ -404,7 +422,7 @@ const AlcoholIntegration: React.FC<AlcoholIntegrationProps> = ({ addNotification
                           <h3 className="font-bold text-slate-800 dark:text-white mb-4 flex items-center gap-2">
                               <BarChart3 size={20} className="text-blue-500" /> {t.alcohol.dashboard.deviceLoad}
                           </h3>
-                          <div className="h-48 w-full" style={{ minWidth: 0 }}>
+                          <div className="h-48 w-full min-w-0">
                               <ResponsiveContainer width="100%" height="100%">
                                   <BarChart data={deviceStats} layout="vertical">
                                       <XAxis type="number" hide />
@@ -421,7 +439,7 @@ const AlcoholIntegration: React.FC<AlcoholIntegrationProps> = ({ addNotification
                           <h3 className="font-bold text-slate-800 dark:text-white mb-2 flex items-center gap-2 self-start">
                               <PieIcon size={20} className="text-emerald-500" /> {t.alcohol.dashboard.complianceRatio}
                           </h3>
-                          <div className="h-48 w-full relative" style={{ minWidth: 0 }}>
+                          <div className="h-48 w-full relative min-w-0">
                               <ResponsiveContainer width="100%" height="100%">
                                   <PieChart>
                                       <Pie
@@ -470,7 +488,7 @@ const AlcoholIntegration: React.FC<AlcoholIntegrationProps> = ({ addNotification
                               </tr>
                           </thead>
                           <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
-                              {tests.slice(0, 50).map((test) => ( // Show last 50 only in feed
+                              {filteredData.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage).map((test) => (
                                   <tr key={test.id} className={`hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors ${test.status === 'FAIL' ? 'bg-red-50 dark:bg-red-900/10' : ''}`}>
                                       <td className="px-4 py-3">
                                           <div className="font-mono text-slate-600 dark:text-slate-400 text-xs">{test.timestamp}</div>
@@ -499,6 +517,51 @@ const AlcoholIntegration: React.FC<AlcoholIntegrationProps> = ({ addNotification
                           </tbody>
                       </table>
                   </div>
+                  
+                  {/* Pagination Footer */}
+                  {filteredData.length > 0 && (
+                      <div className="p-4 border-t border-slate-100 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 flex flex-col sm:flex-row items-center justify-between gap-2 shrink-0">
+                          <div className="flex items-center gap-2 text-[10px] font-mono text-slate-500 dark:text-slate-400">
+                              <select
+                                  value={itemsPerPage}
+                                  onChange={e => {
+                                      setItemsPerPage(Number(e.target.value));
+                                      setCurrentPage(1);
+                                  }}
+                                  title="Rows per page"
+                                  className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-2 py-0.5 focus:outline-none focus:ring-1 focus:ring-indigo-500 cursor-pointer"
+                              >
+                                  {[20, 30, 50, 80, 100].map(val => (
+                                      <option key={val} value={val}>{val}</option>
+                                  ))}
+                              </select>
+                              <span>/ page</span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                              <span className="text-[10px] text-slate-500 dark:text-slate-400">
+                                  Page {currentPage} of {totalPages || 1}
+                              </span>
+                              <div className="flex gap-1">
+                                  <button
+                                      disabled={currentPage === 1}
+                                      onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                                      className="p-1 rounded bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 disabled:opacity-30 hover:bg-slate-50 transition-colors text-slate-600 dark:text-slate-300"
+                                      title="Previous Page"
+                                  >
+                                      <ChevronLeft size={12} />
+                                  </button>
+                                  <button
+                                      disabled={currentPage === totalPages}
+                                      onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                                      className="p-1 rounded bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 disabled:opacity-30 hover:bg-slate-50 transition-colors text-slate-600 dark:text-slate-300"
+                                      title="Next Page"
+                                  >
+                                      <ChevronRight size={12} />
+                                  </button>
+                                </div>
+                          </div>
+                      </div>
+                  )}
                   
                   {/* Device Status Footer */}
                   <div className="p-4 border-t border-slate-100 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50">
@@ -530,7 +593,7 @@ const AlcoholIntegration: React.FC<AlcoholIntegrationProps> = ({ addNotification
                               <p className="text-xs text-red-100">{t.alcohol.dashboard.alert.desc}</p>
                           </div>
                       </div>
-                      <button onClick={() => setActiveAlert(null)} className="p-2 hover:bg-white/20 rounded-full transition-colors"><XCircle size={24} /></button>
+                      <button onClick={() => setActiveAlert(null)} title="Close" className="p-2 hover:bg-white/20 rounded-full transition-colors"><XCircle size={24} /></button>
                   </div>
 
                   <div className="p-8">

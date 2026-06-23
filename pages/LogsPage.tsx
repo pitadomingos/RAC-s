@@ -120,6 +120,7 @@ const LogsPage: React.FC = () => {
                                 className="bg-transparent text-white text-sm font-bold focus:outline-none p-1.5 cursor-pointer"
                                 value={filterLevel}
                                 onChange={(e) => { setFilterLevel(e.target.value as any); setCurrentPage(1); }}
+                                title="Filter by Level"
                             >
                                 <option value="ALL">{t.logs.levels.all}</option>
                                 <option value="INFO">{t.logs.levels.info}</option>
@@ -210,15 +211,30 @@ const LogsPage: React.FC = () => {
                     </table>
                 </div>
 
-                <div className="p-3 border-t border-slate-100 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 flex flex-col md:flex-row justify-between items-center gap-4">
-                    <div className="flex items-center gap-4">
-                        <div className="text-xs text-slate-600 dark:text-slate-400">
-                            {t.common.page} {currentPage} {t.common.of} {Math.max(1, totalPages)} ({filteredLogs.length} total)
+                <div className="p-3 border-t border-slate-100 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 flex flex-col md:flex-row justify-between items-center gap-4 shrink-0">
+                    <div className="flex flex-wrap items-center gap-4 text-xs text-slate-600 dark:text-slate-400">
+                        <span>{t.common.page} {currentPage} {t.common.of} {Math.max(1, totalPages)} ({filteredLogs.length} total)</span>
+                        <div className="h-3 w-px bg-slate-200 dark:bg-slate-700"></div>
+                        <div className="flex items-center gap-2 text-xs font-mono text-slate-500 dark:text-slate-400">
+                            <span>Rows per page:</span>
+                            <select
+                                value={itemsPerPage}
+                                onChange={e => {
+                                    setItemsPerPage(Number(e.target.value));
+                                    setCurrentPage(1);
+                                }}
+                                title="Rows per page"
+                                className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-2 py-0.5 focus:outline-none focus:ring-1 focus:ring-purple-500 cursor-pointer"
+                            >
+                                {[20, 30, 50, 80, 100].map(val => (
+                                    <option key={val} value={val}>{val}</option>
+                                ))}
+                            </select>
                         </div>
-                        <div className="flex items-center gap-1">
-                            <button onClick={() => goToPage(currentPage - 1)} disabled={currentPage === 1} className="p-1 rounded hover:bg-gray-200 dark:hover:bg-slate-700 disabled:opacity-30 text-slate-600 dark:text-slate-300"><ChevronLeft size={16} /></button>
-                            <button onClick={() => goToPage(currentPage + 1)} disabled={currentPage === totalPages} className="p-1 rounded hover:bg-gray-200 dark:hover:bg-slate-700 disabled:opacity-30 text-slate-600 dark:text-slate-300"><ChevronRight size={16} /></button>
-                        </div>
+                    </div>
+                    <div className="flex gap-2">
+                        <button onClick={() => goToPage(currentPage - 1)} disabled={currentPage === 1} title="Previous Page" className="p-2 rounded-xl border bg-white dark:bg-slate-800 disabled:opacity-30 hover:bg-slate-50 transition-colors"><ChevronLeft size={16}/></button>
+                        <button onClick={() => goToPage(currentPage + 1)} disabled={currentPage === totalPages} title="Next Page" className="p-2 rounded-xl border bg-white dark:bg-slate-800 disabled:opacity-30 hover:bg-slate-50 transition-colors"><ChevronRight size={16}/></button>
                     </div>
                 </div>
             </div>

@@ -1,12 +1,13 @@
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import {
-    Briefcase, Plus, Search, Edit2, Trash2, ChevronDown,
+    Briefcase, Plus, Search, Edit2, Trash2, ChevronDown, ChevronLeft,
     Building2, Users, Shield, AlertTriangle, CheckCircle2,
     X, Phone, Mail, User, ChevronRight, Filter, BarChart3
 } from 'lucide-react';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useAuth } from '../contexts/AuthContext';
+import { useToast } from '../contexts/ToastContext';
 import { Company } from '../types';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -101,8 +102,9 @@ const emptyForm: Omit<SubcontractorEntry, 'id' | 'complianceScore' | 'employeeCo
 };
 
 const SubcontractorPage: React.FC<SubcontractorPageProps> = ({ companies }) => {
-    const { t } = useLanguage();
+    const { t, language } = useLanguage();
     const { user } = useAuth();
+    const { confirm } = useToast();
     const ts = t.subcontractors;
 
     const [subs, setSubs] = useState<SubcontractorEntry[]>(() => {
@@ -133,6 +135,16 @@ const SubcontractorPage: React.FC<SubcontractorPageProps> = ({ companies }) => {
             return matchSearch && matchStatus && matchContractor;
         });
     }, [subs, searchQuery, filterStatus, filterContractor]);
+
+    const [currentPage, setCurrentPage] = useState(1);
+    const [rowsPerPage, setRowsPerPage] = useState(20);
+
+    const totalPages = Math.ceil(filtered.length / rowsPerPage);
+    useEffect(() => {
+        if (currentPage > totalPages) {
+            setCurrentPage(totalPages > 0 ? totalPages : 1);
+        }
+    }, [filtered.length, rowsPerPage, totalPages, currentPage]);
 
     const selected = subs.find(s => s.id === selectedId);
 
@@ -197,8 +209,8 @@ const SubcontractorPage: React.FC<SubcontractorPageProps> = ({ companies }) => {
         setIsModalOpen(false);
     };
 
-    const handleDelete = (id: string) => {
-        if (window.confirm(ts.confirmDelete)) {
+    const handleDelete = async (id: string) => {
+        if (await confirm(language === 'pt' ? 'Eliminar Subempreiteiro' : 'Delete Subcontractor', ts.confirmDelete)) {
             const updated = subs.filter(s => s.id !== id);
             persist(updated);
             if (selectedId === id) {
@@ -292,9 +304,10 @@ const SubcontractorPage: React.FC<SubcontractorPageProps> = ({ companies }) => {
                                     {f}
                                 </button>
                             ))}
-                            <select
+                             <select
                                 value={filterContractor}
                                 onChange={e => setFilterContractor(e.target.value)}
+                                title={ts.table.mainContractor}
                                 className="px-3 py-1.5 rounded-xl text-[10px] font-black uppercase bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 border-none outline-none cursor-pointer"
                             >
                                 <option value="all">{ts.table.mainContractor}: All</option>
@@ -320,7 +333,7 @@ const SubcontractorPage: React.FC<SubcontractorPageProps> = ({ companies }) => {
                                 <p className="font-bold text-sm">{ts.noResults}</p>
                             </div>
                         )}
-                        {filtered.map(sub => (
+                        {filtered.slice((currentPage - 1) * rowsPerPage, currentPage * rowsPerPage).map(sub => (
                             <div
                                 key={sub.id}
                                 onClick={() => setSelectedId(sub.id)}
@@ -350,7 +363,7 @@ const SubcontractorPage: React.FC<SubcontractorPageProps> = ({ companies }) => {
                                 <div className="col-span-2 flex flex-col items-center gap-1">
                                     <span className={`text-sm font-black ${getComplianceColor(sub.complianceScore)}`}>{sub.complianceScore}%</span>
                                     <div className="w-16 h-1.5 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
-                                        <div className={`h-full rounded-full ${getComplianceBg(sub.complianceScore)}`} style={{ width: `${sub.complianceScore}%` }} />
+                                        <div className={`h-full rounded-full ${getComplianceBg(sub.complianceScore)} w-pct-${sub.complianceScore}`} />
                                     </div>
                                 </div>
 
@@ -382,6 +395,50 @@ const SubcontractorPage: React.FC<SubcontractorPageProps> = ({ companies }) => {
                             </div>
                         ))}
                     </div>
+                    {/* Pagination Footer */}
+                    {filtered.length > 0 && (
+                        <div className="px-6 py-4 bg-slate-50 dark:bg-slate-900/40 border-t border-slate-100 dark:border-slate-700 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs font-mono text-slate-500 dark:text-slate-400 shrink-0">
+                            <div className="flex items-center gap-2">
+                                <span>Rows per page:</span>
+                                <select
+                                    title="Rows per page"
+                                    value={rowsPerPage}
+                                    onChange={e => {
+                                        setRowsPerPage(Number(e.target.value));
+                                        setCurrentPage(1);
+                                    }}
+                                    className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-2 py-1 focus:outline-none focus:ring-1 focus:ring-violet-500 cursor-pointer"
+                                >
+                                    {[20, 30, 50, 80, 100].map(val => (
+                                        <option key={val} value={val}>{val}</option>
+                                    ))}
+                                </select>
+                            </div>
+                            <div className="flex items-center gap-4">
+                                <span>
+                                    Showing {Math.min(filtered.length, (currentPage - 1) * rowsPerPage + 1)}-{Math.min(filtered.length, currentPage * rowsPerPage)} of {filtered.length}
+                                </span>
+                                <div className="flex items-center gap-1">
+                                    <button
+                                        disabled={currentPage === 1}
+                                        onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                                        className="p-1.5 rounded-lg border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700 disabled:opacity-40 disabled:hover:bg-transparent transition-colors"
+                                        title="Previous Page"
+                                    >
+                                        <ChevronLeft size={14} />
+                                    </button>
+                                    <button
+                                        disabled={currentPage === totalPages}
+                                        onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                                        className="p-1.5 rounded-lg border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700 disabled:opacity-40 disabled:hover:bg-transparent transition-colors"
+                                        title="Next Page"
+                                    >
+                                        <ChevronRight size={14} />
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
                 </div>
 
                 {/* Right: Detail Panel */}
@@ -407,10 +464,16 @@ const SubcontractorPage: React.FC<SubcontractorPageProps> = ({ companies }) => {
                                         </div>
                                     </div>
                                     <div className="flex gap-2">
-                                        <button onClick={() => openEdit(selected)} className="p-2 hover:bg-violet-50 dark:hover:bg-violet-900/30 text-violet-500 rounded-xl transition-colors">
+                                        <button onClick={() => openEdit(selected)}
+                                            title={language === 'pt' ? 'Editar Subempreiteiro' : 'Edit Subcontractor'}
+                                            aria-label={language === 'pt' ? 'Editar Subempreiteiro' : 'Edit Subcontractor'}
+                                            className="p-2 hover:bg-violet-50 dark:hover:bg-violet-900/30 text-violet-500 rounded-xl transition-colors">
                                             <Edit2 size={18} />
                                         </button>
-                                        <button onClick={() => handleDelete(selected.id)} className="p-2 hover:bg-red-50 dark:hover:bg-red-900/30 text-red-400 rounded-xl transition-colors">
+                                        <button onClick={() => handleDelete(selected.id)}
+                                            title={language === 'pt' ? 'Excluir Subempreiteiro' : 'Delete Subcontractor'}
+                                            aria-label={language === 'pt' ? 'Excluir Subempreiteiro' : 'Delete Subcontractor'}
+                                            className="p-2 hover:bg-red-50 dark:hover:bg-red-900/30 text-red-400 rounded-xl transition-colors">
                                             <Trash2 size={18} />
                                         </button>
                                     </div>
@@ -424,8 +487,7 @@ const SubcontractorPage: React.FC<SubcontractorPageProps> = ({ companies }) => {
                                     </div>
                                     <div className="h-3 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
                                         <div
-                                            className={`h-full rounded-full transition-all duration-700 ${getComplianceBg(selected.complianceScore)}`}
-                                            style={{ width: `${selected.complianceScore}%` }}
+                                            className={`h-full rounded-full transition-all duration-700 ${getComplianceBg(selected.complianceScore)} w-pct-${selected.complianceScore}`}
                                         />
                                     </div>
                                     <div className={`text-xs font-black uppercase tracking-widest mt-2 ${getComplianceColor(selected.complianceScore)}`}>
@@ -469,7 +531,7 @@ const SubcontractorPage: React.FC<SubcontractorPageProps> = ({ companies }) => {
                                         <div key={i} className="flex items-center gap-3">
                                             <div className="text-[10px] font-bold text-slate-500 w-36 truncate">{item.label}</div>
                                             <div className="flex-1 h-2 bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden">
-                                                <div className={`h-full rounded-full ${getComplianceBg(item.score)}`} style={{ width: `${item.score}%` }} />
+                                                <div className={`h-full rounded-full ${getComplianceBg(item.score)} w-pct-${item.score}`} />
                                             </div>
                                             <div className={`text-[10px] font-black w-8 text-right ${getComplianceColor(item.score)}`}>{item.score}%</div>
                                         </div>
@@ -500,7 +562,10 @@ const SubcontractorPage: React.FC<SubcontractorPageProps> = ({ companies }) => {
                                     {editingId ? ts.editSubcontractor : ts.addSubcontractor}
                                 </h3>
                             </div>
-                            <button onClick={() => setIsModalOpen(false)} className="p-2 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-400 rounded-xl transition-colors">
+                            <button onClick={() => setIsModalOpen(false)}
+                                title={language === 'pt' ? 'Fechar' : 'Close'}
+                                aria-label={language === 'pt' ? 'Fechar' : 'Close'}
+                                className="p-2 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-400 rounded-xl transition-colors">
                                 <X size={20} />
                             </button>
                         </div>
@@ -524,6 +589,7 @@ const SubcontractorPage: React.FC<SubcontractorPageProps> = ({ companies }) => {
                                     required
                                     value={formData.mainContractorId}
                                     onChange={e => setFormData(p => ({ ...p, mainContractorId: e.target.value }))}
+                                    title={ts.modal.mainContractor}
                                     className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-sm text-slate-900 dark:text-white focus:border-violet-500 outline-none"
                                 >
                                     <option value="">{ts.modal.selectParent}</option>

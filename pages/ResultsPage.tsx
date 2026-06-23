@@ -352,7 +352,7 @@ const ResultsPage: React.FC<ResultsPageProps> = ({ bookings, updateBookingStatus
                             {isImporting ? <RefreshCw size={16} className="animate-spin" /> : <Upload size={16} />}
                             {isImporting ? 'Processing' : 'Upload Records'}
                         </button>
-                        <input type="file" ref={fileInputRef} className="hidden" accept=".csv" onChange={handleFileUpload} />
+                        <input type="file" ref={fileInputRef} className="hidden" accept=".csv" title="Import CSV File" onChange={handleFileUpload} />
                     </>
                 )}
                 <button 
@@ -432,8 +432,8 @@ const ResultsPage: React.FC<ResultsPageProps> = ({ bookings, updateBookingStatus
                                                 </button>
                                             ) : (
                                                 <div className="opacity-0 group-hover:opacity-100 flex gap-1 transition-opacity">
-                                                    <button onClick={() => navigate(`/verify/${booking.employee.recordId}`)} className="p-2 text-slate-400 hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg"><QrCode size={16}/></button>
-                                                    <button className="p-2 text-slate-400 hover:text-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded-lg"><FileText size={16}/></button>
+                                                    <button onClick={() => navigate(`/verify/${booking.employee.recordId}`)} title="Verify QR" className="p-2 text-slate-400 hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg"><QrCode size={16}/></button>
+                                                    <button title="View Details" className="p-2 text-slate-400 hover:text-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded-lg"><FileText size={16}/></button>
                                                 </div>
                                             )}
                                         </div>
@@ -444,13 +444,30 @@ const ResultsPage: React.FC<ResultsPageProps> = ({ bookings, updateBookingStatus
                     </tbody>
                 </table>
             </div>
-            <div className="p-5 border-t border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-900/50 flex justify-between items-center">
-                <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
-                    Page {currentPage} of {Math.max(1, totalPages)} • Displaying {paginatedBookings.length} of {filteredBookings.length} Records
+            <div className="p-5 border-t border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-900/50 flex flex-col md:flex-row justify-between items-center gap-4">
+                <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex flex-wrap items-center gap-4">
+                    <span>Page {currentPage} of {Math.max(1, totalPages)} • Displaying {paginatedBookings.length} of {filteredBookings.length} Records</span>
+                    <div className="h-3 w-px bg-slate-200 dark:bg-slate-700"></div>
+                    <div className="flex items-center gap-2 text-xs font-mono text-slate-500 dark:text-slate-400">
+                        <span>Rows per page:</span>
+                        <select
+                            value={itemsPerPage}
+                            onChange={e => {
+                                setItemsPerPage(Number(e.target.value));
+                                setCurrentPage(1);
+                            }}
+                            title="Rows per page"
+                            className="bg-white dark:bg-slate-800 border border-slate-250 dark:border-slate-700 rounded-lg px-2 py-0.5 focus:outline-none focus:ring-1 focus:ring-blue-500 cursor-pointer"
+                        >
+                            {[20, 30, 50, 80, 100].map(val => (
+                                <option key={val} value={val}>{val}</option>
+                            ))}
+                        </select>
+                    </div>
                 </div>
                 <div className="flex gap-2">
-                    <button onClick={() => setCurrentPage(p => Math.max(1, p-1))} disabled={currentPage === 1} className="p-2 rounded-xl border bg-white dark:bg-slate-800 disabled:opacity-30 hover:bg-slate-50 transition-colors"><ChevronLeft size={18} /></button>
-                    <button onClick={() => setCurrentPage(p => Math.min(totalPages, p+1))} disabled={currentPage === totalPages} className="p-2 rounded-xl border bg-white dark:bg-slate-800 disabled:opacity-30 hover:bg-slate-50 transition-colors"><ChevronRight size={18} /></button>
+                    <button onClick={() => setCurrentPage(p => Math.max(1, p-1))} disabled={currentPage === 1} title="Previous Page" className="p-2 rounded-xl border bg-white dark:bg-slate-800 disabled:opacity-30 hover:bg-slate-50 transition-colors"><ChevronLeft size={18} /></button>
+                    <button onClick={() => setCurrentPage(p => Math.min(totalPages, p+1))} disabled={currentPage === totalPages} title="Next Page" className="p-2 rounded-xl border bg-white dark:bg-slate-800 disabled:opacity-30 hover:bg-slate-50 transition-colors"><ChevronRight size={18} /></button>
                 </div>
             </div>
         </div>

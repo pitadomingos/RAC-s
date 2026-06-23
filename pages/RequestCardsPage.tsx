@@ -5,6 +5,7 @@ import CardTemplate from '../components/CardTemplate';
 import { Mail, AlertCircle, CheckCircle2, Printer, Search, X, ZoomIn, Filter, Trash2, User, Sparkles, CreditCard, Layers } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useLanguage } from '../contexts/LanguageContext';
+import { useToast } from '../contexts/ToastContext';
 import { OPS_KEYS } from '../constants';
 
 interface RequestCardsPageProps {
@@ -22,6 +23,7 @@ const RequestCardsPage: React.FC<RequestCardsPageProps> = ({ bookings, requireme
   const navigate = useNavigate();
   const location = useLocation();
   const { t } = useLanguage();
+  const { showAlert } = useToast();
   const [requestSent, setRequestSent] = useState(false);
   
   const [slotInputs, setSlotInputs] = useState<string[]>(() => {
@@ -186,7 +188,7 @@ const RequestCardsPage: React.FC<RequestCardsPageProps> = ({ bookings, requireme
               } 
           });
       } else {
-          alert("Please select at least one employee to print.");
+          showAlert("Print Error", "Please select at least one employee to print.");
       }
   };
 

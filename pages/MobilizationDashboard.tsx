@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { 
-    Users, Briefcase, FileText, ShieldAlert, CheckCircle2, AlertTriangle, 
+    Users, Briefcase, FileText, ShieldAlert, CheckCircle, CheckCircle2, AlertTriangle, 
     Send, Smartphone, Mail, Download, ShieldCheck, HelpCircle, 
     Upload, File, Check, RefreshCw, BadgeAlert, Plus, Trash2, Calendar, 
     Heart, Eye, Activity, Info, Clock, CheckSquare, Square, ChevronRight, UserMinus,
@@ -11,13 +11,20 @@ import { useMessages } from '../contexts/MessageContext';
 import { useAuth } from '../contexts/AuthContext';
 import { db } from '../services/databaseService';
 import { DEMO_RECRUITMENT_PROCESSES } from '../mockData';
-import { RecruitmentProcess, RecruitmentStatus, RecruitDocument, MedicalExam, FitnessCertificate, Employee, BookingStatus, Company } from '../types';
+import { RecruitmentProcess, RecruitmentStatus, RecruitDocument, MedicalExam, FitnessCertificate, Employee, BookingStatus, Company, RacDef } from '../types';
 import { v4 as uuidv4 } from 'uuid';
+import { useToast } from '../contexts/ToastContext';
+import { generateRecruitmentStagesPDF } from '../utils/pdfGenerator';
 
-const MobilizationDashboard: React.FC<{ companies?: Company[] }> = ({ companies = [] }) => {
+const MobilizationDashboard: React.FC<{ companies?: Company[]; racDefinitions?: RacDef[] }> = ({ companies = [], racDefinitions = [] }) => {
     const { t, language } = useLanguage();
     const { user } = useAuth();
     const { addMessage } = useMessages();
+    const { showToast, confirm, showAlert } = useToast();
+
+    const isVehicleType = (type: string) => {
+        return ['Haul Truck', 'Light Vehicle'].includes(type);
+    };
     
     // Core Workflow State
     const [processes, setProcesses] = useState<RecruitmentProcess[]>(() => {
@@ -58,21 +65,16 @@ const MobilizationDashboard: React.FC<{ companies?: Company[] }> = ({ companies 
         }
         
         // Clinic / Medical
-        if (dept.includes('medical') || dept.includes('clinic') || title.includes('doctor') || title.includes('nurse')) {
+        if (dept.includes('clinic') || dept.includes('medical') || title.includes('doctor') || title.includes('nurse')) {
             tabs.push('Clinic');
         }
         
-        // Environment / HSE / Safety
-        if (dept.includes('hse') || title.includes('safety') || title.includes('environment')) {
+        // HSE Environment (Induction)
+        if (dept.includes('hse') || dept.includes('environment') || title.includes('safety') || title.includes('trainer')) {
             tabs.push('Environment');
-            if (!tabs.includes('Security')) tabs.push('Security');
         }
         
-        if (tabs.length === 0) {
-            tabs.push('AM'); // Fallback
-        }
-        
-        return tabs;
+        return tabs.length > 0 ? tabs : ['AM'];
     }, [user]);
 
     // Force activeTab to switch to first allowed tab if user switches to a role with restricted privileges
@@ -82,9 +84,26 @@ const MobilizationDashboard: React.FC<{ companies?: Company[] }> = ({ companies 
         }
     }, [allowedTabs, activeTab]);
 
-    // UI States
-    const [isAddRequestOpen, setIsAddRequestOpen] = useState(false);
     const [selectedProcessId, setSelectedProcessId] = useState<string | null>(null);
+    const [isAddRequestOpen, setIsAddRequestOpen] = useState(false);
+    
+    // New Request State Form
+    const [requestType, setRequestType] = useState<'Recruitment' | 'PersonnelAccess' | 'EquipmentAccess' | 'DeliveryAccess'>('Recruitment');
+    const [equipmentType, setEquipmentType] = useState('Excavator');
+    const [equipmentId, setEquipmentId] = useState('');
+    const [respPersonName, setRespPersonName] = useState('');
+    const [respPersonPhone, setRespPersonPhone] = useState('');
+    
+    // Delivery fields
+    const [truckModel, setTruckModel] = useState('');
+    const [truckRegNumber, setTruckRegNumber] = useState('');
+    const [poNumber, setPoNumber] = useState('');
+
+    // Dynamic stages flags
+    const [requiresMedical, setRequiresMedical] = useState(true);
+    const [requiresInduction, setRequiresInduction] = useState(true);
+    const [requiresRac, setRequiresRac] = useState(true);
+
     const [newRequest, setNewRequest] = useState({
         candidateName: '',
         candidateEmail: '',
@@ -96,12 +115,6 @@ const MobilizationDashboard: React.FC<{ companies?: Company[] }> = ({ companies 
         role: 'Operator',
         requiredRacs: [] as string[]
     });
-
-    const [requestType, setRequestType] = useState<'Recruitment' | 'PersonnelAccess' | 'EquipmentAccess'>('Recruitment');
-    const [equipmentType, setEquipmentType] = useState('Excavator');
-    const [equipmentId, setEquipmentId] = useState('');
-    const [respPersonName, setRespPersonName] = useState('');
-    const [respPersonPhone, setRespPersonPhone] = useState('');
 
     const primeCompanies = companies.filter(c => c.tier === 'Prime' || !c.tier);
     const contractorCompanies = companies.filter(c => c.tier === 'Sub');
@@ -120,12 +133,31 @@ const MobilizationDashboard: React.FC<{ companies?: Company[] }> = ({ companies 
     const [amUploadState, setAmUploadState] = useState<{
         candidateId: { uploaded: boolean; fileName: string; fileSize: string; uploading: boolean };
         fitnessCert: { uploaded: boolean; fileName: string; fileSize: string; uploading: boolean };
+        insurance: { uploaded: boolean; fileName: string; fileSize: string; uploading: boolean };
+        manifesto: { uploaded: boolean; fileName: string; fileSize: string; uploading: boolean };
+        photoFront: { uploaded: boolean; fileName: string; fileSize: string; uploading: boolean };
+        photoRight: { uploaded: boolean; fileName: string; fileSize: string; uploading: boolean };
+        photoLeft: { uploaded: boolean; fileName: string; fileSize: string; uploading: boolean };
+        photoBack: { uploaded: boolean; fileName: string; fileSize: string; uploading: boolean };
+        driverLicense: { uploaded: boolean; fileName: string; fileSize: string; uploading: boolean };
+        passport: { uploaded: boolean; fileName: string; fileSize: string; uploading: boolean };
     }>({
         candidateId: { uploaded: false, fileName: '', fileSize: '', uploading: false },
         fitnessCert: { uploaded: false, fileName: '', fileSize: '', uploading: false },
+        insurance: { uploaded: false, fileName: '', fileSize: '', uploading: false },
+        manifesto: { uploaded: false, fileName: '', fileSize: '', uploading: false },
+        photoFront: { uploaded: false, fileName: '', fileSize: '', uploading: false },
+        photoRight: { uploaded: false, fileName: '', fileSize: '', uploading: false },
+        photoLeft: { uploaded: false, fileName: '', fileSize: '', uploading: false },
+        photoBack: { uploaded: false, fileName: '', fileSize: '', uploading: false },
+        driverLicense: { uploaded: false, fileName: '', fileSize: '', uploading: false },
+        passport: { uploaded: false, fileName: '', fileSize: '', uploading: false },
     });
 
-    const handleAmFileSelect = (docKey: 'candidateId' | 'fitnessCert', e: React.ChangeEvent<HTMLInputElement>) => {
+    const handleAmFileSelect = (
+        docKey: 'candidateId' | 'fitnessCert' | 'insurance' | 'manifesto' | 'photoFront' | 'photoRight' | 'photoLeft' | 'photoBack' | 'driverLicense' | 'passport', 
+        e: React.ChangeEvent<HTMLInputElement>
+    ) => {
         const file = e.target.files?.[0];
         if (!file) return;
         setAmUploadState(prev => ({ ...prev, [docKey]: { ...prev[docKey], uploading: true, fileName: file.name, fileSize: `${(file.size / 1024).toFixed(1)} KB` } }));
@@ -138,10 +170,21 @@ const MobilizationDashboard: React.FC<{ companies?: Company[] }> = ({ companies 
         setAmUploadState({
             candidateId: { uploaded: false, fileName: '', fileSize: '', uploading: false },
             fitnessCert: { uploaded: false, fileName: '', fileSize: '', uploading: false },
+            insurance: { uploaded: false, fileName: '', fileSize: '', uploading: false },
+            manifesto: { uploaded: false, fileName: '', fileSize: '', uploading: false },
+            photoFront: { uploaded: false, fileName: '', fileSize: '', uploading: false },
+            photoRight: { uploaded: false, fileName: '', fileSize: '', uploading: false },
+            photoLeft: { uploaded: false, fileName: '', fileSize: '', uploading: false },
+            photoBack: { uploaded: false, fileName: '', fileSize: '', uploading: false },
+            driverLicense: { uploaded: false, fileName: '', fileSize: '', uploading: false },
+            passport: { uploaded: false, fileName: '', fileSize: '', uploading: false },
         });
         setEquipmentId('');
         setRespPersonName('');
         setRespPersonPhone('');
+        setTruckModel('');
+        setTruckRegNumber('');
+        setPoNumber('');
     };
 
     // Security State
@@ -182,43 +225,73 @@ const MobilizationDashboard: React.FC<{ companies?: Company[] }> = ({ companies 
         }
     }, [processes, selectedProcessId]);
 
-    // Available RAC categories
-    const AVAILABLE_RACS = [
-        { code: 'RAC01', name: 'RAC 01 - Working at Height' },
-        { code: 'RAC02', name: 'RAC 02 - Vehicles & Mobile Eq.' },
-        { code: 'RAC03', name: 'RAC 03 - Energy Isolation (LOTO)' },
-        { code: 'RAC05', name: 'RAC 05 - Confined Spaces' },
-        { code: 'RAC08', name: 'RAC 08 - Electrical Safety' },
-        { code: 'RAC11', name: 'RAC 11 - Mine Traffic Rules' },
-        { code: 'PTS', name: 'PTS - Work Permit Issuer' },
-        { code: 'ART', name: 'ART - Risk Assessment' }
-    ];
+    // Available RAC categories — read from Training app definitions, fallback to hardcoded
+    const AVAILABLE_RACS = React.useMemo(() => {
+        if (racDefinitions.length > 0) {
+            return racDefinitions.map(r => ({
+                code: r.code,
+                name: `${r.code} - ${r.name}`
+            }));
+        }
+        // Fallback if no racDefinitions passed
+        return [
+            { code: 'RAC01', name: 'RAC 01 - Working at Height' },
+            { code: 'RAC02', name: 'RAC 02 - Vehicles & Mobile Eq.' },
+            { code: 'RAC03', name: 'RAC 03 - Energy Isolation (LOTO)' },
+            { code: 'RAC05', name: 'RAC 05 - Confined Spaces' },
+            { code: 'RAC08', name: 'RAC 08 - Electrical Safety' },
+            { code: 'RAC11', name: 'RAC 11 - Mine Traffic Rules' },
+            { code: 'PTS', name: 'PTS - Work Permit Issuer' },
+            { code: 'ART', name: 'ART - Risk Assessment' }
+        ];
+    }, [racDefinitions]);
+
+    const getNextStageAfterClinicOrSecurity = (proc: RecruitmentProcess) => {
+        if (proc.requiresInduction !== false) {
+            return RecruitmentStatus.INDUCTION_PENDING;
+        } else if (proc.requiresRac !== false) {
+            return RecruitmentStatus.TRAINING_PENDING;
+        } else {
+            return RecruitmentStatus.COMPLETED;
+        }
+    };
 
     // Helper: Determine bottleneck department and responsible party
     const getBottleneckInfo = (status: RecruitmentStatus) => {
+        const cert = t.proposal.mobilization.certificate || {
+            deptHR: 'HR Department',
+            deptClinic: 'Occupational Clinic',
+            deptHSE: 'Environment / HSE',
+            deptSecurity: 'Security Office',
+            deptAM: 'Area Manager'
+        };
         switch(status) {
             case RecruitmentStatus.AM_REQUESTED:
-                return { dept: 'HR Department', role: 'HR Specialist', bg: 'bg-blue-500/10 text-blue-500 border-blue-500/20' };
+                return { dept: cert.deptHR, role: language === 'pt' ? 'Especialista de RH' : 'HR Specialist', bg: 'bg-blue-500/10 text-blue-500 border-blue-500/20' };
             case RecruitmentStatus.HR_PENDING:
-                return { dept: 'HR Department', role: 'HR Specialist', bg: 'bg-blue-500/10 text-blue-500 border-blue-500/20' };
+                return { dept: cert.deptHR, role: language === 'pt' ? 'Especialista de RH' : 'HR Specialist', bg: 'bg-blue-500/10 text-blue-500 border-blue-500/20' };
             case RecruitmentStatus.SECURITY_PENDING:
-                return { dept: 'Security Office', role: 'Security Controller', bg: 'bg-amber-500/10 text-amber-500 border-amber-500/20' };
+                return { dept: cert.deptSecurity, role: language === 'pt' ? 'Controlador de Segurança' : 'Security Controller', bg: 'bg-amber-500/10 text-amber-500 border-amber-500/20' };
             case RecruitmentStatus.PARALLEL_CLEARANCE_PENDING:
-                return { dept: 'Security + Clinic', role: 'Security & Clinic (Parallel)', bg: 'bg-orange-500/10 text-orange-500 border-orange-500/20' };
+                return { dept: language === 'pt' ? 'Segurança + Clínica' : 'Security + Clinic', role: language === 'pt' ? 'Segurança e Clínica (Paralelo)' : 'Security & Clinic (Parallel)', bg: 'bg-orange-500/10 text-orange-500 border-orange-500/20' };
             case RecruitmentStatus.CLINIC_PENDING:
-                return { dept: 'Occupational Clinic', role: 'Clinic Doctor', bg: 'bg-red-500/10 text-red-500 border-red-500/20' };
+                return { dept: cert.deptClinic, role: language === 'pt' ? 'Médico do Trabalho' : 'Clinic Doctor', bg: 'bg-red-500/10 text-red-500 border-red-500/20' };
             case RecruitmentStatus.INDUCTION_PENDING:
-                return { dept: 'Environment / HSE', role: 'Safety Inductor', bg: 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20' };
+                return { dept: cert.deptHSE, role: language === 'pt' ? 'Instrutor de Segurança' : 'Safety Inductor', bg: 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20' };
             case RecruitmentStatus.TRAINING_PENDING:
-                return { dept: 'CARS Training System', role: 'RAC Training Lead', bg: 'bg-violet-500/10 text-violet-500 border-violet-500/20' };
+                return { dept: language === 'pt' ? 'Sistema de Treino RACS' : 'CARS Training System', role: language === 'pt' ? 'Responsável de Treino RAC' : 'RAC Training Lead', bg: 'bg-violet-500/10 text-violet-500 border-violet-500/20' };
             case RecruitmentStatus.COMPLETED:
-                return { dept: 'Area Manager', role: 'Area Manager (Receipt confirmation)', bg: 'bg-purple-500/10 text-purple-500 border-purple-500/20' };
+                return { dept: cert.deptAM, role: language === 'pt' ? 'Gestor de Área (Confirmação)' : 'Area Manager (Receipt confirmation)', bg: 'bg-purple-500/10 text-purple-500 border-purple-500/20' };
             case RecruitmentStatus.RECEIVED:
-                return { dept: 'None', role: 'Mobilized', bg: 'bg-slate-500/10 text-slate-400 border-slate-500/10' };
+                return { dept: language === 'pt' ? 'Nenhum' : 'None', role: language === 'pt' ? 'Mobilizado' : 'Mobilized', bg: 'bg-slate-500/10 text-slate-400 border-slate-500/10' };
             case RecruitmentStatus.SAFETY_PENDING:
-                return { dept: 'Safety Team', role: 'Safety Inspector', bg: 'bg-orange-500/10 text-orange-500 border-orange-500/20' };
+                return { dept: language === 'pt' ? 'Equipa de Segurança' : 'Safety Team', role: language === 'pt' ? 'Inspetor de Segurança' : 'Safety Inspector', bg: 'bg-orange-500/10 text-orange-500 border-orange-500/20' };
             case RecruitmentStatus.FAILED:
-                return { dept: 'Safety Team', role: 'Inspection Failed (Access Denied)', bg: 'bg-red-500/10 text-red-500 border-red-500/20' };
+                return { dept: language === 'pt' ? 'Equipa de Segurança' : 'Safety Team', role: language === 'pt' ? 'Inspeção Recusada (Acesso Negado)' : 'Inspection Failed (Access Denied)', bg: 'bg-red-500/10 text-red-500 border-red-500/20' };
+            case RecruitmentStatus.DELIVERING:
+                return { dept: cert.deptAM, role: language === 'pt' ? 'Gestor de Área (Entrega Ativa)' : 'Area Manager (Active Delivery)', bg: 'bg-blue-500/10 text-blue-500 border-blue-500/20' };
+            case RecruitmentStatus.DELIVERED:
+                return { dept: cert.deptSecurity, role: language === 'pt' ? 'Segurança (Portão de Saída)' : 'Security (Exit Gate Check)', bg: 'bg-amber-500/10 text-amber-500 border-amber-500/20' };
         }
     };
 
@@ -239,11 +312,14 @@ const MobilizationDashboard: React.FC<{ companies?: Company[] }> = ({ companies 
         }
     };
 
-    const getPersonnelSteps = () => [
-        { step: 1, title: 'Requisition', desc: 'Submitted by AM', activeStatus: [] },
-        { step: 2, title: 'Security Review', desc: 'Access clearance', activeStatus: [RecruitmentStatus.SECURITY_PENDING] },
-        { step: 3, title: 'Access Granted', desc: 'Badge issued', activeStatus: [RecruitmentStatus.COMPLETED, RecruitmentStatus.RECEIVED] }
-    ];
+    const getPersonnelSteps = () => {
+        const st = t.proposal.mobilization.steps || {};
+        return [
+            { step: 1, title: st.requisition || 'Requisition', desc: st.submittedByAm || 'Submitted by AM', activeStatus: [] },
+            { step: 2, title: st.securityReview || 'Security Review', desc: st.accessClearance || 'Access clearance', activeStatus: [RecruitmentStatus.SECURITY_PENDING] },
+            { step: 3, title: st.accessGranted || 'Access Granted', desc: st.badgeIssued || 'Badge issued', activeStatus: [RecruitmentStatus.COMPLETED, RecruitmentStatus.RECEIVED] }
+        ];
+    };
 
     const getPersonnelStageNumber = (status: RecruitmentStatus) => {
         switch(status) {
@@ -254,12 +330,15 @@ const MobilizationDashboard: React.FC<{ companies?: Company[] }> = ({ companies 
         }
     };
 
-    const getEquipmentSteps = () => [
-        { step: 1, title: 'Requisition', desc: 'Submitted by AM', activeStatus: [] },
-        { step: 2, title: 'Safety Inspection', desc: 'Physical check', activeStatus: [RecruitmentStatus.SAFETY_PENDING, RecruitmentStatus.FAILED] },
-        { step: 3, title: 'Security Tag', desc: 'Permit & Tag issuance', activeStatus: [RecruitmentStatus.SECURITY_PENDING] },
-        { step: 4, title: 'Access Issued', desc: 'Authorized', activeStatus: [RecruitmentStatus.COMPLETED, RecruitmentStatus.RECEIVED] }
-    ];
+    const getEquipmentSteps = () => {
+        const st = t.proposal.mobilization.steps || {};
+        return [
+            { step: 1, title: st.requisition || 'Requisition', desc: st.submittedByAm || 'Submitted by AM', activeStatus: [] },
+            { step: 2, title: st.safetyInspection || 'Safety Inspection', desc: st.physicalCheck || 'Physical check', activeStatus: [RecruitmentStatus.SAFETY_PENDING, RecruitmentStatus.FAILED] },
+            { step: 3, title: st.securityTag || 'Security Tag', desc: st.permitTagIssuance || 'Permit & Tag issuance', activeStatus: [RecruitmentStatus.SECURITY_PENDING] },
+            { step: 4, title: st.accessIssued || 'Access Issued', desc: st.authorized || 'Authorized', activeStatus: [RecruitmentStatus.COMPLETED, RecruitmentStatus.RECEIVED] }
+        ];
+    };
 
     const getEquipmentStageNumber = (status: RecruitmentStatus) => {
         switch(status) {
@@ -268,6 +347,27 @@ const MobilizationDashboard: React.FC<{ companies?: Company[] }> = ({ companies 
             case RecruitmentStatus.SECURITY_PENDING: return 3;
             case RecruitmentStatus.COMPLETED: return 4;
             case RecruitmentStatus.RECEIVED: return 4;
+            default: return 1;
+        }
+    };
+
+    const getDeliverySteps = () => {
+        return [
+            { step: 1, title: 'Requisition', desc: 'Submitted by AM', activeStatus: [] },
+            { step: 2, title: 'Gate Entry', desc: 'Doc verification', activeStatus: [RecruitmentStatus.SECURITY_PENDING] },
+            { step: 3, title: 'Delivering', desc: 'Active on site', activeStatus: [RecruitmentStatus.DELIVERING] },
+            { step: 4, title: 'Exit Gate', desc: 'Vehicle exit check', activeStatus: [RecruitmentStatus.DELIVERED] },
+            { step: 5, title: 'Completed', desc: 'Left site', activeStatus: [RecruitmentStatus.RECEIVED, RecruitmentStatus.COMPLETED] }
+        ];
+    };
+
+    const getDeliveryStageNumber = (status: RecruitmentStatus) => {
+        switch(status) {
+            case RecruitmentStatus.SECURITY_PENDING: return 2;
+            case RecruitmentStatus.DELIVERING: return 3;
+            case RecruitmentStatus.DELIVERED: return 4;
+            case RecruitmentStatus.RECEIVED: return 5;
+            case RecruitmentStatus.COMPLETED: return 5;
             default: return 1;
         }
     };
@@ -282,23 +382,112 @@ const MobilizationDashboard: React.FC<{ companies?: Company[] }> = ({ companies 
             const stageNum = getEquipmentStageNumber(process.status);
             const steps = getEquipmentSteps();
             return { steps, stageNum };
-        } else {
-            const stageNum = getStageNumber(process.status);
-            const steps = [
-                { step: 1, title: 'Requisition', desc: 'Requested by AM', activeStatus: [RecruitmentStatus.AM_REQUESTED] },
-                { step: 2, title: 'HR Documents', desc: 'ID, Passport verified', activeStatus: [RecruitmentStatus.HR_PENDING] },
-                { step: 3, title: 'Access Card', desc: 'Temporary Access', activeStatus: [RecruitmentStatus.SECURITY_PENDING] },
-                { step: 4, title: 'Medicals', desc: 'Vitals & Fit Exam', activeStatus: [RecruitmentStatus.CLINIC_PENDING, RecruitmentStatus.INDUCTION_PENDING] },
-                { step: 5, title: 'Induction', desc: 'Safety Orientation', activeStatus: [RecruitmentStatus.TRAINING_PENDING] },
-                { step: 6, title: 'Mobilized', desc: 'CARS Active', activeStatus: [RecruitmentStatus.COMPLETED, RecruitmentStatus.RECEIVED] }
-            ];
+        } else if (type === 'DeliveryAccess') {
+            const stageNum = getDeliveryStageNumber(process.status);
+            const steps = getDeliverySteps();
             return { steps, stageNum };
+        } else {
+            const st = t.proposal.mobilization.steps || {};
+            
+            const steps = [
+                { step: 1, title: st.requisition || 'Requisition', desc: st.requestedByAm || 'Requested by AM', activeStatus: [RecruitmentStatus.AM_REQUESTED] },
+                { step: 2, title: st.hrDocuments || 'HR Documents', desc: st.idPassportVerified || 'ID, Passport verified', activeStatus: [RecruitmentStatus.HR_PENDING] },
+                { step: 3, title: st.accessCard || 'Access Card', desc: st.temporaryAccess || 'Temporary Access', activeStatus: [RecruitmentStatus.SECURITY_PENDING, RecruitmentStatus.PARALLEL_CLEARANCE_PENDING] }
+            ];
+
+            let currentStep = 4;
+            
+            if (process.requiresMedical !== false) {
+                steps.push({
+                    step: currentStep++,
+                    title: st.medicals || 'Medicals',
+                    desc: st.vitalsFitExam || 'Vitals & Fit Exam',
+                    activeStatus: [RecruitmentStatus.CLINIC_PENDING]
+                });
+            }
+
+            if (process.requiresInduction !== false) {
+                steps.push({
+                    step: currentStep++,
+                    title: st.induction || 'Induction',
+                    desc: st.safetyOrientation || 'Safety Orientation',
+                    activeStatus: [RecruitmentStatus.INDUCTION_PENDING]
+                });
+            }
+
+            if (process.requiresRac !== false) {
+                steps.push({
+                    step: currentStep++,
+                    title: 'RAC Training',
+                    desc: 'Safety Standards',
+                    activeStatus: [RecruitmentStatus.TRAINING_PENDING]
+                });
+            }
+
+            steps.push({
+                step: currentStep,
+                title: st.mobilized || 'Mobilized',
+                desc: st.carsActive || 'CARS Active',
+                activeStatus: [RecruitmentStatus.COMPLETED, RecruitmentStatus.RECEIVED]
+            });
+
+            let stageNum = 1;
+            const currentStatus = process.status;
+            
+            const activeStep = steps.find(s => s.activeStatus.includes(currentStatus));
+            if (activeStep) {
+                stageNum = activeStep.step;
+            } else {
+                if (currentStatus === RecruitmentStatus.RECEIVED || currentStatus === RecruitmentStatus.COMPLETED) {
+                    stageNum = steps.length;
+                } else if (currentStatus === RecruitmentStatus.AM_REQUESTED) {
+                    stageNum = 1;
+                } else if (currentStatus === RecruitmentStatus.HR_PENDING) {
+                    stageNum = 2;
+                } else if (currentStatus === RecruitmentStatus.SECURITY_PENDING || currentStatus === RecruitmentStatus.PARALLEL_CLEARANCE_PENDING) {
+                    stageNum = 3;
+                } else {
+                    stageNum = 1;
+                }
+            }
+
+            return { steps, stageNum };
+        }
+    };
+
+    const translateStatus = (status: RecruitmentStatus) => {
+        const statuses = t.proposal.mobilization.statuses;
+        switch (status) {
+            case RecruitmentStatus.AM_REQUESTED:
+                return statuses['AM Requested'] || 'Requisition Submitted';
+            case RecruitmentStatus.HR_PENDING:
+                return statuses['HR Pending'] || 'HR Verification';
+            case RecruitmentStatus.SECURITY_PENDING:
+                return statuses['Security Pending'] || 'Badge Issuance';
+            case RecruitmentStatus.CLINIC_PENDING:
+                return statuses['Clinic Pending'] || 'Medical Clearance';
+            case RecruitmentStatus.INDUCTION_PENDING:
+                return statuses['Induction Pending'] || 'HSE Induction';
+            case RecruitmentStatus.TRAINING_PENDING:
+                return statuses['Training Pending'] || 'RAC Training';
+            case RecruitmentStatus.COMPLETED:
+                return statuses['Completed'] || 'Certification Ready';
+            case RecruitmentStatus.RECEIVED:
+                return statuses['Received'] || 'Mobilized';
+            case RecruitmentStatus.PARALLEL_CLEARANCE_PENDING:
+                return language === 'pt' ? 'Liberação em Paralelo' : 'Parallel Clearance';
+            case RecruitmentStatus.SAFETY_PENDING:
+                return language === 'pt' ? 'Inspeção de Segurança' : 'Safety Inspection';
+            case RecruitmentStatus.FAILED:
+                return language === 'pt' ? 'Falhado' : 'Failed';
+            default:
+                return status;
         }
     };
 
     // --- WORKFLOW ACTIONS ---
 
-    // Stage 1: Area Manager requests recruit / access / equipment
+    // Stage 1: Area Manager requests recruit / access / equipment / delivery
     const handleCreateRequest = (e: React.FormEvent) => {
         e.preventDefault();
         
@@ -307,25 +496,60 @@ const MobilizationDashboard: React.FC<{ companies?: Company[] }> = ({ companies 
             if (!newRequest.candidateName || !newRequest.candidateEmail) return;
             if (newRequest.workerType === 'Contractor') {
                 if (!amUploadState.candidateId.uploaded || !amUploadState.fitnessCert.uploaded) {
-                    alert('Please upload both the ID Document and Third-Party Fitness Certificate.');
+                    showAlert(
+                        language === 'pt' ? 'Documentação Pendente' : 'Pending Documentation',
+                        language === 'pt' 
+                            ? 'Por favor, faça o upload do Documento de Identificação e do Certificado de Aptidão Física de Terceiros.'
+                            : 'Please upload both the ID Document and Third-Party Fitness Certificate.'
+                    );
                     return;
                 }
             }
         } else if (requestType === 'PersonnelAccess') {
             if (!newRequest.candidateName || !newRequest.candidateEmail) return;
             if (!amUploadState.candidateId.uploaded) {
-                alert('Please upload National ID, Passport or DIRE document.');
+                showAlert(
+                    language === 'pt' ? 'Documento em Falta' : 'Missing Document',
+                    language === 'pt'
+                        ? 'Por favor, faça o upload do Bilhete de Identidade, Passaporte ou DIRE.'
+                        : 'Please upload National ID, Passport or DIRE document.'
+                );
+                return;
+            }
+        } else if (requestType === 'DeliveryAccess') {
+            if (!newRequest.candidateName || !truckModel || !truckRegNumber || !poNumber) return;
+            if (!amUploadState.driverLicense.uploaded || !amUploadState.passport.uploaded) {
+                showAlert(
+                    language === 'pt' ? 'Documentos em Falta' : 'Missing Documents',
+                    language === 'pt'
+                        ? 'Por favor, faça o upload da Carta de Condução e do Passaporte/BI do motorista.'
+                        : 'Please upload both the Driver\'s License and Driver\'s Passport.'
+                );
                 return;
             }
         } else if (requestType === 'EquipmentAccess') {
             if (!equipmentId || !respPersonName) return;
-            if (!amUploadState.candidateId.uploaded) {
-                alert('Please upload Contractor & Responsible Person Details.');
+            
+            const missingDocs: string[] = [];
+            if (!amUploadState.insurance.uploaded) missingDocs.push(language === 'pt' ? 'Seguro de Responsabilidade Civil' : 'Liability Insurance');
+            if (isVehicleType(equipmentType) && !amUploadState.manifesto.uploaded) missingDocs.push(language === 'pt' ? 'Manifesto de Carga' : 'Manifesto');
+            if (!amUploadState.photoFront.uploaded) missingDocs.push(language === 'pt' ? 'Foto Vista Frontal' : 'Front View Photo');
+            if (!amUploadState.photoRight.uploaded) missingDocs.push(language === 'pt' ? 'Foto Vista Lat. Dir.' : 'Side View (R) Photo');
+            if (!amUploadState.photoLeft.uploaded) missingDocs.push(language === 'pt' ? 'Foto Vista Lat. Esq.' : 'Side View (L) Photo');
+            if (!amUploadState.photoBack.uploaded) missingDocs.push(language === 'pt' ? 'Foto Vista Traseira' : 'Back View Photo');
+
+            if (missingDocs.length > 0) {
+                showAlert(
+                    language === 'pt' ? 'Documentos Obrigatórios em Falta' : 'Required Documents Missing',
+                    language === 'pt'
+                        ? `Por favor, carregue os seguintes documentos para a liberação de segurança: ${missingDocs.join(', ')}`
+                        : `Please upload the following required documents for safety clearance: ${missingDocs.join(', ')}`
+                );
                 return;
             }
         }
 
-        const effectiveCompany = newRequest.workerType === 'Contractor' || requestType === 'EquipmentAccess'
+        const effectiveCompany = newRequest.workerType === 'Contractor' || requestType === 'EquipmentAccess' || requestType === 'DeliveryAccess'
             ? newRequest.contractorCompany || newRequest.primeCompany
             : newRequest.primeCompany;
             
@@ -338,25 +562,110 @@ const MobilizationDashboard: React.FC<{ companies?: Company[] }> = ({ companies 
         const recordId = `${recordPrefix}-${Math.floor(1000 + Math.random() * 9000)}`;
 
         const amDocs: RecruitDocument[] = [];
-        if (amUploadState.candidateId.uploaded) {
-            amDocs.push({
-                name: amUploadState.candidateId.fileName,
-                type: requestType === 'EquipmentAccess' ? 'Contractor & Responsible Details' : 'AM ID Upload',
-                uploadedAt: new Date().toISOString(),
-                fileSize: amUploadState.candidateId.fileSize,
-                status: 'Verified',
-                uploadedBy: 'AM'
-            });
-        }
-        if (requestType === 'Recruitment' && amUploadState.fitnessCert.uploaded) {
-            amDocs.push({
-                name: amUploadState.fitnessCert.fileName,
-                type: 'Fitness Certificate',
-                uploadedAt: new Date().toISOString(),
-                fileSize: amUploadState.fitnessCert.fileSize,
-                status: 'Verified',
-                uploadedBy: 'AM'
-            });
+        
+        if (requestType === 'EquipmentAccess') {
+            if (amUploadState.insurance.uploaded) {
+                amDocs.push({
+                    name: amUploadState.insurance.fileName,
+                    type: 'Insurance',
+                    uploadedAt: new Date().toISOString(),
+                    fileSize: amUploadState.insurance.fileSize,
+                    status: 'Verified',
+                    uploadedBy: 'AM'
+                });
+            }
+            if (isVehicleType(equipmentType) && amUploadState.manifesto.uploaded) {
+                amDocs.push({
+                    name: amUploadState.manifesto.fileName,
+                    type: 'Manifesto',
+                    uploadedAt: new Date().toISOString(),
+                    fileSize: amUploadState.manifesto.fileSize,
+                    status: 'Verified',
+                    uploadedBy: 'AM'
+                });
+            }
+            if (amUploadState.photoFront.uploaded) {
+                amDocs.push({
+                    name: amUploadState.photoFront.fileName,
+                    type: 'Front View Image',
+                    uploadedAt: new Date().toISOString(),
+                    fileSize: amUploadState.photoFront.fileSize,
+                    status: 'Verified',
+                    uploadedBy: 'AM'
+                });
+            }
+            if (amUploadState.photoRight.uploaded) {
+                amDocs.push({
+                    name: amUploadState.photoRight.fileName,
+                    type: 'Side View (R)',
+                    uploadedAt: new Date().toISOString(),
+                    fileSize: amUploadState.photoRight.fileSize,
+                    status: 'Verified',
+                    uploadedBy: 'AM'
+                });
+            }
+            if (amUploadState.photoLeft.uploaded) {
+                amDocs.push({
+                    name: amUploadState.photoLeft.fileName,
+                    type: 'Side View (L)',
+                    uploadedAt: new Date().toISOString(),
+                    fileSize: amUploadState.photoLeft.fileSize,
+                    status: 'Verified',
+                    uploadedBy: 'AM'
+                });
+            }
+            if (amUploadState.photoBack.uploaded) {
+                amDocs.push({
+                    name: amUploadState.photoBack.fileName,
+                    type: 'Back View',
+                    uploadedAt: new Date().toISOString(),
+                    fileSize: amUploadState.photoBack.fileSize,
+                    status: 'Verified',
+                    uploadedBy: 'AM'
+                });
+            }
+        } else if (requestType === 'DeliveryAccess') {
+            if (amUploadState.driverLicense.uploaded) {
+                amDocs.push({
+                    name: amUploadState.driverLicense.fileName,
+                    type: 'Driver License',
+                    uploadedAt: new Date().toISOString(),
+                    fileSize: amUploadState.driverLicense.fileSize,
+                    status: 'Verified',
+                    uploadedBy: 'AM'
+                });
+            }
+            if (amUploadState.passport.uploaded) {
+                amDocs.push({
+                    name: amUploadState.passport.fileName,
+                    type: 'Passport',
+                    uploadedAt: new Date().toISOString(),
+                    fileSize: amUploadState.passport.fileSize,
+                    status: 'Verified',
+                    uploadedBy: 'AM'
+                });
+            }
+        } else {
+            if (amUploadState.candidateId.uploaded) {
+                amDocs.push({
+                    name: amUploadState.candidateId.fileName,
+                    type: 'AM ID Upload',
+                    uploadedAt: new Date().toISOString(),
+                    fileSize: amUploadState.candidateId.fileSize,
+                    status: 'Verified',
+                    uploadedBy: 'AM'
+                });
+            }
+            if (requestType === 'Recruitment' && amUploadState.fitnessCert.uploaded) {
+                amDocs.push({
+                    name: amUploadState.fitnessCert.fileName,
+                    type: 'Fitness Certificate',
+                    uploadedAt: new Date().toISOString(),
+                    fileSize: amUploadState.fitnessCert.fileSize,
+                    status: 'Verified',
+                    uploadedBy: 'AM'
+                });
+            }
         }
 
         let requestObj: RecruitmentProcess;
@@ -382,7 +691,10 @@ const MobilizationDashboard: React.FC<{ companies?: Company[] }> = ({ companies 
                 nudgeCount: 0,
                 employeeId: newEmpId,
                 recordId: recordId,
-                requestType: 'Recruitment'
+                requestType: 'Recruitment',
+                requiresMedical,
+                requiresInduction,
+                requiresRac
             };
         } else if (requestType === 'PersonnelAccess') {
             requestObj = {
@@ -406,6 +718,34 @@ const MobilizationDashboard: React.FC<{ companies?: Company[] }> = ({ companies 
                 employeeId: newEmpId,
                 recordId: recordId,
                 requestType: 'PersonnelAccess'
+            };
+        } else if (requestType === 'DeliveryAccess') {
+            requestObj = {
+                id: `rp-${uuidv4().slice(0, 8)}`,
+                candidateName: newRequest.candidateName,
+                candidateEmail: newRequest.candidateEmail || 'driver.delivery@vulcan.co.mz',
+                candidatePhone: newRequest.candidatePhone || '+258 84 000 0000',
+                workerType: 'Contractor',
+                primeCompany: newRequest.primeCompany,
+                contractorCompany: effectiveCompany,
+                company: effectiveCompany,
+                department: newRequest.department,
+                role: 'Delivery Driver',
+                requiredRacs: [],
+                status: RecruitmentStatus.SECURITY_PENDING,
+                requestedBy: user?.name || 'Area Manager',
+                requestedAt: new Date().toISOString(),
+                documents: [],
+                amDocuments: amDocs,
+                nudgeCount: 0,
+                recordId: recordId,
+                requestType: 'DeliveryAccess',
+                truckModel: truckModel,
+                truckRegNumber: truckRegNumber,
+                poNumber: poNumber,
+                requiresMedical: false,
+                requiresInduction: false,
+                requiresRac: false
             };
         } else { // EquipmentAccess
             requestObj = {
@@ -472,6 +812,15 @@ const MobilizationDashboard: React.FC<{ companies?: Company[] }> = ({ companies 
                 content: `Dear Security Team,\n\nArea Manager ${requestObj.requestedBy} has submitted a Personnel Access Request for ${requestObj.candidateName}.\n\nBest regards,\nCARS Onboarding Gateway`
             });
             db.addLog('INFO', `PERSONNEL_ACCESS_REQUISITION: ${requestObj.candidateName} requested by ${requestObj.requestedBy}`, user?.name || 'AM');
+        } else if (requestType === 'DeliveryAccess') {
+            addMessage({
+                type: 'EMAIL',
+                recipient: 'security.gate@vulcan.co.mz',
+                recipientName: 'Security Gate Team',
+                subject: `ACTION REQUIRED: Delivery Access Request - PO ${requestObj.poNumber}`,
+                content: `Dear Security Gate Team,\n\nArea Manager ${requestObj.requestedBy} has requested entry clearance for delivery truck (Reg: ${requestObj.truckRegNumber}, PO: ${requestObj.poNumber}) driven by ${requestObj.candidateName}.\n\nPlease verify physical documents on arrival.\n\nBest regards,\nCARS Gateway`
+            });
+            db.addLog('INFO', `DELIVERY_ACCESS_REQUISITION: Driver ${requestObj.candidateName} for PO ${requestObj.poNumber} requested by ${requestObj.requestedBy}`, user?.name || 'AM');
         } else {
             addMessage({
                 type: 'EMAIL',
@@ -604,7 +953,12 @@ const MobilizationDashboard: React.FC<{ companies?: Company[] }> = ({ companies 
         if (!process) return;
 
         if (!process.documents || process.documents.length === 0) {
-            alert('Please upload at least one document to proceed.');
+            showAlert(
+                language === 'pt' ? 'Documento em Falta' : 'Missing Document',
+                language === 'pt'
+                    ? 'Por favor, faça o upload de pelo menos um documento para continuar.'
+                    : 'Please upload at least one document to proceed.'
+            );
             return;
         }
 
@@ -653,7 +1007,12 @@ const MobilizationDashboard: React.FC<{ companies?: Company[] }> = ({ companies 
     // Stage 3: Security issues temporary badge
     const handleIssueBadge = (id: string) => {
         if (!badgeNo.trim()) {
-            alert('Please enter a Temporary Badge Number.');
+            showAlert(
+                language === 'pt' ? 'Badge Inválido' : 'Invalid Badge',
+                language === 'pt'
+                    ? 'Por favor, insira o número do cartão de acesso temporário.'
+                    : 'Please enter a Temporary Badge Number.'
+            );
             return;
         }
 
@@ -743,7 +1102,12 @@ const MobilizationDashboard: React.FC<{ companies?: Company[] }> = ({ companies 
             nextStatus = securityDone ? RecruitmentStatus.INDUCTION_PENDING : RecruitmentStatus.PARALLEL_CLEARANCE_PENDING;
         } else {
             if (!inductionDate) {
-                alert('Please specify a date for the Safety/Environment Induction.');
+                showAlert(
+                    language === 'pt' ? 'Data de Integração em Falta' : 'Induction Date Missing',
+                    language === 'pt'
+                        ? 'Por favor, especifique uma data para a Integração de Segurança/Ambiente.'
+                        : 'Please specify a date for the Safety/Environment Induction.'
+                );
                 return;
             }
             nextStatus = RecruitmentStatus.INDUCTION_PENDING;
@@ -784,21 +1148,43 @@ const MobilizationDashboard: React.FC<{ companies?: Company[] }> = ({ companies 
     };
 
     // Stage 5a: Environment Induction sign-off
-    const handleConfirmInduction = (id: string) => {
+    const handleConfirmInduction = async (id: string) => {
         if (!indGeneral || !indEnv || !indEvac || !indPPE) {
-            alert('All safety orientation steps must be verified and checked.');
+            showAlert(
+                language === 'pt' ? 'Orientação Incompleta' : 'Orientation Incomplete',
+                language === 'pt'
+                    ? 'Todos os passos de orientação de segurança devem ser verificados e assinalados.'
+                    : 'All safety orientation steps must be verified and checked.'
+            );
             return;
         }
 
         const process = processes.find(p => p.id === id);
         if (!process) return;
 
+        let empId = process.employeeId;
+        let recordId = process.recordId;
+        const nextStatus = process.requiresRac === false ? RecruitmentStatus.COMPLETED : RecruitmentStatus.TRAINING_PENDING;
+
+        if (nextStatus === RecruitmentStatus.COMPLETED) {
+            try {
+                const dbReg = await registerProcessInDatabase(process);
+                empId = dbReg.empId;
+                recordId = dbReg.recordId;
+            } catch (err) {
+                console.error(err);
+            }
+        }
+
         const updated = processes.map(p => {
             if (p.id === id) {
                 return {
                     ...p,
-                    status: RecruitmentStatus.TRAINING_PENDING,
-                    inductionConfirmed: true
+                    status: nextStatus,
+                    inductionConfirmed: true,
+                    employeeId: empId,
+                    recordId: recordId,
+                    trainingCompletedAt: nextStatus === RecruitmentStatus.COMPLETED ? new Date().toISOString() : undefined
                 };
             }
             return p;
@@ -810,16 +1196,54 @@ const MobilizationDashboard: React.FC<{ companies?: Company[] }> = ({ companies 
         setIndEvac(false);
         setIndPPE(false);
 
-        // Notify RACS / CARS Training Department
-        addMessage({
-            type: 'EMAIL',
-            recipient: 'cars.training@vulcan.co.mz',
-            recipientName: 'CARS Training Coordinator',
-            subject: `ACTION REQUIRED: Initialize RAC Certification - ${process.candidateName}`,
-            content: `Dear CARS Training Administrator,\n\nCandidate ${process.candidateName} has successfully completed safety and environmental induction.\n\nThe required RAC training modules requested for this employee are: ${process.requiredRacs.join(', ') || 'General Safety'}.\n\nPlease schedule training evaluation sessions. Once training scores are logged and passed, the certificate will be made available for download.\n\nBest regards,\nCARS Automated Onboarding Gateway`
+        if (nextStatus === RecruitmentStatus.COMPLETED) {
+            addMessage({
+                type: 'EMAIL',
+                recipient: 'area.manager@vulcan.co.mz',
+                recipientName: process.requestedBy,
+                subject: `SUCCESS: Onboarding Complete (RAC Skipped) - ${process.candidateName}`,
+                content: `Dear ${process.requestedBy},\n\nWe are pleased to inform you that the onboarding process for ${process.candidateName} has been completed successfully.\n\nSummary of Credentials:\n- HR Verification: PASSED\n- Security Access: ACTIVE (Badge ${process.temporaryBadgeNumber})\n- Clinic Medical Check: CLEARED Fit-for-Work\n- HSE Site Induction: SIGNED OFF\n- CARS RAC Modules: Bypassed\n\nYou can now log in to the CARS Mobilization dashboard to download the Final Certificate.\n\nKeep working safely,\nCARS Gateway`
+            });
+            db.addLog('INFO', `HSE_INDUCTION_COMPLETED: Safety checklist certified for ${process.candidateName}. RAC Training bypassed.`, 'Environment & HSE');
+        } else {
+            // Notify RACS / CARS Training Department
+            addMessage({
+                type: 'EMAIL',
+                recipient: 'cars.training@vulcan.co.mz',
+                recipientName: 'CARS Training Coordinator',
+                subject: `ACTION REQUIRED: Initialize RAC Certification - ${process.candidateName}`,
+                content: `Dear CARS Training Administrator,\n\nCandidate ${process.candidateName} has successfully completed safety and environmental induction.\n\nThe required RAC training modules requested for this employee are: ${process.requiredRacs.join(', ') || 'General Safety'}.\n\nPlease schedule training evaluation sessions. Once training scores are logged and passed, the certificate will be made available for download.\n\nBest regards,\nCARS Automated Onboarding Gateway`
+            });
+            db.addLog('INFO', `HSE_INDUCTION_COMPLETED: Safety checklist certified for ${process.candidateName}`, 'Environment & HSE');
+        }
+    };
+
+    const handleConfirmDeliveryFinished = (id: string) => {
+        const process = processes.find(p => p.id === id);
+        if (!process) return;
+
+        const updated = processes.map(p => {
+            if (p.id === id) {
+                return {
+                    ...p,
+                    status: RecruitmentStatus.DELIVERED
+                };
+            }
+            return p;
         });
 
-        db.addLog('INFO', `HSE_INDUCTION_COMPLETED: Safety checklist certified for ${process.candidateName}`, 'Environment & HSE');
+        setProcesses(updated);
+
+        addMessage({
+            type: 'EMAIL',
+            recipient: 'security.gate@vulcan.co.mz',
+            recipientName: 'Security Gate Team',
+            subject: `DELIVERY COMPLETED: Ready for Exit - PO ${process.poNumber}`,
+            content: `Dear Security Gate Team,\n\nArea Manager has confirmed that delivery driver ${process.candidateName} has finished unloading and is headed to the exit gate.\n\nPlease verify and record the vehicle exit.\n\nBest regards,\nCARS Onboarding Coordinator`
+        });
+
+        db.addLog('INFO', `DELIVERY_COMPLETED: Driver ${process.candidateName} for PO ${process.poNumber} completed unloading. Headed to exit.`, user?.name || 'AM');
+        showToast(language === 'pt' ? 'Entrega marcada como concluída' : 'Delivery marked as completed', 'success');
     };
 
     // Helper: Register the recruit as an active employee in the CARS system database
@@ -916,15 +1340,17 @@ const MobilizationDashboard: React.FC<{ companies?: Company[] }> = ({ companies 
         try {
             const { empId, recordId } = await registerProcessInDatabase(process);
 
+            const finalProcess = {
+                ...process,
+                status: RecruitmentStatus.RECEIVED,
+                receivedAt: new Date().toISOString(),
+                employeeId: empId,
+                recordId: recordId
+            };
+
             const updated = processes.map(p => {
                 if (p.id === id) {
-                    return {
-                        ...p,
-                        status: RecruitmentStatus.RECEIVED,
-                        receivedAt: new Date().toISOString(),
-                        employeeId: empId,
-                        recordId: recordId
-                    };
+                    return finalProcess;
                 }
                 return p;
             });
@@ -940,24 +1366,70 @@ const MobilizationDashboard: React.FC<{ companies?: Company[] }> = ({ companies 
             });
 
             db.addLog('AUDIT', `EMPLOYEE_MOBILIZATION_SUCCESS: ${process.candidateName} fully onboarded and received`, 'Area Manager');
-            alert(t.proposal.mobilization.confirmReceiptMsg.replace('{name}', process.candidateName));
+
+            // Auto generate Stages PDF
+            try {
+                await generateRecruitmentStagesPDF(finalProcess, language);
+                showToast(
+                    language === 'pt' ? 'Relatório de Mobilização gerado com sucesso!' : 'Mobilization report generated successfully!',
+                    'success'
+                );
+            } catch (pdfErr) {
+                console.error("PDF generation failed", pdfErr);
+            }
+
+            showAlert(
+                language === 'pt' ? 'Mobilização Concluída' : 'Mobilization Complete',
+                t.proposal.mobilization.confirmReceiptMsg.replace('{name}', process.candidateName)
+            );
         } catch (e) {
              console.error('Error confirming receipt', e);
         }
     };
 
+    // Download Stages report
+    const handleDownloadStagesReport = async (id: string) => {
+        const process = processes.find(p => p.id === id);
+        if (!process) return;
+        try {
+            await generateRecruitmentStagesPDF(process, language);
+            showToast(
+                language === 'pt' ? 'Relatório descarregado com sucesso!' : 'Report downloaded successfully!',
+                'success'
+            );
+        } catch (pdfErr) {
+            console.error("PDF generation failed", pdfErr);
+            showToast(
+                language === 'pt' ? 'Erro ao gerar o relatório PDF' : 'Error generating PDF report',
+                'error'
+            );
+        }
+    };
+
     // Clean process (for presentation reset)
-    const handleResetProcesses = () => {
-        if (window.confirm(t.proposal.mobilization.resetConfirm)) {
+    const handleResetProcesses = async () => {
+        if (await confirm(
+            language === 'pt' ? 'Reiniciar Simulação' : 'Reset Simulation',
+            t.proposal.mobilization.resetConfirm,
+            { isDestructive: true }
+        )) {
             localStorage.removeItem('mobilization_processes');
             setProcesses(DEMO_RECRUITMENT_PROCESSES);
             setSelectedProcessId(DEMO_RECRUITMENT_PROCESSES[0].id);
+            showToast(
+                language === 'pt' ? 'Simulação reiniciada com sucesso' : 'Simulation reset successfully',
+                'success'
+            );
         }
     };
 
     // Remove candidate
-    const handleDeleteProcess = (id: string) => {
-        if (window.confirm(t.proposal.mobilization.deleteConfirm)) {
+    const handleDeleteProcess = async (id: string) => {
+        if (await confirm(
+            language === 'pt' ? 'Excluir Solicitação' : 'Delete Request',
+            t.proposal.mobilization.deleteConfirm,
+            { isDestructive: true }
+        )) {
             const updated = processes.filter(p => p.id !== id);
             setProcesses(updated);
             if (selectedProcessId === id && updated.length > 0) {
@@ -965,6 +1437,10 @@ const MobilizationDashboard: React.FC<{ companies?: Company[] }> = ({ companies 
             } else if (updated.length === 0) {
                 setSelectedProcessId(null);
             }
+            showToast(
+                language === 'pt' ? 'Solicitação excluída' : 'Request deleted',
+                'success'
+            );
         }
     };
 
@@ -978,9 +1454,19 @@ const MobilizationDashboard: React.FC<{ companies?: Company[] }> = ({ companies 
         } else if (requestType === 'PersonnelAccess') {
             if (!newRequest.candidateName || !newRequest.candidateEmail) return true;
             return !amUploadState.candidateId.uploaded;
+        } else if (requestType === 'DeliveryAccess') {
+            if (!newRequest.candidateName || !newRequest.candidatePhone || !truckModel || !truckRegNumber || !poNumber) return true;
+            return !amUploadState.driverLicense.uploaded || !amUploadState.passport.uploaded;
         } else if (requestType === 'EquipmentAccess') {
             if (!equipmentId || !respPersonName) return true;
-            return !amUploadState.candidateId.uploaded;
+            
+            const manifestoOk = !isVehicleType(equipmentType) || amUploadState.manifesto.uploaded;
+            return !amUploadState.insurance.uploaded || 
+                   !manifestoOk ||
+                   !amUploadState.photoFront.uploaded ||
+                   !amUploadState.photoRight.uploaded ||
+                   !amUploadState.photoLeft.uploaded ||
+                   !amUploadState.photoBack.uploaded;
         }
         return true;
     };
@@ -994,16 +1480,31 @@ const MobilizationDashboard: React.FC<{ companies?: Company[] }> = ({ companies 
             if (!amUploadState.candidateId.uploaded) {
                 return '⚠ Upload ID Document First';
             }
+        } else if (requestType === 'DeliveryAccess') {
+            if (!newRequest.candidateName || !newRequest.candidatePhone || !truckModel || !truckRegNumber || !poNumber) {
+                return '⚠ Fill All Fields';
+            }
+            if (!amUploadState.driverLicense.uploaded || !amUploadState.passport.uploaded) {
+                return '⚠ Upload Documents First';
+            }
         } else if (requestType === 'EquipmentAccess') {
-            if (!amUploadState.candidateId.uploaded) {
-                return '⚠ Upload Details First';
+            const manifestoOk = !isVehicleType(equipmentType) || amUploadState.manifesto.uploaded;
+            const missing = !amUploadState.insurance.uploaded || 
+                            !manifestoOk ||
+                            !amUploadState.photoFront.uploaded ||
+                            !amUploadState.photoRight.uploaded ||
+                            !amUploadState.photoLeft.uploaded ||
+                            !amUploadState.photoBack.uploaded;
+            if (missing) {
+                return '⚠ Upload Required Documents';
             }
         }
         return 'Submit Request';
     };
 
     return (
-        <div className="space-y-6 pb-20 animate-fade-in">
+        <>
+            <div className="space-y-6 pb-20 animate-fade-in no-print">
             {/* Header banner */}
             <div className="bg-gradient-to-br from-indigo-950 via-slate-900 to-indigo-950 text-white p-8 rounded-[2.5rem] shadow-2xl relative overflow-hidden border border-indigo-800/40">
                 <div className="absolute top-[-20%] right-[-10%] w-72 h-72 bg-indigo-500/10 blur-[80px] rounded-full"></div>
@@ -1106,36 +1607,41 @@ const MobilizationDashboard: React.FC<{ companies?: Company[] }> = ({ companies 
                                                 </div>
                                             </div>
                                         </div>
-
-                                        {/* Stages Stepper Quick View */}
-                                        <div className="flex items-center gap-1 bg-white dark:bg-slate-800 p-2 rounded-xl border border-slate-100 dark:border-slate-700">
-                                            {Array.from({ length: p.requestType === 'PersonnelAccess' ? 3 : p.requestType === 'EquipmentAccess' ? 4 : 6 }, (_, i) => i + 1).map(s => {
-                                                const currentStage = p.requestType === 'PersonnelAccess' ? getPersonnelStageNumber(p.status) : p.requestType === 'EquipmentAccess' ? getEquipmentStageNumber(p.status) : getStageNumber(p.status);
-                                                const isFailed = p.status === RecruitmentStatus.FAILED;
-                                                return (
-                                                    <div 
-                                                        key={s} 
-                                                        className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-black font-mono transition-all ${
-                                                            currentStage > s 
-                                                            ? 'bg-emerald-500 text-white' 
-                                                            : currentStage === s 
-                                                            ? isFailed ? 'bg-red-500 text-white shadow' : 'bg-indigo-600 text-white animate-pulse' 
-                                                            : 'bg-slate-200 dark:bg-slate-700 text-slate-400 dark:text-slate-500'
-                                                        }`}
-                                                    >
-                                                        {s}
-                                                    </div>
-                                                );
-                                            })}
-                                        </div>
-
-                                        {/* Status & Bottleneck Indicator */}
-                                        <div className="text-right shrink-0">
-                                            <span className={`text-[10px] font-black uppercase tracking-wider px-3 py-1 rounded-full border ${bottleneck.bg}`}>
-                                                {p.status === RecruitmentStatus.RECEIVED ? 'Mobilized' : bottleneck.dept}
-                                            </span>
-                                            <div className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-1">
-                                                {p.status === RecruitmentStatus.RECEIVED ? 'Onsite' : `Current: ${p.status}`}
+                                                   {/* Stages Stepper Quick View */}
+                                        <div className="flex items-center gap-4">
+                                            <div className="flex items-center gap-1 bg-white dark:bg-slate-800 p-2 rounded-xl border border-slate-100 dark:border-slate-700">
+                                                {(() => {
+                                                    const { steps, stageNum } = getProcessTimeline(p);
+                                                    const isFailed = p.status === RecruitmentStatus.FAILED;
+                                                    return steps.map((s, idx) => {
+                                                        const isComplete = stageNum > s.step || ((p.status === RecruitmentStatus.RECEIVED || p.status === RecruitmentStatus.COMPLETED) && s.step === steps.length);
+                                                        const isActive = stageNum === s.step;
+                                                        return (
+                                                            <div 
+                                                                key={idx} 
+                                                                className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-black font-mono transition-all ${
+                                                                    isComplete 
+                                                                    ? 'bg-emerald-500 text-white' 
+                                                                    : isActive 
+                                                                    ? isFailed ? 'bg-red-500 text-white shadow' : 'bg-indigo-600 text-white animate-pulse' 
+                                                                    : 'bg-slate-200 dark:bg-slate-700 text-slate-400 dark:text-slate-500'
+                                                                }`}
+                                                                title={s.title}
+                                                            >
+                                                                {s.step}
+                                                            </div>
+                                                        );
+                                                    });
+                                                })()}
+                                            </div>
+                                            <div className="text-right flex flex-col items-end">
+                                                {/* Status & Bottleneck Indicator */}
+                                                <span className={`text-[10px] font-black uppercase tracking-wider px-3 py-1 rounded-full border ${bottleneck.bg}`}>
+                                                    {p.status === RecruitmentStatus.RECEIVED ? (t.proposal.mobilization.statuses['Received'] || 'Mobilized') : bottleneck.dept}
+                                                </span>
+                                                <div className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-1">
+                                                    {p.status === RecruitmentStatus.RECEIVED ? (t.proposal.mobilization.steps?.onsite || 'Onsite') : `${t.proposal.mobilization.steps?.current || 'Current'}: ${translateStatus(p.status)}`}
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
@@ -1144,8 +1650,8 @@ const MobilizationDashboard: React.FC<{ companies?: Company[] }> = ({ companies 
                             {processes.length === 0 && (
                                 <div className="p-12 text-center text-slate-400">
                                     <Briefcase size={48} className="mx-auto mb-4 opacity-25"/>
-                                    <p className="font-bold">No active recruitment processes in the system.</p>
-                                    <p className="text-xs mt-1">Click "New Request" to initiate a process.</p>
+                                    <p className="font-bold">{t.proposal.mobilization.steps?.noActiveRecruitment || 'No active recruitment processes in the system.'}</p>
+                                    <p className="text-xs mt-1">{t.proposal.mobilization.steps?.clickNewRequest || 'Click "New Request" to initiate a process.'}</p>
                                 </div>
                             )}
                         </div>
@@ -1153,28 +1659,28 @@ const MobilizationDashboard: React.FC<{ companies?: Company[] }> = ({ companies 
 
                     {/* Stage Tracker & Visual Workflow Details */}
                     {activeProcess && (
-                        <div className="bg-white dark:bg-slate-800 rounded-[2.5rem] shadow-sm border border-slate-200 dark:border-slate-700 p-8 space-y-8">
+                        <div className="bg-white dark:bg-slate-800 rounded-[2rem] shadow-sm border border-slate-200 dark:border-slate-700 p-8 space-y-8">
                             <div className="flex justify-between items-start">
                                 <div>
-                                    <h4 className="text-xl font-black text-slate-900 dark:text-white uppercase tracking-tight">Onboarding Timeline & Stepper</h4>
-                                    <p className="text-xs text-slate-500 uppercase tracking-widest font-bold">Candidate: {activeProcess.candidateName}</p>
+                                    <h4 className="text-xl font-black text-slate-900 dark:text-white uppercase tracking-tight">{t.proposal.mobilization.steps?.timelineStepper || 'Onboarding Timeline & Stepper'}</h4>
+                                    <p className="text-xs text-slate-500 uppercase tracking-widest font-bold">{(t.proposal.mobilization.steps?.candidateLabel || 'Candidate') + ': ' + activeProcess.candidateName}</p>
                                 </div>
-                                <button onClick={() => handleDeleteProcess(activeProcess.id)} className="p-2 text-slate-400 hover:text-red-500 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors">
+                                <button aria-label="Remove process" title="Remove process" onClick={() => handleDeleteProcess(activeProcess.id)} className="p-2 text-slate-400 hover:text-red-500 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors">
                                     <UserMinus size={18} />
                                 </button>
                             </div>
 
                             {/* Detailed Step Progression Graph */}
-                            <div className="grid grid-cols-1 md:grid-cols-6 gap-4 relative justify-center">
+                            <div className="flex flex-col md:flex-row justify-between items-center gap-4 md:gap-2 relative">
                                 {(() => {
                                     const { steps, stageNum } = getProcessTimeline(activeProcess);
                                     const isFailed = activeProcess.status === RecruitmentStatus.FAILED;
                                     return steps.map((s, idx) => {
-                                        const isComplete = stageNum > s.step || (activeProcess.requestType === 'Recruitment' && s.step === 5 && activeProcess.inductionConfirmed && stageNum >= 5);
+                                        const isComplete = stageNum > s.step || ((activeProcess.status === RecruitmentStatus.RECEIVED || activeProcess.status === RecruitmentStatus.COMPLETED) && s.step === steps.length);
                                         const isActive = stageNum === s.step;
                                         
                                         return (
-                                            <div key={idx} className="flex flex-col items-center text-center relative space-y-3">
+                                            <div key={idx} className="flex flex-col items-center text-center relative space-y-3 flex-1">
                                                 <div className={`w-10 h-10 rounded-full border-2 flex items-center justify-center font-black transition-all ${
                                                     isFailed && isActive
                                                     ? 'bg-red-500 border-red-500 text-white ring-4 ring-red-500/20 shadow'
@@ -1216,7 +1722,14 @@ const MobilizationDashboard: React.FC<{ companies?: Company[] }> = ({ companies 
                                 </div>
                                 {activeProcess.status !== RecruitmentStatus.RECEIVED && (
                                     <div className="flex flex-wrap gap-2 shrink-0 self-start md:self-center">
-                                        {activeProcess.status !== RecruitmentStatus.COMPLETED && (
+                                        {activeProcess.requestType === 'DeliveryAccess' && activeProcess.status === RecruitmentStatus.DELIVERING ? (
+                                            <button 
+                                                onClick={() => handleConfirmDeliveryFinished(activeProcess.id)}
+                                                className="bg-emerald-500 hover:bg-emerald-600 text-white font-black text-xs uppercase tracking-widest px-5 py-3 rounded-xl shadow-lg shadow-emerald-500/10 hover:shadow-emerald-500/20 active:scale-95 transition-all flex items-center gap-2"
+                                            >
+                                                <Check size={14}/> Confirm Delivery Finished
+                                            </button>
+                                        ) : activeProcess.status !== RecruitmentStatus.COMPLETED && (
                                             <button 
                                                 onClick={() => handleNudge(activeProcess.id)}
                                                 className="bg-red-500 hover:bg-red-600 text-white font-black text-xs uppercase tracking-widest px-5 py-3 rounded-xl shadow-lg shadow-red-500/10 hover:shadow-red-500/20 active:scale-95 transition-all flex items-center gap-2"
@@ -1274,7 +1787,7 @@ const MobilizationDashboard: React.FC<{ companies?: Company[] }> = ({ companies 
                                                 <div key={status} className="flex items-center gap-2">
                                                     <span className="text-[9px] font-black text-slate-400 uppercase w-14 shrink-0">{label}</span>
                                                     <div className="flex-1 h-2 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
-                                                        <div className={`h-full rounded-full transition-all duration-700 ${color}`} style={{ width: `${pct}%` }} />
+                                                        <div className={`h-full rounded-full transition-all duration-700 ${color} w-pct-${pct}`} />
                                                     </div>
                                                     <span className={`text-[10px] font-black w-5 text-right ${count > 0 ? textColor : 'text-slate-300 dark:text-slate-600'}`}>{count}</span>
                                                 </div>
@@ -1317,8 +1830,17 @@ const MobilizationDashboard: React.FC<{ companies?: Company[] }> = ({ companies 
                                     )}
 
                                     {activeProcess && activeProcess.status === RecruitmentStatus.RECEIVED && (
-                                        <div className="p-4 rounded-xl bg-slate-100 dark:bg-slate-900 text-slate-600 dark:text-slate-400 text-xs font-bold text-center">
-                                            ✓ Onboarding completed. Recipient has arrived on-site.
+                                        <div className="space-y-3">
+                                            <div className="p-4 rounded-xl bg-slate-100 dark:bg-slate-900 text-slate-600 dark:text-slate-400 text-xs font-bold text-center">
+                                                ✓ Onboarding completed. Recipient has arrived on-site.
+                                            </div>
+                                            <button
+                                                type="button"
+                                                onClick={() => handleDownloadStagesReport(activeProcess.id)}
+                                                className="w-full bg-slate-800 hover:bg-slate-700 text-white font-black text-xs uppercase tracking-widest py-3 rounded-xl transition-colors shadow flex items-center justify-center gap-2"
+                                            >
+                                                <Download size={14}/> Download Stages Report
+                                            </button>
                                         </div>
                                     )}
 
@@ -1654,23 +2176,23 @@ const MobilizationDashboard: React.FC<{ companies?: Company[] }> = ({ companies 
                                                 <div className="grid grid-cols-2 gap-3">
                                                     <div>
                                                         <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1 block">Blood Pressure</label>
-                                                        <input type="text" value={medBP} onChange={e => setMedBP(e.target.value)} className="w-full p-2.5 bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-lg text-xs font-bold" />
+                                                        <input type="text" aria-label="Blood Pressure" placeholder="120/80" value={medBP} onChange={e => setMedBP(e.target.value)} className="w-full p-2.5 bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-lg text-xs font-bold" />
                                                     </div>
                                                     <div>
                                                         <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1 block">Heart Rate (bpm)</label>
-                                                        <input type="number" value={medHR} onChange={e => setMedHR(Number(e.target.value))} className="w-full p-2.5 bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-lg text-xs font-bold" />
+                                                        <input type="number" aria-label="Heart Rate" placeholder="72" value={medHR} onChange={e => setMedHR(Number(e.target.value))} className="w-full p-2.5 bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-lg text-xs font-bold" />
                                                     </div>
                                                 </div>
                                                 <div className="grid grid-cols-2 gap-3">
                                                     <div>
                                                         <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1 block">Vision Test</label>
-                                                        <select value={medVision} onChange={e => setMedVision(e.target.value as any)} className="w-full p-2.5 bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-lg text-xs font-bold">
+                                                        <select aria-label="Vision Test" value={medVision} onChange={e => setMedVision(e.target.value as any)} className="w-full p-2.5 bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-lg text-xs font-bold">
                                                             <option>Pass</option><option>Fail</option>
                                                         </select>
                                                     </div>
                                                     <div>
                                                         <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1 block">Drug Screen</label>
-                                                        <select value={medDrugs} onChange={e => setMedDrugs(e.target.value as any)} className="w-full p-2.5 bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-lg text-xs font-bold">
+                                                        <select aria-label="Drug Screen" value={medDrugs} onChange={e => setMedDrugs(e.target.value as any)} className="w-full p-2.5 bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-lg text-xs font-bold">
                                                             <option>Negative</option><option>Positive</option>
                                                         </select>
                                                     </div>
@@ -1686,13 +2208,13 @@ const MobilizationDashboard: React.FC<{ companies?: Company[] }> = ({ companies 
                                                             </div>
                                                             <div>
                                                                 <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1 block">Hearing</label>
-                                                                <select value={medHearing} onChange={e => setMedHearing(e.target.value as any)} className="w-full p-2.5 bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-lg text-xs font-bold">
+                                                                <select aria-label="Hearing" value={medHearing} onChange={e => setMedHearing(e.target.value as any)} className="w-full p-2.5 bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-lg text-xs font-bold">
                                                                     <option>Normal</option><option>Impaired</option>
                                                                 </select>
                                                             </div>
                                                             <div>
                                                                 <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1 block">Musculo.</label>
-                                                                <select value={medMusculo} onChange={e => setMedMusculo(e.target.value as any)} className="w-full p-2.5 bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-lg text-xs font-bold">
+                                                                <select aria-label="Musculoskeletal" value={medMusculo} onChange={e => setMedMusculo(e.target.value as any)} className="w-full p-2.5 bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-lg text-xs font-bold">
                                                                     <option>Normal</option><option>Impaired</option>
                                                                 </select>
                                                             </div>
@@ -1720,7 +2242,7 @@ const MobilizationDashboard: React.FC<{ companies?: Company[] }> = ({ companies 
                                                 {!isContractorParallel && (
                                                     <div>
                                                         <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1 block">Scheduled Induction Date</label>
-                                                        <input type="date" value={inductionDate} onChange={e => setInductionDate(e.target.value)} className="w-full p-2.5 bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-lg text-xs font-bold text-slate-800 dark:text-white" />
+                                                        <input type="date" aria-label="Scheduled Induction Date" title="Scheduled Induction Date" value={inductionDate} onChange={e => setInductionDate(e.target.value)} className="w-full p-2.5 bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-lg text-xs font-bold text-slate-800 dark:text-white" />
                                                     </div>
                                                 )}
                                             </div>
@@ -1873,7 +2395,7 @@ const MobilizationDashboard: React.FC<{ companies?: Company[] }> = ({ companies 
                                 {requestType === 'PersonnelAccess' && 'Request Personnel Access'}
                                 {requestType === 'EquipmentAccess' && 'Request Equipment Access'}
                             </h3>
-                            <button type="button" onClick={() => setIsAddRequestOpen(false)} className="p-2 text-slate-400 hover:text-red-500 transition-colors"><UserMinus size={24} /></button>
+                            <button type="button" aria-label="Close request form" title="Close request form" onClick={() => setIsAddRequestOpen(false)} className="p-2 text-slate-400 hover:text-red-500 transition-colors"><UserMinus size={24} /></button>
                         </div>
                         
                         <div className="p-8 space-y-5 max-h-[450px] overflow-y-auto">
@@ -1884,14 +2406,25 @@ const MobilizationDashboard: React.FC<{ companies?: Company[] }> = ({ companies 
                                     {[
                                         { id: 'Recruitment', label: 'Recruitment' },
                                         { id: 'PersonnelAccess', label: 'Personnel' },
-                                        { id: 'EquipmentAccess', label: 'Equipment' }
+                                        { id: 'EquipmentAccess', label: 'Equipment' },
+                                        { id: 'DeliveryAccess', label: 'Delivery' }
                                     ].map(t => (
                                         <button
                                             key={t.id}
                                             type="button"
                                             onClick={() => {
-                                                setRequestType(t.id as any);
+                                                const targetType = t.id as any;
+                                                setRequestType(targetType);
                                                 resetAmUploads();
+                                                if (targetType === 'Recruitment') {
+                                                    setRequiresMedical(true);
+                                                    setRequiresInduction(true);
+                                                    setRequiresRac(true);
+                                                } else {
+                                                    setRequiresMedical(false);
+                                                    setRequiresInduction(false);
+                                                    setRequiresRac(false);
+                                                }
                                             }}
                                             className={`flex-1 py-3 text-[10px] font-black uppercase tracking-wider transition-all ${
                                                 requestType === t.id
@@ -1905,7 +2438,7 @@ const MobilizationDashboard: React.FC<{ companies?: Company[] }> = ({ companies 
                                 </div>
                             </div>
 
-                            {requestType !== 'EquipmentAccess' ? (
+                            {requestType === 'Recruitment' || requestType === 'PersonnelAccess' ? (
                                 <>
                                     <div className="grid grid-cols-2 gap-4">
                                         <div>
@@ -1973,6 +2506,7 @@ const MobilizationDashboard: React.FC<{ companies?: Company[] }> = ({ companies 
                                         <div>
                                             <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 mb-2 block">Prime Company</label>
                                             <select
+                                                aria-label="Prime Company"
                                                 value={newRequest.primeCompany}
                                                 onChange={e => setNewRequest({ ...newRequest, primeCompany: e.target.value })}
                                                 className="w-full bg-slate-50 dark:bg-slate-900 border-2 border-slate-100 dark:border-slate-700 rounded-2xl p-4 text-xs font-bold outline-none focus:border-indigo-500 transition-all"
@@ -1985,6 +2519,7 @@ const MobilizationDashboard: React.FC<{ companies?: Company[] }> = ({ companies 
                                             <div>
                                                 <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 mb-2 block">Contractor Company</label>
                                                 <select
+                                                    aria-label="Contractor Company"
                                                     required
                                                     value={newRequest.contractorCompany}
                                                     onChange={e => setNewRequest({ ...newRequest, contractorCompany: e.target.value })}
@@ -2001,6 +2536,7 @@ const MobilizationDashboard: React.FC<{ companies?: Company[] }> = ({ companies 
                                         <div>
                                             <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 mb-2 block">Department</label>
                                             <select 
+                                                aria-label="Department"
                                                 value={newRequest.department}
                                                 onChange={e => setNewRequest({...newRequest, department: e.target.value})}
                                                 className="w-full bg-slate-50 dark:bg-slate-900 border-2 border-slate-100 dark:border-slate-700 rounded-2xl p-4 text-xs font-bold outline-none focus:border-indigo-500 transition-all"
@@ -2027,34 +2563,144 @@ const MobilizationDashboard: React.FC<{ companies?: Company[] }> = ({ companies 
                                     </div>
 
                                     {requestType === 'Recruitment' && (
-                                        <div>
-                                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 mb-3 block">Required RAC Training Modules</label>
-                                            <div className="grid grid-cols-2 gap-2 bg-slate-50 dark:bg-slate-900/50 p-4 rounded-2xl border border-slate-100 dark:border-slate-800">
-                                                {AVAILABLE_RACS.map(rac => {
-                                                    const isSelected = newRequest.requiredRacs.includes(rac.code);
-                                                    return (
-                                                        <div 
-                                                            key={rac.code}
-                                                            onClick={() => {
-                                                                const updated = isSelected 
-                                                                    ? newRequest.requiredRacs.filter(r => r !== rac.code) 
-                                                                    : [...newRequest.requiredRacs, rac.code];
-                                                                setNewRequest({...newRequest, requiredRacs: updated});
-                                                            }}
-                                                            className={`flex items-center gap-2 p-2 rounded-lg cursor-pointer text-xs font-bold ${
-                                                                isSelected 
-                                                                ? 'bg-indigo-600/10 border border-indigo-500/30 text-indigo-600 dark:text-indigo-400' 
-                                                                : 'hover:bg-white dark:hover:bg-slate-800 text-slate-600 dark:text-slate-400 border border-transparent'
-                                                            }`}
-                                                        >
-                                                            <input type="checkbox" checked={isSelected} readOnly className="rounded border-slate-300 dark:border-slate-700 text-indigo-600 focus:ring-indigo-500" />
-                                                            <span>{rac.code}</span>
-                                                        </div>
-                                                    );
-                                                })}
+                                        <>
+                                            <div className="space-y-3">
+                                                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 block">Workflow Stages Required</label>
+                                                <div className="flex gap-4 p-4 bg-slate-50 dark:bg-slate-900/50 rounded-2xl border border-slate-100 dark:border-slate-800">
+                                                    <label className="flex items-center gap-2 text-xs font-bold text-slate-700 dark:text-slate-300 cursor-pointer">
+                                                        <input 
+                                                            type="checkbox" 
+                                                            checked={requiresMedical}
+                                                            onChange={e => setRequiresMedical(e.target.checked)}
+                                                            className="rounded border-slate-300 dark:border-slate-700 text-indigo-600 focus:ring-indigo-500" 
+                                                        />
+                                                        Medical Exam
+                                                    </label>
+                                                    <label className="flex items-center gap-2 text-xs font-bold text-slate-700 dark:text-slate-300 cursor-pointer">
+                                                        <input 
+                                                            type="checkbox" 
+                                                            checked={requiresInduction}
+                                                            onChange={e => setRequiresInduction(e.target.checked)}
+                                                            className="rounded border-slate-300 dark:border-slate-700 text-indigo-600 focus:ring-indigo-500" 
+                                                        />
+                                                        HSE Induction
+                                                    </label>
+                                                    <label className="flex items-center gap-2 text-xs font-bold text-slate-700 dark:text-slate-300 cursor-pointer">
+                                                        <input 
+                                                            type="checkbox" 
+                                                            checked={requiresRac}
+                                                            onChange={e => setRequiresRac(e.target.checked)}
+                                                            className="rounded border-slate-300 dark:border-slate-700 text-indigo-600 focus:ring-indigo-500" 
+                                                        />
+                                                        RAC Training
+                                                    </label>
+                                                </div>
                                             </div>
-                                        </div>
+
+                                            <div>
+                                                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 mb-3 block">Required RAC Training Modules</label>
+                                                <div className="grid grid-cols-2 gap-2 bg-slate-50 dark:bg-slate-900/50 p-4 rounded-2xl border border-slate-100 dark:border-slate-800">
+                                                    {AVAILABLE_RACS.map(rac => {
+                                                        const isSelected = newRequest.requiredRacs.includes(rac.code);
+                                                        return (
+                                                            <div 
+                                                                key={rac.code}
+                                                                onClick={() => {
+                                                                    const updated = isSelected 
+                                                                        ? newRequest.requiredRacs.filter(r => r !== rac.code) 
+                                                                        : [...newRequest.requiredRacs, rac.code];
+                                                                    setNewRequest({...newRequest, requiredRacs: updated});
+                                                                }}
+                                                                className={`flex items-center gap-2 p-2 rounded-lg cursor-pointer text-xs font-bold ${
+                                                                    isSelected 
+                                                                    ? 'bg-indigo-600/10 border border-indigo-500/30 text-indigo-600 dark:text-indigo-400' 
+                                                                    : 'hover:bg-white dark:hover:bg-slate-800 text-slate-600 dark:text-slate-400 border border-transparent'
+                                                                }`}
+                                                            >
+                                                                <input type="checkbox" aria-label={rac.name} checked={isSelected} readOnly className="rounded border-slate-300 dark:border-slate-700 text-indigo-600 focus:ring-indigo-500" />
+                                                                <span>{rac.code}</span>
+                                                            </div>
+                                                        );
+                                                    })}
+                                                </div>
+                                            </div>
+                                        </>
                                     )}
+                                </>
+                            ) : requestType === 'DeliveryAccess' ? (
+                                <>
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div>
+                                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 mb-2 block">Driver Name</label>
+                                            <input 
+                                                required 
+                                                type="text" 
+                                                placeholder="e.g. John Doe"
+                                                value={newRequest.candidateName}
+                                                onChange={e => setNewRequest({...newRequest, candidateName: e.target.value})}
+                                                className="w-full bg-slate-50 dark:bg-slate-900 border-2 border-slate-100 dark:border-slate-700 rounded-2xl p-4 text-xs font-bold outline-none focus:border-indigo-500 transition-all"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 mb-2 block">Driver Phone Number</label>
+                                            <input 
+                                                required
+                                                type="text" 
+                                                placeholder="+258 84..."
+                                                value={newRequest.candidatePhone}
+                                                onChange={e => setNewRequest({...newRequest, candidatePhone: e.target.value})}
+                                                className="w-full bg-slate-50 dark:bg-slate-900 border-2 border-slate-100 dark:border-slate-700 rounded-2xl p-4 text-xs font-bold outline-none focus:border-indigo-500 transition-all"
+                                            />
+                                        </div>
+                                    </div>
+                                    <div className="grid grid-cols-3 gap-4">
+                                        <div>
+                                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 mb-2 block">Truck Model</label>
+                                            <input 
+                                                required 
+                                                type="text" 
+                                                placeholder="e.g. Scania G460"
+                                                value={truckModel}
+                                                onChange={e => setTruckModel(e.target.value)}
+                                                className="w-full bg-slate-50 dark:bg-slate-900 border-2 border-slate-100 dark:border-slate-700 rounded-2xl p-4 text-xs font-bold outline-none focus:border-indigo-500 transition-all"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 mb-2 block">Reg. Number</label>
+                                            <input 
+                                                required 
+                                                type="text" 
+                                                placeholder="e.g. MMM-123-MC"
+                                                value={truckRegNumber}
+                                                onChange={e => setTruckRegNumber(e.target.value)}
+                                                className="w-full bg-slate-50 dark:bg-slate-900 border-2 border-slate-100 dark:border-slate-700 rounded-2xl p-4 text-xs font-bold outline-none focus:border-indigo-500 transition-all"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 mb-2 block">PO Number</label>
+                                            <input 
+                                                required 
+                                                type="text" 
+                                                placeholder="e.g. PO-789012"
+                                                value={poNumber}
+                                                onChange={e => setPoNumber(e.target.value)}
+                                                className="w-full bg-slate-50 dark:bg-slate-900 border-2 border-slate-100 dark:border-slate-700 rounded-2xl p-4 text-xs font-bold outline-none focus:border-indigo-500 transition-all"
+                                            />
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 mb-2 block">Contractor Company (Owner)</label>
+                                        <select
+                                            aria-label="Contractor Company Owner"
+                                            required
+                                            value={newRequest.contractorCompany}
+                                            onChange={e => setNewRequest({ ...newRequest, contractorCompany: e.target.value })}
+                                            className="w-full bg-slate-50 dark:bg-slate-900 border-2 border-amber-200 dark:border-amber-700 rounded-2xl p-4 text-xs font-bold outline-none focus:border-amber-500 transition-all"
+                                        >
+                                            <option value="">— Select Contractor —</option>
+                                            {contractorList.map(c => <option key={c}>{c}</option>)}
+                                        </select>
+                                    </div>
                                 </>
                             ) : (
                                 <>
@@ -2063,6 +2709,7 @@ const MobilizationDashboard: React.FC<{ companies?: Company[] }> = ({ companies 
                                         <div>
                                             <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 mb-2 block">Equipment Type</label>
                                             <select
+                                                aria-label="Equipment Type"
                                                 value={equipmentType}
                                                 onChange={e => setEquipmentType(e.target.value)}
                                                 className="w-full bg-slate-50 dark:bg-slate-900 border-2 border-slate-100 dark:border-slate-700 rounded-2xl p-4 text-xs font-bold outline-none focus:border-indigo-500 transition-all"
@@ -2092,6 +2739,7 @@ const MobilizationDashboard: React.FC<{ companies?: Company[] }> = ({ companies 
                                     <div>
                                         <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 mb-2 block">Contractor Company (Owner)</label>
                                         <select
+                                            aria-label="Contractor Company Owner"
                                             required
                                             value={newRequest.contractorCompany}
                                             onChange={e => setNewRequest({ ...newRequest, contractorCompany: e.target.value })}
@@ -2132,6 +2780,7 @@ const MobilizationDashboard: React.FC<{ companies?: Company[] }> = ({ companies 
                                     <div>
                                         <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 mb-2 block">Department</label>
                                         <select 
+                                            aria-label="Department"
                                             value={newRequest.department}
                                             onChange={e => setNewRequest({...newRequest, department: e.target.value})}
                                             className="w-full bg-slate-50 dark:bg-slate-900 border-2 border-slate-100 dark:border-slate-700 rounded-2xl p-4 text-xs font-bold outline-none focus:border-indigo-500 transition-all"
@@ -2163,83 +2812,353 @@ const MobilizationDashboard: React.FC<{ companies?: Company[] }> = ({ companies 
                                         {requestType === 'Recruitment' && newRequest.workerType === 'Contractor' && '⚠ Both National ID/Passport/DIRE and Fitness Certificate are mandatory for Contractors.'}
                                         {requestType === 'Recruitment' && newRequest.workerType === 'Prime' && 'ℹ Uploading documents is optional for Prime employees.'}
                                         {requestType === 'PersonnelAccess' && '⚠ National ID, Passport or DIRE is mandatory for Access Card clearance.'}
-                                        {requestType === 'EquipmentAccess' && '⚠ Contractor & Responsible Person details document is mandatory for physical safety inspection.'}
+                                        {requestType === 'EquipmentAccess' && '⚠ Equipment Insurance and Photos (including Manifesto for Vehicles) are mandatory.'}
                                     </p>
 
-                                    {/* Candidate National ID / Details */}
-                                    <div className="flex items-center justify-between p-3 bg-white dark:bg-slate-800 rounded-xl border border-slate-100 dark:border-slate-700">
-                                        <div className="flex items-center gap-2">
-                                            <FileScan size={16} className={amUploadState.candidateId.uploaded ? 'text-emerald-500' : 'text-slate-400'} />
-                                            <div>
-                                                <div className="text-xs font-black text-slate-700 dark:text-slate-200">
-                                                    {requestType === 'EquipmentAccess' ? 'Contractor & Responsible Details' : 'National ID, Passport or DIRE'}
+                                    {requestType === 'EquipmentAccess' ? (
+                                        <div className="space-y-3">
+                                            {/* Insurance Upload */}
+                                            <div className="flex items-center justify-between p-3 bg-white dark:bg-slate-800 rounded-xl border border-slate-100 dark:border-slate-700">
+                                                <div className="flex items-center gap-2">
+                                                    <FileCheck size={16} className={amUploadState.insurance.uploaded ? 'text-emerald-500' : 'text-slate-400'} />
+                                                    <div>
+                                                        <div className="text-xs font-black text-slate-700 dark:text-slate-200">Liability Insurance</div>
+                                                        {amUploadState.insurance.uploaded ? (
+                                                            <div className="text-[9px] text-emerald-600 font-bold truncate max-w-[140px]">{amUploadState.insurance.fileName}</div>
+                                                        ) : (
+                                                            <div className="text-[9px] text-slate-400">PDF, JPG or PNG · max 10 MB</div>
+                                                        )}
+                                                    </div>
                                                 </div>
-                                                {amUploadState.candidateId.uploaded ? (
-                                                    <div className="text-[9px] text-emerald-600 font-bold truncate max-w-[140px]">{amUploadState.candidateId.fileName}</div>
+                                                {amUploadState.insurance.uploaded ? (
+                                                    <span className="text-[9px] bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400 px-2 py-0.5 rounded-full font-black flex items-center gap-1">
+                                                        <Check size={9}/> Uploaded
+                                                    </span>
                                                 ) : (
-                                                    <div className="text-[9px] text-slate-400">PDF, JPG or PNG · max 10 MB</div>
+                                                    <label className="cursor-pointer">
+                                                        <input
+                                                            type="file"
+                                                            accept=".pdf,.jpg,.jpeg,.png"
+                                                            className="sr-only"
+                                                            onChange={e => handleAmFileSelect('insurance', e)}
+                                                        />
+                                                        <span className={`text-[9px] px-3 py-1.5 rounded-lg font-black uppercase border transition-colors ${
+                                                            amUploadState.insurance.uploading
+                                                            ? 'bg-slate-100 text-slate-400 border-slate-200 cursor-wait'
+                                                            : 'bg-indigo-50 hover:bg-indigo-100 text-indigo-600 border-indigo-100'
+                                                        }`}>
+                                                            {amUploadState.insurance.uploading ? 'Uploading...' : 'Upload'}
+                                                        </span>
+                                                    </label>
+                                                )}
+                                            </div>
+
+                                            {/* Manifesto Upload (Conditionally for vehicles) */}
+                                            {isVehicleType(equipmentType) && (
+                                                <div className="flex items-center justify-between p-3 bg-white dark:bg-slate-800 rounded-xl border border-slate-100 dark:border-slate-700">
+                                                    <div className="flex items-center gap-2">
+                                                        <FileText size={16} className={amUploadState.manifesto.uploaded ? 'text-emerald-500' : 'text-slate-400'} />
+                                                        <div>
+                                                            <div className="text-xs font-black text-slate-700 dark:text-slate-200">Manifesto / Logbook</div>
+                                                            {amUploadState.manifesto.uploaded ? (
+                                                                <div className="text-[9px] text-emerald-600 font-bold truncate max-w-[140px]">{amUploadState.manifesto.fileName}</div>
+                                                            ) : (
+                                                                <div className="text-[9px] text-slate-400">Required for Vehicles · PDF, JPG, PNG</div>
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                    {amUploadState.manifesto.uploaded ? (
+                                                        <span className="text-[9px] bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400 px-2 py-0.5 rounded-full font-black flex items-center gap-1">
+                                                            <Check size={9}/> Uploaded
+                                                        </span>
+                                                    ) : (
+                                                        <label className="cursor-pointer">
+                                                            <input
+                                                                type="file"
+                                                                accept=".pdf,.jpg,.jpeg,.png"
+                                                                className="sr-only"
+                                                                onChange={e => handleAmFileSelect('manifesto', e)}
+                                                            />
+                                                            <span className={`text-[9px] px-3 py-1.5 rounded-lg font-black uppercase border transition-colors ${
+                                                                amUploadState.manifesto.uploading
+                                                                ? 'bg-slate-100 text-slate-400 border-slate-200 cursor-wait'
+                                                                : 'bg-indigo-50 hover:bg-indigo-100 text-indigo-600 border-indigo-100'
+                                                            }`}>
+                                                                {amUploadState.manifesto.uploading ? 'Uploading...' : 'Upload'}
+                                                            </span>
+                                                        </label>
+                                                    )}
+                                                </div>
+                                            )}
+
+                                            {/* Photo Grid */}
+                                            <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-2">Equipment Photos (4 Views Required)</div>
+                                            <div className="grid grid-cols-2 gap-3">
+                                                {/* Front Photo */}
+                                                <div className="p-3 bg-white dark:bg-slate-800 rounded-xl border border-slate-100 dark:border-slate-700 flex flex-col justify-between gap-2">
+                                                    <div className="text-xs font-black text-slate-700 dark:text-slate-200 flex items-center justify-between">
+                                                        <span>Front View</span>
+                                                        {amUploadState.photoFront.uploaded && <Check size={12} className="text-emerald-500"/>}
+                                                    </div>
+                                                    {amUploadState.photoFront.uploaded ? (
+                                                        <div className="text-[9px] text-emerald-600 font-bold truncate">{amUploadState.photoFront.fileName}</div>
+                                                    ) : (
+                                                        <div className="text-[9px] text-slate-400">Front view photo</div>
+                                                    )}
+                                                    <label className="cursor-pointer text-center mt-1">
+                                                        <input
+                                                            type="file"
+                                                            accept="image/*"
+                                                            className="sr-only"
+                                                            onChange={e => handleAmFileSelect('photoFront', e)}
+                                                        />
+                                                        <span className={`block text-[9px] py-1 rounded-lg font-black uppercase border transition-colors ${
+                                                            amUploadState.photoFront.uploading
+                                                            ? 'bg-slate-100 text-slate-400 border-slate-200 cursor-wait'
+                                                            : 'bg-indigo-50 hover:bg-indigo-100 text-indigo-600 border-indigo-100'
+                                                        }`}>
+                                                            {amUploadState.photoFront.uploading ? 'Uploading...' : amUploadState.photoFront.uploaded ? 'Change' : 'Upload'}
+                                                        </span>
+                                                    </label>
+                                                </div>
+
+                                                {/* Back Photo */}
+                                                <div className="p-3 bg-white dark:bg-slate-800 rounded-xl border border-slate-100 dark:border-slate-700 flex flex-col justify-between gap-2">
+                                                    <div className="text-xs font-black text-slate-700 dark:text-slate-200 flex items-center justify-between">
+                                                        <span>Back View</span>
+                                                        {amUploadState.photoBack.uploaded && <Check size={12} className="text-emerald-500"/>}
+                                                    </div>
+                                                    {amUploadState.photoBack.uploaded ? (
+                                                        <div className="text-[9px] text-emerald-600 font-bold truncate">{amUploadState.photoBack.fileName}</div>
+                                                    ) : (
+                                                        <div className="text-[9px] text-slate-400">Back view photo</div>
+                                                    )}
+                                                    <label className="cursor-pointer text-center mt-1">
+                                                        <input
+                                                            type="file"
+                                                            accept="image/*"
+                                                            className="sr-only"
+                                                            onChange={e => handleAmFileSelect('photoBack', e)}
+                                                        />
+                                                        <span className={`block text-[9px] py-1 rounded-lg font-black uppercase border transition-colors ${
+                                                            amUploadState.photoBack.uploading
+                                                            ? 'bg-slate-100 text-slate-400 border-slate-200 cursor-wait'
+                                                            : 'bg-indigo-50 hover:bg-indigo-100 text-indigo-600 border-indigo-100'
+                                                        }`}>
+                                                            {amUploadState.photoBack.uploading ? 'Uploading...' : amUploadState.photoBack.uploaded ? 'Change' : 'Upload'}
+                                                        </span>
+                                                    </label>
+                                                </div>
+
+                                                {/* Left Side Photo */}
+                                                <div className="p-3 bg-white dark:bg-slate-800 rounded-xl border border-slate-100 dark:border-slate-700 flex flex-col justify-between gap-2">
+                                                    <div className="text-xs font-black text-slate-700 dark:text-slate-200 flex items-center justify-between">
+                                                        <span>Side View (L)</span>
+                                                        {amUploadState.photoLeft.uploaded && <Check size={12} className="text-emerald-500"/>}
+                                                    </div>
+                                                    {amUploadState.photoLeft.uploaded ? (
+                                                        <div className="text-[9px] text-emerald-600 font-bold truncate">{amUploadState.photoLeft.fileName}</div>
+                                                    ) : (
+                                                        <div className="text-[9px] text-slate-400">Left view photo</div>
+                                                    )}
+                                                    <label className="cursor-pointer text-center mt-1">
+                                                        <input
+                                                            type="file"
+                                                            accept="image/*"
+                                                            className="sr-only"
+                                                            onChange={e => handleAmFileSelect('photoLeft', e)}
+                                                        />
+                                                        <span className={`block text-[9px] py-1 rounded-lg font-black uppercase border transition-colors ${
+                                                            amUploadState.photoLeft.uploading
+                                                            ? 'bg-slate-100 text-slate-400 border-slate-200 cursor-wait'
+                                                            : 'bg-indigo-50 hover:bg-indigo-100 text-indigo-600 border-indigo-100'
+                                                        }`}>
+                                                            {amUploadState.photoLeft.uploading ? 'Uploading...' : amUploadState.photoLeft.uploaded ? 'Change' : 'Upload'}
+                                                        </span>
+                                                    </label>
+                                                </div>
+
+                                                {/* Right Side Photo */}
+                                                <div className="p-3 bg-white dark:bg-slate-800 rounded-xl border border-slate-100 dark:border-slate-700 flex flex-col justify-between gap-2">
+                                                    <div className="text-xs font-black text-slate-700 dark:text-slate-200 flex items-center justify-between">
+                                                        <span>Side View (R)</span>
+                                                        {amUploadState.photoRight.uploaded && <Check size={12} className="text-emerald-500"/>}
+                                                    </div>
+                                                    {amUploadState.photoRight.uploaded ? (
+                                                        <div className="text-[9px] text-emerald-600 font-bold truncate">{amUploadState.photoRight.fileName}</div>
+                                                    ) : (
+                                                        <div className="text-[9px] text-slate-400">Right view photo</div>
+                                                    )}
+                                                    <label className="cursor-pointer text-center mt-1">
+                                                        <input
+                                                            type="file"
+                                                            accept="image/*"
+                                                            className="sr-only"
+                                                            onChange={e => handleAmFileSelect('photoRight', e)}
+                                                        />
+                                                        <span className={`block text-[9px] py-1 rounded-lg font-black uppercase border transition-colors ${
+                                                            amUploadState.photoRight.uploading
+                                                            ? 'bg-slate-100 text-slate-400 border-slate-200 cursor-wait'
+                                                            : 'bg-indigo-50 hover:bg-indigo-100 text-indigo-600 border-indigo-100'
+                                                        }`}>
+                                                            {amUploadState.photoRight.uploading ? 'Uploading...' : amUploadState.photoRight.uploaded ? 'Change' : 'Upload'}
+                                                        </span>
+                                                    </label>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ) : requestType === 'DeliveryAccess' ? (
+                                        <div className="space-y-3">
+                                            {/* Driver's License Upload */}
+                                            <div className="flex items-center justify-between p-3 bg-white dark:bg-slate-800 rounded-xl border border-slate-100 dark:border-slate-700">
+                                                <div className="flex items-center gap-2">
+                                                    <FileCheck size={16} className={amUploadState.driverLicense.uploaded ? 'text-emerald-500' : 'text-slate-400'} />
+                                                    <div>
+                                                        <div className="text-xs font-black text-slate-700 dark:text-slate-200">Driver's License</div>
+                                                        {amUploadState.driverLicense.uploaded ? (
+                                                            <div className="text-[9px] text-emerald-600 font-bold truncate max-w-[140px]">{amUploadState.driverLicense.fileName}</div>
+                                                        ) : (
+                                                            <div className="text-[9px] text-slate-400">PDF, JPG or PNG · max 10 MB</div>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                                {amUploadState.driverLicense.uploaded ? (
+                                                    <span className="text-[9px] bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400 px-2 py-0.5 rounded-full font-black flex items-center gap-1">
+                                                        <Check size={9}/> Uploaded
+                                                    </span>
+                                                ) : (
+                                                    <label className="cursor-pointer">
+                                                        <input
+                                                            type="file"
+                                                            accept=".pdf,.jpg,.jpeg,.png"
+                                                            className="sr-only"
+                                                            onChange={e => handleAmFileSelect('driverLicense', e)}
+                                                        />
+                                                        <span className={`text-[9px] px-3 py-1.5 rounded-lg font-black uppercase border transition-colors ${
+                                                            amUploadState.driverLicense.uploading
+                                                            ? 'bg-slate-100 text-slate-400 border-slate-200 cursor-wait'
+                                                            : 'bg-indigo-50 hover:bg-indigo-100 text-indigo-600 border-indigo-100'
+                                                        }`}>
+                                                            {amUploadState.driverLicense.uploading ? 'Uploading...' : 'Upload'}
+                                                        </span>
+                                                    </label>
+                                                )}
+                                            </div>
+
+                                            {/* Passport Upload */}
+                                            <div className="flex items-center justify-between p-3 bg-white dark:bg-slate-800 rounded-xl border border-slate-100 dark:border-slate-700">
+                                                <div className="flex items-center gap-2">
+                                                    <FileScan size={16} className={amUploadState.passport.uploaded ? 'text-emerald-500' : 'text-slate-400'} />
+                                                    <div>
+                                                        <div className="text-xs font-black text-slate-700 dark:text-slate-200">Driver's Passport</div>
+                                                        {amUploadState.passport.uploaded ? (
+                                                            <div className="text-[9px] text-emerald-600 font-bold truncate max-w-[140px]">{amUploadState.passport.fileName}</div>
+                                                        ) : (
+                                                            <div className="text-[9px] text-slate-400">PDF, JPG or PNG · max 10 MB</div>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                                {amUploadState.passport.uploaded ? (
+                                                    <span className="text-[9px] bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400 px-2 py-0.5 rounded-full font-black flex items-center gap-1">
+                                                        <Check size={9}/> Uploaded
+                                                    </span>
+                                                ) : (
+                                                    <label className="cursor-pointer">
+                                                        <input
+                                                            type="file"
+                                                            accept=".pdf,.jpg,.jpeg,.png"
+                                                            className="sr-only"
+                                                            onChange={e => handleAmFileSelect('passport', e)}
+                                                        />
+                                                        <span className={`text-[9px] px-3 py-1.5 rounded-lg font-black uppercase border transition-colors ${
+                                                            amUploadState.passport.uploading
+                                                            ? 'bg-slate-100 text-slate-400 border-slate-200 cursor-wait'
+                                                            : 'bg-indigo-50 hover:bg-indigo-100 text-indigo-600 border-indigo-100'
+                                                        }`}>
+                                                            {amUploadState.passport.uploading ? 'Uploading...' : 'Upload'}
+                                                        </span>
+                                                    </label>
                                                 )}
                                             </div>
                                         </div>
-                                        {amUploadState.candidateId.uploaded ? (
-                                            <span className="text-[9px] bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400 px-2 py-0.5 rounded-full font-black flex items-center gap-1">
-                                                <Check size={9}/> Uploaded
-                                            </span>
-                                        ) : (
-                                            <label className="cursor-pointer">
-                                                <input
-                                                    type="file"
-                                                    accept=".pdf,.jpg,.jpeg,.png"
-                                                    className="sr-only"
-                                                    onChange={e => handleAmFileSelect('candidateId', e)}
-                                                />
-                                                <span className={`text-[9px] px-3 py-1.5 rounded-lg font-black uppercase border transition-colors ${
-                                                    amUploadState.candidateId.uploading
-                                                    ? 'bg-slate-100 text-slate-400 border-slate-200 cursor-wait'
-                                                    : 'bg-indigo-50 hover:bg-indigo-100 text-indigo-600 border-indigo-100'
-                                                }`}>
-                                                    {amUploadState.candidateId.uploading ? 'Uploading...' : 'Upload'}
-                                                </span>
-                                            </label>
-                                        )}
-                                    </div>
+                                    ) : (
+                                        <>
+                                            {/* Candidate National ID / Details */}
+                                            <div className="flex items-center justify-between p-3 bg-white dark:bg-slate-800 rounded-xl border border-slate-100 dark:border-slate-700">
+                                                <div className="flex items-center gap-2">
+                                                    <FileScan size={16} className={amUploadState.candidateId.uploaded ? 'text-emerald-500' : 'text-slate-400'} />
+                                                    <div>
+                                                        <div className="text-xs font-black text-slate-700 dark:text-slate-200">
+                                                            {requestType === 'EquipmentAccess' ? 'Contractor & Responsible Details' : 'National ID, Passport or DIRE'}
+                                                        </div>
+                                                        {amUploadState.candidateId.uploaded ? (
+                                                            <div className="text-[9px] text-emerald-600 font-bold truncate max-w-[140px]">{amUploadState.candidateId.fileName}</div>
+                                                        ) : (
+                                                            <div className="text-[9px] text-slate-400">PDF, JPG or PNG · max 10 MB</div>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                                {amUploadState.candidateId.uploaded ? (
+                                                    <span className="text-[9px] bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400 px-2 py-0.5 rounded-full font-black flex items-center gap-1">
+                                                        <Check size={9}/> Uploaded
+                                                    </span>
+                                                ) : (
+                                                    <label className="cursor-pointer">
+                                                        <input
+                                                            type="file"
+                                                            accept=".pdf,.jpg,.jpeg,.png"
+                                                            className="sr-only"
+                                                            onChange={e => handleAmFileSelect('candidateId', e)}
+                                                        />
+                                                        <span className={`text-[9px] px-3 py-1.5 rounded-lg font-black uppercase border transition-colors ${
+                                                            amUploadState.candidateId.uploading
+                                                            ? 'bg-slate-100 text-slate-400 border-slate-200 cursor-wait'
+                                                            : 'bg-indigo-50 hover:bg-indigo-100 text-indigo-600 border-indigo-100'
+                                                        }`}>
+                                                            {amUploadState.candidateId.uploading ? 'Uploading...' : 'Upload'}
+                                                        </span>
+                                                    </label>
+                                                )}
+                                            </div>
 
-                                    {/* Third-Party Fitness Certificate */}
-                                    {requestType === 'Recruitment' && (
-                                        <div className="flex items-center justify-between p-3 bg-white dark:bg-slate-800 rounded-xl border border-slate-100 dark:border-slate-700">
-                                            <div className="flex items-center gap-2">
-                                                <FileCheck size={16} className={amUploadState.fitnessCert.uploaded ? 'text-emerald-500' : 'text-slate-400'} />
-                                                <div>
-                                                    <div className="text-xs font-black text-slate-700 dark:text-slate-200">Third-Party Fitness Certificate</div>
+                                            {/* Third-Party Fitness Certificate */}
+                                            {requestType === 'Recruitment' && (
+                                                <div className="flex items-center justify-between p-3 bg-white dark:bg-slate-800 rounded-xl border border-slate-100 dark:border-slate-700">
+                                                    <div className="flex items-center gap-2">
+                                                        <FileCheck size={16} className={amUploadState.fitnessCert.uploaded ? 'text-emerald-500' : 'text-slate-400'} />
+                                                        <div>
+                                                            <div className="text-xs font-black text-slate-700 dark:text-slate-200">Third-Party Fitness Certificate</div>
+                                                            {amUploadState.fitnessCert.uploaded ? (
+                                                                <div className="text-[9px] text-emerald-600 font-bold truncate max-w-[140px]">{amUploadState.fitnessCert.fileName}</div>
+                                                            ) : (
+                                                                <div className="text-[9px] text-slate-400">Issued by certified medical facility</div>
+                                                            )}
+                                                        </div>
+                                                    </div>
                                                     {amUploadState.fitnessCert.uploaded ? (
-                                                        <div className="text-[9px] text-emerald-600 font-bold truncate max-w-[140px]">{amUploadState.fitnessCert.fileName}</div>
+                                                        <span className="text-[9px] bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400 px-2 py-0.5 rounded-full font-black flex items-center gap-1">
+                                                            <Check size={9}/> Uploaded
+                                                        </span>
                                                     ) : (
-                                                        <div className="text-[9px] text-slate-400">Issued by certified medical facility</div>
+                                                        <label className="cursor-pointer">
+                                                            <input
+                                                                type="file"
+                                                                accept=".pdf,.jpg,.jpeg,.png"
+                                                                className="sr-only"
+                                                                onChange={e => handleAmFileSelect('fitnessCert', e)}
+                                                            />
+                                                            <span className={`text-[9px] px-3 py-1.5 rounded-lg font-black uppercase border transition-colors ${
+                                                                amUploadState.fitnessCert.uploading
+                                                                ? 'bg-slate-100 text-slate-400 border-slate-200 cursor-wait'
+                                                                : 'bg-indigo-50 hover:bg-indigo-100 text-indigo-600 border-indigo-100'
+                                                            }`}>
+                                                                {amUploadState.fitnessCert.uploading ? 'Uploading...' : 'Upload'}
+                                                            </span>
+                                                        </label>
                                                     )}
                                                 </div>
-                                            </div>
-                                            {amUploadState.fitnessCert.uploaded ? (
-                                                <span className="text-[9px] bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400 px-2 py-0.5 rounded-full font-black flex items-center gap-1">
-                                                    <Check size={9}/> Uploaded
-                                                </span>
-                                            ) : (
-                                                <label className="cursor-pointer">
-                                                    <input
-                                                        type="file"
-                                                        accept=".pdf,.jpg,.jpeg,.png"
-                                                        className="sr-only"
-                                                        onChange={e => handleAmFileSelect('fitnessCert', e)}
-                                                    />
-                                                    <span className={`text-[9px] px-3 py-1.5 rounded-lg font-black uppercase border transition-colors ${
-                                                        amUploadState.fitnessCert.uploading
-                                                        ? 'bg-slate-100 text-slate-400 border-slate-200 cursor-wait'
-                                                        : 'bg-indigo-50 hover:bg-indigo-100 text-indigo-600 border-indigo-100'
-                                                    }`}>
-                                                        {amUploadState.fitnessCert.uploading ? 'Uploading...' : 'Upload'}
-                                                    </span>
-                                                </label>
                                             )}
-                                        </div>
+                                        </>
                                     )}
                                 </div>
                             </div>
@@ -2264,7 +3183,221 @@ const MobilizationDashboard: React.FC<{ companies?: Company[] }> = ({ companies 
                     </form>
                 </div>
             )}
-        </div>
+            </div>
+
+            {/* DYNAMIC PROFESSIONAL PRINT-ONLY CERTIFICATE */}
+            {activeProcess && (
+                <div className="hidden print:block print:w-full print:bg-white text-slate-900 font-sans p-10 max-w-[210mm] mx-auto select-none">
+                    {/* Header */}
+                    <div className="flex justify-between items-center border-b-4 border-slate-900 pb-6 mb-8">
+                        <div className="flex items-center gap-4">
+                            <img src="https://vulcanrealestate.com/wp-content/themes/vulcanrealestate/images/logomark-vulcan.svg" alt="Vulcan Logo" className="h-16 object-contain" />
+                            <div>
+                                <h1 className="text-3xl font-black tracking-tighter text-slate-900 uppercase">VULCAN</h1>
+                                <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">Resources Mozambique</p>
+                            </div>
+                        </div>
+                        <div className="flex flex-col items-end text-right">
+                            <div className="flex items-center gap-2 text-indigo-600">
+                                <ShieldCheck size={28} className="text-indigo-600" />
+                                <span className="text-xl font-black tracking-tighter text-slate-900">ZeroGate</span>
+                            </div>
+                            <span className="text-[8px] font-black uppercase text-slate-400 mt-1 tracking-widest">Access Control System</span>
+                        </div>
+                    </div>
+
+                    {/* Department and Metadata */}
+                    <div className="flex justify-between items-start mb-8 bg-slate-50 p-4 rounded-xl border border-slate-100">
+                        <div>
+                            <span className="block text-[9px] font-black text-slate-400 uppercase tracking-widest">{t.proposal.mobilization.certificate?.issuingDept || 'Issuing Department'}</span>
+                            <span className="text-sm font-bold text-slate-800 uppercase">
+                                {activeProcess.status === 'HR_PENDING' && (t.proposal.mobilization.certificate?.deptHR || 'Human Resources Department')}
+                                {activeProcess.status === 'CLINIC_PENDING' && (t.proposal.mobilization.certificate?.deptClinic || 'Occupational Health Clinic')}
+                                {(activeProcess.status === 'INDUCTION_PENDING' || activeProcess.status === 'SAFETY_PENDING' || activeProcess.status === 'FAILED') && (t.proposal.mobilization.certificate?.deptHSE || 'HSE (Health, Safety & Environment) Department')}
+                                {(activeProcess.status === 'SECURITY_PENDING' || activeProcess.status === 'COMPLETED') && (t.proposal.mobilization.certificate?.deptSecurity || 'Security & Access Control Department')}
+                                {activeProcess.status === 'AM_REQUESTED' && (t.proposal.mobilization.certificate?.deptAM || 'Onboarding & Mobilization Office')}
+                            </span>
+                        </div>
+                        <div className="text-right">
+                            <span className="block text-[9px] font-black text-slate-400 uppercase tracking-widest">{t.proposal.mobilization.certificate?.documentStatus || 'Document Status'}</span>
+                            <span className={`text-xs font-black uppercase px-2 py-0.5 rounded ${
+                                activeProcess.status === 'Completed' ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'
+                            }`}>
+                                {translateStatus(activeProcess.status)}
+                            </span>
+                        </div>
+                    </div>
+
+                    {/* Certificate Title */}
+                    <div className="text-center mb-8">
+                        <h2 className="text-2xl font-black uppercase tracking-tight text-slate-900">
+                            {activeProcess.requestType === 'EquipmentAccess' ? (t.proposal.mobilization.certificate?.titleEquipment || 'Equipment Access Mobilization Certificate') : (t.proposal.mobilization.certificate?.titleWorkforce || 'Workforce Access Mobilization Certificate')}
+                        </h2>
+                        <p className="text-xs text-slate-500 font-mono mt-1">Ref: ZG-MOB-{activeProcess.id.substring(0,8).toUpperCase()}</p>
+                    </div>
+
+                    {/* Details Table */}
+                    <div className="border border-slate-200 rounded-2xl overflow-hidden mb-8">
+                        <div className="bg-slate-100 px-6 py-3 border-b border-slate-200 font-black text-xs uppercase tracking-widest text-slate-700">
+                            {activeProcess.requestType === 'EquipmentAccess' ? (t.proposal.mobilization.certificate?.detailsEquipment || 'Equipment & Contractor Details') : (t.proposal.mobilization.certificate?.detailsPersonnel || 'Personnel Onboarding Details')}
+                        </div>
+                        
+                        {activeProcess.requestType === 'EquipmentAccess' ? (
+                            <table className="w-full text-left text-sm font-bold divide-y divide-slate-100">
+                                <tbody>
+                                    <tr>
+                                        <td className="px-6 py-3 bg-slate-50 text-slate-400 w-1/3">{t.proposal.mobilization.certificate?.eqType || 'Equipment Type'}</td>
+                                        <td className="px-6 py-3 text-slate-800">{activeProcess.equipmentType || 'N/A'}</td>
+                                    </tr>
+                                    <tr>
+                                        <td className="px-6 py-3 bg-slate-50 text-slate-400">{t.proposal.mobilization.certificate?.eqId || 'Equipment Tag / ID'}</td>
+                                        <td className="px-6 py-3 text-slate-800 font-mono">{activeProcess.equipmentId || activeProcess.candidateName}</td>
+                                    </tr>
+                                    <tr>
+                                        <td className="px-6 py-3 bg-slate-50 text-slate-400">{t.proposal.mobilization.certificate?.contractorCo || 'Contractor Company'}</td>
+                                        <td className="px-6 py-3 text-slate-800">{activeProcess.company}</td>
+                                    </tr>
+                                    <tr>
+                                        <td className="px-6 py-3 bg-slate-50 text-slate-400">{t.proposal.mobilization.certificate?.respPerson || 'Responsible Person'}</td>
+                                        <td className="px-6 py-3 text-slate-800">{activeProcess.responsiblePersonName || 'N/A'} ({activeProcess.responsiblePersonPhone || 'N/A'})</td>
+                                    </tr>
+                                    <tr>
+                                        <td className="px-6 py-3 bg-slate-50 text-slate-400">{t.proposal.mobilization.certificate?.mobStage || 'Mobilization Stage'}</td>
+                                        <td className="px-6 py-3 text-slate-800">{activeProcess.department}</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        ) : (
+                            <table className="w-full text-left text-sm font-bold divide-y divide-slate-100">
+                                <tbody>
+                                    <tr>
+                                        <td className="px-6 py-3 bg-slate-50 text-slate-400 w-1/3">{t.proposal.mobilization.certificate?.fullName || 'Full Name'}</td>
+                                        <td className="px-6 py-3 text-slate-800">{activeProcess.candidateName}</td>
+                                    </tr>
+                                    <tr>
+                                        <td className="px-6 py-3 bg-slate-50 text-slate-400">{t.proposal.mobilization.certificate?.badgeNo || 'Personnel ID / Badge'}</td>
+                                        <td className="px-6 py-3 text-slate-800 font-mono">{activeProcess.temporaryBadgeNumber || (language === 'pt' ? 'Pendente' : 'Pending')}</td>
+                                    </tr>
+                                    <tr>
+                                        <td className="px-6 py-3 bg-slate-50 text-slate-400">{t.proposal.mobilization.certificate?.employingCo || 'Employing Company'}</td>
+                                        <td className="px-6 py-3 text-slate-800">{activeProcess.company} ({activeProcess.workerType || 'Prime'})</td>
+                                    </tr>
+                                    <tr>
+                                        <td className="px-6 py-3 bg-slate-50 text-slate-400">{t.proposal.mobilization.certificate?.workDept || 'Work Department'}</td>
+                                        <td className="px-6 py-3 text-slate-800">{activeProcess.department}</td>
+                                    </tr>
+                                    <tr>
+                                        <td className="px-6 py-3 bg-slate-50 text-slate-400">{t.proposal.mobilization.certificate?.jobRole || 'Job Role'}</td>
+                                        <td className="px-6 py-3 text-slate-800">{activeProcess.role}</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        )}
+                    </div>
+
+                    {/* Workflow Checklist Grid */}
+                    <div className="grid grid-cols-2 gap-4 mb-10">
+                        <div className="border border-slate-200 rounded-2xl p-4 flex flex-col justify-between">
+                            <div>
+                                <span className="block text-[8px] uppercase font-black text-slate-400 tracking-widest mb-1">{t.proposal.mobilization.certificate?.gate1 || 'Gate 1: Identity & Contracts'}</span>
+                                <span className="text-xs font-black text-slate-700 uppercase">{t.proposal.mobilization.certificate?.gate1Sub || 'HR DOCUMENT CHECK'}</span>
+                            </div>
+                            <div className="flex items-center gap-2 mt-4 text-emerald-600">
+                                <CheckCircle size={16} />
+                                <span className="text-xs font-bold">{t.proposal.mobilization.certificate?.verified || 'VERIFIED'}</span>
+                            </div>
+                        </div>
+
+                        {activeProcess.requestType !== 'EquipmentAccess' ? (
+                            <>
+                                <div className="border border-slate-200 rounded-2xl p-4 flex flex-col justify-between">
+                                    <div>
+                                        <span className="block text-[8px] uppercase font-black text-slate-400 tracking-widest mb-1">{t.proposal.mobilization.certificate?.gate2 || 'Gate 2: Occupational Health'}</span>
+                                        <span className="text-xs font-black text-slate-700 uppercase">{t.proposal.mobilization.certificate?.gate2Sub || 'Clinic Vitals Check'}</span>
+                                    </div>
+                                    <div className="flex items-center gap-2 mt-4">
+                                        {activeProcess.status === 'HR_PENDING' || activeProcess.status === 'CLINIC_PENDING' || activeProcess.status === 'AM_REQUESTED' ? (
+                                            <span className="text-xs font-bold text-amber-500">{t.proposal.mobilization.certificate?.pending || 'PENDING'}</span>
+                                        ) : (
+                                            <div className="flex items-center gap-2 text-emerald-600">
+                                                <CheckCircle size={16} />
+                                                <span className="text-xs font-bold">{t.proposal.mobilization.certificate?.cleared || 'CLEARED'}</span>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                                <div className="border border-slate-200 rounded-2xl p-4 flex flex-col justify-between">
+                                    <div>
+                                        <span className="block text-[8px] uppercase font-black text-slate-400 tracking-widest mb-1">{t.proposal.mobilization.certificate?.gate3 || 'Gate 3: HSE Competence'}</span>
+                                        <span className="text-xs font-black text-slate-700 uppercase">{t.proposal.mobilization.certificate?.gate3Sub || 'Induction & Safety Training'}</span>
+                                    </div>
+                                    <div className="flex items-center gap-2 mt-4">
+                                        {['HR_PENDING', 'CLINIC_PENDING', 'INDUCTION_PENDING', 'AM_REQUESTED'].includes(activeProcess.status) ? (
+                                            <span className="text-xs font-bold text-amber-500">{t.proposal.mobilization.certificate?.pending || 'PENDING'}</span>
+                                        ) : (
+                                            <div className="flex items-center gap-2 text-emerald-600">
+                                                <CheckCircle size={16} />
+                                                <span className="text-xs font-bold">{t.proposal.mobilization.certificate?.cleared || 'CLEARED'} ({activeProcess.requiredRacs ? activeProcess.requiredRacs.join(', ') : 'RAC01'})</span>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            </>
+                        ) : (
+                            <div className="border border-slate-200 rounded-2xl p-4 flex flex-col justify-between">
+                                <div>
+                                    <span className="block text-[8px] uppercase font-black text-slate-400 tracking-widest mb-1">{t.proposal.mobilization.certificate?.gate2Eq || 'Gate 2: Physical Inspection'}</span>
+                                    <span className="text-xs font-black text-slate-700 uppercase">{t.proposal.mobilization.certificate?.gate2EqSub || 'HSE Safety Inspection'}</span>
+                                </div>
+                                <div className="flex items-center gap-2 mt-4">
+                                    {activeProcess.safetyInspectionCleared ? (
+                                        <div className="flex items-center gap-2 text-emerald-600">
+                                            <CheckCircle size={16} />
+                                            <span className="text-xs font-bold">{t.proposal.mobilization.certificate?.cleared || 'CLEARED'} (Ref: {activeProcess.safetyInspectionRecordId})</span>
+                                        </div>
+                                    ) : (
+                                        <span className="text-xs font-bold text-amber-500">{t.proposal.mobilization.certificate?.pending || 'PENDING'}</span>
+                                    )}
+                                </div>
+                            </div>
+                        )}
+
+                        <div className="border border-slate-200 rounded-2xl p-4 flex flex-col justify-between">
+                            <div>
+                                <span className="block text-[8px] uppercase font-black text-slate-400 tracking-widest mb-1">{t.proposal.mobilization.certificate?.gate4 || 'Gate 4: Site Access'}</span>
+                                <span className="text-xs font-black text-slate-700 uppercase">{t.proposal.mobilization.certificate?.gate4Sub || 'Security Badge / Tag'}</span>
+                            </div>
+                            <div className="flex items-center gap-2 mt-4">
+                                {activeProcess.status === 'Completed' ? (
+                                    <div className="flex items-center gap-2 text-emerald-600">
+                                        <CheckCircle size={16} />
+                                        <span className="text-xs font-bold">{t.proposal.mobilization.certificate?.activeGranted || 'ACTIVE & GRANTED'}</span>
+                                    </div>
+                                ) : (
+                                    <span className="text-xs font-bold text-amber-500">{t.proposal.mobilization.certificate?.pendingSecurity || 'PENDING SECURITY ISSUANCE'}</span>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Footer / Signatures */}
+                    <div className="flex justify-between items-end mt-16 pt-10 border-t border-slate-200 text-xs font-bold uppercase text-slate-400">
+                        <div className="flex-1 max-w-[200px] border-t border-slate-300 pt-2 text-left">
+                            <span className="block text-slate-800 font-bold">{t.proposal.mobilization.certificate?.issuingAuthority || 'Issuing Authority'}</span>
+                            <span className="block text-[10px] text-slate-400 font-normal">{t.proposal.mobilization.certificate?.officerSign || 'Onboarding Officer Sign'}</span>
+                        </div>
+                        <div className="text-center">
+                            <span className="block text-[9px] font-black text-slate-400 tracking-widest">{t.proposal.mobilization.certificate?.printedBy || 'Printed By'}</span>
+                            <span className="block text-[10px] text-slate-800 font-mono mt-0.5">{user?.name} ({user?.role})</span>
+                        </div>
+                        <div className="flex-1 max-w-[200px] border-t border-slate-300 pt-2 text-right">
+                            <span className="block text-slate-800 font-bold">{t.proposal.mobilization.certificate?.traineeRep || 'Trainee / Representative'}</span>
+                            <span className="block text-[10px] text-slate-400 font-normal">{t.proposal.mobilization.certificate?.traineeSign || 'Acknowledgment Sign'}</span>
+                        </div>
+                    </div>
+                </div>
+            )}
+        </>
     );
 };
 

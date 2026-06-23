@@ -756,5 +756,39 @@ export const DEMO_RECRUITMENT_PROCESSES: RecruitmentProcess[] = [
     equipmentId: 'EX-901',
     responsiblePersonName: 'Alberto Manjate',
     responsiblePersonPhone: '+258 84 102 9384'
+  },
+  {
+    id: 'rp-8',
+    candidateName: 'Water Truck WT-405',
+    candidateEmail: 'water.trucks@vulcan.com',
+    candidatePhone: '+258 84 555 1234',
+    workerType: 'Contractor',
+    primeCompany: 'Vulcan Resources Mozambique',
+    contractorCompany: 'Mota-Engil Africa',
+    company: 'Mota-Engil Africa',
+    department: 'Mine Operations',
+    role: 'Water Truck',
+    requiredRacs: [],
+    status: RecruitmentStatus.SECURITY_PENDING,
+    requestedBy: 'Grace Matsinhe',
+    requestedAt: new Date(Date.now() - 3600000 * 2).toISOString(),
+    documents: [],
+    amDocuments: [
+      { name: 'insurance_wt405.pdf', type: 'Insurance', uploadedAt: new Date(Date.now() - 3600000 * 2).toISOString(), fileSize: '1.2 MB', status: 'Verified', uploadedBy: 'AM' },
+      { name: 'manifest_wt405.pdf', type: 'Manifesto', uploadedAt: new Date(Date.now() - 3600000 * 2).toISOString(), fileSize: '850 KB', status: 'Verified', uploadedBy: 'AM' },
+      { name: 'wt405_front.jpg', type: 'Front View Image', uploadedAt: new Date(Date.now() - 3600000 * 2).toISOString(), fileSize: '1.1 MB', status: 'Verified', uploadedBy: 'AM' },
+      { name: 'wt405_right.jpg', type: 'Side View (R)', uploadedAt: new Date(Date.now() - 3600000 * 2).toISOString(), fileSize: '1.2 MB', status: 'Verified', uploadedBy: 'AM' },
+      { name: 'wt405_left.jpg', type: 'Side View (L)', uploadedAt: new Date(Date.now() - 3600000 * 2).toISOString(), fileSize: '1.1 MB', status: 'Verified', uploadedBy: 'AM' },
+      { name: 'wt405_back.jpg', type: 'Back View', uploadedAt: new Date(Date.now() - 3600000 * 2).toISOString(), fileSize: '1.3 MB', status: 'Verified', uploadedBy: 'AM' }
+    ],
+    nudgeCount: 0,
+    requestType: 'EquipmentAccess',
+    equipmentType: 'Water Truck',
+    equipmentId: 'WT-405',
+    responsiblePersonName: 'Alberto Manjate',
+    responsiblePersonPhone: '+258 84 102 9384',
+    safetyInspectionCleared: true,
+    safetyInspectionRecordId: 'INSP-WT-405-A',
+    safetyInspectionComments: 'Brakes, steering, lights, tire thread verified and fully compliant.'
   }
 ];

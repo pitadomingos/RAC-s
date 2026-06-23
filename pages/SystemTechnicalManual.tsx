@@ -3,7 +3,7 @@ import {
   FileText, Shield, Database, Network, GitMerge, Lock, 
   Cpu, Zap, Printer, ArrowLeft, Layers, Globe, Server, 
   Smartphone, Code, CheckCircle, AlertTriangle, Building2,
-  ListFilter, Activity, Binary, ChevronRight
+  ListFilter, Activity, Binary, ChevronRight, ShieldCheck
 } from 'lucide-react';
 import { useNavigate, Navigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
@@ -55,20 +55,40 @@ const SystemTechnicalManual: React.FC = () => {
       <div className="max-w-[210mm] mx-auto bg-white p-[20mm] shadow-2xl mt-10 mb-20 print:shadow-none print:m-0 print:p-[15mm] text-slate-800">
         
         {/* Title Header */}
-        <div className="border-b-4 border-slate-900 pb-10 mb-12 flex justify-between items-end">
-            <div>
-                <div className="flex items-center gap-3 mb-4">
-                    <div className="bg-slate-900 p-3 rounded-xl">
-                        <Shield size={40} className="text-white" />
+        <div className="border-b-4 border-slate-900 pb-8 mb-8">
+            <div className="flex justify-between items-center mb-6">
+                <div className="flex items-center gap-4">
+                    <img src="https://vulcanrealestate.com/wp-content/themes/vulcanrealestate/images/logomark-vulcan.svg" alt="Vulcan Logo" className="h-16 object-contain" />
+                    <div>
+                        <h1 className="text-3xl font-black tracking-tighter text-slate-900 uppercase">VULCAN</h1>
+                        <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">Resources Mozambique</p>
                     </div>
-                    <span className="text-4xl font-black tracking-tighter uppercase italic">CARS <span className="text-slate-500">v2.5</span></span>
                 </div>
-                <h1 className="text-5xl font-black text-slate-900 mb-2">{tm.header.specTitle}</h1>
-                <p className="text-slate-500 font-bold uppercase tracking-[0.3em] text-xs">{tm.header.specSubtitle}</p>
+                <div className="flex flex-col items-end text-right">
+                    <div className="flex items-center gap-2 text-indigo-600">
+                        <ShieldCheck size={28} className="text-indigo-600" />
+                        <span className="text-xl font-black tracking-tighter text-slate-900">ZeroGate</span>
+                    </div>
+                    <span className="text-[8px] font-black uppercase text-slate-400 mt-1 tracking-widest">System Technical Blueprint</span>
+                </div>
             </div>
-            <div className="text-right">
-                <div className="text-[10px] font-black text-slate-400 uppercase mb-1">{tm.header.status}</div>
-                <div className="bg-emerald-100 text-emerald-700 px-3 py-1 rounded-full text-xs font-black uppercase tracking-widest border border-emerald-200">{tm.header.statusValue}</div>
+
+            <div className="flex justify-between items-start mb-8 bg-slate-50 p-4 rounded-xl border border-slate-100 font-sans">
+                <div>
+                    <span className="block text-[9px] font-black text-slate-400 uppercase tracking-widest">Issuing Department</span>
+                    <span className="text-sm font-bold text-slate-800 uppercase">IT & Safety Systems Infrastructure Department</span>
+                </div>
+                <div className="text-right flex flex-col items-end">
+                    <span className="block text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">{tm.header.status}</span>
+                    <span className="bg-emerald-100 text-emerald-700 px-3 py-1 rounded-full text-xs font-black uppercase tracking-widest border border-emerald-200 inline-block">{tm.header.statusValue}</span>
+                </div>
+            </div>
+
+            <div className="text-center">
+                <h1 className="text-4xl font-black uppercase tracking-tight text-slate-900 mb-2">
+                    ZeroGate System Architecture Blueprint & Specification
+                </h1>
+                <p className="text-xs text-slate-500 font-mono">Ref: ZG-TBM-V2.5-SPEC</p>
             </div>
         </div>
 

@@ -33,7 +33,7 @@ const UserManagement: React.FC<UserManagementProps> = ({ users, onUpdateUser, on
 
   // Pagination State
   const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState(10);
+  const [itemsPerPage, setItemsPerPage] = useState(20);
 
   // Confirmation Modal State
   const [confirmState, setConfirmState] = useState<{
@@ -303,9 +303,11 @@ const UserManagement: React.FC<UserManagementProps> = ({ users, onUpdateUser, on
                 <div className="flex items-center gap-2 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-xl px-3 py-2 shadow-sm">
                     <span className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">{t.common.rowsPerPage}</span>
                     <select value={itemsPerPage} onChange={handlePageSizeChange} className="text-sm font-bold bg-transparent outline-none text-slate-800 dark:text-white cursor-pointer" title={t.common.rowsPerPage} aria-label={t.common.rowsPerPage}>
-                        <option value={10}>10</option>
                         <option value={20}>20</option>
+                        <option value={30}>30</option>
                         <option value={50}>50</option>
+                        <option value={80}>80</option>
+                        <option value={100}>100</option>
                     </select>
                 </div>
             </div>

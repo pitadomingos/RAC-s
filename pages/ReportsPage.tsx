@@ -212,22 +212,40 @@ const ReportsPage: React.FC<ReportsPageProps> = ({
        <div className="hidden print:flex flex-col mb-10 pb-6 border-b-4 border-slate-900">
             <div className="flex justify-between items-center mb-6">
                 <div className="flex items-center gap-4">
-                    {currentCompany?.logoUrl ? (
-                        <img src={currentCompany.logoUrl} alt="Logo" className="h-16 object-contain" />
-                    ) : (
-                        <div className="w-16 h-16 bg-slate-900 text-white flex items-center justify-center rounded-xl font-black text-xl italic">VULCAN</div>
-                    )}
+                    <img src="https://vulcanrealestate.com/wp-content/themes/vulcanrealestate/images/logomark-vulcan.svg" alt="Vulcan Logo" className="h-16 object-contain" />
                     <div>
-                        <h1 className="text-3xl font-black text-slate-900 uppercase tracking-tighter">{currentCompany?.appName || 'CARS MANAGER'}</h1>
-                        <p className="text-xs font-bold text-slate-500 uppercase tracking-[0.2em]">Enterprise Safety & Training Audit</p>
+                        <h1 className="text-3xl font-black tracking-tighter text-slate-900 uppercase">VULCAN</h1>
+                        <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">Resources Mozambique</p>
                     </div>
                 </div>
-                <div className="text-right">
-                    <div className="text-xs font-black text-slate-400 uppercase">Generated On</div>
-                    <div className="text-lg font-mono font-bold text-slate-900">{new Date().toLocaleString('en-GB')}</div>
+                <div className="flex flex-col items-end text-right">
+                    <div className="flex items-center gap-2 text-indigo-600">
+                        <ShieldCheck size={28} className="text-indigo-600" />
+                        <span className="text-xl font-black tracking-tighter text-slate-900">ZeroGate</span>
+                    </div>
+                    <span className="text-[8px] font-black uppercase text-slate-400 mt-1 tracking-widest">Safety System Audit</span>
                 </div>
             </div>
-            <div className="grid grid-cols-4 gap-6 bg-slate-50 p-6 rounded-2xl border-2 border-slate-100">
+
+            <div className="flex justify-between items-start mb-8 bg-slate-50 p-4 rounded-xl border border-slate-100">
+                <div>
+                    <span className="block text-[9px] font-black text-slate-400 uppercase tracking-widest">Issuing Department</span>
+                    <span className="text-sm font-bold text-slate-800 uppercase">HSE Department (Health, Safety & Environment)</span>
+                </div>
+                <div className="text-right">
+                    <span className="block text-[9px] font-black text-slate-400 uppercase tracking-widest">Generated On</span>
+                    <span className="text-xs font-bold text-slate-800 uppercase font-mono">{new Date().toLocaleString('en-GB')}</span>
+                </div>
+            </div>
+
+            <div className="text-center mb-8">
+                <h2 className="text-2xl font-black uppercase tracking-tight text-slate-900">
+                    ZeroGate Safety Intelligence & Behavioral Audit Report
+                </h2>
+                <p className="text-xs text-slate-500 font-mono mt-1">Ref: ZG-REP-{new Date().toISOString().slice(0,10).replace(/-/g, '')}</p>
+            </div>
+
+            <div className="grid grid-cols-4 gap-6 bg-slate-50 p-6 rounded-2xl border-2 border-slate-100 font-sans">
                 <div className="text-center">
                     <span className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Pass Rate</span>
                     <span className="text-2xl font-black text-slate-900">{stats.passRate}%</span>

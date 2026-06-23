@@ -4,7 +4,8 @@ import { Booking, BookingStatus, TrainingSession, UserRole, RacDef } from '../ty
 import { 
     Save, AlertCircle, CheckCircle, Lock, Users, ClipboardList, 
     UserCheck, GraduationCap, CheckCircle2, Search, CheckSquare, 
-    X, Filter, ArrowUpDown, MessageSquare, Sliders, ChevronDown, Printer, UserX
+    X, Filter, ArrowUpDown, MessageSquare, Sliders, ChevronDown, Printer, UserX, ShieldCheck,
+    ChevronLeft, ChevronRight
 } from 'lucide-react';
 import { useLanguage } from '../contexts/LanguageContext';
 import { addMonths, format } from 'date-fns';
@@ -41,6 +42,8 @@ const TrainerInputPage: React.FC<TrainerInputPageProps> = ({
   const [bulkTheory, setBulkTheory] = useState<string>('');
   const [bulkPractical, setBulkPractical] = useState<string>('');
   const [showBulkTools, setShowBulkTools] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [rowsPerPage, setRowsPerPage] = useState(20);
 
   const availableSessions = useMemo(() => {
       let relevantSessions = sessions;
@@ -198,6 +201,18 @@ const TrainerInputPage: React.FC<TrainerInputPageProps> = ({
       return data;
   }, [sessionBookings, searchQuery, statusFilter, sortBy, sortDir]);
 
+  const totalPages = Math.ceil(processedBookings.length / rowsPerPage);
+
+  React.useEffect(() => {
+    setCurrentPage(1);
+  }, [selectedSessionId, searchQuery, statusFilter, sortBy]);
+
+  React.useEffect(() => {
+    if (currentPage > totalPages) {
+      setCurrentPage(totalPages > 0 ? totalPages : 1);
+    }
+  }, [processedBookings.length, rowsPerPage, totalPages, currentPage]);
+
   const handleHeaderClick = (field: typeof sortBy) => {
       if (sortBy === field) setSortDir(prev => prev === 'asc' ? 'desc' : 'asc');
       else { setSortBy(field); setSortDir('asc'); }
@@ -227,7 +242,62 @@ const TrainerInputPage: React.FC<TrainerInputPageProps> = ({
             )}
           </div>
           {selectedSessionId && sessionBookings.length > 0 ? (
-            <><div className="hidden print:block p-8 border-b-2 border-black mb-4"><div className="flex justify-between items-start"><div className="flex items-center gap-4"><div className="h-16 w-16 bg-slate-900 text-white rounded flex items-center justify-center font-black text-xs text-center p-1 leading-tight">{language === 'pt' ? 'RACS' : 'CARS'} SAFETY</div><div><h1 className="text-2xl font-black uppercase tracking-tight text-black">Training Result Register</h1><p className="text-sm font-medium text-gray-600 uppercase tracking-wider">Critical Activity Requirements (RAC)</p></div></div><div className="text-right"><div className="text-xl font-bold text-black">{currentSession?.racType}</div><div className="text-sm font-mono">{currentSession?.id}</div></div></div><div className="mt-8 grid grid-cols-4 gap-4 text-sm border-t border-gray-300 pt-4"><div><span className="block text-[10px] uppercase font-bold text-gray-500">Date</span><span className="font-bold text-black">{currentSession?.date}</span></div><div><span className="block text-[10px] uppercase font-bold text-gray-500">Time</span><span className="font-bold text-black">{currentSession?.startTime}</span></div><div><span className="block text-[10px] uppercase font-bold text-gray-500">Location</span><span className="font-bold text-black">{currentSession?.location}</span></div><div><span className="block text-[10px] uppercase font-bold text-gray-500">Instructor</span><span className="font-bold text-black">{currentSession?.instructor}</span></div></div></div>
+            <><div className="hidden print:block print:w-full print:bg-white text-slate-900 font-sans p-8 border-b-4 border-slate-900 mb-8">
+                {/* Header */}
+                <div className="flex justify-between items-center mb-6">
+                    <div className="flex items-center gap-4">
+                        <img src="https://vulcanrealestate.com/wp-content/themes/vulcanrealestate/images/logomark-vulcan.svg" alt="Vulcan Logo" className="h-16 object-contain" />
+                        <div>
+                            <h1 className="text-3xl font-black tracking-tighter text-slate-900 uppercase">VULCAN</h1>
+                            <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">Resources Mozambique</p>
+                        </div>
+                    </div>
+                    <div className="flex flex-col items-end text-right">
+                        <div className="flex items-center gap-2 text-indigo-600">
+                            <ShieldCheck size={28} className="text-indigo-600" />
+                            <span className="text-xl font-black tracking-tighter text-slate-900">ZeroGate</span>
+                        </div>
+                        <span className="text-[8px] font-black uppercase text-slate-400 mt-1 tracking-widest">Training System Register</span>
+                    </div>
+                </div>
+
+                <div className="flex justify-between items-start mb-8 bg-slate-50 p-4 rounded-xl border border-slate-100">
+                    <div>
+                        <span className="block text-[9px] font-black text-slate-400 uppercase tracking-widest">Issuing Department</span>
+                        <span className="text-sm font-bold text-slate-800 uppercase">HSE Training & Certification Department</span>
+                    </div>
+                    <div className="text-right">
+                        <span className="block text-[9px] font-black text-slate-400 uppercase tracking-widest">Generated On</span>
+                        <span className="text-xs font-bold text-slate-800 uppercase font-mono">{new Date().toLocaleString('en-GB')}</span>
+                    </div>
+                </div>
+
+                <div className="text-center mb-8">
+                    <h2 className="text-2xl font-black uppercase tracking-tight text-slate-900">
+                        ZeroGate Critical Activity Requirements (RAC) Training Register
+                    </h2>
+                    <p className="text-xs text-slate-500 font-mono mt-1">Ref: ZG-TRN-{currentSession?.id?.substring(0,8).toUpperCase() || 'N/A'}</p>
+                </div>
+
+                <div className="grid grid-cols-4 gap-4 text-sm border-t border-slate-200 pt-4 font-sans text-slate-800">
+                    <div>
+                        <span className="block text-[10px] uppercase font-bold text-slate-400">Date</span>
+                        <span className="font-bold text-slate-900">{currentSession?.date}</span>
+                    </div>
+                    <div>
+                        <span className="block text-[10px] uppercase font-bold text-slate-400">Time</span>
+                        <span className="font-bold text-slate-900">{currentSession?.startTime}</span>
+                    </div>
+                    <div>
+                        <span className="block text-[10px] uppercase font-bold text-slate-400">Location</span>
+                        <span className="font-bold text-slate-900">{currentSession?.location}</span>
+                    </div>
+                    <div>
+                        <span className="block text-[10px] uppercase font-bold text-slate-400">Instructor</span>
+                        <span className="font-bold text-slate-900">{currentSession?.instructor}</span>
+                    </div>
+                </div>
+            </div>
                 <div className="p-4 border-b border-slate-100 dark:border-slate-700 flex flex-col xl:flex-row gap-4 justify-between items-center bg-white dark:bg-slate-800 sticky top-0 z-20 shadow-sm no-print"><div className="flex flex-wrap items-center gap-2 w-full xl:w-auto"><div className="relative flex-1 min-w-[200px]"><Search className="absolute left-3 top-2.5 text-slate-400" size={16} /><input type="text" placeholder="Find student..." className="w-full pl-9 pr-4 py-2 bg-slate-100 dark:bg-slate-700 border-transparent focus:bg-white dark:focus:bg-slate-600 border focus:border-blue-500 rounded-lg text-sm transition-all outline-none" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} /></div><div className="flex bg-slate-100 dark:bg-slate-700 p-1 rounded-lg">{['All', 'Passed', 'Failed', 'Absent'].map(filter => (<button key={filter} onClick={() => setStatusFilter(filter as any)} className={`px-3 py-1.5 text-xs font-bold rounded-md transition-all ${statusFilter === filter ? 'bg-white dark:bg-slate-600 shadow-sm text-blue-600 dark:text-blue-400' : 'text-slate-500 hover:text-slate-700 dark:text-slate-400'}`}>{filter}</button>))}</div></div><div className="flex items-center gap-2 w-full xl:w-auto justify-end"><button onClick={() => window.print()} className="flex items-center gap-2 px-4 py-2 bg-slate-800 text-white rounded-lg text-xs font-bold hover:bg-slate-700 transition-colors shadow-sm"><Printer size={16} /> Print Register</button><button onClick={() => setShowBulkTools(!showBulkTools)} className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold border transition-colors ${showBulkTools ? 'bg-indigo-50 border-indigo-200 text-indigo-700' : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50'}`}><Sliders size={16} /> Batch Operations</button></div></div>
                 {showBulkTools && (<div className="bg-indigo-50/50 dark:bg-indigo-900/10 border-b border-indigo-100 dark:border-indigo-800 p-4 animate-fade-in-down flex flex-wrap items-center gap-4 no-print"><button onClick={handleBulkAttendance} className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-lg text-xs font-bold text-slate-700 dark:text-slate-300 hover:text-blue-600 shadow-sm"><CheckSquare size={16} /> Mark All Present</button><div className="h-6 w-px bg-indigo-200 dark:bg-indigo-700 mx-2"></div><div className="flex items-center gap-2"><span className="text-xs font-bold text-indigo-800 dark:text-indigo-300">Bulk Score:</span><input type="number" placeholder="Theory" className="w-20 px-2 py-1.5 text-xs border rounded-md focus:ring-2 focus:ring-indigo-500 outline-none text-center" value={bulkTheory} onChange={(e) => setBulkTheory(e.target.value)}/>{reqs.needsPractical && (<input type="number" placeholder="Prac" className="w-20 px-2 py-1.5 text-xs border rounded-md focus:ring-2 focus:ring-indigo-500 outline-none text-center" value={bulkPractical} onChange={(e) => setBulkPractical(e.target.value)}/>)}<button onClick={handleBulkScoreApply} disabled={!bulkTheory && !bulkPractical} className="bg-indigo-600 text-white px-3 py-1.5 rounded-md text-xs font-bold hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed">Apply</button></div></div>)}
                 <div className="flex-1 overflow-x-auto">
@@ -253,7 +323,7 @@ const TrainerInputPage: React.FC<TrainerInputPageProps> = ({
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100 dark:divide-slate-700 bg-white dark:bg-slate-800 print:divide-gray-300">
-                      {processedBookings.map((booking) => {
+                      {processedBookings.slice((currentPage - 1) * rowsPerPage, currentPage * rowsPerPage).map((booking) => {
                         const isDisqualified = reqs.needsDl && !booking.driverLicenseVerified;
                         const isPassed = booking.status === BookingStatus.PASSED;
                         const isAbsent = booking.status === BookingStatus.ABSENT;
@@ -326,7 +396,53 @@ const TrainerInputPage: React.FC<TrainerInputPageProps> = ({
                       })}
                     </tbody>
                   </table>
+              </div>
+              {/* Pagination Footer */}
+              {processedBookings.length > 0 && (
+                <div className="px-6 py-4 bg-slate-50 dark:bg-slate-900/40 border-t border-slate-100 dark:border-slate-700 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs font-mono text-slate-500 dark:text-slate-400 shrink-0 no-print">
+                  <div className="flex items-center gap-2">
+                    <span>Rows per page:</span>
+                    <select
+                      title="Rows per page"
+                      value={rowsPerPage}
+                      onChange={e => {
+                        setRowsPerPage(Number(e.target.value));
+                        setCurrentPage(1);
+                      }}
+                      className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-2 py-1 focus:outline-none focus:ring-1 focus:ring-yellow-500 cursor-pointer text-slate-700 dark:text-slate-200"
+                    >
+                      {[20, 30, 50, 80, 100].map(val => (
+                        <option key={val} value={val}>{val}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="flex items-center gap-4">
+                    <span>
+                      Showing {Math.min(processedBookings.length, (currentPage - 1) * rowsPerPage + 1)}-{Math.min(processedBookings.length, currentPage * rowsPerPage)} of {processedBookings.length}
+                    </span>
+                    <div className="flex items-center gap-1">
+                      <button
+                        type="button"
+                        disabled={currentPage === 1}
+                        onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                        className="p-1.5 rounded-lg border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700 disabled:opacity-40 disabled:hover:bg-transparent transition-colors text-slate-500 dark:text-slate-400"
+                        title="Previous Page"
+                      >
+                        <ChevronLeft size={14} />
+                      </button>
+                      <button
+                        type="button"
+                        disabled={currentPage === totalPages}
+                        onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                        className="p-1.5 rounded-lg border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700 disabled:opacity-40 disabled:hover:bg-transparent transition-colors text-slate-500 dark:text-slate-400"
+                        title="Next Page"
+                      >
+                        <ChevronRight size={14} />
+                      </button>
+                    </div>
+                  </div>
                 </div>
+              )}
                 <div className="hidden print:flex mt-12 pt-8 border-t-2 border-black justify-between gap-20 page-break-inside-avoid"><div className="flex-1"><div className="border-t border-black w-full pt-2"><p className="font-bold text-sm text-black">Instructor Signature</p><p className="text-xs text-gray-500">I certify that the above results are accurate and true.</p></div></div><div className="flex-1"><div className="border-t border-black w-full pt-2"><p className="font-bold text-sm text-black">HSE Reviewer / Supervisor</p><p className="text-xs text-gray-500">Validation of training record.</p></div></div></div>
                 <div className="sticky bottom-0 z-30 p-4 bg-white dark:bg-slate-800 border-t border-slate-200 dark:border-slate-700 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)] flex justify-between items-center no-print"><div className="text-xs text-slate-500 font-medium">{hasUnsavedChanges ? <span className="text-amber-600 font-bold flex items-center gap-1"><AlertCircle size={14}/> Unsaved changes pending...</span> : <span className="text-green-600 flex items-center gap-1">{successMsg && <CheckCircle size={14}/>} {successMsg}</span>}</div><button onClick={handleSave} disabled={!hasUnsavedChanges} className={`flex items-center gap-2 px-8 py-3 rounded-xl font-bold shadow-lg transition-all transform hover:-translate-y-0.5 ${hasUnsavedChanges ? 'bg-yellow-500 hover:bg-yellow-400 text-slate-900 shadow-yellow-500/30' : 'bg-slate-200 text-slate-400 cursor-not-allowed shadow-none'}`}><Save size={18} /> {t.trainer.saveResults}</button></div>
             </>

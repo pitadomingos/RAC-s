@@ -110,8 +110,19 @@ const PortalGateway: React.FC<PortalGatewayProps> = ({ onSelectModule }) => {
 
             </div>
 
+            {/* Presentation Page Link */}
+            <div className="relative z-10 mt-10 animate-fade-in-up" style={{ animationDelay: '0.15s' }}>
+                <a 
+                    href="#/presentation" 
+                    className="flex items-center gap-2 px-6 py-3 bg-slate-900/60 border border-slate-800 hover:border-indigo-500/50 hover:bg-slate-900 rounded-full text-xs font-bold uppercase tracking-widest text-slate-300 hover:text-white transition-all shadow-lg active:scale-95 hover:scale-105"
+                >
+                    <Sparkles size={14} className="text-yellow-500 animate-pulse" />
+                    <span>View ZeroGate Strategy Presentation</span>
+                </a>
+            </div>
+
             {/* Portal Footer / User Info */}
-            <div className="relative z-10 mt-16 flex flex-col items-center gap-4 animate-fade-in-up font-mono text-xs text-slate-500" style={{ animationDelay: '0.2s' }}>
+            <div className="relative z-10 mt-12 flex flex-col items-center gap-4 animate-fade-in-up font-mono text-xs text-slate-500" style={{ animationDelay: '0.2s' }}>
                 <div className="flex items-center gap-3 bg-slate-900/60 border border-slate-800 rounded-2xl px-5 py-3">
                     <div className="w-6 h-6 rounded-lg bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-400 font-bold">
                         {user?.name.charAt(0) || 'U'}

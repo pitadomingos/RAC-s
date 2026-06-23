@@ -150,11 +150,11 @@ const Layout: React.FC<LayoutProps> = ({
   };
 
   const allNavItems = activeModule === 'mobilization' ? [
-    { path: '/recruitment', label: 'Mobilization Flow', icon: Users, visible: true },
-    { path: '/hr-portal', label: 'HR Portal', icon: FileText, visible: true },
-    { path: '/security-portal', label: 'Security Portal', icon: Shield, visible: true },
-    { path: '/clinic-portal', label: 'Clinic Portal', icon: Heart, visible: true },
-    { path: '/safety-inspections', label: 'Safety Inspections', icon: ClipboardList, visible: true },
+    { path: '/recruitment', label: t.nav.mobilizationFlow, icon: Users, visible: true },
+    { path: '/hr-portal', label: t.nav.hrPortal, icon: FileText, visible: true },
+    { path: '/security-portal', label: t.nav.securityPortal, icon: Shield, visible: true },
+    { path: '/clinic-portal', label: t.nav.clinicPortal, icon: Heart, visible: true },
+    { path: '/safety-inspections', label: t.nav.safetyInspections, icon: ClipboardList, visible: true },
     { path: '/messages', label: t.nav.communications, icon: Send, visible: true },
     { path: '/manuals', label: t.nav.manuals, icon: BookOpen, visible: true },
   ] : [
@@ -167,7 +167,6 @@ const Layout: React.FC<LayoutProps> = ({
     { path: '/integration', label: t.nav.integration, icon: GitMerge, visible: [UserRole.SYSTEM_ADMIN, UserRole.ENTERPRISE_ADMIN].includes(userRole) },
     { path: '/reports', label: t.nav.reports, icon: FileBarChart, visible: [UserRole.SYSTEM_ADMIN, UserRole.ENTERPRISE_ADMIN, UserRole.SITE_ADMIN].includes(userRole) },
     { path: '/enterprise-dashboard', label: t.nav.enterpriseDashboard, icon: BarChart, visible: [UserRole.SYSTEM_ADMIN, UserRole.ENTERPRISE_ADMIN].includes(userRole) },
-    { path: '/subcontractors', label: t.subcontractors.title, icon: Briefcase, visible: [UserRole.SYSTEM_ADMIN, UserRole.ENTERPRISE_ADMIN, UserRole.SITE_ADMIN].includes(userRole) },
     { path: '/alcohol-control', label: t.nav.alcohol, icon: Wine, visible: showAlcoholLink },
     { path: '/request-cards', label: t.nav.requestCards, icon: Mail, visible: userRole !== UserRole.ENTERPRISE_ADMIN && userRole !== UserRole.RAC_TRAINER },
     { path: '/messages', label: t.nav.communications, icon: Send, visible: userRole === UserRole.SYSTEM_ADMIN },
@@ -178,7 +177,6 @@ const Layout: React.FC<LayoutProps> = ({
     { path: '/settings', label: t.nav.settings, icon: Settings, visible: [UserRole.SYSTEM_ADMIN, UserRole.ENTERPRISE_ADMIN, UserRole.SITE_ADMIN].includes(userRole) },
     { path: '/tech-docs', label: t.nav.techDocs, icon: FileCode, visible: [UserRole.SYSTEM_ADMIN, UserRole.ENTERPRISE_ADMIN].includes(userRole) },
     { path: '/logs', label: t.nav.logs, icon: ScrollText, visible: [UserRole.SYSTEM_ADMIN, UserRole.ENTERPRISE_ADMIN].includes(userRole) },
-    { path: '/safety-inspections', label: 'Safety Inspections', icon: Shield, visible: [UserRole.SYSTEM_ADMIN, UserRole.ENTERPRISE_ADMIN, UserRole.SITE_ADMIN].includes(userRole) },
     { path: '/manuals', label: t.nav.manuals, icon: BookOpen, visible: true },
   ];
 
@@ -211,8 +209,8 @@ const Layout: React.FC<LayoutProps> = ({
             </div>
             {!isCollapsed && <span className="text-xl font-black tracking-tighter bg-clip-text text-transparent bg-gradient-to-r from-white to-slate-400">{dynamicAppName}</span>}
           </div>
-          <button onClick={() => setSidebarOpen(false)} className="md:hidden text-gray-400 hover:text-white"><X size={24} /></button>
-          <button onClick={() => setIsCollapsed(!isCollapsed)} className="hidden md:flex bg-slate-800 dark:bg-slate-900 text-gray-400 hover:text-white rounded p-1">{isCollapsed ? <ChevronRight size={16}/> : <ChevronLeft size={16}/>}</button>
+          <button onClick={() => setSidebarOpen(false)} title="Close sidebar" className="md:hidden text-gray-400 hover:text-white"><X size={24} /></button>
+          <button onClick={() => setIsCollapsed(!isCollapsed)} title={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'} className="hidden md:flex bg-slate-800 dark:bg-slate-900 text-gray-400 hover:text-white rounded p-1">{isCollapsed ? <ChevronRight size={16}/> : <ChevronLeft size={16}/>}</button>
         </div>
 
         <nav className="p-4 space-y-2 flex-1 overflow-y-auto">
@@ -237,7 +235,7 @@ const Layout: React.FC<LayoutProps> = ({
                 className="w-full flex items-center justify-center gap-2 bg-indigo-600/15 hover:bg-indigo-600 border border-indigo-500/20 hover:border-indigo-500 text-indigo-400 hover:text-white text-xs font-black uppercase tracking-widest py-3 px-4 rounded-xl transition-all shadow-md active:scale-95"
               >
                 <Compass size={16} />
-                {!isCollapsed && <span>Switch Module</span>}
+                {!isCollapsed && <span>{t.nav.switchModule}</span>}
               </button>
             )}
             <div className="flex items-center gap-3">
@@ -248,7 +246,7 @@ const Layout: React.FC<LayoutProps> = ({
                         <div className="text-[10px] font-bold text-slate-500 uppercase tracking-widest truncate">{user?.role || 'Guest'}</div>
                     </div>
                 )}
-                {!isCollapsed && <button onClick={handleLogout} className="p-2 hover:bg-red-500/20 text-slate-400 hover:text-red-400 rounded-lg transition-colors"><LogOut size={18} /></button>}
+                {!isCollapsed && <button onClick={handleLogout} title="Log out" className="p-2 hover:bg-red-500/20 text-slate-400 hover:text-red-400 rounded-lg transition-colors"><LogOut size={18} /></button>}
             </div>
         </div>
       </aside>
@@ -256,7 +254,7 @@ const Layout: React.FC<LayoutProps> = ({
       <div className="flex-1 flex flex-col h-full w-full overflow-hidden">
         <header className="no-print h-16 bg-white dark:bg-slate-800 shadow-sm flex items-center justify-between px-4 md:px-6 z-10 border-b border-gray-200 dark:border-slate-700">
           <div className="flex items-center gap-4">
-             <button onClick={() => setSidebarOpen(true)} className="md:hidden text-slate-600 dark:text-slate-300"><Menu size={24} /></button>
+             <button onClick={() => setSidebarOpen(true)} title="Open sidebar" className="md:hidden text-slate-600 dark:text-slate-300"><Menu size={24} /></button>
              
              {/* PREVIOUS / NEXT NAVIGATION BUTTONS */}
              <div className="hidden md:flex items-center gap-2 mr-4 border-r border-gray-200 dark:border-slate-700 pr-4">
@@ -295,6 +293,7 @@ const Layout: React.FC<LayoutProps> = ({
             {setCurrentSiteId && (userRole === UserRole.SYSTEM_ADMIN || userRole === UserRole.ENTERPRISE_ADMIN) && (
                 <div className="hidden md:flex items-center gap-2 bg-slate-50 dark:bg-slate-700 border border-slate-200 rounded-lg px-2 py-1">
                     <select value={currentSiteId} onChange={(e) => setCurrentSiteId(e.target.value)}
+                        aria-label="Select site"
                         className="bg-transparent text-xs font-bold text-slate-700 dark:text-slate-200 outline-none cursor-pointer"
                     >
                         <option value="all">{t.common.enterpriseView}</option>

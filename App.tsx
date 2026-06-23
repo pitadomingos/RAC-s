@@ -40,6 +40,7 @@ import { AdvisorProvider } from './contexts/AdvisorContext';
 import { MessageProvider } from './contexts/MessageContext';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { useLanguage } from './contexts/LanguageContext';
+import { ToastProvider } from './contexts/ToastContext';
 import { db } from './services/databaseService';
 import { isSupabaseConfigured, supabase } from './services/supabaseClient';
 import { UserRole, Booking, EmployeeRequirement, TrainingSession, RacDef, Site, Company, SystemNotification, Employee, User, Room, Trainer, BookingStatus } from './types';
@@ -91,6 +92,14 @@ const AppContent: React.FC = () => {
   const { t } = useLanguage();
   const [isLoading, setIsLoading] = useState(true);
   const [isCloudSyncing, setIsCloudSyncing] = useState(false);
+  
+  // Track hash changes so gateway can detect #/presentation navigation
+  const [currentHash, setCurrentHash] = useState(window.location.hash);
+  useEffect(() => {
+    const onHashChange = () => setCurrentHash(window.location.hash);
+    window.addEventListener('hashchange', onHashChange);
+    return () => window.removeEventListener('hashchange', onHashChange);
+  }, []);
   
   const [activeModule, setActiveModule] = useState<'mobilization' | 'training' | null>(() => {
     return localStorage.getItem('cars_active_module') as any || null;
@@ -171,6 +180,9 @@ const AppContent: React.FC = () => {
   useEffect(() => {
       if (!isAuthenticated) return;
       
+      // Prevent background database polling/refreshes while presenting to avoid layout and animation flickering
+      if (currentHash.startsWith('#/presentation')) return;
+      
       const interval = setInterval(async () => {
           try {
               await refreshData();
@@ -180,7 +192,7 @@ const AppContent: React.FC = () => {
       }, 3000); // Poll every 3 seconds
 
       return () => clearInterval(interval);
-  }, [isAuthenticated]);
+  }, [isAuthenticated, currentHash]);
 
   useEffect(() => {
       const initApp = async () => {
@@ -214,6 +226,8 @@ const AppContent: React.FC = () => {
       };
       initApp();
   }, [isAuthenticated, user?.email]);
+
+
 
   const addNotification = (notif: SystemNotification) => setNotifications(prev => [notif, ...prev]);
 
@@ -473,7 +487,26 @@ const AppContent: React.FC = () => {
       </div>
   );
 
+
   if (activeModule === null) {
+      // Allow direct access to presentation from the gateway link
+      if (currentHash === '#/presentation' || currentHash === '#/presentation/') {
+          return (
+              <AdvisorProvider>
+                  <MessageProvider>
+                      <Router>
+                          <Suspense fallback={
+                              <div className="h-screen w-screen bg-slate-950 flex flex-col items-center justify-center text-white">
+                                  <Loader2 size={80} className="text-blue-500 animate-spin" />
+                              </div>
+                          }>
+                              <PresentationPage />
+                          </Suspense>
+                      </Router>
+                  </MessageProvider>
+              </AdvisorProvider>
+          );
+      }
       return (
           <Suspense fallback={
               <div className="h-screen w-screen bg-slate-950 flex flex-col items-center justify-center text-white">
@@ -484,6 +517,7 @@ const AppContent: React.FC = () => {
           </Suspense>
       );
   }
+
 
   const missingTables = dbHealth.filter(h => h.status === 'missing');
 
@@ -515,7 +549,7 @@ const AppContent: React.FC = () => {
                 <Layout userRole={user?.role || UserRole.USER} setUserRole={() => {}} notifications={notifications} clearNotifications={() => setNotifications([])} sites={sites} currentSiteId={currentSiteId} setCurrentSiteId={setCurrentSiteId} companies={companies} activeModule={activeModule} onSwitchModule={handleSelectModule}>
                   <Routes>
                     <Route path="/" element={<RoleBasedHome userRole={user?.role || UserRole.USER} dashboardProps={{ bookings, requirements, sessions, userRole: user?.role, racDefinitions, currentSiteId, companies }} />} />
-                    <Route path="/recruitment" element={<MobilizationDashboard companies={companies} />} />
+                    <Route path="/recruitment" element={<MobilizationDashboard companies={companies} racDefinitions={racDefinitions} />} />
                     <Route path="/database" element={<DatabasePage employees={employees} bookings={bookings} requirements={requirements} updateRequirements={handleUpdateRequirement} sessions={sessions} onUpdateEmployee={handleUpdateEmployee} onDeleteEmployee={handleDeleteEmployee} racDefinitions={racDefinitions} addNotification={addNotification} currentSiteId={currentSiteId} companies={companies} />} />
                     <Route path="/booking" element={<BookingForm addBookings={handleAddBookings} sessions={sessions} userRole={user?.role || UserRole.USER} existingBookings={bookings} addNotification={addNotification} racDefinitions={racDefinitions} companies={companies} />} />
                     <Route path="/results" element={<ResultsPage bookings={bookings} updateBookingStatus={handleUpdateBookingStatus} importBookings={handleImportBookings} userRole={user?.role || UserRole.USER} sessions={sessions} requirements={requirements} sites={sites} racDefinitions={racDefinitions} addNotification={addNotification} currentSiteId={currentSiteId} onRefresh={refreshData} />} />
@@ -554,7 +588,9 @@ const AppContent: React.FC = () => {
 const App: React.FC = () => {
   return (
     <AuthProvider>
+      <ToastProvider>
         <AppContent />
+      </ToastProvider>
     </AuthProvider>
   );
 };

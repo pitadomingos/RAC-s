@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { Site, RacDef, Booking, EmployeeRequirement, Employee } from '../types';
 import { Shield, CheckSquare, Save, Building2, MapPin, AlertCircle, Info, RefreshCw } from 'lucide-react';
 import { useLanguage } from '../contexts/LanguageContext';
+import { useToast } from '../contexts/ToastContext';
 
 interface SiteGovernancePageProps {
   sites: Site[];
@@ -16,7 +17,8 @@ interface SiteGovernancePageProps {
 const SiteGovernancePage: React.FC<SiteGovernancePageProps> = ({ 
     sites, setSites, racDefinitions, bookings, requirements, updateRequirements 
 }) => {
-  const { t } = useLanguage();
+   const { t } = useLanguage();
+  const { showAlert } = useToast();
   const [selectedSiteId, setSelectedSiteId] = useState<string>(sites[0]?.id || '');
   const [isSaving, setIsSaving] = useState(false);
 
@@ -71,9 +73,12 @@ const SiteGovernancePage: React.FC<SiteGovernancePageProps> = ({
           }
       });
 
-      setTimeout(() => {
+       setTimeout(() => {
           setIsSaving(false);
-          alert(t.governance.policyUpdated.replace('{siteName}', selectedSite.name).replace('{count}', String(siteEmployees.size)));
+          showAlert(
+              "Policy Updated",
+              t.governance.policyUpdated.replace('{siteName}', selectedSite.name).replace('{count}', String(siteEmployees.size))
+          );
       }, 800);
   };
 

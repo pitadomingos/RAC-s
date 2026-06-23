@@ -104,6 +104,17 @@
       "driverLicenseNumber": "MC-11002",
       "driverLicenseClass": "C",
       "driverLicenseExpiry": "2028-08-20"
+    },
+    {
+      "id": "e2c7c0c7-ea2a-404a-aaa4-7e9bbb49b0cf",
+      "recordId": "VUL-6659",
+      "name": "Pita Domingos",
+      "company": "Vulcan Resources Mozambique",
+      "department": "Plant Maintenance",
+      "role": "Personnel Access (Operator)",
+      "siteId": "s-moatize",
+      "isActive": true,
+      "phoneNumber": "+258845479481"
     }
   ],
   "bookings": [
@@ -184,6 +195,24 @@
       "medicalExpiry": "2026-11-15"
     },
     {
+      "id": "req-emp-paulo-RAC03",
+      "employeeId": "emp-paulo",
+      "racCode": "RAC03",
+      "status": "Expired",
+      "expiryDate": "2026-05-10",
+      "medicalStatus": "Valid",
+      "medicalExpiry": "2026-11-15"
+    },
+    {
+      "id": "req-emp-paulo-RAC04",
+      "employeeId": "emp-paulo",
+      "racCode": "RAC04",
+      "status": "Expired",
+      "expiryDate": "2026-05-10",
+      "medicalStatus": "Valid",
+      "medicalExpiry": "2026-11-15"
+    },
+    {
       "id": "req-emp-maria-RAC02",
       "employeeId": "emp-maria",
       "racCode": "RAC02",
@@ -200,6 +229,33 @@
       "expiryDate": "2026-05-10",
       "medicalStatus": "Valid",
       "medicalExpiry": "2027-02-14"
+    },
+    {
+      "id": "req-emp-celso-RAC03",
+      "employeeId": "emp-celso",
+      "racCode": "RAC03",
+      "status": "Expired",
+      "expiryDate": "2026-05-10",
+      "medicalStatus": "Valid",
+      "medicalExpiry": "2027-02-14"
+    },
+    {
+      "id": "req-aso-emp-02a7a77c",
+      "employeeId": "emp-02a7a77c",
+      "racCode": "",
+      "status": "Valid",
+      "expiryDate": "",
+      "medicalStatus": "Valid",
+      "medicalExpiry": "2027-06-22"
+    },
+    {
+      "id": "req-e2c7c0c7-ea2a-404a-aaa4-7e9bbb49b0cf-RAC03",
+      "employeeId": "e2c7c0c7-ea2a-404a-aaa4-7e9bbb49b0cf",
+      "racCode": "RAC03",
+      "status": "Expired",
+      "expiryDate": "2026-05-10",
+      "medicalStatus": "Expired",
+      "medicalExpiry": ""
     }
   ],
   "logs": [

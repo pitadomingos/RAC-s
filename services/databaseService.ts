@@ -1420,5 +1420,67 @@ export const db = {
             sessionLanguage: data.session_language,
             siteId: data.site_id
         };
+    },
+
+    // ─── FormBuilder: SQL Schema Execution ────────────────────────────────────
+    async executeSQL(sql: string, tableName: string, portalType: string, user: string): Promise<{ success: boolean; error?: string }> {
+        // Track created schemas in localStorage regardless of mode
+        const schemas = getLocalStorageJson('formbuilder_schemas', []);
+        const existing = schemas.findIndex((s: any) => s.tableName === tableName);
+        const schemaRecord = {
+            tableName,
+            portalType,
+            sql,
+            createdAt: new Date().toISOString(),
+            createdBy: user,
+            status: 'pending' as string
+        };
+
+        if (isSupabaseConfigured && supabase) {
+            try {
+                // Execute via Supabase's RPC function (requires a 'exec_sql' function in the DB)
+                const { error } = await supabase.rpc('exec_sql', { sql_query: sql });
+                if (error) {
+                    // If the RPC function doesn't exist, fall back to logging
+                    if (error.message?.includes('function') || error.code === '42883') {
+                        schemaRecord.status = 'rpc_unavailable_stored';
+                        if (existing >= 0) schemas[existing] = schemaRecord;
+                        else schemas.push(schemaRecord);
+                        saveLocalStorageJson('formbuilder_schemas', schemas);
+                        await this.addLog('WARN', `FORM_BUILDER_SQL_STORED: Table ${tableName} — RPC not available, SQL stored for manual execution`, user, { sql, portalType });
+                        return { success: true, error: 'SQL stored. RPC function exec_sql not found — please execute manually in Supabase SQL Editor.' };
+                    }
+                    schemaRecord.status = 'error';
+                    if (existing >= 0) schemas[existing] = schemaRecord;
+                    else schemas.push(schemaRecord);
+                    saveLocalStorageJson('formbuilder_schemas', schemas);
+                    return { success: false, error: error.message };
+                }
+                schemaRecord.status = 'executed';
+                if (existing >= 0) schemas[existing] = schemaRecord;
+                else schemas.push(schemaRecord);
+                saveLocalStorageJson('formbuilder_schemas', schemas);
+                await this.addLog('INFO', `FORM_BUILDER_TABLE_CREATED: ${tableName} (${portalType}) — SQL executed successfully`, user, { tableName, portalType });
+                return { success: true };
+            } catch (e: any) {
+                schemaRecord.status = 'error';
+                if (existing >= 0) schemas[existing] = schemaRecord;
+                else schemas.push(schemaRecord);
+                saveLocalStorageJson('formbuilder_schemas', schemas);
+                return { success: false, error: e.message || 'Unknown error' };
+            }
+        } else {
+            // Offline mode — store schema and mark as created
+            schemaRecord.status = 'offline_stored';
+            if (existing >= 0) schemas[existing] = schemaRecord;
+            else schemas.push(schemaRecord);
+            saveLocalStorageJson('formbuilder_schemas', schemas);
+            await this.addLog('INFO', `FORM_BUILDER_SCHEMA_SAVED: ${tableName} (${portalType}) — stored for execution when DB is connected`, user, { tableName, portalType, sql });
+            return { success: true };
+        }
+    },
+
+    getCreatedTables(): { tableName: string; portalType: string; createdAt: string; createdBy: string; status: string }[] {
+        return getLocalStorageJson('formbuilder_schemas', []);
     }
 };

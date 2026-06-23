@@ -224,12 +224,14 @@ export enum RecruitmentStatus {
   COMPLETED = 'Completed',
   RECEIVED = 'Received',
   SAFETY_PENDING = 'Safety Pending',
-  FAILED = 'Failed'
+  FAILED = 'Failed',
+  DELIVERING = 'Delivering',
+  DELIVERED = 'Delivered'
 }
 
 export interface RecruitDocument {
   name: string;
-  type: 'ID' | 'Passport' | 'Work Permit' | 'Fitness Certificate' | 'AM ID Upload' | 'Contractor & Responsible Details' | 'DIRE';
+  type: 'ID' | 'Passport' | 'Work Permit' | 'Fitness Certificate' | 'AM ID Upload' | 'Contractor & Responsible Details' | 'DIRE' | 'Insurance' | 'Manifesto' | 'Front View Image' | 'Side View (R)' | 'Side View (L)' | 'Back View' | 'Driver License';
   uploadedAt: string;
   fileSize: string;
   status: 'Pending' | 'Verified' | 'Rejected';
@@ -298,7 +300,7 @@ export interface RecruitmentProcess {
   recordId?: string;
   
   // Extended fields for Option 2 & 3
-  requestType?: 'Recruitment' | 'PersonnelAccess' | 'EquipmentAccess';
+  requestType?: 'Recruitment' | 'PersonnelAccess' | 'EquipmentAccess' | 'DeliveryAccess';
   equipmentType?: string;
   equipmentId?: string;
   responsiblePersonName?: string;
@@ -306,6 +308,29 @@ export interface RecruitmentProcess {
   safetyInspectionCleared?: boolean;
   safetyInspectionComments?: string;
   safetyInspectionRecordId?: string;
+
+  // Dynamic workflow stages
+  requiresMedical?: boolean;
+  requiresInduction?: boolean;
+  requiresRac?: boolean;
+
+  // Delivery access fields
+  truckModel?: string;
+  truckRegNumber?: string;
+  poNumber?: string;
+
+  // Temporal access & security document fields
+  accessStartDate?: string;
+  accessEndDate?: string;
+  canteen?: { breakfast: boolean; lunch: boolean; supper: boolean; lunchPack: boolean };
+  accessReason?: string;
+  accessStatus?: 'granted' | 'denied';
+  denialReason?: string;
+  accessDocumentRef?: string;
+  areaManagerName?: string;
+  areaManagerPhone?: string;
+  areaManagerDepartment?: string;
+  candidateIdNumber?: string;
 }
 // â”€â”€â”€ Safety Inspection Module â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 

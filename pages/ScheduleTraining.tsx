@@ -53,7 +53,7 @@ const ScheduleTraining: React.FC<ScheduleTrainingProps> = ({
 
   // Pagination State
   const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState(10);
+  const [itemsPerPage, setItemsPerPage] = useState(20);
 
   // Confirmation Modal State
   const [confirmState, setConfirmState] = useState<{
@@ -390,9 +390,11 @@ const ScheduleTraining: React.FC<ScheduleTrainingProps> = ({
                           title="Rows per page"
                           aria-label="Rows per page"
                       >
-                          <option value={10}>10</option>
-                          <option value={20}>20</option>
-                          <option value={50}>50</option>
+                           <option value={20}>20</option>
+                           <option value={30}>30</option>
+                           <option value={50}>50</option>
+                           <option value={80}>80</option>
+                           <option value={100}>100</option>
                       </select>
                   </div>
               </div>

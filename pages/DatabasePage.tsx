@@ -42,6 +42,11 @@ const DatabasePage: React.FC<DatabasePageProps> = ({ employees = [], bookings, r
 
   const [confirmState, setConfirmState] = useState({ isOpen: false, title: '', message: '', onConfirm: () => {}, isDestructive: false });
 
+  // Reset currentPage on search/filter changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, selectedCompany]);
+
   const getRequirement = (empId: string): EmployeeRequirement => {
     return requirements.find(r => r.employeeId === empId) || { employeeId: empId, asoExpiryDate: '', requiredRacs: {} };
   };
@@ -345,14 +350,31 @@ const DatabasePage: React.FC<DatabasePageProps> = ({ employees = [], bookings, r
         </div>
 
         {/* --- FOOTER PAGINATION --- */}
-        <div className="p-6 border-t border-gray-100 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-900/50 flex flex-col md:flex-row justify-between items-center gap-4">
-            <div className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] flex items-center gap-4">
+        <div className="p-6 border-t border-gray-100 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-900/50 flex flex-col md:flex-row justify-between items-center gap-4 shrink-0">
+            <div className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] flex flex-wrap items-center gap-4">
                 <div className="flex items-center gap-2">
                     <DbIcon size={14} className="text-slate-300" />
                     <span>Total Workforce Index: {processedData.length}</span>
                 </div>
                 <div className="h-3 w-px bg-slate-200 dark:bg-slate-700"></div>
                 <span>Page {currentPage} of {Math.ceil(processedData.length / itemsPerPage) || 1}</span>
+                <div className="h-3 w-px bg-slate-200 dark:bg-slate-700"></div>
+                <div className="flex items-center gap-2 text-xs font-mono text-slate-500 dark:text-slate-400">
+                    <span>Rows per page:</span>
+                    <select
+                        value={itemsPerPage}
+                        onChange={e => {
+                            setItemsPerPage(Number(e.target.value));
+                            setCurrentPage(1);
+                        }}
+                        title="Rows per page"
+                        className="bg-white dark:bg-slate-805 border border-slate-200 dark:border-slate-700 rounded-lg px-2 py-0.5 focus:outline-none focus:ring-1 focus:ring-indigo-500 cursor-pointer"
+                    >
+                        {[20, 30, 50, 80, 100].map(val => (
+                            <option key={val} value={val}>{val}</option>
+                        ))}
+                    </select>
+                </div>
             </div>
             <div className="flex gap-2">
                 <button onClick={() => setCurrentPage(p => Math.max(1, p-1))} disabled={currentPage === 1} className="px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 disabled:opacity-30 hover:bg-slate-50 transition-all font-black text-[10px] uppercase tracking-widest flex items-center gap-2">
