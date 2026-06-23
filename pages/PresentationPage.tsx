@@ -323,7 +323,6 @@ const PresentationPage: React.FC = () => {
                                 icon: Activity, 
                                 color: 'rose', 
                                 url: 'https://h365-new.vercel.app/',
-                                spanTwo: true,
                                 subLinks: [
                                     { label: 'CHAEM Portal', url: 'https://chaem-app.vercel.app/' },
                                     { label: 'Patient Portal', url: 'https://h365-patient-portal-red.vercel.app/' }
@@ -339,7 +338,6 @@ const PresentationPage: React.FC = () => {
                             { name: 'SwiftPOS', sub: t.proposal.aboutMe.portfolio.swiftpos, icon: CreditCard, color: 'emerald' },
                             { name: 'MicroFin', sub: t.proposal.aboutMe.portfolio.microfin, icon: Wallet, color: 'amber' },
                             { name: 'Sentinel', sub: t.proposal.aboutMe.portfolio.sentinel, icon: Eye, color: 'blue' },
-                            { name: 'Data Unification', sub: t.proposal.aboutMe.portfolio.dataUnif, icon: GitMerge, color: 'purple' },
                         ].map((item, i) => (
                             <div key={i} className={`group relative p-5 bg-slate-900/40 border border-slate-800 rounded-3xl backdrop-blur-sm hover:border-indigo-500/50 transition-all hover:bg-slate-900/80 shadow-lg flex flex-col justify-between ${item.spanTwo ? 'md:col-span-2' : ''}`}>
                                 <div>
