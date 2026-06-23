@@ -171,21 +171,19 @@ const ScheduleTraining: React.FC<ScheduleTrainingProps> = ({
       const req = requirements.find(r => r.employeeId === emp.id);
       const todayStr = new Date().toISOString().split('T')[0];
 
-      if (!req) {
-          warnings.push("ASO Missing");
-      } else if (!req.asoExpiryDate) {
-          warnings.push("ASO Missing");
+      if (!req || !req.asoExpiryDate) {
+          warnings.push(t.schedule.asoMissing || "ASO Missing");
       } else if (req.asoExpiryDate <= todayStr) {
-          warnings.push(`ASO Expired (${req.asoExpiryDate})`);
+          warnings.push((t.schedule.asoExpired || "ASO Expired ({date})").replace('{date}', req.asoExpiryDate));
       }
 
       const foundDef = racDefinitions.find(r => r.code === sessionRacCode);
       if (foundDef?.requiresDriverLicense) {
           const dlExpiry = emp.driverLicenseExpiry || '';
           if (!dlExpiry) {
-              warnings.push("License Missing");
+              warnings.push(t.schedule.licenseMissing || "License Missing");
           } else if (dlExpiry <= todayStr) {
-              warnings.push(`License Expired (${dlExpiry})`);
+              warnings.push((t.schedule.licenseExpired || "License Expired ({date})").replace('{date}', dlExpiry));
           }
       }
 
@@ -373,7 +371,7 @@ const ScheduleTraining: React.FC<ScheduleTrainingProps> = ({
                   <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
                   <input 
                     type="text" 
-                    placeholder="Search sessions..." 
+                    placeholder={t.schedule.searchPlaceholder || "Search sessions..."} 
                     className="w-full pl-10 pr-4 py-3 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-xl text-sm font-medium focus:ring-2 focus:ring-blue-500 outline-none transition-all shadow-sm"
                     value={filterQuery}
                     onChange={(e) => { setFilterQuery(e.target.value); setCurrentPage(1); }}
@@ -382,13 +380,13 @@ const ScheduleTraining: React.FC<ScheduleTrainingProps> = ({
               
               <div className="flex items-center gap-3">
                   <div className="flex items-center gap-2 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-xl px-3 py-2 shadow-sm">
-                      <span className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Rows</span>
+                      <span className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">{t.schedule.rows || 'Rows'}</span>
                       <select 
                           value={itemsPerPage}
                           onChange={handlePageSizeChange}
                           className="text-sm font-bold bg-transparent outline-none text-slate-800 dark:text-white cursor-pointer"
-                          title="Rows per page"
-                          aria-label="Rows per page"
+                          title={t.schedule.rows || 'Rows'}
+                          aria-label={t.schedule.rows || 'Rows'}
                       >
                            <option value={20}>20</option>
                            <option value={30}>30</option>
@@ -433,18 +431,17 @@ const ScheduleTraining: React.FC<ScheduleTrainingProps> = ({
                                   </div>
                               </div>
                           </div>
-
                           <div className="mt-4 md:mt-0 flex items-center gap-4 md:border-l border-slate-100 dark:border-slate-700 pt-4 md:pt-0 md:pl-6">
                               <div className="flex gap-4">
                                   <div className="text-center">
-                                      <div className="text-[10px] text-slate-400 font-bold uppercase tracking-wider mb-0.5 flex items-center justify-center gap-1"><UsersIcon size={10}/> Capacity</div>
+                                      <div className="text-[10px] text-slate-400 font-bold uppercase tracking-wider mb-0.5 flex items-center justify-center gap-1"><UsersIcon size={10}/> {t.schedule.capacity || 'Capacity'}</div>
                                       <div className={`text-xl font-black flex items-center justify-center gap-1 ${isFull ? 'text-red-500' : 'text-slate-800 dark:text-white'}`}>
                                           {counts.pending} <span className="text-xs font-medium text-slate-400">/ {session.capacity}</span>
                                       </div>
                                   </div>
                                   {counts.waitlisted > 0 && (
                                       <div className="text-center">
-                                          <div className="text-[10px] text-amber-500 font-bold uppercase tracking-wider mb-0.5 flex items-center justify-center gap-1"><ListFilter size={10}/> Waitlist</div>
+                                          <div className="text-[10px] text-amber-500 font-bold uppercase tracking-wider mb-0.5 flex items-center justify-center gap-1"><ListFilter size={10}/> {t.schedule.waitlist || 'Waitlist'}</div>
                                           <div className="text-xl font-black text-amber-600 bg-amber-50 dark:bg-amber-900/20 px-3 rounded-lg border border-amber-100 dark:border-amber-800">
                                               {counts.waitlisted}
                                           </div>
@@ -463,10 +460,10 @@ const ScheduleTraining: React.FC<ScheduleTrainingProps> = ({
                                             ? 'bg-blue-600 border-blue-600 text-white shadow-lg shadow-blue-500/20'
                                             : 'bg-slate-50 hover:bg-slate-100 dark:bg-slate-700 dark:hover:bg-slate-600 border-slate-200 dark:border-slate-600 text-slate-700 dark:text-slate-200'
                                     }`}
-                                    title="View Expiring or Missing Employees"
+                                    title={t.schedule.expiringOrMissing || 'Expiring or Missing Training'}
                                   >
                                       {expandedSessionId === session.id ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
-                                      <span>Expiring ({getEligibleExpiringEmployees(session).length})</span>
+                                      <span>{t.schedule.expiring || 'Expiring'} ({getEligibleExpiringEmployees(session).length})</span>
                                   </button>
                                   
                                   <button 
@@ -486,7 +483,7 @@ const ScheduleTraining: React.FC<ScheduleTrainingProps> = ({
                               <div className="flex items-center justify-between mb-4">
                                   <h4 className="text-sm font-black uppercase text-slate-500 dark:text-slate-400 tracking-wider flex items-center gap-2">
                                       <AlertTriangle size={16} className="text-amber-500" />
-                                      Expiring or Missing Training
+                                      {t.schedule.expiringOrMissing || 'Expiring or Missing Training'}
                                   </h4>
                                   <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest bg-slate-100 dark:bg-slate-700 px-2 py-1 rounded">
                                       Module: {getSessionRacCode(session)}
@@ -495,18 +492,18 @@ const ScheduleTraining: React.FC<ScheduleTrainingProps> = ({
 
                               {getEligibleExpiringEmployees(session).length === 0 ? (
                                   <div className="text-center py-6 text-slate-500 text-xs font-semibold">
-                                      No active employees with missing, expired, or expiring training for this module on this site.
+                                      {t.schedule.noEligibleEmployees || 'No active employees with missing, expired, or expiring training for this module on this site.'}
                                   </div>
                               ) : (
                                   <div className="overflow-x-auto rounded-xl border border-slate-100 dark:border-slate-700 bg-white dark:bg-slate-800">
                                       <table className="w-full text-left border-collapse text-xs">
                                           <thead>
                                               <tr className="bg-slate-50 dark:bg-slate-900/50 text-slate-400 dark:text-slate-500 font-bold border-b border-slate-100 dark:border-slate-700">
-                                                  <th className="p-3">Employee</th>
-                                                  <th className="p-3">Company / Dept</th>
-                                                  <th className="p-3">Training Status</th>
-                                                  <th className="p-3">Compliance Warnings</th>
-                                                  <th className="p-3 text-right">Actions</th>
+                                                  <th className="p-3">{t.schedule.thEmployee || 'Employee'}</th>
+                                                  <th className="p-3">{t.schedule.thCompanyDept || 'Company / Dept'}</th>
+                                                  <th className="p-3">{t.schedule.thTrainingStatus || 'Training Status'}</th>
+                                                  <th className="p-3">{t.schedule.thComplianceWarnings || 'Compliance Warnings'}</th>
+                                                  <th className="p-3 text-right">{t.common.actions || 'Actions'}</th>
                                               </tr>
                                           </thead>
                                           <tbody className="divide-y divide-slate-100 dark:divide-slate-700 font-medium">
@@ -526,17 +523,17 @@ const ScheduleTraining: React.FC<ScheduleTrainingProps> = ({
                                                           <td className="p-3">
                                                               {expStatus.status === 'missing' && (
                                                                   <span className="px-2 py-0.5 bg-rose-50 text-rose-600 dark:bg-rose-950/20 dark:text-rose-400 border border-rose-100 dark:border-rose-900/50 rounded-md font-bold uppercase text-[9px] tracking-wider">
-                                                                      Missing
+                                                                      {t.schedule.statusMissing || 'Missing'}
                                                                   </span>
                                                               )}
                                                               {expStatus.status === 'expired' && (
                                                                   <span className="px-2 py-0.5 bg-red-50 text-red-600 dark:bg-red-950/20 dark:text-red-400 border border-red-100 dark:border-red-900/50 rounded-md font-bold uppercase text-[9px] tracking-wider" title={expStatus.expiryDate}>
-                                                                      Expired
+                                                                      {t.schedule.statusExpired || 'Expired'}
                                                                   </span>
                                                               )}
                                                               {expStatus.status === 'expiring' && (
                                                                   <span className="px-2 py-0.5 bg-amber-50 text-amber-600 dark:bg-amber-950/20 dark:text-amber-400 border border-amber-100 dark:border-amber-900/50 rounded-md font-bold uppercase text-[9px] tracking-wider" title={`Expires on ${expStatus.expiryDate}`}>
-                                                                      Expiring ({expStatus.daysRemaining} days)
+                                                                      {(t.schedule.statusExpiring || 'Expiring ({days} days)').replace('{days}', String(expStatus.daysRemaining))}
                                                                   </span>
                                                               )}
                                                           </td>
@@ -545,7 +542,7 @@ const ScheduleTraining: React.FC<ScheduleTrainingProps> = ({
                                                                   {warnings.length === 0 ? (
                                                                       <span className="flex items-center gap-1 text-[10px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-100 dark:border-emerald-900/50 px-2 py-0.5 rounded-md">
                                                                           <CheckCircle size={10} />
-                                                                          ASO & License OK
+                                                                          {t.schedule.asoLicenseOk || 'ASO & License OK'}
                                                                       </span>
                                                                   ) : (
                                                                       warnings.map((warn, i) => (
@@ -565,10 +562,10 @@ const ScheduleTraining: React.FC<ScheduleTrainingProps> = ({
                                                                         ? 'bg-amber-500 hover:bg-amber-600 border-amber-600 text-white'
                                                                         : 'bg-blue-600 hover:bg-blue-500 border-blue-700 text-white'
                                                                 }`}
-                                                                title={isFull ? 'Add to Waitlist (Capacity Full)' : 'Push to Scheduled Session'}
+                                                                title={isFull ? (t.booking.registerToWaitlist || 'Add to Waitlist') : (t.schedule.actionPush || 'Push')}
                                                               >
                                                                   <UserCheck size={12} />
-                                                                  {isFull ? 'Waitlist' : 'Push'}
+                                                                  {isFull ? (t.schedule.actionWaitlist || 'Waitlist') : (t.schedule.actionPush || 'Push')}
                                                               </button>
                                                           </td>
                                                       </tr>
@@ -588,8 +585,8 @@ const ScheduleTraining: React.FC<ScheduleTrainingProps> = ({
                       <div className="w-20 h-20 bg-slate-100 dark:bg-slate-700 rounded-full flex items-center justify-center mb-4">
                           <Calendar size={40} className="text-slate-300 dark:text-slate-500" />
                       </div>
-                      <p className="font-bold text-lg text-slate-500 dark:text-slate-400">No sessions scheduled</p>
-                      <p className="text-sm text-slate-400">Click "New Session" to get started.</p>
+                      <p className="font-bold text-lg text-slate-500 dark:text-slate-400">{t.schedule.noSessions || 'No sessions scheduled'}</p>
+                      <p className="text-sm text-slate-400">{t.schedule.clickNewSession || 'Click "New Session" to get started.'}</p>
                   </div>
               )}
           </div>
@@ -597,13 +594,16 @@ const ScheduleTraining: React.FC<ScheduleTrainingProps> = ({
           {sortedSessions.length > 0 && (
               <div className="p-4 border-t border-slate-100 dark:border-slate-700 bg-white dark:bg-slate-800 flex justify-between items-center">
                   <div className="flex items-center gap-4">
-                      <div className="text-xs font-bold text-slate-400 uppercase tracking-wider">
-                          Page {currentPage} of {Math.max(1, totalPages)} • {sortedSessions.length} Total
+                      <div className="text-xs font-bold text-slate-400 uppercase tracking-wider font-mono">
+                          {(t.schedule.pageOfTotal || 'Page {page} of {totalPages} • {total} Total')
+                              .replace('{page}', String(currentPage))
+                              .replace('{totalPages}', String(Math.max(1, totalPages)))
+                              .replace('{total}', String(sortedSessions.length))}
                       </div>
                       
                       <div className="flex gap-2 border-l border-slate-200 dark:border-slate-700 pl-4">
-                          <button onClick={() => goToPage(currentPage - 1)} disabled={currentPage === 1} className="p-2 rounded-lg border border-slate-200 dark:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-700 disabled:opacity-50 transition-colors text-slate-600 dark:text-slate-300" title="Previous Page" aria-label="Previous Page"><ChevronLeft size={16} /></button>
-                          <button onClick={() => goToPage(currentPage + 1)} disabled={currentPage === totalPages} className="p-2 rounded-lg border border-slate-200 dark:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-700 disabled:opacity-50 transition-colors text-slate-600 dark:text-slate-300" title="Next Page" aria-label="Next Page"><ChevronRight size={16} /></button>
+                          <button onClick={() => goToPage(currentPage - 1)} disabled={currentPage === 1} className="p-2 rounded-lg border border-slate-200 dark:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-700 disabled:opacity-50 transition-colors text-slate-600 dark:text-slate-300" title={t.booking.prevPage || 'Previous Page'} aria-label="Previous Page"><ChevronLeft size={16} /></button>
+                          <button onClick={() => goToPage(currentPage + 1)} disabled={currentPage === totalPages} className="p-2 rounded-lg border border-slate-200 dark:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-700 disabled:opacity-50 transition-colors text-slate-600 dark:text-slate-300" title={t.booking.nextPage || 'Next Page'} aria-label="Next Page"><ChevronRight size={16} /></button>
                       </div>
                   </div>
               </div>
@@ -617,7 +617,7 @@ const ScheduleTraining: React.FC<ScheduleTrainingProps> = ({
           onConfirm={confirmState.onConfirm}
           onClose={() => setConfirmState(prev => ({ ...prev, isOpen: false }))}
           isDestructive={confirmState.isDestructive}
-          confirmText="Confirm"
+          confirmText={t.common.confirm}
       />
 
       {isModalOpen && (
@@ -627,7 +627,7 @@ const ScheduleTraining: React.FC<ScheduleTrainingProps> = ({
                 <div className="p-6 bg-slate-50 dark:bg-slate-900/50 border-b border-slate-100 dark:border-slate-700 flex justify-between items-center">
                     <div>
                         <h3 className="text-xl font-black text-slate-900 dark:text-white tracking-tight">{t.schedule.modal.title}</h3>
-                        <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Create a new training slot.</p>
+                        <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">{t.schedule.modalSubtitle || 'Create a new training slot.'}</p>
                     </div>
                     <button onClick={() => setIsModalOpen(false)} className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-2 rounded-full hover:bg-white dark:hover:bg-slate-700 transition-colors" title="Close Modal" aria-label="Close Modal">
                         <X size={20} />
@@ -642,7 +642,7 @@ const ScheduleTraining: React.FC<ScheduleTrainingProps> = ({
                                 className="w-full bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 text-slate-900 dark:text-white rounded-xl p-4 text-sm font-bold focus:ring-2 focus:ring-blue-500 outline-none appearance-none transition-all hover:bg-slate-100 dark:hover:bg-slate-600"
                                 value={String(newSession.racType)}
                                 onChange={e => setNewSession({...newSession, racType: e.target.value})}
-                                title="Select RAC Type"
+                                title={t.schedule.modal.racType || 'RAC Type'}
                                 aria-label="Select RAC Type"
                             >
                                 {racDefinitions.map(rac => (
@@ -663,7 +663,7 @@ const ScheduleTraining: React.FC<ScheduleTrainingProps> = ({
                                 className="w-full bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-xl p-3 text-sm font-semibold focus:ring-2 focus:ring-blue-500 outline-none text-slate-800 dark:text-white transition-all"
                                 value={String(newSession.date)}
                                 onChange={e => setNewSession({...newSession, date: e.target.value})}
-                                title="Date"
+                                title={t.schedule.modal.date || 'Date'}
                                 placeholder="YYYY-MM-DD"
                             />
                         </div>
@@ -674,7 +674,7 @@ const ScheduleTraining: React.FC<ScheduleTrainingProps> = ({
                                 className="w-full bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-xl p-3 text-sm font-semibold focus:ring-2 focus:ring-blue-500 outline-none text-slate-800 dark:text-white transition-all"
                                 value={String(newSession.startTime)}
                                 onChange={e => setNewSession({...newSession, startTime: e.target.value})}
-                                title="Start Time"
+                                title={t.schedule.modal.startTime || 'Start Time'}
                                 placeholder="HH:MM"
                             />
                         </div>
@@ -695,10 +695,10 @@ const ScheduleTraining: React.FC<ScheduleTrainingProps> = ({
                                             capacity: selectedRoom ? selectedRoom.capacity : 0
                                         });
                                     }}
-                                    title="Select Room"
+                                    title={t.schedule.modal.location || 'Location'}
                                     aria-label="Select Room"
                                 >
-                                    <option value="">Select Room</option>
+                                    <option value="">{t.schedule.selectRoom || 'Select Room'}</option>
                                     {rooms.map(room => (
                                         <option key={room.id} value={room.name}>{room.name}</option>
                                     ))}
@@ -732,7 +732,7 @@ const ScheduleTraining: React.FC<ScheduleTrainingProps> = ({
                                     title="Select Instructor"
                                     aria-label="Select Instructor"
                                 >
-                                    <option value="">Select Instructor</option>
+                                    <option value="">{t.schedule.selectInstructor || 'Select Instructor'}</option>
                                     {trainers.map(trainer => (
                                         <option key={trainer.id} value={trainer.name}>
                                             {trainer.name}

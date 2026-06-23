@@ -34,6 +34,7 @@ const SafetyInspectionPage = lazy(() => import('./pages/SafetyInspectionPage').t
 const HRPortalPage = lazy(() => import('./pages/HRPortalPage').then(m => ({ default: m.HRPortalPage })));
 const SecurityPortalPage = lazy(() => import('./pages/SecurityPortalPage').then(m => ({ default: m.SecurityPortalPage })));
 const ClinicPortalPage = lazy(() => import('./pages/ClinicPortalPage').then(m => ({ default: m.ClinicPortalPage })));
+const BookingsPage = lazy(() => import('./pages/BookingsPage').then(m => ({ default: m.BookingsPage })));
 import GeminiAdvisor from './components/GeminiAdvisor';
 import PresentationRoleSwitcher from './components/PresentationRoleSwitcher';
 import { AdvisorProvider } from './contexts/AdvisorContext';
@@ -492,7 +493,8 @@ const AppContent: React.FC = () => {
       // Allow direct access to presentation, verification, and print-cards routes
       const isDirectRoute = currentHash.startsWith('#/presentation') || 
                             currentHash.startsWith('#/verify/') || 
-                            currentHash.startsWith('#/print-cards');
+                            currentHash.startsWith('#/print-cards') ||
+                            currentHash.startsWith('#/bookings');
                             
       if (!isDirectRoute) {
           return (
@@ -562,6 +564,7 @@ const AppContent: React.FC = () => {
                     <Route path="/hr-portal" element={<HRPortalPage />} />
                     <Route path="/security-portal" element={<SecurityPortalPage />} />
                     <Route path="/clinic-portal" element={<ClinicPortalPage />} />
+                    <Route path="/bookings" element={<BookingsPage bookings={bookings} sessions={sessions} updateBookingStatus={handleUpdateBookingStatus} userRole={user?.role} sites={sites} racDefinitions={racDefinitions} currentSiteId={currentSiteId} />} />
                   </Routes>
                   <GeminiAdvisor />
                 </Layout>

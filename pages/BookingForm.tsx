@@ -154,7 +154,7 @@ const BookingForm: React.FC<BookingFormProps> = ({ addBookings, sessions, userRo
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!activeSessionId) {
-      addNotification({ id: uuidv4(), type: 'warning', title: 'Input Error', message: 'Please select a session.', timestamp: new Date(), isRead: false });
+      addNotification({ id: uuidv4(), type: 'warning', title: t.booking.inputError, message: t.booking.selectSessionWarning, timestamp: new Date(), isRead: false });
       return;
     }
 
@@ -202,8 +202,8 @@ const BookingForm: React.FC<BookingFormProps> = ({ addBookings, sessions, userRo
     addNotification({ 
         id: uuidv4(), 
         type: waitlistedCount > 0 ? 'warning' : 'success', 
-        title: waitlistedCount > 0 ? 'Queue Processed' : 'Success', 
-        message: waitlistedCount > 0 ? `${waitlistedCount} staff added to FIFO Waitlist.` : `Confirmed enrollment for ${newBookings.length} personnel.`, 
+        title: waitlistedCount > 0 ? t.booking.queueProcessedTitle : t.booking.successTitle, 
+        message: waitlistedCount > 0 ? t.booking.waitlistSuccessMsg.replace('{count}', String(waitlistedCount)) : t.booking.enrollmentSuccessMsg.replace('{count}', String(newBookings.length)), 
         timestamp: new Date(), 
         isRead: false 
     });
@@ -242,12 +242,12 @@ const BookingForm: React.FC<BookingFormProps> = ({ addBookings, sessions, userRo
                   <AlertCircle size={24} />
               </div>
               <div>
-                  <h4 className="font-black text-amber-800 dark:text-amber-200 uppercase tracking-tight text-sm">Capacity Warning</h4>
+                  <h4 className="font-black text-amber-800 dark:text-amber-200 uppercase tracking-tight text-sm">{t.booking.capacityWarningTitle}</h4>
                   <p className="text-amber-700 dark:text-amber-400 text-sm font-medium leading-relaxed mt-0.5">
                       {t.booking.waitlistWarning}
                   </p>
                   <div className="mt-2 flex items-center gap-2">
-                      <span className="text-[10px] font-black uppercase text-amber-500 bg-white dark:bg-slate-800 px-2 py-0.5 rounded border border-amber-200 dark:border-amber-800">Occupancy: {currentOccupancy} / {currentSession?.capacity}</span>
+                      <span className="text-[10px] font-black uppercase text-amber-500 bg-white dark:bg-slate-800 px-2 py-0.5 rounded border border-amber-200 dark:border-amber-800">{t.booking.occupancy}: {currentOccupancy} / {currentSession?.capacity}</span>
                   </div>
               </div>
           </div>
@@ -270,7 +270,7 @@ const BookingForm: React.FC<BookingFormProps> = ({ addBookings, sessions, userRo
                    <select 
                       value={activeSessionId} 
                       onChange={(e) => setActiveSessionId(e.target.value)}
-                      title="Select Training Session"
+                      title={t.booking.selectSession}
                       className={`w-full bg-white dark:bg-slate-700 border-2 rounded-2xl p-4 text-xl font-bold appearance-none cursor-pointer transition-all ${isSessionFull ? 'border-amber-400' : targetRac ? 'border-indigo-500 ring-4 ring-indigo-500/10' : 'border-slate-200 dark:border-slate-600 focus:border-indigo-500'}`}
                       required
                     >
@@ -289,10 +289,10 @@ const BookingForm: React.FC<BookingFormProps> = ({ addBookings, sessions, userRo
               <table className="min-w-full">
                 <thead>
                   <tr className="text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">
-                    <th className="px-4 py-3">ID Number</th>
-                    <th className="px-4 py-3">Full Name</th>
-                    <th className="px-4 py-3">Department</th>
-                    <th className="px-4 py-3">Company</th>
+                    <th className="px-4 py-3">{t.booking.thIdNumber}</th>
+                    <th className="px-4 py-3">{t.booking.thFullName}</th>
+                    <th className="px-4 py-3">{t.booking.thDepartment}</th>
+                    <th className="px-4 py-3">{t.booking.thCompany}</th>
                     <th className="px-4 py-3 w-10"></th>
                   </tr>
                 </thead>
@@ -311,20 +311,20 @@ const BookingForm: React.FC<BookingFormProps> = ({ addBookings, sessions, userRo
                           />
                         </td>
                         <td className="px-2 py-3">
-                          <input className="w-full bg-slate-50 dark:bg-slate-700 border-transparent focus:bg-white border focus:border-indigo-500 rounded-lg p-2 text-sm font-bold" placeholder="Full Name" value={row.name} onChange={(e) => handleRowChange(index, 'name', e.target.value)} />
+                          <input className="w-full bg-slate-50 dark:bg-slate-700 border-transparent focus:bg-white border focus:border-indigo-500 rounded-lg p-2 text-sm font-bold" placeholder={t.booking.thFullName} value={row.name} onChange={(e) => handleRowChange(index, 'name', e.target.value)} />
                         </td>
                         <td className="px-2 py-3">
-                          <select className="w-full bg-slate-50 dark:bg-slate-700 border-transparent rounded-lg p-2 text-xs" value={row.department} title="Select Department" onChange={(e) => handleRowChange(index, 'department', e.target.value)}>
+                          <select className="w-full bg-slate-50 dark:bg-slate-700 border-transparent rounded-lg p-2 text-xs" value={row.department} title={t.common.department} onChange={(e) => handleRowChange(index, 'department', e.target.value)}>
                               {DEPARTMENTS.map(d => <option key={d} value={d}>{d}</option>)}
                           </select>
                         </td>
                         <td className="px-2 py-3">
-                          <select className="w-full bg-slate-50 dark:bg-slate-700 border-transparent rounded-lg p-2 text-xs" value={row.company} title="Select Company" onChange={(e) => handleRowChange(index, 'company', e.target.value)}>
+                          <select className="w-full bg-slate-50 dark:bg-slate-700 border-transparent rounded-lg p-2 text-xs" value={row.company} title={t.common.company} onChange={(e) => handleRowChange(index, 'company', e.target.value)}>
                               {companies.map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
                           </select>
                         </td>
                         <td className="px-2 py-3 text-center">
-                          <button type="button" onClick={() => setRows(rows.filter((_, i) => i !== index))} title="Delete Row" className="text-slate-300 hover:text-red-500 transition-colors"><Trash2 size={16}/></button>
+                          <button type="button" onClick={() => setRows(rows.filter((_, i) => i !== index))} title={t.booking.deleteRow} className="text-slate-300 hover:text-red-500 transition-colors"><Trash2 size={16}/></button>
                         </td>
                       </tr>
                     );
@@ -335,14 +335,14 @@ const BookingForm: React.FC<BookingFormProps> = ({ addBookings, sessions, userRo
               {rows.length > 0 && (
                 <div className="px-6 py-4 bg-slate-50 dark:bg-slate-900/40 border border-slate-200 dark:border-slate-700 rounded-2xl mt-4 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs font-mono text-slate-500 dark:text-slate-400 shrink-0">
                   <div className="flex items-center gap-2">
-                    <span>Rows per page:</span>
+                    <span>{t.booking.rowsPerPage}</span>
                     <select
                       value={rowsPerPage}
                       onChange={e => {
                         setRowsPerPage(Number(e.target.value));
                         setCurrentPage(1);
                       }}
-                      title="Rows per page"
+                      title={t.booking.rowsPerPage}
                       className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-2 py-1 focus:outline-none focus:ring-1 focus:ring-indigo-500 cursor-pointer text-slate-700 dark:text-slate-200"
                     >
                       {[20, 30, 50, 80, 100].map(val => (
@@ -352,7 +352,10 @@ const BookingForm: React.FC<BookingFormProps> = ({ addBookings, sessions, userRo
                   </div>
                   <div className="flex items-center gap-4">
                     <span>
-                      Showing {Math.min(rows.length, (currentPage - 1) * rowsPerPage + 1)}-{Math.min(rows.length, currentPage * rowsPerPage)} of {rows.length}
+                      {t.booking.showingOf
+                        .replace('{start}', String(Math.min(rows.length, (currentPage - 1) * rowsPerPage + 1)))
+                        .replace('{end}', String(Math.min(rows.length, currentPage * rowsPerPage)))
+                        .replace('{total}', String(rows.length))}
                     </span>
                     <div className="flex items-center gap-1">
                       <button
@@ -360,7 +363,7 @@ const BookingForm: React.FC<BookingFormProps> = ({ addBookings, sessions, userRo
                         disabled={currentPage === 1}
                         onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
                         className="p-1.5 rounded-lg border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700 disabled:opacity-40 disabled:hover:bg-transparent transition-colors text-slate-500 dark:text-slate-400"
-                        title="Previous Page"
+                        title={t.booking.prevPage}
                       >
                         <ChevronLeft size={14} />
                       </button>
@@ -369,7 +372,7 @@ const BookingForm: React.FC<BookingFormProps> = ({ addBookings, sessions, userRo
                         disabled={currentPage === totalPages}
                         onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
                         className="p-1.5 rounded-lg border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700 disabled:opacity-40 disabled:hover:bg-transparent transition-colors text-slate-500 dark:text-slate-400"
-                        title="Next Page"
+                        title={t.booking.nextPage}
                       >
                         <ChevronRight size={14} />
                       </button>
@@ -384,7 +387,7 @@ const BookingForm: React.FC<BookingFormProps> = ({ addBookings, sessions, userRo
 
             <div className="p-8 border-t border-slate-100 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 flex justify-end">
               <button type="submit" className={`bg-indigo-600 hover:bg-indigo-500 text-white text-lg px-12 py-4 rounded-2xl font-black shadow-xl shadow-indigo-500/20 transition-all transform hover:-translate-y-1 ${isSessionFull ? 'from-amber-600 to-amber-500 shadow-amber-500/30' : ''}`}>
-                <Save size={20} className="inline mr-2" /> {isSessionFull ? 'Register to Waitlist' : t.booking.submitBooking}
+                <Save size={20} className="inline mr-2" /> {isSessionFull ? t.booking.registerToWaitlist : t.booking.submitBooking}
               </button>
             </div>
           </form>

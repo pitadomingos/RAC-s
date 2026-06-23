@@ -45,6 +45,17 @@ const TrainerInputPage: React.FC<TrainerInputPageProps> = ({
   const [currentPage, setCurrentPage] = useState(1);
   const [rowsPerPage, setRowsPerPage] = useState(20);
 
+  const getStatusLabel = (status: BookingStatus) => {
+    switch (status) {
+        case BookingStatus.PASSED: return t.common.passed;
+        case BookingStatus.FAILED: return t.common.failed;
+        case BookingStatus.ABSENT: return t.common.absent;
+        case BookingStatus.PENDING: return t.common.pending;
+        case BookingStatus.WAITLISTED: return t.common.waitlisted;
+        default: return status;
+    }
+  };
+
   const availableSessions = useMemo(() => {
       let relevantSessions = sessions;
       if (userRole === UserRole.RAC_TRAINER) {
@@ -169,7 +180,7 @@ const TrainerInputPage: React.FC<TrainerInputPageProps> = ({
     });
     updateBookings(bookingsToSave);
     await db.addLog('AUDIT', `TRAINING_RESULTS_COMMITTED: ${bookingsToSave.length} records for ${selectedSession?.racType}`, user?.name || 'Instructor', { sessionId: selectedSessionId });
-    setSuccessMsg('Results saved successfully!');
+    setSuccessMsg(t.trainer.saveSuccess);
     setHasUnsavedChanges(false);
     setTimeout(() => window.print(), 100);
     setTimeout(() => { setSuccessMsg(''); setSelectedSessionId(''); setSessionBookings([]); }, 1500);
@@ -229,8 +240,8 @@ const TrainerInputPage: React.FC<TrainerInputPageProps> = ({
             </div>
             {selectedSessionId && (
                 <div className="flex gap-4">
-                    <div className="bg-white/10 p-3 rounded-xl border border-white/10 backdrop-blur-sm text-center min-w-[100px]"><div className="text-2xl font-bold">{sessionBookings.length}</div><div className="text-[10px] uppercase text-slate-400 font-bold">Total</div></div>
-                    <div className="bg-green-500/20 p-3 rounded-xl border border-green-500/30 backdrop-blur-sm text-center min-w-[100px]"><div className="text-2xl font-bold text-green-400">{sessionBookings.filter(b => b.status === BookingStatus.PASSED).length}</div><div className="text-[10px] uppercase text-green-300 font-bold">Passing</div></div>
+                    <div className="bg-white/10 p-3 rounded-xl border border-white/10 backdrop-blur-sm text-center min-w-[100px]"><div className="text-2xl font-bold">{sessionBookings.length}</div><div className="text-[10px] uppercase text-slate-400 font-bold">{t.trainer.total}</div></div>
+                    <div className="bg-green-500/20 p-3 rounded-xl border border-green-500/30 backdrop-blur-sm text-center min-w-[100px]"><div className="text-2xl font-bold text-green-400">{sessionBookings.filter(b => b.status === BookingStatus.PASSED).length}</div><div className="text-[10px] uppercase text-green-300 font-bold">{t.trainer.passing}</div></div>
                 </div>
             )}
          </div>
@@ -238,7 +249,7 @@ const TrainerInputPage: React.FC<TrainerInputPageProps> = ({
       <div className="bg-white dark:bg-slate-800 rounded-xl shadow-lg border border-slate-100 dark:border-slate-700 overflow-hidden flex flex-col min-h-[600px] print:shadow-none print:border-none print:min-h-0">
           <div className="no-print p-6 border-b border-slate-100 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50">
             {availableSessions.length === 0 ? (<div className="bg-orange-50 text-orange-800 p-4 rounded-xl text-sm border border-orange-200 flex items-center justify-center gap-2"><AlertCircle size={16} /><span>{t.trainer.noSessions}</span></div>) : (
-                  <div className="max-w-3xl mx-auto"><label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2 ml-1">{t.trainer.selectSession}</label><div className="relative group"><select value={selectedSessionId} onChange={handleSessionChange} className="w-full bg-white dark:bg-slate-700 border-2 border-slate-200 dark:border-slate-600 text-slate-900 dark:text-white rounded-xl shadow-sm focus:border-yellow-500 focus:ring-4 focus:ring-yellow-500/20 p-4 pl-12 text-lg font-bold appearance-none cursor-pointer transition-all" title="Select Training Session" aria-label="Select Training Session"><option value="">{t.trainer.chooseSession}</option>{availableSessions.map(session => (<option key={session.id} value={session.id}>{session.racType} • {session.date} • {session.location} ({session.capacity} Cap)</option>))}</select><ClipboardList className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-hover:text-yellow-500 transition-colors" size={24} /><ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400" size={20} /></div></div>
+                   <div className="max-w-3xl mx-auto"><label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2 ml-1">{t.trainer.selectSession}</label><div className="relative group"><select value={selectedSessionId} onChange={handleSessionChange} className="w-full bg-white dark:bg-slate-700 border-2 border-slate-200 dark:border-slate-600 text-slate-900 dark:text-white rounded-xl shadow-sm focus:border-yellow-500 focus:ring-4 focus:ring-yellow-500/20 p-4 pl-12 text-lg font-bold appearance-none cursor-pointer transition-all" title={t.trainer.selectSession} aria-label={t.trainer.selectSession}><option value="">{t.trainer.chooseSession}</option>{availableSessions.map(session => (<option key={session.id} value={session.id}>{session.racType} • {session.date} • {session.location} ({session.capacity} Cap)</option>))}</select><ClipboardList className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-hover:text-yellow-500 transition-colors" size={24} /><ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400" size={20} /></div></div>
             )}
           </div>
           {selectedSessionId && sessionBookings.length > 0 ? (
@@ -257,69 +268,126 @@ const TrainerInputPage: React.FC<TrainerInputPageProps> = ({
                             <ShieldCheck size={28} className="text-indigo-600" />
                             <span className="text-xl font-black tracking-tighter text-slate-900">ZeroGate</span>
                         </div>
-                        <span className="text-[8px] font-black uppercase text-slate-400 mt-1 tracking-widest">Training System Register</span>
+                        <span className="text-[8px] font-black uppercase text-slate-400 mt-1 tracking-widest">{t.trainer.systemRegister}</span>
                     </div>
                 </div>
 
                 <div className="flex justify-between items-start mb-8 bg-slate-50 p-4 rounded-xl border border-slate-100">
                     <div>
-                        <span className="block text-[9px] font-black text-slate-400 uppercase tracking-widest">Issuing Department</span>
-                        <span className="text-sm font-bold text-slate-800 uppercase">HSE Training & Certification Department</span>
+                        <span className="block text-[9px] font-black text-slate-400 uppercase tracking-widest">{t.trainer.issuingDept}</span>
+                        <span className="text-sm font-bold text-slate-800 uppercase">{t.trainer.hseDeptName}</span>
                     </div>
                     <div className="text-right">
-                        <span className="block text-[9px] font-black text-slate-400 uppercase tracking-widest">Generated On</span>
-                        <span className="text-xs font-bold text-slate-800 uppercase font-mono">{new Date().toLocaleString('en-GB')}</span>
+                        <span className="block text-[9px] font-black text-slate-400 uppercase tracking-widest">{t.trainer.generatedOn}</span>
+                        <span className="text-xs font-bold text-slate-800 uppercase font-mono">{new Date().toLocaleString(language === 'en' ? 'en-GB' : 'pt-PT')}</span>
                     </div>
                 </div>
 
                 <div className="text-center mb-8">
-                    <h2 className="text-2xl font-black uppercase tracking-tight text-slate-900">
-                        ZeroGate Critical Activity Requirements (RAC) Training Register
+                    <h2 className="text-2xl font-black uppercase tracking-tight text-slate-900 font-sans">
+                        {t.trainer.printTitle}
                     </h2>
                     <p className="text-xs text-slate-500 font-mono mt-1">Ref: ZG-TRN-{currentSession?.id?.substring(0,8).toUpperCase() || 'N/A'}</p>
                 </div>
 
                 <div className="grid grid-cols-4 gap-4 text-sm border-t border-slate-200 pt-4 font-sans text-slate-800">
                     <div>
-                        <span className="block text-[10px] uppercase font-bold text-slate-400">Date</span>
+                        <span className="block text-[10px] uppercase font-bold text-slate-400">{t.common.date}</span>
                         <span className="font-bold text-slate-900">{currentSession?.date}</span>
                     </div>
                     <div>
-                        <span className="block text-[10px] uppercase font-bold text-slate-400">Time</span>
+                        <span className="block text-[10px] uppercase font-bold text-slate-400">{t.common.time}</span>
                         <span className="font-bold text-slate-900">{currentSession?.startTime}</span>
                     </div>
                     <div>
-                        <span className="block text-[10px] uppercase font-bold text-slate-400">Location</span>
+                        <span className="block text-[10px] uppercase font-bold text-slate-400">{t.schedule.modal.location}</span>
                         <span className="font-bold text-slate-900">{currentSession?.location}</span>
                     </div>
                     <div>
-                        <span className="block text-[10px] uppercase font-bold text-slate-400">Instructor</span>
+                        <span className="block text-[10px] uppercase font-bold text-slate-400">{t.schedule.modal.instructor}</span>
                         <span className="font-bold text-slate-900">{currentSession?.instructor}</span>
                     </div>
                 </div>
             </div>
-                <div className="p-4 border-b border-slate-100 dark:border-slate-700 flex flex-col xl:flex-row gap-4 justify-between items-center bg-white dark:bg-slate-800 sticky top-0 z-20 shadow-sm no-print"><div className="flex flex-wrap items-center gap-2 w-full xl:w-auto"><div className="relative flex-1 min-w-[200px]"><Search className="absolute left-3 top-2.5 text-slate-400" size={16} /><input type="text" placeholder="Find student..." className="w-full pl-9 pr-4 py-2 bg-slate-100 dark:bg-slate-700 border-transparent focus:bg-white dark:focus:bg-slate-600 border focus:border-blue-500 rounded-lg text-sm transition-all outline-none" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} /></div><div className="flex bg-slate-100 dark:bg-slate-700 p-1 rounded-lg">{['All', 'Passed', 'Failed', 'Absent'].map(filter => (<button key={filter} onClick={() => setStatusFilter(filter as any)} className={`px-3 py-1.5 text-xs font-bold rounded-md transition-all ${statusFilter === filter ? 'bg-white dark:bg-slate-600 shadow-sm text-blue-600 dark:text-blue-400' : 'text-slate-500 hover:text-slate-700 dark:text-slate-400'}`}>{filter}</button>))}</div></div><div className="flex items-center gap-2 w-full xl:w-auto justify-end"><button onClick={() => window.print()} className="flex items-center gap-2 px-4 py-2 bg-slate-800 text-white rounded-lg text-xs font-bold hover:bg-slate-700 transition-colors shadow-sm"><Printer size={16} /> Print Register</button><button onClick={() => setShowBulkTools(!showBulkTools)} className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold border transition-colors ${showBulkTools ? 'bg-indigo-50 border-indigo-200 text-indigo-700' : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50'}`}><Sliders size={16} /> Batch Operations</button></div></div>
-                {showBulkTools && (<div className="bg-indigo-50/50 dark:bg-indigo-900/10 border-b border-indigo-100 dark:border-indigo-800 p-4 animate-fade-in-down flex flex-wrap items-center gap-4 no-print"><button onClick={handleBulkAttendance} className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-lg text-xs font-bold text-slate-700 dark:text-slate-300 hover:text-blue-600 shadow-sm"><CheckSquare size={16} /> Mark All Present</button><div className="h-6 w-px bg-indigo-200 dark:bg-indigo-700 mx-2"></div><div className="flex items-center gap-2"><span className="text-xs font-bold text-indigo-800 dark:text-indigo-300">Bulk Score:</span><input type="number" placeholder="Theory" className="w-20 px-2 py-1.5 text-xs border rounded-md focus:ring-2 focus:ring-indigo-500 outline-none text-center" value={bulkTheory} onChange={(e) => setBulkTheory(e.target.value)}/>{reqs.needsPractical && (<input type="number" placeholder="Prac" className="w-20 px-2 py-1.5 text-xs border rounded-md focus:ring-2 focus:ring-indigo-500 outline-none text-center" value={bulkPractical} onChange={(e) => setBulkPractical(e.target.value)}/>)}<button onClick={handleBulkScoreApply} disabled={!bulkTheory && !bulkPractical} className="bg-indigo-600 text-white px-3 py-1.5 rounded-md text-xs font-bold hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed">Apply</button></div></div>)}
+                <div className="p-4 border-b border-slate-100 dark:border-slate-700 flex flex-col xl:flex-row gap-4 justify-between items-center bg-white dark:bg-slate-800 sticky top-0 z-20 shadow-sm no-print">
+                  <div className="flex flex-wrap items-center gap-2 w-full xl:w-auto">
+                    <div className="relative flex-1 min-w-[200px]">
+                      <Search className="absolute left-3 top-2.5 text-slate-400" size={16} />
+                      <input 
+                        type="text" 
+                        placeholder={t.trainer.findStudent} 
+                        className="w-full pl-9 pr-4 py-2 bg-slate-100 dark:bg-slate-700 border-transparent focus:bg-white dark:focus:bg-slate-600 border focus:border-blue-500 rounded-lg text-sm transition-all outline-none" 
+                        value={searchQuery} 
+                        onChange={(e) => setSearchQuery(e.target.value)} 
+                      />
+                    </div>
+                    <div className="flex bg-slate-100 dark:bg-slate-700 p-1 rounded-lg">
+                      {(['All', 'Passed', 'Failed', 'Absent'] as const).map(filter => {
+                        const labelMap = {
+                          All: t.common.all,
+                          Passed: t.common.passed,
+                          Failed: t.common.failed,
+                          Absent: t.common.absent
+                        };
+                        return (
+                          <button 
+                            key={filter} 
+                            onClick={() => setStatusFilter(filter)} 
+                            className={`px-3 py-1.5 text-xs font-bold rounded-md transition-all ${statusFilter === filter ? 'bg-white dark:bg-slate-600 shadow-sm text-blue-600 dark:text-blue-400' : 'text-slate-500 hover:text-slate-700 dark:text-slate-400'}`}
+                          >
+                            {labelMap[filter]}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2 w-full xl:w-auto justify-end">
+                    <button onClick={() => window.print()} className="flex items-center gap-2 px-4 py-2 bg-slate-800 text-white rounded-lg text-xs font-bold hover:bg-slate-700 transition-colors shadow-sm">
+                      <Printer size={16} /> {t.trainer.printRegister}
+                    </button>
+                    <button onClick={() => setShowBulkTools(!showBulkTools)} className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold border transition-colors ${showBulkTools ? 'bg-indigo-50 border-indigo-200 text-indigo-700' : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50'}`}>
+                      <Sliders size={16} /> {t.trainer.batchOperations}
+                    </button>
+                  </div>
+                </div>
+                {showBulkTools && (
+                  <div className="bg-indigo-50/50 dark:bg-indigo-900/10 border-b border-indigo-100 dark:border-indigo-800 p-4 animate-fade-in-down flex flex-wrap items-center gap-4 no-print">
+                    <button onClick={handleBulkAttendance} className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-lg text-xs font-bold text-slate-700 dark:text-slate-300 hover:text-blue-600 shadow-sm">
+                      <CheckSquare size={16} /> {t.trainer.markAllPresent}
+                    </button>
+                    <div className="h-6 w-px bg-indigo-200 dark:bg-indigo-700 mx-2"></div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-bold text-indigo-800 dark:text-indigo-300">{t.trainer.bulkScore}</span>
+                      <input type="number" placeholder={t.trainer.theoryPlaceholder} className="w-20 px-2 py-1.5 text-xs border rounded-md focus:ring-2 focus:ring-indigo-500 outline-none text-center" value={bulkTheory} onChange={(e) => setBulkTheory(e.target.value)}/>
+                      {reqs.needsPractical && (
+                        <input type="number" placeholder={t.trainer.practicalPlaceholder} className="w-20 px-2 py-1.5 text-xs border rounded-md focus:ring-2 focus:ring-indigo-500 outline-none text-center" value={bulkPractical} onChange={(e) => setBulkPractical(e.target.value)}/>
+                      )}
+                      <button onClick={handleBulkScoreApply} disabled={!bulkTheory && !bulkPractical} className="bg-indigo-600 text-white px-3 py-1.5 rounded-md text-xs font-bold hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed">
+                        {t.trainer.apply}
+                      </button>
+                    </div>
+                  </div>
+                )}
                 <div className="flex-1 overflow-x-auto">
                   <table className="min-w-full divide-y divide-slate-200 dark:divide-slate-700 border-collapse">
                     <thead className="bg-slate-50 dark:bg-slate-800 print:bg-gray-100">
                       <tr>
                         <th onClick={() => handleHeaderClick('Name')} className="px-4 py-3 text-left text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider cursor-pointer hover:text-slate-700 dark:hover:text-slate-200 group print:text-black print:border-b print:border-black">
-                          <div className="flex items-center gap-1">Student <ArrowUpDown size={12} className={`opacity-0 group-hover:opacity-100 ${sortBy === 'Name' ? 'opacity-100' : ''} no-print`}/></div>
+                          <div className="flex items-center gap-1">{t.trainer.thStudent} <ArrowUpDown size={12} className={`opacity-0 group-hover:opacity-100 ${sortBy === 'Name' ? 'opacity-100' : ''} no-print`}/></div>
                         </th>
                         <th onClick={() => handleHeaderClick('ID')} className="px-4 py-3 text-left text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider cursor-pointer hover:text-slate-700 group hidden md:table-cell print:table-cell print:text-black print:border-b print:border-black">
-                          <div className="flex items-center gap-1">ID <ArrowUpDown size={12} className={`opacity-0 group-hover:opacity-100 ${sortBy === 'ID' ? 'opacity-100' : ''} no-print`}/></div>
+                          <div className="flex items-center gap-1">{t.trainer.thId} <ArrowUpDown size={12} className={`opacity-0 group-hover:opacity-100 ${sortBy === 'ID' ? 'opacity-100' : ''} no-print`}/></div>
                         </th>
                         <th onClick={() => handleHeaderClick('Company')} className="px-4 py-3 text-left text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider cursor-pointer hover:text-slate-700 group hidden lg:table-cell print:table-cell print:text-black print:border-b print:border-black">
-                          <div className="flex items-center gap-1">Company <ArrowUpDown size={12} className={`opacity-0 group-hover:opacity-100 ${sortBy === 'Company' ? 'opacity-100' : ''} no-print`}/></div>
+                          <div className="flex items-center gap-1">{t.trainer.thCompany} <ArrowUpDown size={12} className={`opacity-0 group-hover:opacity-100 ${sortBy === 'Company' ? 'opacity-100' : ''} no-print`}/></div>
                         </th>
-                        <th className="px-4 py-3 text-center text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider w-16 print:text-black print:border-b print:border-black">Present</th>
-                        {reqs.needsDl && <th className="px-4 py-3 text-center text-xs font-bold text-red-500 uppercase tracking-wider w-16 bg-red-50 dark:bg-red-900/10 print:bg-transparent print:text-black print:border-b print:border-black">DL Ver</th>}
-                        <th className="px-4 py-3 text-center text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider w-24 print:text-black print:border-b print:border-black">Theory</th>
-                        {reqs.needsPractical && <th className="px-4 py-3 text-center text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider w-24 print:text-black print:border-b print:border-black">Practical</th>}
-                        <th className="px-4 py-3 text-left text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider w-32 print:text-black print:border-b print:border-black">Status</th>
-                        <th className="px-4 py-3 text-left text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider w-48 no-print">Remarks</th>
-                        <th className="hidden print:table-cell px-4 py-3 text-center text-xs font-bold text-black uppercase tracking-wider w-32 border-b border-black">Signature</th>
+                        <th className="px-4 py-3 text-center text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider w-16 print:text-black print:border-b print:border-black">{t.trainer.thPresent}</th>
+                        {reqs.needsDl && <th className="px-4 py-3 text-center text-xs font-bold text-red-500 uppercase tracking-wider w-16 bg-red-50 dark:bg-red-900/10 print:bg-transparent print:text-black print:border-b print:border-black">{t.trainer.thDlVer}</th>}
+                        <th className="px-4 py-3 text-center text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider w-24 print:text-black print:border-b print:border-black">{t.trainer.thTheory}</th>
+                        {reqs.needsPractical && <th className="px-4 py-3 text-center text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider w-24 print:text-black print:border-b print:border-black">{t.trainer.thPractical}</th>}
+                        <th className="px-4 py-3 text-left text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider w-32 print:text-black print:border-b print:border-black">{t.trainer.thStatus}</th>
+                        <th className="px-4 py-3 text-left text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider w-48 no-print">{t.trainer.thRemarks}</th>
+                        <th className="hidden print:table-cell px-4 py-3 text-center text-xs font-bold text-black uppercase tracking-wider w-32 border-b border-black">{t.trainer.thSignature}</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100 dark:divide-slate-700 bg-white dark:bg-slate-800 print:divide-gray-300">
@@ -335,11 +403,11 @@ const TrainerInputPage: React.FC<TrainerInputPageProps> = ({
                             <td className="px-4 py-3 hidden md:table-cell text-sm font-mono text-slate-600 dark:text-slate-300 print:table-cell print:text-black print:py-2 print:border-b print:border-gray-200">{booking.employee.recordId}</td>
                             <td className="px-4 py-3 hidden lg:table-cell text-xs text-slate-500 print:table-cell print:text-black print:py-2 print:border-b print:border-gray-200">{booking.employee.company}</td>
                             <td className="px-4 py-3 text-center print:py-2 print:border-b print:border-gray-200">
-                              <input type="checkbox" className="w-5 h-5 rounded text-blue-600 focus:ring-blue-500 border-gray-300 cursor-pointer" checked={booking.attendance || false} onChange={(e) => handleInputChange(booking.id, 'attendance', e.target.checked)} title="Mark Present" aria-label="Mark Present" />
+                              <input type="checkbox" className="w-5 h-5 rounded text-blue-600 focus:ring-blue-500 border-gray-300 cursor-pointer" checked={booking.attendance || false} onChange={(e) => handleInputChange(booking.id, 'attendance', e.target.checked)} title={t.trainer.thPresent} aria-label={t.trainer.thPresent} />
                             </td>
                             {reqs.needsDl && (
                               <td className="px-4 py-3 text-center bg-red-50/30 dark:bg-red-900/10 print:bg-transparent print:py-2 print:border-b print:border-gray-200">
-                                <input type="checkbox" className="w-5 h-5 rounded text-red-600 focus:ring-red-500 border-gray-300 cursor-pointer" checked={booking.driverLicenseVerified || false} disabled={isAbsent} onChange={(e) => handleInputChange(booking.id, 'driverLicenseVerified', e.target.checked)} title="Driver's License Verified" aria-label="Driver's License Verified" />
+                                <input type="checkbox" className="w-5 h-5 rounded text-red-600 focus:ring-red-500 border-gray-300 cursor-pointer" checked={booking.driverLicenseVerified || false} disabled={isAbsent} onChange={(e) => handleInputChange(booking.id, 'driverLicenseVerified', e.target.checked)} title={t.trainer.thDlVer} aria-label={t.trainer.thDlVer} />
                               </td>
                             )}
                             <td className="px-4 py-3 print:py-2 print:border-b print:border-gray-200">
@@ -355,8 +423,8 @@ const TrainerInputPage: React.FC<TrainerInputPageProps> = ({
                                 value={isAbsent ? 0 : booking.theoryScore} 
                                 disabled={isDisqualified || isAbsent} 
                                 onChange={(e) => handleInputChange(booking.id, 'theoryScore', parseInt(e.target.value) || 0)}
-                                title="Theory Score"
-                                placeholder="Theory Score"
+                                title={t.trainer.thTheory}
+                                placeholder={t.trainer.thTheory}
                               />
                             </td>
                             {reqs.needsPractical && (
@@ -373,20 +441,20 @@ const TrainerInputPage: React.FC<TrainerInputPageProps> = ({
                                     }`} 
                                     value={booking.practicalScore} 
                                     onChange={(e) => handleInputChange(booking.id, 'practicalScore', parseInt(e.target.value) || 0)}
-                                    title="Practical Score"
-                                    placeholder="Practical Score"
+                                    title={t.trainer.thPractical}
+                                    placeholder={t.trainer.thPractical}
                                   />
                                 )}
                               </td>
                             )}
                             <td className="px-4 py-3 print:py-2 print:border-b print:border-gray-200">
                               <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-black uppercase tracking-wider border shadow-sm ${isPassed ? 'bg-green-100 border-green-200 text-green-700 dark:text-green-400' : isAbsent ? 'bg-slate-100 border-slate-200 text-slate-700 dark:text-slate-400' : 'bg-red-100 border-red-200 text-red-700 dark:text-red-400'}`}>
-                                {isAbsent ? <UserX size={10} /> : null}{booking.status}
+                                {isAbsent ? <UserX size={10} /> : null}{getStatusLabel(booking.status)}
                               </span>
                             </td>
                             <td className="px-4 py-3 no-print">
                               <div className="relative">
-                                <input type="text" placeholder="Add remarks..." className="w-full bg-transparent border-b border-slate-200 dark:border-slate-700 focus:border-blue-500 outline-none text-xs py-1 text-slate-600 dark:text-slate-300" value={booking.comments || ''} onChange={(e) => handleInputChange(booking.id, 'comments', e.target.value)}/>
+                                <input type="text" placeholder={t.trainer.addRemarks} className="w-full bg-transparent border-b border-slate-200 dark:border-slate-700 focus:border-blue-500 outline-none text-xs py-1 text-slate-600 dark:text-slate-300" value={booking.comments || ''} onChange={(e) => handleInputChange(booking.id, 'comments', e.target.value)}/>
                                 <MessageSquare size={10} className="absolute right-0 top-1.5 text-slate-300 pointer-events-none" />
                               </div>
                             </td>
@@ -401,9 +469,9 @@ const TrainerInputPage: React.FC<TrainerInputPageProps> = ({
               {processedBookings.length > 0 && (
                 <div className="px-6 py-4 bg-slate-50 dark:bg-slate-900/40 border-t border-slate-100 dark:border-slate-700 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs font-mono text-slate-500 dark:text-slate-400 shrink-0 no-print">
                   <div className="flex items-center gap-2">
-                    <span>Rows per page:</span>
+                    <span>{t.common.rowsPerPage}</span>
                     <select
-                      title="Rows per page"
+                      title={t.common.rowsPerPage}
                       value={rowsPerPage}
                       onChange={e => {
                         setRowsPerPage(Number(e.target.value));
@@ -418,7 +486,10 @@ const TrainerInputPage: React.FC<TrainerInputPageProps> = ({
                   </div>
                   <div className="flex items-center gap-4">
                     <span>
-                      Showing {Math.min(processedBookings.length, (currentPage - 1) * rowsPerPage + 1)}-{Math.min(processedBookings.length, currentPage * rowsPerPage)} of {processedBookings.length}
+                      {t.trainer.showingOf
+                        .replace('{start}', String(Math.min(processedBookings.length, (currentPage - 1) * rowsPerPage + 1)))
+                        .replace('{end}', String(Math.min(processedBookings.length, currentPage * rowsPerPage)))
+                        .replace('{total}', String(processedBookings.length))}
                     </span>
                     <div className="flex items-center gap-1">
                       <button
@@ -426,7 +497,7 @@ const TrainerInputPage: React.FC<TrainerInputPageProps> = ({
                         disabled={currentPage === 1}
                         onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
                         className="p-1.5 rounded-lg border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700 disabled:opacity-40 disabled:hover:bg-transparent transition-colors text-slate-500 dark:text-slate-400"
-                        title="Previous Page"
+                        title={t.booking.prevPage}
                       >
                         <ChevronLeft size={14} />
                       </button>
@@ -435,7 +506,7 @@ const TrainerInputPage: React.FC<TrainerInputPageProps> = ({
                         disabled={currentPage === totalPages}
                         onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
                         className="p-1.5 rounded-lg border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700 disabled:opacity-40 disabled:hover:bg-transparent transition-colors text-slate-500 dark:text-slate-400"
-                        title="Next Page"
+                        title={t.booking.nextPage}
                       >
                         <ChevronRight size={14} />
                       </button>
@@ -443,10 +514,50 @@ const TrainerInputPage: React.FC<TrainerInputPageProps> = ({
                   </div>
                 </div>
               )}
-                <div className="hidden print:flex mt-12 pt-8 border-t-2 border-black justify-between gap-20 page-break-inside-avoid"><div className="flex-1"><div className="border-t border-black w-full pt-2"><p className="font-bold text-sm text-black">Instructor Signature</p><p className="text-xs text-gray-500">I certify that the above results are accurate and true.</p></div></div><div className="flex-1"><div className="border-t border-black w-full pt-2"><p className="font-bold text-sm text-black">HSE Reviewer / Supervisor</p><p className="text-xs text-gray-500">Validation of training record.</p></div></div></div>
-                <div className="sticky bottom-0 z-30 p-4 bg-white dark:bg-slate-800 border-t border-slate-200 dark:border-slate-700 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)] flex justify-between items-center no-print"><div className="text-xs text-slate-500 font-medium">{hasUnsavedChanges ? <span className="text-amber-600 font-bold flex items-center gap-1"><AlertCircle size={14}/> Unsaved changes pending...</span> : <span className="text-green-600 flex items-center gap-1">{successMsg && <CheckCircle size={14}/>} {successMsg}</span>}</div><button onClick={handleSave} disabled={!hasUnsavedChanges} className={`flex items-center gap-2 px-8 py-3 rounded-xl font-bold shadow-lg transition-all transform hover:-translate-y-0.5 ${hasUnsavedChanges ? 'bg-yellow-500 hover:bg-yellow-400 text-slate-900 shadow-yellow-500/30' : 'bg-slate-200 text-slate-400 cursor-not-allowed shadow-none'}`}><Save size={18} /> {t.trainer.saveResults}</button></div>
+                <div className="hidden print:flex mt-12 pt-8 border-t-2 border-black justify-between gap-20 page-break-inside-avoid">
+                  <div className="flex-1">
+                    <div className="border-t border-black w-full pt-2">
+                      <p className="font-bold text-sm text-black">{t.trainer.instructorSignature}</p>
+                      <p className="text-xs text-gray-500">{t.trainer.certifyAccurate}</p>
+                    </div>
+                  </div>
+                  <div className="flex-1">
+                    <div className="border-t border-black w-full pt-2">
+                      <p className="font-bold text-sm text-black">{t.trainer.hseReviewer}</p>
+                      <p className="text-xs text-gray-500">{t.trainer.validationRecord}</p>
+                    </div>
+                  </div>
+                </div>
+                <div className="sticky bottom-0 z-30 p-4 bg-white dark:bg-slate-800 border-t border-slate-200 dark:border-slate-700 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)] flex justify-between items-center no-print">
+                  <div className="text-xs text-slate-500 font-medium">
+                    {hasUnsavedChanges ? (
+                      <span className="text-amber-600 font-bold flex items-center gap-1">
+                        <AlertCircle size={14}/> {t.trainer.unsavedChanges}
+                      </span>
+                    ) : (
+                      <span className="text-green-600 flex items-center gap-1">
+                        {successMsg && <CheckCircle size={14}/>} {successMsg}
+                      </span>
+                    )}
+                  </div>
+                  <button 
+                    onClick={handleSave} 
+                    disabled={!hasUnsavedChanges} 
+                    className={`flex items-center gap-2 px-8 py-3 rounded-xl font-bold shadow-lg transition-all transform hover:-translate-y-0.5 ${hasUnsavedChanges ? 'bg-yellow-500 hover:bg-yellow-400 text-slate-900 shadow-yellow-500/30' : 'bg-slate-200 text-slate-400 cursor-not-allowed shadow-none'}`}
+                  >
+                    <Save size={18} /> {t.trainer.saveResults}
+                  </button>
+                </div>
             </>
-          ) : (<div className="flex-1 flex flex-col items-center justify-center text-slate-400"><div className="bg-slate-50 dark:bg-slate-700/50 p-6 rounded-full mb-4"><ClipboardList size={48} className="text-slate-300 dark:text-slate-500" /></div><p className="font-medium text-lg">No pending sessions selected.</p><p className="text-sm">Choose a session above to start grading.</p></div>)}
+          ) : (
+            <div className="flex-1 flex flex-col items-center justify-center text-slate-400">
+              <div className="bg-slate-50 dark:bg-slate-700/50 p-6 rounded-full mb-4">
+                <ClipboardList size={48} className="text-slate-300 dark:text-slate-500" />
+              </div>
+              <p className="font-medium text-lg">{t.trainer.noPendingSelected}</p>
+              <p className="text-sm">{t.trainer.chooseSessionToStart}</p>
+            </div>
+          )}
       </div>
     </div>
   );

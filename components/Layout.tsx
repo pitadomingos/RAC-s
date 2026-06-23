@@ -158,11 +158,11 @@ const Layout: React.FC<LayoutProps> = ({
     { path: '/messages', label: t.nav.communications, icon: Send, visible: true },
     { path: '/manuals', label: t.nav.manuals, icon: BookOpen, visible: true },
   ] : [
-    { path: '/presentation', label: t.nav.presentation, icon: Rocket, visible: userRole === UserRole.SYSTEM_ADMIN },
     { path: '/system-blueprint', label: 'System Blueprint', icon: Compass, visible: userRole === UserRole.SYSTEM_ADMIN },
     { path: '/', label: t.nav.dashboard, icon: LayoutDashboard, visible: ![UserRole.USER, UserRole.RAC_TRAINER].includes(userRole) },
     { path: '/booking', label: t.nav.booking, icon: CalendarPlus, visible: userRole !== UserRole.RAC_TRAINER && userRole !== UserRole.ENTERPRISE_ADMIN && userRole !== UserRole.SITE_ADMIN },
     { path: '/results', label: t.nav.records, icon: ClipboardList, visible: userRole !== UserRole.RAC_TRAINER && userRole !== UserRole.ENTERPRISE_ADMIN },
+    { path: '/bookings', label: t.nav.bookings, icon: ScrollText, visible: [UserRole.SYSTEM_ADMIN, UserRole.SITE_ADMIN, UserRole.ENTERPRISE_ADMIN, UserRole.RAC_ADMIN].includes(userRole) },
     { path: '/database', label: t.nav.database, icon: Database, visible: userRole !== UserRole.USER && userRole !== UserRole.RAC_TRAINER },
     { path: '/integration', label: t.nav.integration, icon: GitMerge, visible: [UserRole.SYSTEM_ADMIN, UserRole.ENTERPRISE_ADMIN].includes(userRole) },
     { path: '/reports', label: t.nav.reports, icon: FileBarChart, visible: [UserRole.SYSTEM_ADMIN, UserRole.ENTERPRISE_ADMIN, UserRole.SITE_ADMIN].includes(userRole) },

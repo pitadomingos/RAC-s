@@ -11,7 +11,7 @@ import {
     ScanFace, AlertTriangle, ArrowRight, History, ShieldAlert, Cpu,
     CheckSquare, XCircle, Search, Terminal, Binary, FileSpreadsheet, Eye, EyeOff,
     BarChart3, Cloud, ShieldCheck, Timer, ListFilter, Bell, ArrowDown, QrCode,
-    Network, Share2, RefreshCw, Radio, UserX, Clock
+    Network, Share2, RefreshCw, Radio, UserX, Clock, ExternalLink, ArrowUpRight
 } from 'lucide-react';
 import { useNavigate, Navigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
@@ -174,6 +174,7 @@ const PresentationPage: React.FC = () => {
 
     const handleExit = () => {
         localStorage.removeItem('presentation_active');
+        localStorage.removeItem('cars_active_module');
         navigate('/');
         window.location.reload();
     };
@@ -316,18 +317,68 @@ const PresentationPage: React.FC = () => {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         {[
                             { name: 'EduDesk', sub: t.proposal.aboutMe.portfolio.edudesk, icon: GraduationCap, color: 'indigo' },
-                            { name: 'H365', sub: t.proposal.aboutMe.portfolio.h365, icon: Activity, color: 'rose' },
+                            { 
+                                name: 'H365', 
+                                sub: t.proposal.aboutMe.portfolio.h365, 
+                                icon: Activity, 
+                                color: 'rose', 
+                                url: 'https://h365-new.vercel.app/',
+                                spanTwo: true,
+                                subLinks: [
+                                    { label: 'CHAEM Portal', url: 'https://chaem-app.vercel.app/' },
+                                    { label: 'Patient Portal', url: 'https://h365-patient-portal-red.vercel.app/' }
+                                ]
+                            },
+                            { 
+                                name: 'SCOTMOZ Command Centre', 
+                                sub: (t.proposal.aboutMe.portfolio as any).scotmoz || 'SCOTMOZ Command Centre App', 
+                                icon: Monitor, 
+                                color: 'blue', 
+                                url: 'https://scot-moz-command-centre.vercel.app/' 
+                            },
                             { name: 'SwiftPOS', sub: t.proposal.aboutMe.portfolio.swiftpos, icon: CreditCard, color: 'emerald' },
                             { name: 'MicroFin', sub: t.proposal.aboutMe.portfolio.microfin, icon: Wallet, color: 'amber' },
                             { name: 'Sentinel', sub: t.proposal.aboutMe.portfolio.sentinel, icon: Eye, color: 'blue' },
                             { name: 'Data Unification', sub: t.proposal.aboutMe.portfolio.dataUnif, icon: GitMerge, color: 'purple' },
                         ].map((item, i) => (
-                            <div key={i} className="group relative p-5 bg-slate-900/40 border border-slate-800 rounded-3xl backdrop-blur-sm hover:border-indigo-500/50 transition-all hover:bg-slate-900/80 shadow-lg">
-                                <div className={`w-12 h-12 rounded-2xl bg-${item.color}-500/10 flex items-center justify-center text-${item.color}-400 mb-3 group-hover:scale-110 transition-transform shadow-inner`}>
-                                    <item.icon size={24} />
+                            <div key={i} className={`group relative p-5 bg-slate-900/40 border border-slate-800 rounded-3xl backdrop-blur-sm hover:border-indigo-500/50 transition-all hover:bg-slate-900/80 shadow-lg flex flex-col justify-between ${item.spanTwo ? 'md:col-span-2' : ''}`}>
+                                <div>
+                                    <div className="flex justify-between items-start">
+                                        <div className={`w-12 h-12 rounded-2xl bg-${item.color}-500/10 flex items-center justify-center text-${item.color}-400 mb-3 group-hover:scale-110 transition-transform shadow-inner`}>
+                                            <item.icon size={24} />
+                                        </div>
+                                        {item.url && !item.subLinks && (
+                                            <a href={item.url} target="_blank" rel="noopener noreferrer" className="text-slate-500 hover:text-white p-1.5 hover:bg-white/5 rounded-lg transition-all" title="Visit App">
+                                                <ExternalLink size={16} />
+                                            </a>
+                                        )}
+                                    </div>
+                                    <div className="font-black text-white text-lg tracking-tight">
+                                        {item.url && !item.subLinks ? (
+                                            <a href={item.url} target="_blank" rel="noopener noreferrer" className="hover:text-indigo-400 transition-colors inline-flex items-center gap-1.5">
+                                                {item.name}
+                                                <ArrowUpRight size={14} className="opacity-0 group-hover:opacity-100 transition-opacity" />
+                                            </a>
+                                        ) : (
+                                            item.name
+                                        )}
+                                    </div>
+                                    <div className="text-[10px] text-slate-500 uppercase font-black tracking-widest mt-1 group-hover:text-slate-300 transition-colors">{item.sub}</div>
                                 </div>
-                                <div className="font-black text-white text-lg tracking-tight">{item.name}</div>
-                                <div className="text-[10px] text-slate-500 uppercase font-black tracking-widest mt-1 group-hover:text-slate-300 transition-colors">{item.sub}</div>
+                                
+                                {item.subLinks && (
+                                    <div className="mt-4 pt-3 border-t border-slate-800/80 flex flex-wrap gap-2 items-center">
+                                        <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest mr-1">App Links:</span>
+                                        <a href={item.url} target="_blank" rel="noopener noreferrer" className="text-[10px] font-bold bg-rose-500/10 hover:bg-rose-500 border border-rose-500/20 hover:border-rose-500 text-rose-400 hover:text-white px-3 py-1 rounded-xl transition-all inline-flex items-center gap-1">
+                                            H365 Gateway <ArrowUpRight size={10} />
+                                        </a>
+                                        {item.subLinks.map((sub, sIdx) => (
+                                            <a key={sIdx} href={sub.url} target="_blank" rel="noopener noreferrer" className="text-[10px] font-bold bg-slate-800 hover:bg-slate-700 border border-slate-700 hover:border-slate-600 text-slate-300 hover:text-white px-3 py-1 rounded-xl transition-all inline-flex items-center gap-1">
+                                                {sub.label} <ArrowUpRight size={10} />
+                                            </a>
+                                        ))}
+                                    </div>
+                                )}
                             </div>
                         ))}
                     </div>
