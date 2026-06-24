@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useLanguage } from '../contexts/LanguageContext';
 import { UserRole, User } from '../types';
-import { DEMO_USERS } from '../mockData';
 import { UserCheck, X, Sliders, Play } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
@@ -51,56 +50,56 @@ const PresentationRoleSwitcher: React.FC = () => {
             siteId: 'all'
         },
         // Carlos (Enterprise Admin)
-        DEMO_USERS.find(u => u.name === 'Carlos Macuácua') || {
+        {
             id: 2,
             name: 'Carlos Macuácua',
             email: 'c.macuacua@vulcan.com',
             role: UserRole.ENTERPRISE_ADMIN,
-            status: 'Active',
+            status: 'Active' as const,
             company: 'Vulcan Resources Mozambique',
             jobTitle: 'HSE Director',
             siteId: 'all'
         },
         // Ana Bila (Site Admin)
-        DEMO_USERS.find(u => u.name === 'Ana Bila') || {
+        {
             id: 3,
             name: 'Ana Bila',
             email: 'a.bila@vulcan.com',
             role: UserRole.SITE_ADMIN,
-            status: 'Active',
+            status: 'Active' as const,
             company: 'Vulcan Resources Mozambique',
             jobTitle: 'Site Safety Manager',
             siteId: 's-moatize'
         },
         // Hélio Tembe (Dept Admin / AM)
-        DEMO_USERS.find(u => u.name === 'Hélio Tembe') || {
+        {
             id: 6,
             name: 'Hélio Tembe',
             email: 'h.tembe@vulcan.com',
             role: UserRole.DEPT_ADMIN,
-            status: 'Active',
+            status: 'Active' as const,
             company: 'Vulcan Resources Mozambique',
             jobTitle: 'Mine Ops Supervisor',
             siteId: 's-moatize'
         },
         // António Sitoe (Trainer)
-        DEMO_USERS.find(u => u.name === 'António Sitoe') || {
+        {
             id: 7,
             name: 'António Sitoe',
             email: 'a.sitoe@vulcan.com',
             role: UserRole.RAC_TRAINER,
-            status: 'Active',
+            status: 'Active' as const,
             company: 'Vulcan Resources Mozambique',
             jobTitle: 'Senior RAC Trainer',
             siteId: 's-moatize'
         },
         // Jessica Bata (Safety Officer / User)
-        DEMO_USERS.find(u => u.name === 'Jessica Bata') || {
+        {
             id: 9,
             name: 'Jessica Bata',
             email: 'jessica@vulcan.com',
             role: UserRole.USER,
-            status: 'Active',
+            status: 'Active' as const,
             company: 'Vulcan Resources Mozambique',
             jobTitle: 'Safety Officer',
             siteId: 's-nacala'

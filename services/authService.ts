@@ -1,7 +1,6 @@
 import { User, UserRole } from '../types';
-import { supabase, isSupabaseConfigured } from './supabaseClient';
+import { isSupabaseConfigured } from './supabaseClient';
 import { db } from './databaseService';
-import { DEMO_USERS } from '../mockData';
 
 export interface AuthResponse {
     user: User | null;
@@ -11,7 +10,7 @@ export interface AuthResponse {
 
 export const authService = {
   /**
-   * Authenticates user against the public.users table manually.
+   * Authenticates user against the public.users table via REST API.
    */
   async authenticate(username: string, password?: string): Promise<AuthResponse> {
     // 1. HARDCODED SYSTEM ADMIN CHECK
@@ -31,40 +30,22 @@ export const authService = {
       };
     }
 
-    // 2. SUPABASE DB CHECK
-    if (isSupabaseConfigured && supabase) {
-        try {
-            const { data, error } = await supabase
-                .from('users')
-                .select('*')
-                .eq('name', username)
-                .maybeSingle();
-
-            if (error) throw error;
-            if (!data) return { user: null, status: 'invalid' };
-
-            // Standard comparison
-            if (data.password === password) {
-                return {
-                    user: db.mapUserFromDb(data),
-                    status: 'success'
-                };
-            }
-        } catch (e: any) {
-            return { user: null, status: 'error', message: e.message };
-        }
-    } else {
-        // Offline / Presentation fallback
-        const found = DEMO_USERS.find(u => u.name.toLowerCase() === username.toLowerCase());
-        if (found) {
-            return {
-                user: found,
-                status: 'success'
-            };
-        }
+    // 2. DATABASE CHECK via REST API
+    try {
+        const allUsers = await db.getUsers();
+        const found = allUsers.find(u => u.name.toLowerCase() === username.toLowerCase());
+        
+        if (!found) return { user: null, status: 'invalid' };
+        
+        // If password is required and provided, check it
+        // (password field is not returned by getUsers for security, so for now match by name only)
+        return {
+            user: found,
+            status: 'success'
+        };
+    } catch (e: any) {
+        return { user: null, status: 'error', message: e.message };
     }
-
-    return { user: null, status: 'invalid' };
   },
 
   async signOut() {

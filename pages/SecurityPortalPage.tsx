@@ -8,7 +8,6 @@ import {
     FileCheck, FileScan, BarChart3, TrendingUp, Zap, ClipboardList,
     Download, Ban, Coffee, Truck, User
 } from 'lucide-react';
-import { DEMO_RECRUITMENT_PROCESSES } from '../mockData';
 import { RecruitmentProcess, RecruitmentStatus } from '../types';
 import { useLanguage } from '../contexts/LanguageContext';
 import FormBuilder from '../components/FormBuilder';
@@ -21,8 +20,8 @@ const LS_KEY = 'mobilization_processes';
 function loadProcesses(): RecruitmentProcess[] {
     try {
         const saved = localStorage.getItem(LS_KEY);
-        return saved ? JSON.parse(saved) : DEMO_RECRUITMENT_PROCESSES;
-    } catch { return DEMO_RECRUITMENT_PROCESSES; }
+        return saved ? JSON.parse(saved) : [];
+    } catch { return []; }
 }
 function saveProcesses(p: RecruitmentProcess[]) {
     localStorage.setItem(LS_KEY, JSON.stringify(p));

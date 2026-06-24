@@ -10,7 +10,6 @@ import { useLanguage } from '../contexts/LanguageContext';
 import { useMessages } from '../contexts/MessageContext';
 import { useAuth } from '../contexts/AuthContext';
 import { db } from '../services/databaseService';
-import { DEMO_RECRUITMENT_PROCESSES } from '../mockData';
 import { RecruitmentProcess, RecruitmentStatus, RecruitDocument, MedicalExam, FitnessCertificate, Employee, BookingStatus, Company, RacDef } from '../types';
 import { v4 as uuidv4 } from 'uuid';
 import { useToast } from '../contexts/ToastContext';
@@ -29,7 +28,7 @@ const MobilizationDashboard: React.FC<{ companies?: Company[]; racDefinitions?: 
     // Core Workflow State
     const [processes, setProcesses] = useState<RecruitmentProcess[]>(() => {
         const saved = localStorage.getItem('mobilization_processes');
-        return saved ? JSON.parse(saved) : DEMO_RECRUITMENT_PROCESSES;
+        return saved ? JSON.parse(saved) : [];
     });
 
     // Active tab in Mobilization: 'AM' | 'HR' | 'Security' | 'Clinic' | 'Environment'

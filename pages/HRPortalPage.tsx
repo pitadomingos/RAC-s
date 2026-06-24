@@ -6,7 +6,6 @@ import {
     UserCheck, RefreshCw, Inbox, History, Star, Building2,
     Phone, Mail, Calendar, Briefcase, Hash, Shield, ChevronDown
 } from 'lucide-react';
-import { DEMO_RECRUITMENT_PROCESSES } from '../mockData';
 import { RecruitmentProcess, RecruitmentStatus, RecruitDocument } from '../types';
 import { v4 as uuidv4 } from 'uuid';
 import { useLanguage } from '../contexts/LanguageContext';
@@ -17,8 +16,8 @@ const LS_KEY = 'mobilization_processes';
 function loadProcesses(): RecruitmentProcess[] {
     try {
         const saved = localStorage.getItem(LS_KEY);
-        return saved ? JSON.parse(saved) : DEMO_RECRUITMENT_PROCESSES;
-    } catch { return DEMO_RECRUITMENT_PROCESSES; }
+        return saved ? JSON.parse(saved) : [];
+    } catch { return []; }
 }
 function saveProcesses(p: RecruitmentProcess[]) {
     localStorage.setItem(LS_KEY, JSON.stringify(p));

@@ -1,22 +1,209 @@
 
-import { supabase, isSupabaseConfigured } from './supabaseClient';
+import { API_BASE, isSupabaseConfigured } from './supabaseClient';
 import { Booking, Employee, TrainingSession, EmployeeRequirement, Site, Company, BookingStatus, User, UserRole, RacDef, Room, Trainer, Feedback, SystemNotification, DataConnector, UnsafeCondition } from '../types';
-import { MOCK_EMPLOYEES, MOCK_BOOKINGS, MOCK_SESSIONS, MOCK_REQUIREMENTS } from '../constants';
-import {
-    DEMO_EMPLOYEES,
-    DEMO_BOOKINGS,
-    DEMO_SESSIONS,
-    DEMO_REQUIREMENTS,
-    DEMO_COMPANIES,
-    DEMO_SITES,
-    DEMO_ROOMS,
-    DEMO_TRAINERS,
-    DEMO_RAC_DEFINITIONS,
-    DEMO_USERS,
-    DEMO_UNSAFE_CONDITIONS
-} from '../mockData';
 
-// Helper to load/save JSON in localStorage for offline persistence
+import { v4 as uuidv4 } from 'uuid';
+
+// ─── API helper ─────────────────────────────────────────────────────────────────
+
+async function apiFetch<T>(path: string, options?: RequestInit): Promise<T> {
+    const res = await fetch(`${API_BASE}${path}`, {
+        headers: { 'Content-Type': 'application/json' },
+        ...options
+    });
+    if (!res.ok) {
+        const err = await res.json().catch(() => ({ error: res.statusText }));
+        throw new Error(err.error || `API ${res.status}`);
+    }
+    return res.json();
+}
+
+function post<T>(path: string, body: any): Promise<T> {
+    return apiFetch<T>(path, { method: 'POST', body: JSON.stringify(body) });
+}
+
+function del(path: string): Promise<any> {
+    return apiFetch(path, { method: 'DELETE' });
+}
+
+function put(path: string, body: any): Promise<any> {
+    return apiFetch(path, { method: 'PUT', body: JSON.stringify(body) });
+}
+
+// ─── UUID helper ────────────────────────────────────────────────────────────────
+
+export const isUUID = (str: string | undefined): boolean => {
+    if (!str) return false;
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    return uuidRegex.test(str);
+};
+
+// ─── Column mappers (DB snake_case ↔ App camelCase) ─────────────────────────────
+
+function mapCompanyFromDb(c: any): Company {
+    return {
+        id: c.id,
+        name: c.name,
+        appName: c.app_name,
+        logoUrl: c.logo_url,
+        safetyLogoUrl: c.safety_logo_url,
+        status: (c.status as 'Active' | 'Inactive') || 'Active',
+        defaultLanguage: (c.default_language as 'en' | 'pt') || 'en',
+        parentId: c.parent_id || undefined,
+        tier: (c.tier as 'Prime' | 'Sub') || 'Prime',
+        features: c.features || { alcohol: false }
+    };
+}
+
+function mapEmployeeFromDb(data: any): Employee {
+    if (!data) return data;
+    return {
+        id: data.id,
+        recordId: data.record_id,
+        name: data.name,
+        company: data.company,
+        department: data.department,
+        role: data.role,
+        siteId: data.site_id || undefined,
+        phoneNumber: data.phone_number,
+        driverLicenseNumber: data.driver_license_number,
+        driverLicenseClass: data.driver_license_class,
+        driverLicenseExpiry: data.driver_license_expiry,
+        isActive: data.is_active
+    };
+}
+
+function mapUserFromDb(data: any): User {
+    if (!data) return data;
+    return {
+        id: data.id,
+        name: data.name,
+        email: data.email,
+        role: data.role as UserRole,
+        status: data.status as 'Active' | 'Inactive',
+        company: data.company,
+        jobTitle: data.job_title || '',
+        phoneNumber: data.phone_number || '',
+        department: data.department,
+        siteId: data.site_id || 'all',
+        appModule: data.app_module
+    };
+}
+
+function mapSessionFromDb(s: any): TrainingSession {
+    return {
+        id: s.id,
+        racType: s.rac_type,
+        date: s.date,
+        startTime: s.start_time,
+        location: s.location,
+        instructor: s.instructor,
+        capacity: s.capacity,
+        sessionLanguage: s.session_language,
+        siteId: s.site_id
+    };
+}
+
+function mapBookingFromDb(data: any): Booking {
+    const emp = data.employee ? mapEmployeeFromDb(data.employee) : {
+        id: data.employee_id,
+        recordId: '',
+        name: 'Unknown',
+        company: '',
+        department: '',
+        role: ''
+    };
+    return {
+        id: data.id,
+        sessionId: data.session_id,
+        employee: emp,
+        status: data.status as BookingStatus,
+        resultDate: data.result_date,
+        expiryDate: data.expiry_date,
+        theoryScore: data.theory_score,
+        practicalScore: data.practical_score,
+        attendance: data.attendance,
+        driverLicenseVerified: data.driver_license_verified,
+        isAutoBooked: data.is_auto_booked,
+        comments: data.comments,
+        trainerName: data.trainer_name
+    };
+}
+
+function mapRequirementFromDb(r: any): EmployeeRequirement {
+    return {
+        employeeId: r.employee_id,
+        asoExpiryDate: r.aso_expiry_date,
+        requiredRacs: r.required_racs || {}
+    };
+}
+
+function mapRacDefFromDb(r: any): RacDef {
+    return {
+        id: r.id,
+        companyId: r.company_id,
+        code: r.code,
+        name: r.name,
+        validityMonths: r.validity_months,
+        requiresDriverLicense: r.requires_driver_license,
+        requiresPractical: r.requires_practical,
+        passScore: r.pass_score || 70
+    };
+}
+
+function mapTrainerFromDb(t: any): Trainer {
+    return {
+        id: t.id,
+        name: t.name,
+        racs: t.authorized_racs || [],
+        siteId: t.site_id
+    };
+}
+
+function mapConnectorFromDb(c: any): DataConnector {
+    return {
+        id: c.id,
+        name: c.name,
+        type: c.type,
+        lastSync: c.last_sync,
+        status: c.status,
+        color: c.color,
+        source: c.source,
+        config: c.config || {},
+        mapping: c.mapping || {},
+        moduleMapping: c.module_mapping || {}
+    };
+}
+
+function mapUnsafeConditionFromDb(c: any): UnsafeCondition {
+    return {
+        id: c.id,
+        latitude: c.latitude,
+        longitude: c.longitude,
+        functionLocation: c.function_location,
+        conditionType: c.condition_type,
+        responsibleArea: c.responsible_area,
+        description: c.description,
+        actionPlan: c.action_plan,
+        initialPhotos: c.initial_photos || [],
+        correctionPhotos: c.correction_photos || [],
+        observerId: c.observer_id,
+        observerName: c.observer_name,
+        ssmaFocalPointId: c.ssma_focal_point_id,
+        ssmaFocalPointName: c.ssma_focal_point_name,
+        areaResponsibleId: c.area_responsible_id,
+        areaResponsibleName: c.area_responsible_name,
+        areaManagerId: c.area_manager_id,
+        areaManagerName: c.area_manager_name,
+        state: c.state,
+        mapStatus: c.map_status,
+        createdAt: c.created_at,
+        resolvedAt: c.resolved_at
+    };
+}
+
+// ─── localStorage helper for formbuilder schemas ────────────────────────────────
+
 const getLocalStorageJson = (key: string, defaultVal: any) => {
     try {
         const item = typeof window !== 'undefined' ? localStorage.getItem(key) : null;
@@ -30,585 +217,333 @@ const saveLocalStorageJson = (key: string, val: any) => {
     try {
         if (typeof window !== 'undefined') {
             localStorage.setItem(key, JSON.stringify(val));
-            // Ensure bookings have employeeId populated for mobile app compatibility
-            const mappedBookings = FALLBACK_BOOKINGS.map(b => ({
-                ...b,
-                employeeId: (b as any).employeeId || b.employee?.id
-            }));
-            
-            // Map structured requirements back to server's flat requirements format
-            const today = new Date().toISOString().split('T')[0];
-            const flatRequirements: any[] = [];
-            FALLBACK_REQUIREMENTS.forEach(r => {
-                const trueRacs = Object.entries(r.requiredRacs || {})
-                    .filter(([_, val]) => val === true)
-                    .map(([k]) => k);
-                
-                const isAsoValid = !!(r.asoExpiryDate && r.asoExpiryDate >= today);
-                
-                if (trueRacs.length === 0) {
-                    flatRequirements.push({
-                        id: `req-aso-${r.employeeId}`,
-                        employeeId: r.employeeId,
-                        racCode: '',
-                        status: 'Valid',
-                        expiryDate: '',
-                        medicalStatus: isAsoValid ? 'Valid' : 'Expired',
-                        medicalExpiry: r.asoExpiryDate || ''
-                    });
-                } else {
-                    trueRacs.forEach(code => {
-                        // Determine RAC validity based on booking history
-                        const bookingsForEmp = FALLBACK_BOOKINGS.filter(b => ((b as any).employeeId || b.employee?.id) === r.employeeId);
-                        const passedBooking = bookingsForEmp.find(b => {
-                            if ((b.status as any) === 'Passed' || (b.status as any) === BookingStatus.PASSED) {
-                                const sess = FALLBACK_SESSIONS.find(s => s.id === b.sessionId);
-                                const bRacCode = sess?.racType?.split(' - ')[0] || b.sessionId?.split('-')[0] || '';
-                                return bRacCode.toUpperCase() === code.toUpperCase();
-                            }
-                            return false;
-                        });
-                        const isRacValid = !!(passedBooking && passedBooking.expiryDate && passedBooking.expiryDate >= today);
-                        
-                        flatRequirements.push({
-                            id: `req-${r.employeeId}-${code}`,
-                            employeeId: r.employeeId,
-                            racCode: code,
-                            status: isRacValid ? 'Valid' : 'Expired',
-                            expiryDate: passedBooking?.expiryDate || '2026-05-10',
-                            medicalStatus: isAsoValid ? 'Valid' : 'Expired',
-                            medicalExpiry: r.asoExpiryDate || ''
-                        });
-                    });
-                }
-            });
-
-            // Synchronize with shared Node server
-            fetch('http://localhost:5000/api/save', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    companies: FALLBACK_COMPANIES,
-                    sites: FALLBACK_SITES,
-                    employees: FALLBACK_EMPLOYEES,
-                    bookings: mappedBookings,
-                    sessions: FALLBACK_SESSIONS,
-                    requirements: flatRequirements,
-                    rooms: FALLBACK_ROOMS,
-                    trainers: FALLBACK_TRAINERS,
-                    users: FALLBACK_USERS
-                })
-            }).catch(() => {});
         }
     } catch (e) {
         console.error("Failed to save to localStorage", e);
     }
 };
 
-import { v4 as uuidv4 } from 'uuid';
-
-const initialEmployees = DEMO_EMPLOYEES.length ? DEMO_EMPLOYEES : MOCK_EMPLOYEES;
-const initialBookings = DEMO_BOOKINGS.length ? DEMO_BOOKINGS : MOCK_BOOKINGS;
-const initialSessions = DEMO_SESSIONS.length ? DEMO_SESSIONS : MOCK_SESSIONS;
-const initialRequirements = DEMO_REQUIREMENTS.length ? DEMO_REQUIREMENTS : MOCK_REQUIREMENTS;
-const initialCompanies = DEMO_COMPANIES;
-const initialSites = DEMO_SITES;
-const initialRooms = DEMO_ROOMS;
-const initialTrainers = DEMO_TRAINERS;
-const initialRacDefs = DEMO_RAC_DEFINITIONS;
-const initialUsers: User[] = DEMO_USERS.length ? DEMO_USERS : [
-    {
-        id: 1337,
-        name: "Pita Domingos",
-        email: "p.domingos@vulcan.com",
-        role: UserRole.SYSTEM_ADMIN,
-        status: 'Active',
-        company: 'Vulcan',
-        jobTitle: 'Lead System Architect',
-        siteId: 'all'
-    }
-];
-
-let FALLBACK_EMPLOYEES: Employee[] = getLocalStorageJson('fallback_employees', initialEmployees);
-let FALLBACK_BOOKINGS: Booking[] = getLocalStorageJson('fallback_bookings', initialBookings);
-let FALLBACK_SESSIONS: TrainingSession[] = getLocalStorageJson('fallback_sessions', initialSessions);
-let FALLBACK_REQUIREMENTS: EmployeeRequirement[] = getLocalStorageJson('fallback_requirements', initialRequirements);
-let FALLBACK_COMPANIES: Company[] = getLocalStorageJson('fallback_companies', initialCompanies);
-let FALLBACK_SITES: Site[] = getLocalStorageJson('fallback_sites', initialSites);
-let FALLBACK_ROOMS: Room[] = getLocalStorageJson('fallback_rooms', initialRooms);
-let FALLBACK_TRAINERS: Trainer[] = getLocalStorageJson('fallback_trainers', initialTrainers);
-let FALLBACK_RAC_DEFS: RacDef[] = getLocalStorageJson('fallback_rac_defs', initialRacDefs);
-let FALLBACK_USERS: User[] = getLocalStorageJson('fallback_users', initialUsers);
-let FALLBACK_UNSAFE_CONDITIONS: UnsafeCondition[] = getLocalStorageJson('fallback_unsafe_conditions', DEMO_UNSAFE_CONDITIONS);
-
-// Helper to validate UUID format to prevent Supabase database crashes
-// Standard UUID is 8-4-4-4-12 (36 chars with hyphens)
-export const isUUID = (str: string | undefined): boolean => {
-    if (!str) return false;
-    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-    return uuidRegex.test(str);
-};
+// ═══════════════════════════════════════════════════════════════════════════════
+//  DATABASE SERVICE — All operations via REST API
+// ═══════════════════════════════════════════════════════════════════════════════
 
 export const db = {
     async syncFromLocalServer() {
-        try {
-            // Disabled to prevent ERR_CONNECTION_REFUSED console spam when python backend is not running
-            // const res = await fetch('http://localhost:5000/api/db');
-            // if (res.ok) {
-            if (false) {
-                const res = { json: async () => ({}) };
-                const data: any = await res.json();
-                if (data.companies) {
-                    FALLBACK_COMPANIES = data.companies;
-                    localStorage.setItem('fallback_companies', JSON.stringify(FALLBACK_COMPANIES));
-                }
-                if (data.sites) {
-                    FALLBACK_SITES = data.sites;
-                    localStorage.setItem('fallback_sites', JSON.stringify(FALLBACK_SITES));
-                }
-                if (data.employees) {
-                    FALLBACK_EMPLOYEES = data.employees;
-                    localStorage.setItem('fallback_employees', JSON.stringify(FALLBACK_EMPLOYEES));
-                }
-                if (data.bookings) {
-                    // Populate employee object and ensure sessionId / employeeId are mapped correctly
-                    FALLBACK_BOOKINGS = data.bookings.map((b: any) => {
-                        const empId = b.employeeId || b.employee?.id || 'emp-paulo';
-                        const empObj = (data.employees || []).find((e: any) => e.id === empId) || FALLBACK_EMPLOYEES.find((e: any) => e.id === empId) || {
-                            id: empId,
-                            recordId: 'VUL-UNKNOWN',
-                            name: 'Unknown Employee',
-                            company: 'Vulcan Resources Mozambique',
-                            department: 'HSE',
-                            role: 'Operator'
-                        };
-                        return {
-                            ...b,
-                            employeeId: empId,
-                            employee: b.employee || empObj,
-                            sessionId: b.sessionId || 'sess-1'
-                        };
-                    });
-                    localStorage.setItem('fallback_bookings', JSON.stringify(FALLBACK_BOOKINGS));
-                }
-                if (data.sessions) {
-                    FALLBACK_SESSIONS = data.sessions.map((s: any) => {
-                        const racCode = s.racCode || s.rac_code || s.racType?.split(' - ')[0] || 'RAC01';
-                        const racDef = FALLBACK_RAC_DEFS.find(r => r.code === racCode);
-                        const racType = s.racType || (racDef ? `${racCode} - ${racDef.name}` : `${racCode} - Safety Module`);
-                        return {
-                            ...s,
-                            racCode,
-                            racType,
-                            startTime: s.startTime || s.start_time || '09:00',
-                            sessionLanguage: s.sessionLanguage || s.session_language || 'English',
-                            siteId: s.siteId || s.site_id || 's-moatize'
-                        };
-                    });
-                    localStorage.setItem('fallback_sessions', JSON.stringify(FALLBACK_SESSIONS));
-                }
-                if (data.requirements) {
-                    // Map flat server requirements back to client EmployeeRequirement[] format
-                    const reqMap = new Map<string, { employeeId: string, asoExpiryDate: string, requiredRacs: Record<string, boolean> }>();
-                    
-                    data.requirements.forEach((r: any) => {
-                        const empId = r.employeeId || r.employee_id;
-                        if (!empId) return;
-                        
-                        if (!reqMap.has(empId)) {
-                            reqMap.set(empId, {
-                                employeeId: empId,
-                                asoExpiryDate: r.medicalExpiry || r.medical_expiry || r.asoExpiryDate || '',
-                                requiredRacs: {}
-                            });
-                        }
-                        
-                        const current = reqMap.get(empId)!;
-                        if (r.racCode || r.rac_code) {
-                            const code = r.racCode || r.rac_code;
-                            current.requiredRacs[code] = true;
-                        }
-                        
-                        const medExp = r.medicalExpiry || r.medical_expiry || r.asoExpiryDate;
-                        if (medExp) {
-                            current.asoExpiryDate = medExp;
-                        }
-                    });
-                    
-                    FALLBACK_REQUIREMENTS = Array.from(reqMap.values());
-                    localStorage.setItem('fallback_requirements', JSON.stringify(FALLBACK_REQUIREMENTS));
-                }
-                if (data.rooms) {
-                    FALLBACK_ROOMS = data.rooms;
-                    localStorage.setItem('fallback_rooms', JSON.stringify(FALLBACK_ROOMS));
-                }
-                if (data.trainers) {
-                    FALLBACK_TRAINERS = data.trainers;
-                    localStorage.setItem('fallback_trainers', JSON.stringify(FALLBACK_TRAINERS));
-                }
-                if (data.users) {
-                    FALLBACK_USERS = data.users;
-                    localStorage.setItem('fallback_users', JSON.stringify(FALLBACK_USERS));
-                }
-            }
-        } catch (e) {
-            // Ignore offline
-        }
+        // No-op: the Express server IS the data source now
     },
 
-    async safeQuery<T>(tableName: string, query: any, fallback: T): Promise<T> {
-        if (!isSupabaseConfigured || !supabase) return fallback;
-        try {
-            const { data, error } = await query;
-            if (error) {
-                const errorMsg = error.message || '';
-                const isSchemaError = error.code === '42P01' || 
-                                     error.code === '42703' ||
-                                     errorMsg.includes('schema cache') || 
-                                     errorMsg.includes('does not exist') ||
-                                     error.code === 'PGRST116';
-                
-                if (isSchemaError) {
-                    return fallback;
-                }
-                throw error;
-            }
-            return (data as T) || fallback;
-        } catch (e: any) {
-            return fallback;
-        }
-    },
-
-    // ─── SafeMap Module ────────────────────────────────────────────────────────
-    
-    async getUnsafeConditions(): Promise<UnsafeCondition[]> {
-        return [...FALLBACK_UNSAFE_CONDITIONS];
-    },
-
-    async createUnsafeCondition(condition: Omit<UnsafeCondition, 'id'>): Promise<UnsafeCondition> {
-        const newCondition: UnsafeCondition = {
-            ...condition,
-            id: `sm-${Date.now()}`
-        };
-        FALLBACK_UNSAFE_CONDITIONS.push(newCondition);
-        saveLocalStorageJson('fallback_unsafe_conditions', FALLBACK_UNSAFE_CONDITIONS);
-        return newCondition;
-    },
-
-    async updateUnsafeCondition(id: string, updates: Partial<UnsafeCondition>): Promise<UnsafeCondition | null> {
-        const index = FALLBACK_UNSAFE_CONDITIONS.findIndex(c => c.id === id);
-        if (index === -1) return null;
-        
-        FALLBACK_UNSAFE_CONDITIONS[index] = {
-            ...FALLBACK_UNSAFE_CONDITIONS[index],
-            ...updates
-        };
-        saveLocalStorageJson('fallback_unsafe_conditions', FALLBACK_UNSAFE_CONDITIONS);
-        return FALLBACK_UNSAFE_CONDITIONS[index];
-    },
-
-    mapUserFromDb(data: any): User {
-        if (!data) return data;
-        const { job_title, phone_number, site_id, ...rest } = data;
-        return {
-            ...rest,
-            jobTitle: job_title || '',
-            phoneNumber: phone_number || '',
-            siteId: site_id || 'all'
-        };
-    },
-
-    mapUserToDb(user: Partial<User>): any {
-        const payload: any = {};
-        if (user.id !== undefined) payload.id = user.id;
-        if (user.name !== undefined) payload.name = user.name;
-        if (user.email !== undefined) payload.email = user.email;
-        if (user.role !== undefined) payload.role = user.role;
-        if (user.status !== undefined) payload.status = user.status;
-        if (user.company !== undefined) payload.company = user.company;
-        if (user.jobTitle !== undefined) payload.job_title = user.jobTitle;
-        if (user.phoneNumber !== undefined) payload.phone_number = user.phoneNumber;
-        if (user.siteId !== undefined) payload.site_id = user.siteId;
-        // @ts-ignore
-        if (user.password !== undefined) payload.password = user.password;
-        return payload;
-    },
-
-    mapCompanyFromDb(c: any): Company {
-        return {
-            id: c.id,
-            name: c.name,
-            appName: c.app_name,
-            logoUrl: c.logo_url,
-            safetyLogoUrl: c.safety_logo_url,
-            status: (c.status as 'Active' | 'Inactive') || 'Active',
-            defaultLanguage: (c.default_language as 'en' | 'pt') || 'en',
-            parentId: c.parent_id || undefined, 
-            tier: (c.tier as 'Prime' | 'Sub') || 'Prime',
-            features: c.features || { alcohol: false }
-        };
-    },
-
-    mapEmployeeFromDb(data: any): Employee {
-        if (!data) return data;
-        const { record_id, site_id, phone_number, driver_license_number, driver_license_class, driver_license_expiry, is_active, ...rest } = data;
-        return {
-            ...rest,
-            recordId: record_id,
-            siteId: site_id || 's1',
-            phoneNumber: phone_number,
-            driverLicenseNumber: driver_license_number,
-            driverLicenseClass: driver_license_class,
-            driverLicenseExpiry: driver_license_expiry,
-            isActive: is_active
-        };
-    },
-
-    mapEmployeeToDb(emp: Partial<Employee>): any {
-        const payload: any = {};
-        if (emp.id !== undefined) payload.id = isUUID(emp.id) ? emp.id : uuidv4();
-        if (emp.name !== undefined) payload.name = emp.name;
-        if (emp.recordId !== undefined) payload.record_id = emp.recordId;
-        if (emp.siteId !== undefined) payload.site_id = isUUID(emp.siteId) ? emp.siteId : null;
-        if (emp.phoneNumber !== undefined) payload.phone_number = emp.phoneNumber;
-        if (emp.driverLicenseNumber !== undefined) payload.driver_license_number = emp.driverLicenseNumber;
-        if (emp.driverLicenseClass !== undefined) payload.driver_license_class = emp.driverLicenseClass;
-        if (emp.driverLicenseExpiry !== undefined) payload.driver_license_expiry = emp.driverLicenseExpiry;
-        if (emp.isActive !== undefined) payload.is_active = emp.isActive;
-        if (emp.company !== undefined) payload.company = emp.company;
-        if (emp.department !== undefined) payload.department = emp.department;
-        if (emp.role !== undefined) payload.role = emp.role;
-        return payload;
-    },
+    // ─── Companies ──────────────────────────────────────────────────────────────
 
     async getCompanies(): Promise<Company[]> {
-        const raw = await this.safeQuery('companies', supabase?.from('companies').select('*'), []);
-        if (raw.length === 0 && !isSupabaseConfigured) return DEMO_COMPANIES;
-        return raw.map((c: any) => this.mapCompanyFromDb(c));
+        const raw = await apiFetch<any[]>('/companies');
+        return raw.map(mapCompanyFromDb);
     },
+
+    async saveCompany(company: Company): Promise<Company> {
+        const payload = {
+            id: isUUID(company.id) ? company.id : uuidv4(),
+            name: company.name,
+            app_name: company.appName,
+            logo_url: company.logoUrl,
+            safety_logo_url: company.safetyLogoUrl,
+            status: company.status || 'Active',
+            default_language: company.defaultLanguage || 'en',
+            parent_id: company.parentId && isUUID(company.parentId) ? company.parentId : null,
+            tier: company.tier || 'Prime',
+            features: company.features || { alcohol: false }
+        };
+        const raw = await post<any>('/companies', payload);
+        return mapCompanyFromDb(raw);
+    },
+
+    // ─── Sites ──────────────────────────────────────────────────────────────────
 
     async getSites(): Promise<Site[]> {
-        const raw = await this.safeQuery('sites', supabase?.from('sites').select('*'), []);
-        if (raw.length === 0 && !isSupabaseConfigured) return DEMO_SITES;
-        return raw;
+        return apiFetch<Site[]>('/sites');
     },
+
+    async saveSite(site: Site) {
+        const payload = {
+            id: isUUID(site.id) ? site.id : uuidv4(),
+            company_id: isUUID(site.companyId) ? site.companyId : null,
+            name: site.name,
+            location: site.location,
+            mandatory_racs: site.mandatoryRacs || []
+        };
+        return post('/sites', payload);
+    },
+
+    async deleteSite(id: string) {
+        return del(`/sites/${id}`);
+    },
+
+    // ─── Users ──────────────────────────────────────────────────────────────────
 
     async getUsers(): Promise<User[]> {
-        const raw = await this.safeQuery('users', supabase?.from('users').select('*').order('name', { ascending: true }), []);
-        if (raw.length === 0 && !isSupabaseConfigured) return DEMO_USERS;
-        return raw.map(u => this.mapUserFromDb(u));
+        const raw = await apiFetch<any[]>('/users');
+        return raw.map(mapUserFromDb);
     },
+
+    async upsertUser(user: Partial<User>) {
+        const payload: any = {
+            name: user.name,
+            email: user.email,
+            role: user.role || 'User',
+            status: user.status || 'Active',
+            company: user.company,
+            job_title: user.jobTitle,
+            phone_number: user.phoneNumber,
+            department: user.department,
+            site_id: user.siteId || 'all',
+            app_module: (user as any).appModule || null
+        };
+        // @ts-ignore
+        if (user.password) payload.password = user.password;
+        const raw = await post<any>('/users', payload);
+        return mapUserFromDb(raw);
+    },
+
+    async updateUserPassword(id: number, password: string) {
+        return put(`/users/${id}/password`, { password });
+    },
+
+    async deleteUser(id: number) {
+        return del(`/users/${id}`);
+    },
+
+    // ─── Employees ──────────────────────────────────────────────────────────────
 
     async getEmployees(): Promise<Employee[]> {
-        const raw = await this.safeQuery('employees', supabase?.from('employees').select('*'), []);
-        if (raw.length === 0 && !isSupabaseConfigured) return FALLBACK_EMPLOYEES;
-        return raw.map(e => this.mapEmployeeFromDb(e));
+        const raw = await apiFetch<any[]>('/employees');
+        return raw.map(mapEmployeeFromDb);
     },
 
-    async getSessions(): Promise<TrainingSession[]> {
-        const raw = await this.safeQuery('training_sessions', supabase?.from('training_sessions').select('*').order('date', { ascending: true }), []);
-        if (raw.length === 0 && !isSupabaseConfigured) return FALLBACK_SESSIONS;
-        return raw.map(s => ({
-            ...s,
-            id: s.id,
-            racType: s.rac_type,
-            startTime: s.start_time,
-            sessionLanguage: s.session_language,
-            siteId: s.site_id
-        }));
-    },
-
-    async getBookings(): Promise<Booking[]> {
-        if (!isSupabaseConfigured || !supabase) return FALLBACK_BOOKINGS;
-        try {
-            const [confirmed, queued] = await Promise.all([
-                supabase.from('records').select(`*, employee:employees(*)`),
-                supabase.from('waiting_list').select(`*, employee:employees(*)`)
-            ]);
-
-            const confirmedData = ((confirmed.data as any[]) || []).map(b => this.mapBookingFromDb(b));
-            const waitData = ((queued.data as any[]) || []).map(w => ({
-                id: w.id,
-                sessionId: w.session_id,
-                employee: this.mapEmployeeFromDb(w.employee),
-                status: BookingStatus.WAITLISTED,
-                resultDate: null,
-                expiryDate: null,
-                theoryScore: 0,
-                practicalScore: 0,
-                attendance: false
-            } as Booking));
-
-            return [...confirmedData, ...waitData];
-        } catch (e: any) {
-            return MOCK_BOOKINGS;
-        }
+    async upsertEmployee(emp: Partial<Employee>) {
+        const payload = {
+            id: isUUID(emp.id) ? emp.id : uuidv4(),
+            record_id: emp.recordId || '',
+            name: emp.name,
+            company: emp.company,
+            department: emp.department,
+            role: emp.role,
+            site_id: isUUID(emp.siteId) ? emp.siteId : null,
+            phone_number: emp.phoneNumber,
+            driver_license_number: emp.driverLicenseNumber,
+            driver_license_class: emp.driverLicenseClass,
+            driver_license_expiry: emp.driverLicenseExpiry || null,
+            is_active: emp.isActive ?? true
+        };
+        const raw = await post<any>('/employees', payload);
+        return mapEmployeeFromDb(raw);
     },
 
     async bulkUpsertEmployees(employees: Partial<Employee>[]) {
-        if (!isSupabaseConfigured || !supabase) {
-            const returnedData: { id: string, record_id: string }[] = [];
-            const updatedList = [...FALLBACK_EMPLOYEES];
-            
-            employees.forEach(emp => {
-                const targetId = isUUID(emp.id) ? emp.id : uuidv4();
-                const recordId = emp.recordId || '';
-                
-                const existingIdx = updatedList.findIndex(e => e.recordId === recordId);
-                const employeeObj: Employee = {
-                    id: targetId,
-                    recordId: recordId,
-                    name: emp.name || 'Unknown',
-                    company: emp.company || 'Unknown',
-                    department: emp.department || 'N/A',
-                    role: emp.role || 'N/A',
-                    siteId: emp.siteId || 's1',
-                    isActive: emp.isActive ?? true,
-                    phoneNumber: emp.phoneNumber,
-                    driverLicenseNumber: emp.driverLicenseNumber,
-                    driverLicenseClass: emp.driverLicenseClass,
-                    driverLicenseExpiry: emp.driverLicenseExpiry
-                };
-                
-                if (existingIdx >= 0) {
-                    employeeObj.id = updatedList[existingIdx].id;
-                    updatedList[existingIdx] = {
-                        ...updatedList[existingIdx],
-                        ...emp,
-                        id: employeeObj.id
-                    };
-                } else {
-                    updatedList.push(employeeObj);
-                }
-                
-                returnedData.push({ id: employeeObj.id, record_id: employeeObj.recordId });
-            });
-            
-            FALLBACK_EMPLOYEES = updatedList;
-            saveLocalStorageJson('fallback_employees', FALLBACK_EMPLOYEES);
-            return returnedData;
+        const payload = employees.map(e => ({
+            id: isUUID(e.id) ? e.id : uuidv4(),
+            record_id: e.recordId || '',
+            name: e.name || 'Unknown',
+            company: e.company || 'Unknown',
+            department: e.department || 'N/A',
+            role: e.role || 'N/A',
+            site_id: isUUID(e.siteId) ? e.siteId : null,
+            phone_number: e.phoneNumber,
+            driver_license_number: e.driverLicenseNumber,
+            driver_license_class: e.driverLicenseClass,
+            driver_license_expiry: e.driverLicenseExpiry || null,
+            is_active: e.isActive ?? true
+        }));
+        return post<any[]>('/employees/bulk', { employees: payload });
+    },
+
+    async deleteEmployee(id: string) {
+        return del(`/employees/${id}`);
+    },
+
+    // ─── Sessions ───────────────────────────────────────────────────────────────
+
+    async getSessions(): Promise<TrainingSession[]> {
+        const raw = await apiFetch<any[]>('/sessions');
+        return raw.map(mapSessionFromDb);
+    },
+
+    // ─── Bookings ───────────────────────────────────────────────────────────────
+
+    async getBookings(): Promise<Booking[]> {
+        const [bookingsRaw, waitlistRaw] = await Promise.all([
+            apiFetch<any[]>('/bookings'),
+            apiFetch<any[]>('/waitlist')
+        ]);
+
+        const bookings = bookingsRaw.map(mapBookingFromDb);
+        const waitlist = waitlistRaw.map(w => ({
+            id: w.id,
+            sessionId: w.session_id,
+            employee: mapEmployeeFromDb(w.employee),
+            status: BookingStatus.WAITLISTED,
+            resultDate: null,
+            expiryDate: null,
+            theoryScore: 0,
+            practicalScore: 0,
+            attendance: false
+        } as Booking));
+
+        return [...bookings, ...waitlist];
+    },
+
+    async saveBooking(booking: Partial<Booking>) {
+        if (booking.status === BookingStatus.WAITLISTED) {
+            await this.saveWaitlistEntry(booking.sessionId!, booking.employee!.id);
+            return booking;
         }
-        const payload = employees.map(e => this.mapEmployeeToDb(e));
-        const { data, error } = await supabase.from('employees').upsert(payload, { onConflict: 'record_id' }).select('id, record_id');
-        if (error) throw error;
-        return data || [];
+
+        const payload = {
+            id: isUUID(booking.id) ? booking.id : uuidv4(),
+            session_id: isUUID(booking.sessionId) ? booking.sessionId : null,
+            employee_id: booking.employee?.id,
+            status: booking.status || 'Pending',
+            result_date: booking.resultDate || null,
+            expiry_date: booking.expiryDate || null,
+            theory_score: booking.theoryScore || 0,
+            practical_score: booking.practicalScore || 0,
+            attendance: booking.attendance || false,
+            driver_license_verified: booking.driverLicenseVerified || false,
+            is_auto_booked: booking.isAutoBooked || false,
+            comments: booking.comments || null,
+            trainer_name: booking.trainerName || null
+        };
+        return post('/bookings', payload);
     },
 
     async bulkUpsertBookings(bookings: Partial<Booking>[]) {
-        if (!isSupabaseConfigured || !supabase) {
-            const updatedList = [...FALLBACK_BOOKINGS];
-            bookings.forEach(b => {
-                const id = isUUID(b.id) ? b.id : uuidv4();
-                const existingIdx = updatedList.findIndex(x => x.id === id);
-                
-                let empObj = b.employee || FALLBACK_EMPLOYEES.find(e => e.id === b.employee?.id);
-                if (!empObj) {
-                    empObj = {
-                        id: b.employee?.id || uuidv4(),
-                        recordId: b.employee?.recordId || 'MOCK-EMP',
-                        name: b.employee?.name || 'Unknown',
-                        company: b.employee?.company || 'Unknown',
-                        department: b.employee?.department || 'N/A',
-                        role: b.employee?.role || 'N/A',
-                        isActive: true
-                    };
-                }
-
-                const bookingObj: Booking = {
-                    id,
-                    sessionId: b.sessionId || '',
-                    employee: empObj,
-                    status: b.status || BookingStatus.PENDING,
-                    resultDate: b.resultDate || null,
-                    expiryDate: b.expiryDate || null,
-                    theoryScore: b.theoryScore || 0,
-                    practicalScore: b.practicalScore || 0,
-                    attendance: b.attendance ?? false,
-                    trainerName: b.trainerName,
-                    comments: b.comments || (!isUUID(b.sessionId) ? `Imported Classroom: ${b.sessionId}` : null)
-                };
-
-                if (existingIdx >= 0) {
-                    updatedList[existingIdx] = {
-                        ...updatedList[existingIdx],
-                        ...b,
-                        employee: empObj
-                    } as Booking;
-                } else {
-                    updatedList.push(bookingObj);
-                }
-            });
-            FALLBACK_BOOKINGS = updatedList;
-            saveLocalStorageJson('fallback_bookings', FALLBACK_BOOKINGS);
-            return;
-        }
         const payload = bookings.map(b => ({
-            id: b.id,
+            id: isUUID(b.id) ? b.id : uuidv4(),
             session_id: isUUID(b.sessionId) ? b.sessionId : null,
             employee_id: b.employee?.id,
-            status: b.status,
-            result_date: b.resultDate,
-            expiry_date: b.expiryDate,
-            theory_score: b.theoryScore,
-            practical_score: b.practicalScore,
-            attendance: b.attendance,
-            trainer_name: b.trainerName,
-            comments: b.comments || (!isUUID(b.sessionId) ? `Imported Classroom: ${b.sessionId}` : null)
+            status: b.status || 'Pending',
+            result_date: b.resultDate || null,
+            expiry_date: b.expiryDate || null,
+            theory_score: b.theoryScore || 0,
+            practical_score: b.practicalScore || 0,
+            attendance: b.attendance || false,
+            trainer_name: b.trainerName || null,
+            comments: b.comments || null
         }));
-        const { error } = await supabase.from('records').upsert(payload);
-        if (error) throw error;
+        return post('/bookings/bulk', { bookings: payload });
+    },
+
+    // ─── Waitlist ───────────────────────────────────────────────────────────────
+
+    async saveWaitlistEntry(sessionId: string, employeeId: string) {
+        return post('/waitlist', { session_id: sessionId, employee_id: employeeId });
+    },
+
+    async promoteFromWaitlist(entryId: string, sessionId: string, employeeId: string) {
+        return post(`/waitlist/${entryId}/promote`, { session_id: sessionId, employee_id: employeeId });
+    },
+
+    async removeFromWaitlist(entryId: string) {
+        return del(`/waitlist/${entryId}`);
+    },
+
+    // ─── Requirements ───────────────────────────────────────────────────────────
+
+    async getRequirements(): Promise<EmployeeRequirement[]> {
+        const raw = await apiFetch<any[]>('/requirements');
+        return raw.map(mapRequirementFromDb);
+    },
+
+    async updateRequirement(req: EmployeeRequirement) {
+        return post('/requirements', {
+            employee_id: req.employeeId,
+            aso_expiry_date: req.asoExpiryDate || null,
+            required_racs: req.requiredRacs || {}
+        });
     },
 
     async bulkUpsertRequirements(reqs: EmployeeRequirement[]) {
-        if (!isSupabaseConfigured || !supabase) {
-            const updatedList = [...FALLBACK_REQUIREMENTS];
-            reqs.forEach(r => {
-                const existingIdx = updatedList.findIndex(x => x.employeeId === r.employeeId);
-                if (existingIdx >= 0) {
-                    updatedList[existingIdx] = {
-                        ...updatedList[existingIdx],
-                        asoExpiryDate: r.asoExpiryDate || updatedList[existingIdx].asoExpiryDate,
-                        requiredRacs: {
-                            ...updatedList[existingIdx].requiredRacs,
-                            ...r.requiredRacs
-                        }
-                    };
-                } else {
-                    updatedList.push(r);
-                }
-            });
-            FALLBACK_REQUIREMENTS = updatedList;
-            saveLocalStorageJson('fallback_requirements', FALLBACK_REQUIREMENTS);
-            return;
-        }
         const payload = reqs.map(r => ({
             employee_id: r.employeeId,
-            aso_expiry_date: r.asoExpiryDate,
-            required_racs: r.requiredRacs
+            aso_expiry_date: r.asoExpiryDate || null,
+            required_racs: r.requiredRacs || {}
         }));
-        const { error } = await supabase.from('employee_requirements').upsert(payload);
-        if (error) throw error;
+        return post('/requirements/bulk', { requirements: payload });
     },
 
+    // ─── RAC Definitions ────────────────────────────────────────────────────────
+
+    async getRacDefinitions(): Promise<RacDef[]> {
+        const raw = await apiFetch<any[]>('/rac-definitions');
+        return raw.map(mapRacDefFromDb);
+    },
+
+    async saveRacDefinition(rac: RacDef) {
+        const payload = {
+            id: isUUID(rac.id) ? rac.id : uuidv4(),
+            company_id: rac.companyId && isUUID(rac.companyId) ? rac.companyId : null,
+            code: rac.code,
+            name: rac.name,
+            validity_months: rac.validityMonths,
+            requires_driver_license: rac.requiresDriverLicense || false,
+            requires_practical: rac.requiresPractical || false,
+            pass_score: rac.passScore || 70
+        };
+        return post('/rac-definitions', payload);
+    },
+
+    async deleteRacDefinition(id: string) {
+        return del(`/rac-definitions/${id}`);
+    },
+
+    // ─── Rooms ──────────────────────────────────────────────────────────────────
+
+    async getRooms(): Promise<Room[]> {
+        return apiFetch<Room[]>('/rooms');
+    },
+
+    async saveRoom(room: Room) {
+        const payload = {
+            id: isUUID(room.id) ? room.id : uuidv4(),
+            name: room.name,
+            capacity: room.capacity,
+            site_id: isUUID(room.siteId) ? room.siteId : null
+        };
+        return post('/rooms', payload);
+    },
+
+    async deleteRoom(id: string) {
+        return del(`/rooms/${id}`);
+    },
+
+    // ─── Trainers ───────────────────────────────────────────────────────────────
+
+    async getTrainers(): Promise<Trainer[]> {
+        const raw = await apiFetch<any[]>('/trainers');
+        return raw.map(mapTrainerFromDb);
+    },
+
+    async saveTrainer(trainer: Trainer) {
+        const payload = {
+            id: isUUID(trainer.id) ? trainer.id : uuidv4(),
+            name: trainer.name,
+            authorized_racs: trainer.racs || [],
+            site_id: isUUID(trainer.siteId) ? trainer.siteId : null
+        };
+        return post('/trainers', payload);
+    },
+
+    async deleteTrainer(id: string) {
+        return del(`/trainers/${id}`);
+    },
+
+    // ─── Data Connectors ────────────────────────────────────────────────────────
+
     async getConnectors(): Promise<DataConnector[]> {
-        const raw = await this.safeQuery('data_connectors', supabase?.from('data_connectors').select('*'), []);
-        return raw.map((c: any) => ({
-            id: c.id,
-            name: c.name,
-            type: c.type,
-            lastSync: c.last_sync,
-            status: c.status,
-            color: c.color,
-            source: c.source,
-            config: c.config || {},
-            mapping: c.mapping || {},
-            module_mapping: c.module_mapping || {}
-        }));
+        const raw = await apiFetch<any[]>('/connectors');
+        return raw.map(mapConnectorFromDb);
     },
 
     async saveConnector(connector: DataConnector): Promise<void> {
-        if (!isSupabaseConfigured || !supabase) return;
-        const payload = {
+        await post('/connectors', {
             id: connector.id,
             name: connector.name,
             type: connector.type,
@@ -619,775 +554,93 @@ export const db = {
             config: connector.config,
             mapping: connector.mapping,
             module_mapping: connector.moduleMapping
-        };
-        await supabase.from('data_connectors').upsert(payload);
+        });
     },
 
     async syncExternalData(connectorId: string, rawData: any[], includeModules: boolean = false): Promise<{ added: number, updated: number }> {
-        // --- 1. AUTO PROVISION COMPANIES AND HIERARCHY ---
+        // --- 1. AUTO PROVISION COMPANIES ---
         const existingCompanies = await this.getCompanies();
-        const primeCompany = existingCompanies.find(c => 
-            c.name.toLowerCase() === 'vulcan' || 
-            c.name.toLowerCase() === 'vulcan resources mozambique' || 
-            c.id === 'c1' || 
-            c.tier === 'Prime' || 
+        const primeCompany = existingCompanies.find(c =>
+            c.name.toLowerCase() === 'vulcan' ||
+            c.name.toLowerCase() === 'vulcan resources mozambique' ||
+            c.id === 'c1' ||
+            c.tier === 'Prime' ||
             !c.parentId
         );
         const primeCompanyId = primeCompany?.id || 'c1';
 
-        // Extract all unique company names from rawData
         const rawCompanyNames = Array.from(new Set(rawData.map(item => {
             if (connectorId === 'sf-hr') return item.company || 'Vulcan';
             return item.company || 'Unknown';
         }).filter(Boolean))) as string[];
 
-        // Filter for companies that do not exist yet (case-insensitive)
-        const companiesToCreate = rawCompanyNames.filter(name => {
-            return !existingCompanies.some(c => c.name.toLowerCase() === name.toLowerCase());
-        });
+        const companiesToCreate = rawCompanyNames.filter(name =>
+            !existingCompanies.some(c => c.name.toLowerCase() === name.toLowerCase())
+        );
 
-        if (companiesToCreate.length > 0) {
-            // Split into contractors and subcontractors
-            const contractors = companiesToCreate.filter(name => !name.toLowerCase().startsWith('sub-'));
-            const subcontractors = companiesToCreate.filter(name => name.toLowerCase().startsWith('sub-'));
-            
-            const currentCompanies = [...existingCompanies];
-
-            // 1a. Provision Contractors
-            for (const name of contractors) {
-                const newCompany: Company = {
-                    id: uuidv4(),
-                    name: name,
-                    appName: name,
-                    status: 'Active',
-                    defaultLanguage: 'en',
-                    parentId: primeCompanyId,
-                    tier: 'Sub',
-                    features: { alcohol: false }
-                };
-                
-                if (isSupabaseConfigured && supabase) {
-                    await supabase.from('companies').upsert({
-                        id: newCompany.id,
-                        name: newCompany.name,
-                        app_name: newCompany.appName,
-                        status: newCompany.status,
-                        default_language: newCompany.defaultLanguage,
-                        parent_id: newCompany.parentId,
-                        tier: newCompany.tier,
-                        features: newCompany.features
-                    });
-                } else {
-                    FALLBACK_COMPANIES.push(newCompany);
-                }
-                currentCompanies.push(newCompany);
-            }
-
-            if (!isSupabaseConfigured || !supabase) {
-                saveLocalStorageJson('fallback_companies', FALLBACK_COMPANIES);
-            }
-
-            // 1b. Provision Subcontractors
-            for (const name of subcontractors) {
-                // Resolve parent company from the current list (which now contains newly added contractors)
-                const getTokens = (n: string) => {
-                    let clean = n.toLowerCase();
-                    if (clean.startsWith('sub-')) {
-                        clean = clean.substring(4);
-                    } else if (clean.startsWith('sub ')) {
-                        clean = clean.substring(4);
-                    }
-                    return clean
-                        .replace(/[^a-z0-9\s]/g, ' ')
-                        .split(/\s+/)
-                        .filter(t => t.length > 0);
-                };
-
-                const subTokens = getTokens(name);
-                let matchedParent: Company | undefined = undefined;
-
-                if (subTokens.length > 0) {
-                    const firstSubToken = subTokens[0];
-                    const genericWords = new Set(['engineering', 'services', 'logistics', 'construction', 'africa', 'mozambique', 'group', 'ltd', 'co', 'corporation', 'limitada', 'lda', 'sa', 'inc', 'unknown']);
-                    const isFirstTokenGeneric = genericWords.has(firstSubToken);
-
-                    // Try to match the first token of the subcontractor with the first token of a contractor
-                    if (!isFirstTokenGeneric) {
-                        matchedParent = currentCompanies.find(c => {
-                            const cTokens = getTokens(c.name);
-                            return cTokens.length > 0 && cTokens[0] === firstSubToken;
-                        });
-                    }
-
-                    // Fallback to sharing any non-generic token
-                    if (!matchedParent) {
-                        matchedParent = currentCompanies.find(c => {
-                            const cTokens = getTokens(c.name);
-                            return subTokens.some(st => !genericWords.has(st) && cTokens.includes(st));
-                        });
-                    }
-                }
-
-                const parentId = matchedParent ? matchedParent.id : primeCompanyId;
-
-                const newCompany: Company = {
-                    id: uuidv4(),
-                    name: name,
-                    appName: name,
-                    status: 'Active',
-                    defaultLanguage: 'en',
-                    parentId: parentId,
-                    tier: 'Sub',
-                    features: { alcohol: false }
-                };
-
-                if (isSupabaseConfigured && supabase) {
-                    await supabase.from('companies').upsert({
-                        id: newCompany.id,
-                        name: newCompany.name,
-                        app_name: newCompany.appName,
-                        status: newCompany.status,
-                        default_language: newCompany.defaultLanguage,
-                        parent_id: newCompany.parentId,
-                        tier: newCompany.tier,
-                        features: newCompany.features
-                    });
-                } else {
-                    FALLBACK_COMPANIES.push(newCompany);
-                }
-                currentCompanies.push(newCompany);
-            }
-
-            if (!isSupabaseConfigured || !supabase) {
-                saveLocalStorageJson('fallback_companies', FALLBACK_COMPANIES);
-            }
+        for (const name of companiesToCreate) {
+            await this.saveCompany({
+                id: uuidv4(),
+                name,
+                appName: name,
+                status: 'Active',
+                defaultLanguage: 'en',
+                parentId: primeCompanyId,
+                tier: 'Sub',
+                features: { alcohol: false }
+            });
         }
 
-        // --- 2. UPSERT EMPLOYEES AND REQUIREMENTS ---
-        let added = 0;
-        let updated = 0;
+        // --- 2. UPSERT EMPLOYEES ---
+        let added = 0, updated = 0;
+        const currentEmployees = await this.getEmployees();
 
         for (const item of rawData) {
             const companyName = item.company || (connectorId === 'sf-hr' ? 'Vulcan' : 'Unknown');
-            const normalizedEmp: Partial<Employee> = {
-                id: uuidv4(),
-                recordId: item.id,
+            const existing = currentEmployees.find(e => e.recordId === item.id);
+
+            await post('/employees/upsert', {
+                id: existing?.id || uuidv4(),
+                record_id: item.id,
                 name: item.name,
                 company: companyName,
                 department: item.dept || 'Operations',
                 role: item.role || 'Personnel',
-                isActive: true,
-                siteId: 's1'
-            };
+                is_active: true,
+                site_id: null
+            });
 
-            // In mock mode:
-            if (!isSupabaseConfigured || !supabase) {
-                const existingIdx = FALLBACK_EMPLOYEES.findIndex(e => e.recordId === normalizedEmp.recordId);
-                let targetId = '';
-                if (existingIdx >= 0) {
-                    targetId = FALLBACK_EMPLOYEES[existingIdx].id;
-                    FALLBACK_EMPLOYEES[existingIdx] = {
-                        ...FALLBACK_EMPLOYEES[existingIdx],
-                        ...normalizedEmp,
-                        id: targetId // keep existing ID
-                    };
-                    updated++;
-                } else {
-                    targetId = normalizedEmp.id!;
-                    FALLBACK_EMPLOYEES.push(normalizedEmp as Employee);
-                    added++;
+            if (existing) updated++; else added++;
+
+            if (includeModules && item.aso_expiry) {
+                const racMatrix: Record<string, boolean> = {};
+                if (Array.isArray(item.rac_flags)) {
+                    item.rac_flags.forEach((f: string) => racMatrix[f] = true);
                 }
-
-                if (includeModules && item.aso_expiry) {
-                    const racMatrix: Record<string, boolean> = {};
-                    if (Array.isArray(item.rac_flags)) {
-                        item.rac_flags.forEach((f: string) => racMatrix[f] = true);
-                    }
-
-                    const reqPayload: EmployeeRequirement = {
-                        employeeId: targetId,
+                const empId = existing?.id || (await this.getEmployees()).find(e => e.recordId === item.id)?.id;
+                if (empId) {
+                    await this.updateRequirement({
+                        employeeId: empId,
                         asoExpiryDate: item.aso_expiry,
                         requiredRacs: racMatrix
-                    };
-
-                    const existingReqIdx = FALLBACK_REQUIREMENTS.findIndex(r => r.employeeId === targetId);
-                    if (existingReqIdx >= 0) {
-                        FALLBACK_REQUIREMENTS[existingReqIdx] = reqPayload;
-                    } else {
-                        FALLBACK_REQUIREMENTS.push(reqPayload);
-                    }
+                    });
                 }
-            } else {
-                // Supabase mode:
-                const { data: existing } = await supabase
-                    .from('employees')
-                    .select('id')
-                    .eq('record_id', normalizedEmp.recordId)
-                    .maybeSingle();
-
-                let targetEmployeeId = '';
-
-                if (existing) {
-                    targetEmployeeId = existing.id;
-                    const { error } = await supabase.from('employees').update(this.mapEmployeeToDb(normalizedEmp)).eq('id', existing.id);
-                    if (!error) updated++;
-                } else {
-                    const { data: created, error } = await supabase.from('employees').insert(this.mapEmployeeToDb(normalizedEmp)).select('id').single();
-                    if (!error && created) {
-                        targetEmployeeId = created.id;
-                        added++;
-                    }
-                }
-
-                if (includeModules && targetEmployeeId && item.aso_expiry) {
-                    const racMatrix: Record<string, boolean> = {};
-                    if (Array.isArray(item.rac_flags)) {
-                        item.rac_flags.forEach((f: string) => racMatrix[f] = true);
-                    }
-
-                    const requirementPayload = {
-                        employee_id: targetEmployeeId,
-                        aso_expiry_date: item.aso_expiry,
-                        required_racs: racMatrix
-                    };
-
-                    await supabase.from('employee_requirements').upsert(requirementPayload);
-                }
-            }
-        }
-
-        if (!isSupabaseConfigured || !supabase) {
-            saveLocalStorageJson('fallback_employees', FALLBACK_EMPLOYEES);
-            if (includeModules) {
-                saveLocalStorageJson('fallback_requirements', FALLBACK_REQUIREMENTS);
             }
         }
 
         return { added, updated };
     },
 
-    async promoteFromWaitlist(entryId: string, sessionId: string, employeeId: string) {
-        if (!isSupabaseConfigured || !supabase) {
-            const idx = FALLBACK_BOOKINGS.findIndex(b => b.id === entryId);
-            if (idx >= 0) {
-                FALLBACK_BOOKINGS[idx].status = BookingStatus.PENDING;
-                saveLocalStorageJson('fallback_bookings', FALLBACK_BOOKINGS);
-            }
-            return;
-        }
-        const { error: insertErr } = await supabase.from('records').insert({
-            session_id: sessionId,
-            employee_id: employeeId,
-            status: BookingStatus.PENDING
-        });
-        if (insertErr) throw insertErr;
-        const { error: deleteErr } = await supabase.from('waiting_list').delete().eq('id', entryId);
-        if (deleteErr) throw deleteErr;
-    },
-
-    async saveWaitlistEntry(sessionId: string, employeeId: string) {
-        if (!isSupabaseConfigured || !supabase) {
-            const emp = FALLBACK_EMPLOYEES.find(e => e.id === employeeId);
-            if (emp) {
-                const newWaitlistBooking: Booking = {
-                    id: uuidv4(),
-                    sessionId,
-                    employee: emp,
-                    status: BookingStatus.WAITLISTED,
-                    resultDate: null,
-                    expiryDate: null,
-                    theoryScore: 0,
-                    practicalScore: 0,
-                    attendance: false
-                };
-                FALLBACK_BOOKINGS.push(newWaitlistBooking);
-                saveLocalStorageJson('fallback_bookings', FALLBACK_BOOKINGS);
-            }
-            return;
-        }
-        const { error } = await supabase.from('waiting_list').insert({
-            session_id: sessionId,
-            employee_id: employeeId
-        });
-        if (error) throw error;
-    },
-
-    async removeFromWaitlist(entryId: string) {
-        if (!isSupabaseConfigured || !supabase) {
-            FALLBACK_BOOKINGS = FALLBACK_BOOKINGS.filter(b => b.id !== entryId);
-            saveLocalStorageJson('fallback_bookings', FALLBACK_BOOKINGS);
-            return;
-        }
-        await supabase.from('waiting_list').delete().eq('id', entryId);
-    },
-
-    async getRequirements(): Promise<EmployeeRequirement[]> {
-        const raw = await this.safeQuery('employee_requirements', supabase?.from('employee_requirements').select('*'), []);
-        if (raw.length === 0 && !isSupabaseConfigured) return FALLBACK_REQUIREMENTS;
-        return raw.map(r => ({
-            ...r,
-            employeeId: r.employee_id,
-            asoExpiryDate: r.aso_expiry_date,
-            requiredRacs: r.required_racs
-        }));
-    },
-
-    async getRacDefinitions(): Promise<RacDef[]> {
-        const raw = await this.safeQuery('rac_definitions', supabase?.from('rac_definitions').select('*').order('code'), []);
-        if (raw.length === 0 && !isSupabaseConfigured) return FALLBACK_RAC_DEFS;
-        return raw.map((r: any) => ({
-            id: r.id,
-            companyId: r.company_id,
-            code: r.code,
-            name: r.name,
-            validityMonths: r.validity_months !== undefined ? r.validity_months : r.validityMonths,
-            requiresDriverLicense: r.requires_driver_license !== undefined ? r.requires_driver_license : r.requiresDriverLicense,
-            requiresPractical: r.requires_practical !== undefined ? r.requires_practical : r.requiresPractical,
-            passScore: r.pass_score !== undefined ? r.pass_score : (r.passScore || 70)
-        }));
-    },
-
-    async getRooms(): Promise<Room[]> {
-        const raw = await this.safeQuery('rooms', supabase?.from('rooms').select('*'), []);
-        if (raw.length === 0 && !isSupabaseConfigured) return FALLBACK_ROOMS;
-        return raw;
-    },
-
-    async getTrainers(): Promise<Trainer[]> {
-        const raw = await this.safeQuery('trainers', supabase?.from('trainers').select('*'), []);
-        if (raw.length === 0 && !isSupabaseConfigured) return FALLBACK_TRAINERS;
-        return raw.map((t: any) => ({ 
-            id: t.id,
-            name: t.name,
-            racs: t.authorized_racs || [], 
-            siteId: t.site_id 
-        }));
-    },
-
-    async saveCompany(company: Company): Promise<Company> {
-        if (!isSupabaseConfigured || !supabase) {
-            const targetId = isUUID(company.id) ? company.id : uuidv4();
-            const companyObj: Company = {
-                id: targetId,
-                name: company.name,
-                appName: company.appName,
-                logoUrl: company.logoUrl,
-                safetyLogoUrl: company.safetyLogoUrl,
-                status: company.status || 'Active',
-                defaultLanguage: company.defaultLanguage || 'en',
-                parentId: company.parentId && isUUID(company.parentId) ? company.parentId : undefined,
-                tier: company.tier || 'Prime',
-                features: company.features || { alcohol: false }
-            };
-            const idx = FALLBACK_COMPANIES.findIndex(c => c.id === targetId);
-            if (idx >= 0) {
-                FALLBACK_COMPANIES[idx] = companyObj;
-            } else {
-                FALLBACK_COMPANIES.push(companyObj);
-            }
-            saveLocalStorageJson('fallback_companies', FALLBACK_COMPANIES);
-            return companyObj;
-        }
-        
-        // Ensure ID is a valid UUID. If it's a mock ID like 'c1', generate a new one.
-        const targetId = isUUID(company.id) ? company.id : uuidv4();
-
-        const payload: any = {
-            id: targetId,
-            name: company.name,
-            app_name: company.appName,
-            logo_url: company.logoUrl,
-            safety_logo_url: company.safetyLogoUrl,
-            status: company.status,
-            default_language: company.defaultLanguage,
-            features: company.features
-        };
-        
-        // Ensure parent_id is valid UUID
-        if (company.parentId && isUUID(company.parentId)) {
-            payload.parent_id = company.parentId;
-        } else {
-            payload.parent_id = null;
-        }
-
-        if (company.tier) payload.tier = company.tier;
-
-        const { data, error } = await supabase.from('companies').upsert(payload).select();
-        if (error) throw error;
-        return this.mapCompanyFromDb(data[0]);
-    },
-
-    async saveRacDefinition(rac: RacDef) {
-        if (!isSupabaseConfigured || !supabase) {
-            const targetId = isUUID(rac.id) ? rac.id : uuidv4();
-            const racObj: RacDef = {
-                id: targetId,
-                companyId: rac.companyId || null,
-                code: rac.code,
-                name: rac.name,
-                validityMonths: rac.validityMonths,
-                requiresDriverLicense: rac.requiresDriverLicense,
-                requiresPractical: rac.requiresPractical,
-                passScore: rac.passScore || 70
-            };
-            const idx = FALLBACK_RAC_DEFS.findIndex(r => r.id === targetId);
-            if (idx >= 0) {
-                FALLBACK_RAC_DEFS[idx] = racObj;
-            } else {
-                FALLBACK_RAC_DEFS.push(racObj);
-            }
-            saveLocalStorageJson('fallback_rac_defs', FALLBACK_RAC_DEFS);
-            return racObj;
-        }
-        const payload = {
-            id: isUUID(rac.id) ? rac.id : uuidv4(),
-            company_id: (rac.companyId && isUUID(rac.companyId)) ? rac.companyId : null,
-            code: rac.code,
-            name: rac.name,
-            validity_months: rac.validityMonths,
-            requires_driver_license: rac.requiresDriverLicense,
-            requires_practical: rac.requiresPractical,
-            pass_score: rac.passScore || 70
-        };
-        const { data, error } = await supabase.from('rac_definitions').upsert(payload).select();
-        if (error) throw error;
-        return data[0];
-    },
-
-    async deleteRacDefinition(id: string) {
-        if (!isSupabaseConfigured || !supabase) {
-            FALLBACK_RAC_DEFS = FALLBACK_RAC_DEFS.filter(r => r.id !== id);
-            saveLocalStorageJson('fallback_rac_defs', FALLBACK_RAC_DEFS);
-            return;
-        }
-        await supabase.from('rac_definitions').delete().eq('id', id);
-    },
-
-    async saveSite(site: Site) {
-        if (!isSupabaseConfigured || !supabase) {
-            const targetId = isUUID(site.id) ? site.id : uuidv4();
-            const siteObj: Site = {
-                id: targetId,
-                companyId: site.companyId || null,
-                name: site.name,
-                location: site.location,
-                mandatoryRacs: site.mandatoryRacs || []
-            };
-            const idx = FALLBACK_SITES.findIndex(s => s.id === targetId);
-            if (idx >= 0) {
-                FALLBACK_SITES[idx] = siteObj;
-            } else {
-                FALLBACK_SITES.push(siteObj);
-            }
-            saveLocalStorageJson('fallback_sites', FALLBACK_SITES);
-            return siteObj;
-        }
-        const { data, error } = await supabase.from('sites').upsert({
-            id: isUUID(site.id) ? site.id : uuidv4(),
-            company_id: isUUID(site.companyId) ? site.companyId : null,
-            name: site.name,
-            location: site.location,
-            mandatory_racs: site.mandatoryRacs
-        }).select();
-        if (error) throw error;
-        return data[0];
-    },
-
-    async deleteSite(id: string) {
-        if (!isSupabaseConfigured || !supabase) {
-            FALLBACK_SITES = FALLBACK_SITES.filter(s => s.id !== id);
-            saveLocalStorageJson('fallback_sites', FALLBACK_SITES);
-            return;
-        }
-        await supabase.from('sites').delete().eq('id', id);
-    },
-
-    async saveRoom(room: Room) {
-        if (!isSupabaseConfigured || !supabase) {
-            const targetId = isUUID(room.id) ? room.id : uuidv4();
-            const roomObj: Room = {
-                id: targetId,
-                name: room.name,
-                capacity: room.capacity,
-                siteId: room.siteId || null
-            };
-            const idx = FALLBACK_ROOMS.findIndex(r => r.id === targetId);
-            if (idx >= 0) {
-                FALLBACK_ROOMS[idx] = roomObj;
-            } else {
-                FALLBACK_ROOMS.push(roomObj);
-            }
-            saveLocalStorageJson('fallback_rooms', FALLBACK_ROOMS);
-            return roomObj;
-        }
-        const { data, error } = await supabase.from('rooms').upsert({
-            id: isUUID(room.id) ? room.id : uuidv4(),
-            name: room.name,
-            capacity: room.capacity,
-            site_id: isUUID(room.siteId) ? room.siteId : null
-        }).select();
-        if (error) throw error;
-        return data[0];
-    },
-
-    async deleteRoom(id: string) {
-        if (!isSupabaseConfigured || !supabase) {
-            FALLBACK_ROOMS = FALLBACK_ROOMS.filter(r => r.id !== id);
-            saveLocalStorageJson('fallback_rooms', FALLBACK_ROOMS);
-            return;
-        }
-        await supabase.from('rooms').delete().eq('id', id);
-    },
-
-    async saveTrainer(trainer: Trainer) {
-        if (!isSupabaseConfigured || !supabase) {
-            const targetId = isUUID(trainer.id) ? trainer.id : uuidv4();
-            const trainerObj: Trainer = {
-                id: targetId,
-                name: trainer.name,
-                racs: trainer.racs || [],
-                siteId: trainer.siteId || null
-            };
-            const idx = FALLBACK_TRAINERS.findIndex(t => t.id === targetId);
-            if (idx >= 0) {
-                FALLBACK_TRAINERS[idx] = trainerObj;
-            } else {
-                FALLBACK_TRAINERS.push(trainerObj);
-            }
-            saveLocalStorageJson('fallback_trainers', FALLBACK_TRAINERS);
-            return trainerObj;
-        }
-        const { data, error } = await supabase.from('trainers').upsert({
-            id: isUUID(trainer.id) ? trainer.id : uuidv4(),
-            name: trainer.name,
-            authorized_racs: trainer.racs, 
-            site_id: isUUID(trainer.siteId) ? trainer.siteId : null 
-        }).select();
-        if (error) throw error;
-        return data[0];
-    },
-
-    async deleteTrainer(id: string) {
-        if (!isSupabaseConfigured || !supabase) {
-            FALLBACK_TRAINERS = FALLBACK_TRAINERS.filter(t => t.id !== id);
-            saveLocalStorageJson('fallback_trainers', FALLBACK_TRAINERS);
-            return;
-        }
-        await supabase.from('trainers').delete().eq('id', id);
-    },
-
-    async upsertUser(user: Partial<User>) {
-        if (!isSupabaseConfigured || !supabase) {
-            const targetId = typeof user.id === 'number' ? user.id : Math.floor(Math.random() * 10000);
-            const userObj: User = {
-                id: targetId,
-                name: user.name || 'Unknown',
-                email: user.email || '',
-                role: user.role || UserRole.USER,
-                status: user.status || 'Active',
-                company: user.company || 'Unknown',
-                jobTitle: user.jobTitle || 'N/A',
-                siteId: user.siteId || 'all'
-            };
-            const idx = FALLBACK_USERS.findIndex(u => u.email === user.email || u.id === targetId);
-            if (idx >= 0) {
-                FALLBACK_USERS[idx] = { ...FALLBACK_USERS[idx], ...userObj };
-            } else {
-                FALLBACK_USERS.push(userObj);
-            }
-            saveLocalStorageJson('fallback_users', FALLBACK_USERS);
-            return userObj;
-        }
-        const payload = this.mapUserToDb(user);
-        const { data, error } = await supabase.from('users').upsert(payload, { onConflict: 'email' }).select();
-        if (error) throw error;
-        return this.mapUserFromDb(data[0]);
-    },
-
-    async updateUserPassword(id: number, password: string) {
-        if (!isSupabaseConfigured || !supabase) return;
-        const { error } = await supabase.from('users').update({ password }).eq('id', id);
-        if (error) throw error;
-    },
-
-    async deleteUser(id: number) {
-        if (!isSupabaseConfigured || !supabase) {
-            FALLBACK_USERS = FALLBACK_USERS.filter(u => u.id !== id);
-            saveLocalStorageJson('fallback_users', FALLBACK_USERS);
-            return;
-        }
-        const { error } = await supabase.from('users').delete().eq('id', id);
-        if (error) throw error;
-    },
-
-    async upsertEmployee(emp: Partial<Employee>) {
-        if (!isSupabaseConfigured || !supabase) {
-            const recordId = emp.recordId || '';
-            const existingIdx = FALLBACK_EMPLOYEES.findIndex(e => e.recordId === recordId || (isUUID(emp.id) && e.id === emp.id));
-            let employeeObj: Employee;
-            if (existingIdx >= 0) {
-                employeeObj = {
-                    ...FALLBACK_EMPLOYEES[existingIdx],
-                    ...emp
-                } as Employee;
-                FALLBACK_EMPLOYEES[existingIdx] = employeeObj;
-            } else {
-                employeeObj = {
-                    id: isUUID(emp.id) ? emp.id : uuidv4(),
-                    recordId: recordId,
-                    name: emp.name || 'Unknown',
-                    company: emp.company || 'Unknown',
-                    department: emp.department || 'N/A',
-                    role: emp.role || 'N/A',
-                    siteId: emp.siteId || 's1',
-                    isActive: emp.isActive ?? true,
-                    phoneNumber: emp.phoneNumber,
-                    driverLicenseNumber: emp.driverLicenseNumber,
-                    driverLicenseClass: emp.driverLicenseClass,
-                    driverLicenseExpiry: emp.driverLicenseExpiry
-                };
-                FALLBACK_EMPLOYEES.push(employeeObj);
-            }
-            saveLocalStorageJson('fallback_employees', FALLBACK_EMPLOYEES);
-            return employeeObj;
-        }
-        const payload = this.mapEmployeeToDb(emp);
-        const { data, error } = await supabase.from('employees').upsert(payload, { onConflict: 'record_id' }).select();
-        if (error) throw error;
-        return this.mapEmployeeFromDb(data[0]);
-    },
-
-    async deleteEmployee(id: string) {
-        if (!isSupabaseConfigured || !supabase) {
-            FALLBACK_EMPLOYEES = FALLBACK_EMPLOYEES.filter(e => e.id !== id);
-            saveLocalStorageJson('fallback_employees', FALLBACK_EMPLOYEES);
-            FALLBACK_REQUIREMENTS = FALLBACK_REQUIREMENTS.filter(r => r.employeeId !== id);
-            saveLocalStorageJson('fallback_requirements', FALLBACK_REQUIREMENTS);
-            FALLBACK_BOOKINGS = FALLBACK_BOOKINGS.filter(b => b.employee?.id !== id);
-            saveLocalStorageJson('fallback_bookings', FALLBACK_BOOKINGS);
-            return;
-        }
-        const { error } = await supabase.from('employees').delete().eq('id', id);
-        if (error) throw error;
-    },
-
-    async saveBooking(booking: Partial<Booking>) {
-        if (!isSupabaseConfigured || !supabase) {
-            if (booking.status === BookingStatus.WAITLISTED) {
-                await this.saveWaitlistEntry(booking.sessionId!, booking.employee!.id);
-                return booking;
-            }
-            const targetId = isUUID(booking.id) ? booking.id : uuidv4();
-            const existingIdx = FALLBACK_BOOKINGS.findIndex(b => b.id === targetId);
-            
-            let empObj = booking.employee || FALLBACK_EMPLOYEES.find(e => e.id === booking.employee?.id);
-            if (!empObj) {
-                empObj = {
-                    id: booking.employee?.id || uuidv4(),
-                    recordId: booking.employee?.recordId || 'MOCK-EMP',
-                    name: booking.employee?.name || 'Unknown',
-                    company: booking.employee?.company || 'Unknown',
-                    department: booking.employee?.department || 'N/A',
-                    role: booking.employee?.role || 'N/A',
-                    isActive: true
-                };
-            }
-            const bookingObj: Booking = {
-                id: targetId,
-                sessionId: booking.sessionId || '',
-                employee: empObj,
-                status: booking.status || BookingStatus.PENDING,
-                resultDate: booking.resultDate || null,
-                expiryDate: booking.expiryDate || null,
-                theoryScore: booking.theoryScore || 0,
-                practicalScore: booking.practicalScore || 0,
-                attendance: booking.attendance ?? false,
-                trainerName: booking.trainerName,
-                comments: booking.comments || (!isUUID(booking.sessionId) ? `Virtual Session: ${booking.sessionId}` : null)
-            };
-            if (existingIdx >= 0) {
-                FALLBACK_BOOKINGS[existingIdx] = {
-                    ...FALLBACK_BOOKINGS[existingIdx],
-                    ...booking,
-                    employee: empObj
-                } as Booking;
-            } else {
-                FALLBACK_BOOKINGS.push(bookingObj);
-            }
-            saveLocalStorageJson('fallback_bookings', FALLBACK_BOOKINGS);
-            return bookingObj;
-        }
-        
-        if (booking.status === BookingStatus.WAITLISTED) {
-            await this.saveWaitlistEntry(booking.sessionId!, booking.employee!.id);
-            return booking;
-        }
-
-        const payload: any = { ...booking };
-        if (booking.employee) payload.employee_id = booking.employee.id;
-        delete payload.employee;
-        
-        const dbPayload = {
-            id: isUUID(payload.id) ? payload.id : uuidv4(),
-            session_id: isUUID(payload.sessionId) ? payload.sessionId : null,
-            employee_id: payload.employee_id,
-            status: payload.status,
-            result_date: payload.resultDate,
-            expiry_date: payload.expiryDate,
-            theory_score: payload.theoryScore,
-            practical_score: payload.practicalScore,
-            attendance: payload.attendance,
-            driver_license_verified: payload.driver_license_verified,
-            is_auto_booked: payload.isAutoBooked,
-            comments: payload.comments || (!isUUID(payload.sessionId) ? `Virtual Session: ${payload.sessionId}` : null),
-            trainer_name: payload.trainerName
-        };
-
-        const { data, error } = await supabase.from('records').upsert(dbPayload).select();
-        if (error) throw error;
-        return data[0];
-    },
-
-    async updateRequirement(req: EmployeeRequirement) {
-        if (!isSupabaseConfigured || !supabase) {
-            const existingIdx = FALLBACK_REQUIREMENTS.findIndex(r => r.employeeId === req.employeeId);
-            if (existingIdx >= 0) {
-                FALLBACK_REQUIREMENTS[existingIdx] = req;
-            } else {
-                FALLBACK_REQUIREMENTS.push(req);
-            }
-            saveLocalStorageJson('fallback_requirements', FALLBACK_REQUIREMENTS);
-            return;
-        }
-        const payload = { 
-            employee_id: req.employeeId, 
-            aso_expiry_date: req.asoExpiryDate, 
-            required_racs: req.requiredRacs 
-        };
-        await supabase.from('employee_requirements').upsert(payload);
-    },
+    // ─── Feedback ───────────────────────────────────────────────────────────────
 
     async saveFeedback(f: Partial<Feedback>) {
-        if (!isSupabaseConfigured || !supabase) return;
-        await supabase.from('feedback').upsert(f);
+        return post('/feedback', f);
     },
 
+    // ─── System Logs ────────────────────────────────────────────────────────────
+
     async addLog(level: string, message: string, user: string, metadata?: any) {
-        if (!isSupabaseConfigured || !supabase) {
-            const logs = getLocalStorageJson('fallback_logs', []);
-            logs.unshift({
-                id: uuidv4(),
-                level,
-                message_key: message,
-                user_name: user,
-                timestamp: new Date().toISOString(),
-                metadata: metadata || {}
-            });
-            if (logs.length > 100) logs.pop();
-            saveLocalStorageJson('fallback_logs', logs);
-            return;
-        }
-        await supabase.from('system_logs').insert({
+        return post('/logs', {
             level,
             message_key: message,
             user_name: user,
@@ -1396,25 +649,8 @@ export const db = {
     },
 
     async getLogs(): Promise<any[]> {
-        if (!isSupabaseConfigured || !supabase) {
-            const logs = getLocalStorageJson('fallback_logs', []);
-            return logs.map((l: any) => ({
-                id: l.id,
-                level: l.level,
-                messageKey: l.message_key,
-                user: l.user_name,
-                timestamp: l.timestamp,
-                aiFix: l.metadata?.aiFix || null
-            }));
-        }
-        const { data, error } = await supabase
-            .from('system_logs')
-            .select('*')
-            .order('timestamp', { ascending: false })
-            .limit(100);
-        
-        if (error) throw error;
-        return data.map(l => ({
+        const raw = await apiFetch<any[]>('/logs');
+        return raw.map(l => ({
             id: l.id,
             level: l.level,
             messageKey: l.message_key,
@@ -1424,39 +660,79 @@ export const db = {
         }));
     },
 
-    mapBookingFromDb(data: any): Booking {
-        const { employee_id, session_id, result_date, expiry_date, theory_score, practical_score, driver_license_verified, is_auto_booked, employee, trainer_name, ...rest } = data;
-        return {
-            ...rest,
-            sessionId: session_id,
-            employee: this.mapEmployeeFromDb(employee),
-            resultDate: result_date,
-            expiryDate: expiry_date,
-            theoryScore: theory_score,
-            practicalScore: practical_score,
-            driverLicenseVerified: driver_license_verified,
-            isAutoBooked: is_auto_booked,
-            trainerName: trainer_name
-        };
+    // ─── SafeMap Module ─────────────────────────────────────────────────────────
+
+    async getUnsafeConditions(): Promise<UnsafeCondition[]> {
+        const raw = await apiFetch<any[]>('/unsafe-conditions');
+        return raw.map(mapUnsafeConditionFromDb);
     },
 
-    mapSessionFromDb(data: any): TrainingSession {
-        return {
-            id: data.id,
-            racType: data.rac_type,
-            date: data.date,
-            startTime: data.start_time,
-            location: data.location,
-            instructor: data.instructor,
-            capacity: data.capacity,
-            sessionLanguage: data.session_language,
-            siteId: data.site_id
+    async createUnsafeCondition(condition: Omit<UnsafeCondition, 'id'>): Promise<UnsafeCondition> {
+        const payload = {
+            id: `sm-${Date.now()}`,
+            latitude: condition.latitude,
+            longitude: condition.longitude,
+            function_location: condition.functionLocation,
+            condition_type: condition.conditionType,
+            responsible_area: condition.responsibleArea,
+            description: condition.description,
+            action_plan: condition.actionPlan,
+            initial_photos: condition.initialPhotos || [],
+            correction_photos: condition.correctionPhotos || [],
+            observer_id: condition.observerId,
+            observer_name: condition.observerName,
+            ssma_focal_point_id: condition.ssmaFocalPointId,
+            ssma_focal_point_name: condition.ssmaFocalPointName,
+            area_responsible_id: condition.areaResponsibleId,
+            area_responsible_name: condition.areaResponsibleName,
+            area_manager_id: condition.areaManagerId,
+            area_manager_name: condition.areaManagerName,
+            state: condition.state || 'Criado',
+            map_status: condition.mapStatus || 'Recente',
+            resolved_at: condition.resolvedAt || null
         };
+        const raw = await post<any>('/unsafe-conditions', payload);
+        return mapUnsafeConditionFromDb(raw);
     },
 
-    // ─── FormBuilder: SQL Schema Execution ────────────────────────────────────
+    async updateUnsafeCondition(id: string, updates: Partial<UnsafeCondition>): Promise<UnsafeCondition | null> {
+        // Fetch current, merge, and upsert
+        const conditions = await this.getUnsafeConditions();
+        const current = conditions.find(c => c.id === id);
+        if (!current) return null;
+
+        const merged = { ...current, ...updates };
+        const payload = {
+            id: merged.id,
+            latitude: merged.latitude,
+            longitude: merged.longitude,
+            function_location: merged.functionLocation,
+            condition_type: merged.conditionType,
+            responsible_area: merged.responsibleArea,
+            description: merged.description,
+            action_plan: merged.actionPlan,
+            initial_photos: merged.initialPhotos || [],
+            correction_photos: merged.correctionPhotos || [],
+            observer_id: merged.observerId,
+            observer_name: merged.observerName,
+            ssma_focal_point_id: merged.ssmaFocalPointId,
+            ssma_focal_point_name: merged.ssmaFocalPointName,
+            area_responsible_id: merged.areaResponsibleId,
+            area_responsible_name: merged.areaResponsibleName,
+            area_manager_id: merged.areaManagerId,
+            area_manager_name: merged.areaManagerName,
+            state: merged.state,
+            map_status: merged.mapStatus,
+            resolved_at: merged.resolvedAt || null
+        };
+        const raw = await post<any>('/unsafe-conditions', payload);
+        return mapUnsafeConditionFromDb(raw);
+    },
+
+    // ─── FormBuilder: SQL Schema Execution ──────────────────────────────────────
+
     async executeSQL(sql: string, tableName: string, portalType: string, user: string): Promise<{ success: boolean; error?: string }> {
-        // Track created schemas in localStorage regardless of mode
+        // Track schemas in localStorage
         const schemas = getLocalStorageJson('formbuilder_schemas', []);
         const existing = schemas.findIndex((s: any) => s.tableName === tableName);
         const schemaRecord = {
@@ -1468,51 +744,75 @@ export const db = {
             status: 'pending' as string
         };
 
-        if (isSupabaseConfigured && supabase) {
-            try {
-                // Execute via Supabase's RPC function (requires a 'exec_sql' function in the DB)
-                const { error } = await supabase.rpc('exec_sql', { sql_query: sql });
-                if (error) {
-                    // If the RPC function doesn't exist, fall back to logging
-                    if (error.message?.includes('function') || error.code === '42883') {
-                        schemaRecord.status = 'rpc_unavailable_stored';
-                        if (existing >= 0) schemas[existing] = schemaRecord;
-                        else schemas.push(schemaRecord);
-                        saveLocalStorageJson('formbuilder_schemas', schemas);
-                        await this.addLog('WARN', `FORM_BUILDER_SQL_STORED: Table ${tableName} — RPC not available, SQL stored for manual execution`, user, { sql, portalType });
-                        return { success: true, error: 'SQL stored. RPC function exec_sql not found — please execute manually in Supabase SQL Editor.' };
-                    }
-                    schemaRecord.status = 'error';
-                    if (existing >= 0) schemas[existing] = schemaRecord;
-                    else schemas.push(schemaRecord);
-                    saveLocalStorageJson('formbuilder_schemas', schemas);
-                    return { success: false, error: error.message };
-                }
+        try {
+            const result = await post<any>('/exec-sql', { sql });
+            if (result.success) {
                 schemaRecord.status = 'executed';
                 if (existing >= 0) schemas[existing] = schemaRecord;
                 else schemas.push(schemaRecord);
                 saveLocalStorageJson('formbuilder_schemas', schemas);
-                await this.addLog('INFO', `FORM_BUILDER_TABLE_CREATED: ${tableName} (${portalType}) — SQL executed successfully`, user, { tableName, portalType });
+                await this.addLog('INFO', `FORM_BUILDER_TABLE_CREATED: ${tableName} (${portalType})`, user, { tableName, portalType });
                 return { success: true };
-            } catch (e: any) {
+            } else {
                 schemaRecord.status = 'error';
                 if (existing >= 0) schemas[existing] = schemaRecord;
                 else schemas.push(schemaRecord);
                 saveLocalStorageJson('formbuilder_schemas', schemas);
-                return { success: false, error: e.message || 'Unknown error' };
+                return { success: false, error: result.error };
             }
-        } else {
-            // Offline mode — store schema and mark as created
-            schemaRecord.status = 'offline_stored';
+        } catch (e: any) {
+            schemaRecord.status = 'error';
             if (existing >= 0) schemas[existing] = schemaRecord;
             else schemas.push(schemaRecord);
             saveLocalStorageJson('formbuilder_schemas', schemas);
-            await this.addLog('INFO', `FORM_BUILDER_SCHEMA_SAVED: ${tableName} (${portalType}) — stored for execution when DB is connected`, user, { tableName, portalType, sql });
-            return { success: true };
+            return { success: false, error: e.message || 'Unknown error' };
         }
     },
 
     getCreatedTables(): { tableName: string; portalType: string; createdAt: string; createdBy: string; status: string }[] {
         return getLocalStorageJson('formbuilder_schemas', []);
+    },
+
+    // ─── Compatibility stubs ────────────────────────────────────────────────────
+
+    mapBookingFromDb: mapBookingFromDb,
+    mapSessionFromDb: mapSessionFromDb,
+    mapEmployeeFromDb: mapEmployeeFromDb,
+    mapUserFromDb: mapUserFromDb,
+    mapCompanyFromDb: mapCompanyFromDb,
+
+    mapEmployeeToDb(emp: Partial<Employee>): any {
+        return {
+            id: isUUID(emp.id) ? emp.id : uuidv4(),
+            record_id: emp.recordId,
+            name: emp.name,
+            company: emp.company,
+            department: emp.department,
+            role: emp.role,
+            site_id: isUUID(emp.siteId) ? emp.siteId : null,
+            phone_number: emp.phoneNumber,
+            driver_license_number: emp.driverLicenseNumber,
+            driver_license_class: emp.driverLicenseClass,
+            driver_license_expiry: emp.driverLicenseExpiry,
+            is_active: emp.isActive
+        };
+    },
+
+    mapUserToDb(user: Partial<User>): any {
+        return {
+            name: user.name,
+            email: user.email,
+            role: user.role,
+            status: user.status,
+            company: user.company,
+            job_title: user.jobTitle,
+            phone_number: user.phoneNumber,
+            site_id: user.siteId
+        };
+    },
+
+    // safeQuery stub — no longer needed but kept for any stray references
+    async safeQuery<T>(_tableName: string, _query: any, fallback: T): Promise<T> {
+        return fallback;
     }
 };

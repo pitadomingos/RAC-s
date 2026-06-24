@@ -1,188 +1,658 @@
 const http = require('http');
+const { Pool } = require('pg');
 const fs = require('fs');
 const path = require('path');
 
 const PORT = 5000;
-const DB_FILE = path.join(__dirname, 'db.json');
 
-// Seed Data
-const initialData = {
-  companies: [
-    { id: 'c-vulcan', name: 'Vulcan Resources Mozambique', appName: 'ZeroGate', status: 'Active', defaultLanguage: 'en', tier: 'Prime', features: { alcohol: true } },
-    { id: 'c-motaengil', name: 'Mota-Engil Africa', appName: 'ZeroGate Sub-Portal', status: 'Active', defaultLanguage: 'pt', parentId: 'c-vulcan', tier: 'Sub', features: { alcohol: false } },
-    { id: 'c-jachris', name: 'Jachris Services', appName: 'Jachris Portal', status: 'Active', defaultLanguage: 'pt', parentId: 'c-vulcan', tier: 'Sub', features: { alcohol: false } },
-    { id: 'c-belabel', name: 'Belabel Logistics', appName: 'Belabel Portal', status: 'Active', defaultLanguage: 'pt', parentId: 'c-vulcan', tier: 'Sub', features: { alcohol: false } }
-  ],
-  sites: [
-    { id: 's-moatize', companyId: 'c-vulcan', name: 'Moatize Coal Mine', location: 'Tete' },
-    { id: 's-nacala', companyId: 'c-vulcan', name: 'Nacala Logistics Port', location: 'Nampula' }
-  ],
-  employees: [
-    { id: 'emp-paulo', name: 'Paulo Manjate', recordId: 'VUL-2049', siteId: 's-moatize', company: 'Vulcan Resources Mozambique', department: 'HSE Risk', role: 'Operator', isActive: true, phoneNumber: '+258 84 123 4567', driverLicenseNumber: 'MC-29402', driverLicenseClass: 'C', driverLicenseExpiry: '2027-12-10' },
-    { id: 'emp-maria', name: 'Maria Tembe', recordId: 'MOT-8839', siteId: 's-nacala', company: 'Mota-Engil Africa', department: 'Operations', role: 'Driver', isActive: true, phoneNumber: '+258 82 987 6543', driverLicenseNumber: 'MC-40294', driverLicenseClass: 'B', driverLicenseExpiry: '2026-05-15' },
-    { id: 'emp-celso', name: 'Celso Alface', recordId: 'JAC-0092', siteId: 's-moatize', company: 'Jachris Services', department: 'Maintenance', role: 'Technician', isActive: true, phoneNumber: '+258 84 999 1122', driverLicenseNumber: 'MC-11002', driverLicenseClass: 'C', driverLicenseExpiry: '2028-08-20' }
-  ],
-  bookings: [
-    { id: 'book-initial-1', employeeId: 'emp-paulo', sessionId: 'sess-1', status: 'Pending', requestedAt: new Date().toISOString() }
-  ],
-  sessions: [
-    { id: 'sess-1', racCode: 'RAC01', date: '2026-06-25', startTime: '09:00', location: 'Main Classroom', capacity: 15, instructor: 'Pita Domingos', language: 'en', companyId: 'c-vulcan', siteId: 's-moatize' },
-    { id: 'sess-2', racCode: 'RAC02', date: '2026-06-28', startTime: '10:00', location: 'Auditorium B', capacity: 10, instructor: 'Pita Domingos', language: 'pt', companyId: 'c-vulcan', siteId: 's-nacala' },
-    { id: 'sess-3', racCode: 'RAC01', date: '2026-07-02', startTime: '14:00', location: 'Site Classroom 2', capacity: 12, instructor: 'Pita Domingos', language: 'pt', companyId: 'c-vulcan', siteId: 's-moatize' }
-  ],
-  requirements: [
-    { id: 'req-1', employeeId: 'emp-paulo', racCode: 'RAC01', status: 'Valid', expiryDate: '2027-06-01', medicalStatus: 'Valid', medicalExpiry: '2026-11-15' },
-    { id: 'req-2', employeeId: 'emp-maria', racCode: 'RAC02', status: 'Valid', expiryDate: '2027-01-15', medicalStatus: 'Expired', medicalExpiry: '2026-05-01' },
-    { id: 'req-3', employeeId: 'emp-celso', racCode: 'RAC01', status: 'Expired', expiryDate: '2026-05-10', medicalStatus: 'Valid', medicalExpiry: '2027-02-14' }
-  ],
-  logs: [
-    { id: 'log-1', timestamp: new Date(Date.now() - 3600000).toISOString(), employeeName: 'Paulo Manjate', recordId: 'VUL-2049', company: 'Vulcan Resources Mozambique', site: 'Moatize Coal Mine', module: 'Breathalyzer', result: 'Clean (0.00 BAC)', status: 'Authorized' }
-  ],
-  notifications: [
-    { id: 'notif-1', type: 'info', title: 'System Initialized', message: 'CARS Shared Sync API active.', timestamp: new Date().toISOString(), isRead: false }
-  ]
-};
+// ─── Load .env file manually (no dotenv dependency) ─────────────────────────
 
-// Ensure database file exists
-function loadDb() {
-  try {
-    if (fs.existsSync(DB_FILE)) {
-      const raw = fs.readFileSync(DB_FILE, 'utf8');
-      return JSON.parse(raw);
-    }
-  } catch (e) {
-    console.error('Error reading db.json, resetting to default', e);
-  }
-  fs.writeFileSync(DB_FILE, JSON.stringify(initialData, null, 2), 'utf8');
-  return initialData;
-}
-
-function saveDb(data) {
-  try {
-    fs.writeFileSync(DB_FILE, JSON.stringify(data, null, 2), 'utf8');
-  } catch (e) {
-    console.error('Error saving db.json', e);
-  }
-}
-
-// Start Server
-const server = http.createServer((req, res) => {
-  // Add CORS headers to all responses
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS, PUT, DELETE');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-
-  if (req.method === 'OPTIONS') {
-    res.writeHead(204);
-    res.end();
-    return;
-  }
-
-  const parsedUrl = new URL(req.url, `http://${req.headers.host}`);
-  const pathname = parsedUrl.pathname;
-  const db = loadDb();
-
-  // Route: GET /api/db -> Load entire DB state
-  if (pathname === '/api/db' && req.method === 'GET') {
-    res.writeHead(200, { 'Content-Type': 'application/json' });
-    res.end(JSON.stringify(db));
-    return;
-  }
-
-  // Route: POST /api/save -> Full sync
-  if (pathname === '/api/save' && req.method === 'POST') {
-    let body = '';
-    req.on('data', chunk => { body += chunk.toString(); });
-    req.on('end', () => {
-      try {
-        const payload = JSON.parse(body);
-        // Clean and update keys in database
-        Object.keys(payload).forEach(key => {
-          if (db[key]) {
-            db[key] = payload[key];
-          }
-        });
-        saveDb(db);
-        res.writeHead(200, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ success: true }));
-      } catch (e) {
-        res.writeHead(400, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ error: 'Invalid JSON' }));
-      }
-    });
-    return;
-  }
-
-  // Route: POST /api/bookings -> Add new training booking
-  if (pathname === '/api/bookings' && req.method === 'POST') {
-    let body = '';
-    req.on('data', chunk => { body += chunk.toString(); });
-    req.on('end', () => {
-      try {
-        const booking = JSON.parse(body);
-        db.bookings.push(booking);
-        
-        // Push notification for training department
-        const employee = db.employees.find(e => e.id === booking.employeeId) || { name: 'Unknown Employee' };
-        const session = db.sessions.find(s => s.id === booking.sessionId) || { racCode: 'RAC' };
-        
-        db.notifications.unshift({
-          id: Math.random().toString(36).substring(2, 9),
-          type: 'info',
-          title: 'New Training Request',
-          message: `${employee.name} requested enrollment in ${session.racCode}.`,
-          timestamp: new Date().toISOString(),
-          isRead: false
-        });
-
-        saveDb(db);
-        res.writeHead(200, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ success: true, booking }));
-      } catch (e) {
-        res.writeHead(400, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ error: 'Invalid request' }));
-      }
-    });
-    return;
-  }
-
-  // Route: POST /api/alcohol/log -> Log breathalyzer gate checks
-  if (pathname === '/api/alcohol/log' && req.method === 'POST') {
-    let body = '';
-    req.on('data', chunk => { body += chunk.toString(); });
-    req.on('end', () => {
-      try {
-        const logEntry = JSON.parse(body);
-        db.logs.unshift(logEntry);
-        
-        // Trigger alert notification if positive BAC test
-        if (logEntry.result !== 'Clean (0.00 BAC)' && logEntry.status === 'Denied') {
-          db.notifications.unshift({
-            id: Math.random().toString(36).substring(2, 9),
-            type: 'danger',
-            title: 'ALCOHOL VIOLATION DETECTED',
-            message: `Employee ${logEntry.employeeName} (${logEntry.company}) failed breathalyzer test at ${logEntry.site}. Gate Access Denied!`,
-            timestamp: new Date().toISOString(),
-            isRead: false
-          });
+const envPath = path.join(__dirname, '..', '.env');
+if (fs.existsSync(envPath)) {
+    fs.readFileSync(envPath, 'utf8').split('\n').forEach(line => {
+        const trimmed = line.trim();
+        if (!trimmed || trimmed.startsWith('#')) return;
+        const eqIdx = trimmed.indexOf('=');
+        if (eqIdx > 0) {
+            const key = trimmed.substring(0, eqIdx).trim();
+            const val = trimmed.substring(eqIdx + 1).trim();
+            if (!process.env[key]) process.env[key] = val;
         }
-        
-        saveDb(db);
-        res.writeHead(200, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ success: true }));
-      } catch (e) {
-        res.writeHead(400, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ error: 'Invalid payload' }));
-      }
     });
-    return;
-  }
+}
 
-  // Catch all: 404
-  res.writeHead(404, { 'Content-Type': 'application/json' });
-  res.end(JSON.stringify({ error: 'Route not found' }));
+// ─── PostgreSQL Connection ─────────────────────────────────────────────────────
+
+const caCert = fs.readFileSync(path.join(__dirname, 'ca.pem'), 'utf8');
+
+const pool = new Pool({
+    host: process.env.DB_HOST || 'localhost',
+    port: parseInt(process.env.DB_PORT || '5432'),
+    database: process.env.DB_NAME || 'defaultdb',
+    user: process.env.DB_USER || 'postgres',
+    password: process.env.DB_PASSWORD || '',
+    ssl: { rejectUnauthorized: true, ca: caCert },
+    max: 20,
+    idleTimeoutMillis: 30000,
+    connectionTimeoutMillis: 5000
+});
+
+pool.on('error', (err) => {
+    console.error('Unexpected pool error:', err.message);
+});
+
+// ─── Helpers ────────────────────────────────────────────────────────────────────
+
+function parseBody(req) {
+    return new Promise((resolve, reject) => {
+        let body = '';
+        req.on('data', chunk => { body += chunk.toString(); });
+        req.on('end', () => {
+            try { resolve(body ? JSON.parse(body) : {}); }
+            catch (e) { reject(new Error('Invalid JSON')); }
+        });
+        req.on('error', reject);
+    });
+}
+
+function sendJson(res, code, data) {
+    res.writeHead(code, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify(data));
+}
+
+function sendError(res, code, msg) {
+    sendJson(res, code, { error: msg });
+}
+
+// ─── Route helpers ──────────────────────────────────────────────────────────────
+
+function matchRoute(method, pathname, reqMethod, reqPath) {
+    if (reqMethod !== method) return null;
+    // Static path
+    if (!pathname.includes(':')) return reqPath === pathname ? {} : null;
+    // Parameterized path e.g. /api/employees/:id
+    const patternParts = pathname.split('/');
+    const reqParts = reqPath.split('/');
+    if (patternParts.length !== reqParts.length) return null;
+    const params = {};
+    for (let i = 0; i < patternParts.length; i++) {
+        if (patternParts[i].startsWith(':')) {
+            params[patternParts[i].slice(1)] = reqParts[i];
+        } else if (patternParts[i] !== reqParts[i]) {
+            return null;
+        }
+    }
+    return params;
+}
+
+// ─── Server ─────────────────────────────────────────────────────────────────────
+
+const server = http.createServer(async (req, res) => {
+    // CORS
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+    if (req.method === 'OPTIONS') { res.writeHead(204); res.end(); return; }
+
+    const parsedUrl = new URL(req.url, `http://${req.headers.host}`);
+    const pathname = parsedUrl.pathname;
+    let params;
+
+    try {
+        // ════════════════════════════════════════════════════════════════════════
+        //  COMPANIES
+        // ════════════════════════════════════════════════════════════════════════
+
+        if ((params = matchRoute('GET', '/api/companies', req.method, pathname))) {
+            const { rows } = await pool.query('SELECT * FROM companies ORDER BY name');
+            return sendJson(res, 200, rows);
+        }
+
+        if ((params = matchRoute('POST', '/api/companies', req.method, pathname))) {
+            const body = await parseBody(req);
+            const { rows } = await pool.query(
+                `INSERT INTO companies (id, name, app_name, logo_url, safety_logo_url, status, default_language, parent_id, tier, features)
+                 VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)
+                 ON CONFLICT (id) DO UPDATE SET
+                    name=EXCLUDED.name, app_name=EXCLUDED.app_name, logo_url=EXCLUDED.logo_url,
+                    safety_logo_url=EXCLUDED.safety_logo_url, status=EXCLUDED.status,
+                    default_language=EXCLUDED.default_language, parent_id=EXCLUDED.parent_id,
+                    tier=EXCLUDED.tier, features=EXCLUDED.features
+                 RETURNING *`,
+                [body.id, body.name, body.app_name, body.logo_url, body.safety_logo_url,
+                 body.status || 'Active', body.default_language || 'en', body.parent_id || null,
+                 body.tier || 'Prime', body.features ? JSON.stringify(body.features) : '{"alcohol":false}']
+            );
+            return sendJson(res, 200, rows[0]);
+        }
+
+        if ((params = matchRoute('DELETE', '/api/companies/:id', req.method, pathname))) {
+            await pool.query('DELETE FROM companies WHERE id = $1', [params.id]);
+            return sendJson(res, 200, { success: true });
+        }
+
+        // ════════════════════════════════════════════════════════════════════════
+        //  SITES
+        // ════════════════════════════════════════════════════════════════════════
+
+        if ((params = matchRoute('GET', '/api/sites', req.method, pathname))) {
+            const { rows } = await pool.query('SELECT * FROM sites ORDER BY name');
+            return sendJson(res, 200, rows);
+        }
+
+        if ((params = matchRoute('POST', '/api/sites', req.method, pathname))) {
+            const body = await parseBody(req);
+            const { rows } = await pool.query(
+                `INSERT INTO sites (id, company_id, name, location, mandatory_racs)
+                 VALUES ($1,$2,$3,$4,$5)
+                 ON CONFLICT (id) DO UPDATE SET
+                    company_id=EXCLUDED.company_id, name=EXCLUDED.name,
+                    location=EXCLUDED.location, mandatory_racs=EXCLUDED.mandatory_racs
+                 RETURNING *`,
+                [body.id, body.company_id || null, body.name, body.location,
+                 body.mandatory_racs ? JSON.stringify(body.mandatory_racs) : '[]']
+            );
+            return sendJson(res, 200, rows[0]);
+        }
+
+        if ((params = matchRoute('DELETE', '/api/sites/:id', req.method, pathname))) {
+            await pool.query('DELETE FROM sites WHERE id = $1', [params.id]);
+            return sendJson(res, 200, { success: true });
+        }
+
+        // ════════════════════════════════════════════════════════════════════════
+        //  EMPLOYEES
+        // ════════════════════════════════════════════════════════════════════════
+
+        if ((params = matchRoute('GET', '/api/employees', req.method, pathname))) {
+            const { rows } = await pool.query('SELECT * FROM employees ORDER BY name');
+            return sendJson(res, 200, rows);
+        }
+
+        if ((params = matchRoute('POST', '/api/employees', req.method, pathname))) {
+            const body = await parseBody(req);
+            const { rows } = await pool.query(
+                `INSERT INTO employees (id, record_id, name, company, department, role, site_id, email, phone_number, photo_url, driver_license_number, driver_license_class, driver_license_expiry, is_active)
+                 VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14)
+                 ON CONFLICT (id) DO UPDATE SET
+                    record_id=EXCLUDED.record_id, name=EXCLUDED.name, company=EXCLUDED.company,
+                    department=EXCLUDED.department, role=EXCLUDED.role, site_id=EXCLUDED.site_id,
+                    email=EXCLUDED.email, phone_number=EXCLUDED.phone_number, photo_url=EXCLUDED.photo_url,
+                    driver_license_number=EXCLUDED.driver_license_number, driver_license_class=EXCLUDED.driver_license_class,
+                    driver_license_expiry=EXCLUDED.driver_license_expiry, is_active=EXCLUDED.is_active
+                 RETURNING *`,
+                [body.id, body.record_id, body.name, body.company, body.department, body.role,
+                 body.site_id || null, body.email, body.phone_number, body.photo_url,
+                 body.driver_license_number, body.driver_license_class,
+                 body.driver_license_expiry || null, body.is_active !== false]
+            );
+            return sendJson(res, 200, rows[0]);
+        }
+
+        // Upsert by record_id (for imports)
+        if ((params = matchRoute('POST', '/api/employees/upsert', req.method, pathname))) {
+            const body = await parseBody(req);
+            const { rows } = await pool.query(
+                `INSERT INTO employees (id, record_id, name, company, department, role, site_id, phone_number, driver_license_number, driver_license_class, driver_license_expiry, is_active)
+                 VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)
+                 ON CONFLICT (record_id) DO UPDATE SET
+                    name=EXCLUDED.name, company=EXCLUDED.company, department=EXCLUDED.department,
+                    role=EXCLUDED.role, site_id=EXCLUDED.site_id, phone_number=EXCLUDED.phone_number,
+                    driver_license_number=EXCLUDED.driver_license_number, driver_license_class=EXCLUDED.driver_license_class,
+                    driver_license_expiry=EXCLUDED.driver_license_expiry, is_active=EXCLUDED.is_active
+                 RETURNING id, record_id`,
+                [body.id, body.record_id, body.name, body.company, body.department, body.role,
+                 body.site_id || null, body.phone_number, body.driver_license_number,
+                 body.driver_license_class, body.driver_license_expiry || null, body.is_active !== false]
+            );
+            return sendJson(res, 200, rows[0]);
+        }
+
+        // Bulk upsert employees
+        if ((params = matchRoute('POST', '/api/employees/bulk', req.method, pathname))) {
+            const body = await parseBody(req);
+            const results = [];
+            for (const emp of (body.employees || [])) {
+                const { rows } = await pool.query(
+                    `INSERT INTO employees (id, record_id, name, company, department, role, site_id, phone_number, driver_license_number, driver_license_class, driver_license_expiry, is_active)
+                     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)
+                     ON CONFLICT (record_id) DO UPDATE SET
+                        name=EXCLUDED.name, company=EXCLUDED.company, department=EXCLUDED.department,
+                        role=EXCLUDED.role, site_id=EXCLUDED.site_id, phone_number=EXCLUDED.phone_number,
+                        driver_license_number=EXCLUDED.driver_license_number, driver_license_class=EXCLUDED.driver_license_class,
+                        driver_license_expiry=EXCLUDED.driver_license_expiry, is_active=EXCLUDED.is_active
+                     RETURNING id, record_id`,
+                    [emp.id, emp.record_id, emp.name, emp.company, emp.department, emp.role,
+                     emp.site_id || null, emp.phone_number, emp.driver_license_number,
+                     emp.driver_license_class, emp.driver_license_expiry || null, emp.is_active !== false]
+                );
+                results.push(rows[0]);
+            }
+            return sendJson(res, 200, results);
+        }
+
+        if ((params = matchRoute('DELETE', '/api/employees/:id', req.method, pathname))) {
+            await pool.query('DELETE FROM employees WHERE id = $1', [params.id]);
+            return sendJson(res, 200, { success: true });
+        }
+
+        // ════════════════════════════════════════════════════════════════════════
+        //  USERS
+        // ════════════════════════════════════════════════════════════════════════
+
+        if ((params = matchRoute('GET', '/api/users', req.method, pathname))) {
+            const { rows } = await pool.query('SELECT * FROM users ORDER BY name');
+            return sendJson(res, 200, rows);
+        }
+
+        if ((params = matchRoute('POST', '/api/users', req.method, pathname))) {
+            const body = await parseBody(req);
+            const { rows } = await pool.query(
+                `INSERT INTO users (name, email, password, role, status, company, job_title, phone_number, department, site_id, app_module)
+                 VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)
+                 ON CONFLICT (email) DO UPDATE SET
+                    name=EXCLUDED.name, password=COALESCE(EXCLUDED.password, users.password),
+                    role=EXCLUDED.role, status=EXCLUDED.status, company=EXCLUDED.company,
+                    job_title=EXCLUDED.job_title, phone_number=EXCLUDED.phone_number,
+                    department=EXCLUDED.department, site_id=EXCLUDED.site_id, app_module=EXCLUDED.app_module
+                 RETURNING *`,
+                [body.name, body.email, body.password || null, body.role || 'User',
+                 body.status || 'Active', body.company, body.job_title, body.phone_number,
+                 body.department, body.site_id || 'all', body.app_module || null]
+            );
+            return sendJson(res, 200, rows[0]);
+        }
+
+        if ((params = matchRoute('PUT', '/api/users/:id/password', req.method, pathname))) {
+            const body = await parseBody(req);
+            await pool.query('UPDATE users SET password = $1 WHERE id = $2', [body.password, params.id]);
+            return sendJson(res, 200, { success: true });
+        }
+
+        if ((params = matchRoute('DELETE', '/api/users/:id', req.method, pathname))) {
+            await pool.query('DELETE FROM users WHERE id = $1', [parseInt(params.id)]);
+            return sendJson(res, 200, { success: true });
+        }
+
+        // ════════════════════════════════════════════════════════════════════════
+        //  TRAINING SESSIONS
+        // ════════════════════════════════════════════════════════════════════════
+
+        if ((params = matchRoute('GET', '/api/sessions', req.method, pathname))) {
+            const { rows } = await pool.query('SELECT * FROM training_sessions ORDER BY date ASC');
+            return sendJson(res, 200, rows);
+        }
+
+        if ((params = matchRoute('POST', '/api/sessions', req.method, pathname))) {
+            const body = await parseBody(req);
+            const { rows } = await pool.query(
+                `INSERT INTO training_sessions (id, rac_type, date, start_time, location, instructor, capacity, session_language, site_id)
+                 VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)
+                 ON CONFLICT (id) DO UPDATE SET
+                    rac_type=EXCLUDED.rac_type, date=EXCLUDED.date, start_time=EXCLUDED.start_time,
+                    location=EXCLUDED.location, instructor=EXCLUDED.instructor, capacity=EXCLUDED.capacity,
+                    session_language=EXCLUDED.session_language, site_id=EXCLUDED.site_id
+                 RETURNING *`,
+                [body.id, body.rac_type, body.date, body.start_time || '09:00', body.location,
+                 body.instructor, body.capacity || 20, body.session_language || 'English', body.site_id || null]
+            );
+            return sendJson(res, 200, rows[0]);
+        }
+
+        if ((params = matchRoute('DELETE', '/api/sessions/:id', req.method, pathname))) {
+            await pool.query('DELETE FROM training_sessions WHERE id = $1', [params.id]);
+            return sendJson(res, 200, { success: true });
+        }
+
+        // ════════════════════════════════════════════════════════════════════════
+        //  RECORDS (Bookings)
+        // ════════════════════════════════════════════════════════════════════════
+
+        if ((params = matchRoute('GET', '/api/bookings', req.method, pathname))) {
+            const { rows } = await pool.query(
+                `SELECT r.*, row_to_json(e.*) as employee
+                 FROM records r
+                 LEFT JOIN employees e ON r.employee_id = e.id
+                 ORDER BY r.created_at DESC`
+            );
+            return sendJson(res, 200, rows);
+        }
+
+        if ((params = matchRoute('POST', '/api/bookings', req.method, pathname))) {
+            const body = await parseBody(req);
+            const { rows } = await pool.query(
+                `INSERT INTO records (id, session_id, employee_id, status, result_date, expiry_date, theory_score, practical_score, attendance, driver_license_verified, is_auto_booked, comments, trainer_name)
+                 VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)
+                 ON CONFLICT (id) DO UPDATE SET
+                    session_id=EXCLUDED.session_id, employee_id=EXCLUDED.employee_id, status=EXCLUDED.status,
+                    result_date=EXCLUDED.result_date, expiry_date=EXCLUDED.expiry_date,
+                    theory_score=EXCLUDED.theory_score, practical_score=EXCLUDED.practical_score,
+                    attendance=EXCLUDED.attendance, driver_license_verified=EXCLUDED.driver_license_verified,
+                    is_auto_booked=EXCLUDED.is_auto_booked, comments=EXCLUDED.comments, trainer_name=EXCLUDED.trainer_name
+                 RETURNING *`,
+                [body.id, body.session_id || null, body.employee_id, body.status || 'Pending',
+                 body.result_date || null, body.expiry_date || null,
+                 body.theory_score || 0, body.practical_score || 0,
+                 body.attendance || false, body.driver_license_verified || false,
+                 body.is_auto_booked || false, body.comments || null, body.trainer_name || null]
+            );
+            return sendJson(res, 200, rows[0]);
+        }
+
+        // Bulk upsert bookings
+        if ((params = matchRoute('POST', '/api/bookings/bulk', req.method, pathname))) {
+            const body = await parseBody(req);
+            for (const b of (body.bookings || [])) {
+                await pool.query(
+                    `INSERT INTO records (id, session_id, employee_id, status, result_date, expiry_date, theory_score, practical_score, attendance, trainer_name, comments)
+                     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)
+                     ON CONFLICT (id) DO UPDATE SET
+                        session_id=EXCLUDED.session_id, employee_id=EXCLUDED.employee_id, status=EXCLUDED.status,
+                        result_date=EXCLUDED.result_date, expiry_date=EXCLUDED.expiry_date,
+                        theory_score=EXCLUDED.theory_score, practical_score=EXCLUDED.practical_score,
+                        attendance=EXCLUDED.attendance, trainer_name=EXCLUDED.trainer_name, comments=EXCLUDED.comments`,
+                    [b.id, b.session_id || null, b.employee_id, b.status || 'Pending',
+                     b.result_date || null, b.expiry_date || null,
+                     b.theory_score || 0, b.practical_score || 0,
+                     b.attendance || false, b.trainer_name || null, b.comments || null]
+                );
+            }
+            return sendJson(res, 200, { success: true });
+        }
+
+        // ════════════════════════════════════════════════════════════════════════
+        //  WAITING LIST
+        // ════════════════════════════════════════════════════════════════════════
+
+        if ((params = matchRoute('GET', '/api/waitlist', req.method, pathname))) {
+            const { rows } = await pool.query(
+                `SELECT w.*, row_to_json(e.*) as employee
+                 FROM waiting_list w
+                 LEFT JOIN employees e ON w.employee_id = e.id
+                 ORDER BY w.created_at ASC`
+            );
+            return sendJson(res, 200, rows);
+        }
+
+        if ((params = matchRoute('POST', '/api/waitlist', req.method, pathname))) {
+            const body = await parseBody(req);
+            const { rows } = await pool.query(
+                `INSERT INTO waiting_list (session_id, employee_id) VALUES ($1, $2) RETURNING *`,
+                [body.session_id, body.employee_id]
+            );
+            return sendJson(res, 200, rows[0]);
+        }
+
+        // Promote from waitlist to booking
+        if ((params = matchRoute('POST', '/api/waitlist/:id/promote', req.method, pathname))) {
+            const body = await parseBody(req);
+            await pool.query(
+                `INSERT INTO records (session_id, employee_id, status) VALUES ($1, $2, 'Pending')`,
+                [body.session_id, body.employee_id]
+            );
+            await pool.query('DELETE FROM waiting_list WHERE id = $1', [params.id]);
+            return sendJson(res, 200, { success: true });
+        }
+
+        if ((params = matchRoute('DELETE', '/api/waitlist/:id', req.method, pathname))) {
+            await pool.query('DELETE FROM waiting_list WHERE id = $1', [params.id]);
+            return sendJson(res, 200, { success: true });
+        }
+
+        // ════════════════════════════════════════════════════════════════════════
+        //  EMPLOYEE REQUIREMENTS
+        // ════════════════════════════════════════════════════════════════════════
+
+        if ((params = matchRoute('GET', '/api/requirements', req.method, pathname))) {
+            const { rows } = await pool.query('SELECT * FROM employee_requirements');
+            return sendJson(res, 200, rows);
+        }
+
+        if ((params = matchRoute('POST', '/api/requirements', req.method, pathname))) {
+            const body = await parseBody(req);
+            const { rows } = await pool.query(
+                `INSERT INTO employee_requirements (employee_id, aso_expiry_date, required_racs)
+                 VALUES ($1, $2, $3)
+                 ON CONFLICT (employee_id) DO UPDATE SET
+                    aso_expiry_date=EXCLUDED.aso_expiry_date, required_racs=EXCLUDED.required_racs
+                 RETURNING *`,
+                [body.employee_id, body.aso_expiry_date || null,
+                 body.required_racs ? JSON.stringify(body.required_racs) : '{}']
+            );
+            return sendJson(res, 200, rows[0]);
+        }
+
+        // Bulk upsert requirements
+        if ((params = matchRoute('POST', '/api/requirements/bulk', req.method, pathname))) {
+            const body = await parseBody(req);
+            for (const r of (body.requirements || [])) {
+                await pool.query(
+                    `INSERT INTO employee_requirements (employee_id, aso_expiry_date, required_racs)
+                     VALUES ($1, $2, $3)
+                     ON CONFLICT (employee_id) DO UPDATE SET
+                        aso_expiry_date=EXCLUDED.aso_expiry_date, required_racs=EXCLUDED.required_racs`,
+                    [r.employee_id, r.aso_expiry_date || null,
+                     r.required_racs ? JSON.stringify(r.required_racs) : '{}']
+                );
+            }
+            return sendJson(res, 200, { success: true });
+        }
+
+        // ════════════════════════════════════════════════════════════════════════
+        //  RAC DEFINITIONS
+        // ════════════════════════════════════════════════════════════════════════
+
+        if ((params = matchRoute('GET', '/api/rac-definitions', req.method, pathname))) {
+            const { rows } = await pool.query('SELECT * FROM rac_definitions ORDER BY code');
+            return sendJson(res, 200, rows);
+        }
+
+        if ((params = matchRoute('POST', '/api/rac-definitions', req.method, pathname))) {
+            const body = await parseBody(req);
+            const { rows } = await pool.query(
+                `INSERT INTO rac_definitions (id, company_id, code, name, validity_months, requires_driver_license, requires_practical, pass_score)
+                 VALUES ($1,$2,$3,$4,$5,$6,$7,$8)
+                 ON CONFLICT (id) DO UPDATE SET
+                    company_id=EXCLUDED.company_id, code=EXCLUDED.code, name=EXCLUDED.name,
+                    validity_months=EXCLUDED.validity_months, requires_driver_license=EXCLUDED.requires_driver_license,
+                    requires_practical=EXCLUDED.requires_practical, pass_score=EXCLUDED.pass_score
+                 RETURNING *`,
+                [body.id, body.company_id || null, body.code, body.name,
+                 body.validity_months, body.requires_driver_license || false,
+                 body.requires_practical || false, body.pass_score || 70]
+            );
+            return sendJson(res, 200, rows[0]);
+        }
+
+        if ((params = matchRoute('DELETE', '/api/rac-definitions/:id', req.method, pathname))) {
+            await pool.query('DELETE FROM rac_definitions WHERE id = $1', [params.id]);
+            return sendJson(res, 200, { success: true });
+        }
+
+        // ════════════════════════════════════════════════════════════════════════
+        //  ROOMS
+        // ════════════════════════════════════════════════════════════════════════
+
+        if ((params = matchRoute('GET', '/api/rooms', req.method, pathname))) {
+            const { rows } = await pool.query('SELECT * FROM rooms ORDER BY name');
+            return sendJson(res, 200, rows);
+        }
+
+        if ((params = matchRoute('POST', '/api/rooms', req.method, pathname))) {
+            const body = await parseBody(req);
+            const { rows } = await pool.query(
+                `INSERT INTO rooms (id, name, capacity, site_id) VALUES ($1,$2,$3,$4)
+                 ON CONFLICT (id) DO UPDATE SET name=EXCLUDED.name, capacity=EXCLUDED.capacity, site_id=EXCLUDED.site_id
+                 RETURNING *`,
+                [body.id, body.name, body.capacity || 20, body.site_id || null]
+            );
+            return sendJson(res, 200, rows[0]);
+        }
+
+        if ((params = matchRoute('DELETE', '/api/rooms/:id', req.method, pathname))) {
+            await pool.query('DELETE FROM rooms WHERE id = $1', [params.id]);
+            return sendJson(res, 200, { success: true });
+        }
+
+        // ════════════════════════════════════════════════════════════════════════
+        //  TRAINERS
+        // ════════════════════════════════════════════════════════════════════════
+
+        if ((params = matchRoute('GET', '/api/trainers', req.method, pathname))) {
+            const { rows } = await pool.query('SELECT * FROM trainers ORDER BY name');
+            return sendJson(res, 200, rows);
+        }
+
+        if ((params = matchRoute('POST', '/api/trainers', req.method, pathname))) {
+            const body = await parseBody(req);
+            const { rows } = await pool.query(
+                `INSERT INTO trainers (id, name, authorized_racs, site_id) VALUES ($1,$2,$3,$4)
+                 ON CONFLICT (id) DO UPDATE SET name=EXCLUDED.name, authorized_racs=EXCLUDED.authorized_racs, site_id=EXCLUDED.site_id
+                 RETURNING *`,
+                [body.id, body.name, body.authorized_racs ? JSON.stringify(body.authorized_racs) : '[]', body.site_id || null]
+            );
+            return sendJson(res, 200, rows[0]);
+        }
+
+        if ((params = matchRoute('DELETE', '/api/trainers/:id', req.method, pathname))) {
+            await pool.query('DELETE FROM trainers WHERE id = $1', [params.id]);
+            return sendJson(res, 200, { success: true });
+        }
+
+        // ════════════════════════════════════════════════════════════════════════
+        //  DATA CONNECTORS
+        // ════════════════════════════════════════════════════════════════════════
+
+        if ((params = matchRoute('GET', '/api/connectors', req.method, pathname))) {
+            const { rows } = await pool.query('SELECT * FROM data_connectors ORDER BY name');
+            return sendJson(res, 200, rows);
+        }
+
+        if ((params = matchRoute('POST', '/api/connectors', req.method, pathname))) {
+            const body = await parseBody(req);
+            const { rows } = await pool.query(
+                `INSERT INTO data_connectors (id, name, type, last_sync, status, color, source, config, mapping, module_mapping)
+                 VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)
+                 ON CONFLICT (id) DO UPDATE SET
+                    name=EXCLUDED.name, type=EXCLUDED.type, last_sync=EXCLUDED.last_sync,
+                    status=EXCLUDED.status, color=EXCLUDED.color, source=EXCLUDED.source,
+                    config=EXCLUDED.config, mapping=EXCLUDED.mapping, module_mapping=EXCLUDED.module_mapping
+                 RETURNING *`,
+                [body.id, body.name, body.type, body.last_sync || null, body.status || 'Idle',
+                 body.color, body.source, JSON.stringify(body.config || {}),
+                 JSON.stringify(body.mapping || {}), JSON.stringify(body.module_mapping || {})]
+            );
+            return sendJson(res, 200, rows[0]);
+        }
+
+        // ════════════════════════════════════════════════════════════════════════
+        //  FEEDBACK
+        // ════════════════════════════════════════════════════════════════════════
+
+        if ((params = matchRoute('POST', '/api/feedback', req.method, pathname))) {
+            const body = await parseBody(req);
+            await pool.query(
+                `INSERT INTO feedback (id, user_id, user_name, type, message, status, is_actionable, admin_notes)
+                 VALUES ($1,$2,$3,$4,$5,$6,$7,$8)
+                 ON CONFLICT (id) DO UPDATE SET status=EXCLUDED.status, admin_notes=EXCLUDED.admin_notes`,
+                [body.id, body.user_id, body.user_name, body.type, body.message,
+                 body.status || 'New', body.is_actionable || false, body.admin_notes || null]
+            );
+            return sendJson(res, 200, { success: true });
+        }
+
+        // ════════════════════════════════════════════════════════════════════════
+        //  SYSTEM LOGS
+        // ════════════════════════════════════════════════════════════════════════
+
+        if ((params = matchRoute('GET', '/api/logs', req.method, pathname))) {
+            const { rows } = await pool.query(
+                'SELECT * FROM system_logs ORDER BY timestamp DESC LIMIT 100'
+            );
+            return sendJson(res, 200, rows);
+        }
+
+        if ((params = matchRoute('POST', '/api/logs', req.method, pathname))) {
+            const body = await parseBody(req);
+            await pool.query(
+                `INSERT INTO system_logs (level, message_key, user_name, metadata)
+                 VALUES ($1, $2, $3, $4)`,
+                [body.level || 'INFO', body.message_key, body.user_name,
+                 body.metadata ? JSON.stringify(body.metadata) : '{}']
+            );
+            return sendJson(res, 200, { success: true });
+        }
+
+        // ════════════════════════════════════════════════════════════════════════
+        //  UNSAFE CONDITIONS (SafeMap)
+        // ════════════════════════════════════════════════════════════════════════
+
+        if ((params = matchRoute('GET', '/api/unsafe-conditions', req.method, pathname))) {
+            const { rows } = await pool.query('SELECT * FROM unsafe_conditions ORDER BY created_at DESC');
+            return sendJson(res, 200, rows);
+        }
+
+        if ((params = matchRoute('POST', '/api/unsafe-conditions', req.method, pathname))) {
+            const body = await parseBody(req);
+            const { rows } = await pool.query(
+                `INSERT INTO unsafe_conditions (id, latitude, longitude, function_location, condition_type, responsible_area, description, action_plan, initial_photos, correction_photos, observer_id, observer_name, ssma_focal_point_id, ssma_focal_point_name, area_responsible_id, area_responsible_name, area_manager_id, area_manager_name, state, map_status, resolved_at)
+                 VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21)
+                 ON CONFLICT (id) DO UPDATE SET
+                    description=EXCLUDED.description, action_plan=EXCLUDED.action_plan,
+                    correction_photos=EXCLUDED.correction_photos, state=EXCLUDED.state,
+                    map_status=EXCLUDED.map_status, resolved_at=EXCLUDED.resolved_at,
+                    ssma_focal_point_id=EXCLUDED.ssma_focal_point_id, ssma_focal_point_name=EXCLUDED.ssma_focal_point_name,
+                    area_responsible_id=EXCLUDED.area_responsible_id, area_responsible_name=EXCLUDED.area_responsible_name,
+                    area_manager_id=EXCLUDED.area_manager_id, area_manager_name=EXCLUDED.area_manager_name
+                 RETURNING *`,
+                [body.id, body.latitude, body.longitude, body.function_location, body.condition_type,
+                 body.responsible_area, body.description, body.action_plan,
+                 JSON.stringify(body.initial_photos || []), JSON.stringify(body.correction_photos || []),
+                 body.observer_id, body.observer_name, body.ssma_focal_point_id, body.ssma_focal_point_name,
+                 body.area_responsible_id, body.area_responsible_name, body.area_manager_id, body.area_manager_name,
+                 body.state || 'Criado', body.map_status || 'Recente', body.resolved_at || null]
+            );
+            return sendJson(res, 200, rows[0]);
+        }
+
+        // ════════════════════════════════════════════════════════════════════════
+        //  EXEC SQL (FormBuilder)
+        // ════════════════════════════════════════════════════════════════════════
+
+        if ((params = matchRoute('POST', '/api/exec-sql', req.method, pathname))) {
+            const body = await parseBody(req);
+            try {
+                await pool.query(body.sql);
+                return sendJson(res, 200, { success: true });
+            } catch (e) {
+                return sendJson(res, 200, { success: false, error: e.message });
+            }
+        }
+
+        // ════════════════════════════════════════════════════════════════════════
+        //  HEALTH CHECK
+        // ════════════════════════════════════════════════════════════════════════
+
+        if ((params = matchRoute('GET', '/api/health', req.method, pathname))) {
+            try {
+                const { rows } = await pool.query('SELECT NOW() as time');
+                return sendJson(res, 200, { status: 'ok', time: rows[0].time, tables: 18 });
+            } catch (e) {
+                return sendJson(res, 500, { status: 'error', error: e.message });
+            }
+        }
+
+        // 404
+        sendError(res, 404, 'Route not found');
+
+    } catch (err) {
+        console.error('API Error:', err.message);
+        sendError(res, 500, err.message || 'Internal server error');
+    }
 });
 
 server.listen(PORT, () => {
-  console.log(`CARS Shared Sync API running at http://localhost:${PORT}`);
+    console.log(`⚡ ZeroGate API Server running at http://localhost:${PORT}`);
+    console.log(`   Database: Aiven PostgreSQL (pg-f823343-pita13035-8e24.l.aivencloud.com)`);
+    console.log(`   Endpoints: /api/companies, /api/employees, /api/sessions, ...`);
 });

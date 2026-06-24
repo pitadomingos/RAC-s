@@ -1,45 +1,24 @@
 
-import { createClient } from '@supabase/supabase-js';
+/**
+ * API Configuration — Live Database Mode
+ * 
+ * All data operations go through the Express REST API server
+ * which connects to Aiven PostgreSQL via SSL.
+ * 
+ * In development, Vite proxies /api/* to http://localhost:5000
+ * In production, the API server handles both static files and API routes.
+ */
+
+export const API_BASE = '/api';
 
 /**
- * PRODUCTION CREDENTIALS
- * Set these in a .env file at the project root:
- *   SUPABASE_URL=https://your-project.supabase.co
- *   SUPABASE_ANON_KEY=your-anon-key
- *
- * When these are absent the app operates fully in offline/demo mode
- * using the rich mock data in mockData.ts — no network requests are made.
+ * Always true — the app is now connected to a live database.
+ * Kept for backward compatibility with any code that checks this flag.
  */
-const supabaseUrl     = process.env.SUPABASE_URL     || '';
-const supabaseAnonKey = process.env.SUPABASE_ANON_KEY || '';
+export const isSupabaseConfigured = true;
 
 /**
- * Validates the credentials.
- * 'undefined' as a string is a common environment bug — guard against it.
+ * Null — no longer using the Supabase JS client.
+ * Kept as export to avoid breaking import statements across the app.
  */
-export const isSupabaseConfigured = !!(
-    supabaseUrl &&
-    supabaseAnonKey &&
-    supabaseUrl     !== 'undefined' &&
-    supabaseAnonKey !== 'undefined'
-);
-
-/**
- * Safe client initialization.
- * Only calls createClient if credentials are valid to prevent library-level crashes.
- */
-const getSafeClient = () => {
-    if (!isSupabaseConfigured) return null;
-    try {
-        return createClient(supabaseUrl, supabaseAnonKey);
-    } catch (err) {
-        console.error('Critical: Supabase library failed to initialize:', err);
-        return null;
-    }
-};
-
-export const supabase = getSafeClient();
-
-if (!isSupabaseConfigured) {
-    console.info('ℹ️  CARS Manager running in offline/demo mode — mock data active. Set SUPABASE_URL + SUPABASE_ANON_KEY to connect.');
-}
+export const supabase = null;

@@ -1,7 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { Site, Booking, EmployeeRequirement, BookingStatus, UserRole, Company, RecruitmentProcess, RecruitmentStatus, UnsafeCondition } from '../types';
 import { isCompanyDescendant } from '../utils/companyUtils';
-import { DEMO_RECRUITMENT_PROCESSES } from '../mockData';
 import { 
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, 
   Cell
@@ -39,9 +38,9 @@ const ExecutiveDashboard: React.FC<ExecutiveDashboardProps> = ({ bookings, requi
   const [processes] = useState<RecruitmentProcess[]>(() => {
     try {
       const saved = localStorage.getItem('mobilization_processes');
-      return saved ? JSON.parse(saved) : DEMO_RECRUITMENT_PROCESSES;
+      return saved ? JSON.parse(saved) : [];
     } catch {
-      return DEMO_RECRUITMENT_PROCESSES;
+      return [];
     }
   });
 
