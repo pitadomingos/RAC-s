@@ -27,6 +27,7 @@ const ResultsPage = lazy(() => import('./pages/ResultsPage'));
 const SettingsPage = lazy(() => import('./pages/SettingsPage'));
 const AlcoholIntegration = lazy(() => import('./pages/AlcoholIntegration'));
 const EnterpriseDashboard = lazy(() => import('./pages/EnterpriseDashboard'));
+const ExecutiveDashboard = lazy(() => import('./pages/ExecutiveDashboard'));
 const MobilizationDashboard = lazy(() => import('./pages/MobilizationDashboard'));
 const PortalGateway = lazy(() => import('./pages/PortalGateway'));
 const SubcontractorPage = lazy(() => import('./pages/SubcontractorPage'));
@@ -556,6 +557,7 @@ const AppContent: React.FC = () => {
                     <Route path="/integration" element={<IntegrationHub userRole={user?.role || UserRole.USER} />} />
                     <Route path="/reports" element={<ReportsPage bookings={bookings} sessions={sessions} requirements={requirements} sites={sites} currentSiteId={currentSiteId} racDefinitions={racDefinitions} companies={companies} />} />
                     <Route path="/enterprise-dashboard" element={<EnterpriseDashboard sites={sites} bookings={bookings} requirements={requirements} userRole={user?.role} racDefinitions={racDefinitions} companies={companies} />} />
+                    <Route path="/executive-dashboard" element={<ExecutiveDashboard sites={sites} bookings={bookings} requirements={requirements} userRole={user?.role} companies={companies} />} />
                     <Route path="/alcohol-control" element={<AlcoholIntegration addNotification={addNotification} />} />
                     <Route path="/messages" element={<MessageLogPage />} />
                     <Route path="/site-governance" element={<SiteGovernancePage sites={sites} setSites={setSites} racDefinitions={racDefinitions} bookings={bookings} requirements={requirements} updateRequirements={handleUpdateRequirement} />} />

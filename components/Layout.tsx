@@ -167,6 +167,7 @@ const Layout: React.FC<LayoutProps> = ({
     { path: '/integration', label: t.nav.integration, icon: GitMerge, visible: [UserRole.SYSTEM_ADMIN, UserRole.ENTERPRISE_ADMIN].includes(userRole) },
     { path: '/reports', label: t.nav.reports, icon: FileBarChart, visible: [UserRole.SYSTEM_ADMIN, UserRole.ENTERPRISE_ADMIN, UserRole.SITE_ADMIN].includes(userRole) },
     { path: '/enterprise-dashboard', label: t.nav.enterpriseDashboard, icon: BarChart, visible: [UserRole.SYSTEM_ADMIN, UserRole.ENTERPRISE_ADMIN].includes(userRole) },
+    { path: '/executive-dashboard', label: 'Executive Dashboard', icon: Presentation, visible: [UserRole.SYSTEM_ADMIN, UserRole.ENTERPRISE_ADMIN, UserRole.SITE_ADMIN, UserRole.DEPT_ADMIN].includes(userRole) },
     { path: '/alcohol-control', label: t.nav.alcohol, icon: Wine, visible: showAlcoholLink },
     { path: '/request-cards', label: t.nav.requestCards, icon: Mail, visible: userRole !== UserRole.ENTERPRISE_ADMIN && userRole !== UserRole.RAC_TRAINER },
     { path: '/messages', label: t.nav.communications, icon: Send, visible: userRole === UserRole.SYSTEM_ADMIN },

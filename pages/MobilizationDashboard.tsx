@@ -216,14 +216,25 @@ const MobilizationDashboard: React.FC<{ companies?: Company[]; racDefinitions?: 
         localStorage.setItem('mobilization_processes', JSON.stringify(processes));
     }, [processes]);
 
+    const filteredProcesses = React.useMemo(() => {
+        if (activeTab === 'AM') return processes;
+        if (activeTab === 'HR') return processes.filter(p => p.status === RecruitmentStatus.AM_REQUESTED || p.status === RecruitmentStatus.HR_PENDING);
+        if (activeTab === 'Security') return processes.filter(p => p.status === RecruitmentStatus.SECURITY_PENDING || p.status === RecruitmentStatus.PARALLEL_CLEARANCE_PENDING || p.status === RecruitmentStatus.DELIVERED);
+        if (activeTab === 'Clinic') return processes.filter(p => p.status === RecruitmentStatus.CLINIC_PENDING || p.status === RecruitmentStatus.PARALLEL_CLEARANCE_PENDING);
+        if (activeTab === 'Environment') return processes.filter(p => p.status === RecruitmentStatus.INDUCTION_PENDING || p.status === RecruitmentStatus.SAFETY_PENDING || p.status === RecruitmentStatus.FAILED);
+        return processes;
+    }, [processes, activeTab]);
+
     const activeProcess = processes.find(p => p.id === selectedProcessId);
 
     // Auto-select first process for details if none selected
     useEffect(() => {
-        if (!selectedProcessId && processes.length > 0) {
-            setSelectedProcessId(processes[0].id);
+        if (!selectedProcessId && filteredProcesses.length > 0) {
+            setSelectedProcessId(filteredProcesses[0].id);
+        } else if (selectedProcessId && !filteredProcesses.find(p => p.id === selectedProcessId)) {
+            setSelectedProcessId(filteredProcesses.length > 0 ? filteredProcesses[0].id : null);
         }
-    }, [processes, selectedProcessId]);
+    }, [filteredProcesses, selectedProcessId]);
 
     // Available RAC categories — read from Training app definitions, fallback to hardcoded
     const AVAILABLE_RACS = React.useMemo(() => {
@@ -518,12 +529,12 @@ const MobilizationDashboard: React.FC<{ companies?: Company[]; racDefinitions?: 
             }
         } else if (requestType === 'DeliveryAccess') {
             if (!newRequest.candidateName || !truckModel || !truckRegNumber || !poNumber) return;
-            if (!amUploadState.driverLicense.uploaded || !amUploadState.passport.uploaded) {
+            if (!amUploadState.driverLicense.uploaded) {
                 showAlert(
                     language === 'pt' ? 'Documentos em Falta' : 'Missing Documents',
                     language === 'pt'
-                        ? 'Por favor, faça o upload da Carta de Condução e do Passaporte/BI do motorista.'
-                        : 'Please upload both the Driver\'s License and Driver\'s Passport.'
+                        ? 'Por favor, faça o upload da Carta de Condução.'
+                        : 'Please upload the Driver\'s License.'
                 );
                 return;
             }
@@ -1456,7 +1467,7 @@ const MobilizationDashboard: React.FC<{ companies?: Company[]; racDefinitions?: 
             return !amUploadState.candidateId.uploaded;
         } else if (requestType === 'DeliveryAccess') {
             if (!newRequest.candidateName || !newRequest.candidatePhone || !truckModel || !truckRegNumber || !poNumber) return true;
-            return !amUploadState.driverLicense.uploaded || !amUploadState.passport.uploaded;
+            return !amUploadState.driverLicense.uploaded;
         } else if (requestType === 'EquipmentAccess') {
             if (!equipmentId || !respPersonName) return true;
             
@@ -1484,8 +1495,8 @@ const MobilizationDashboard: React.FC<{ companies?: Company[]; racDefinitions?: 
             if (!newRequest.candidateName || !newRequest.candidatePhone || !truckModel || !truckRegNumber || !poNumber) {
                 return '⚠ Fill All Fields';
             }
-            if (!amUploadState.driverLicense.uploaded || !amUploadState.passport.uploaded) {
-                return '⚠ Upload Documents First';
+            if (!amUploadState.driverLicense.uploaded) {
+                return '⚠ Upload Driver\'s License First';
             }
         } else if (requestType === 'EquipmentAccess') {
             const manifestoOk = !isVehicleType(equipmentType) || amUploadState.manifesto.uploaded;
@@ -1576,7 +1587,7 @@ const MobilizationDashboard: React.FC<{ companies?: Company[]; racDefinitions?: 
 
                         {/* Candidate Pipeline Cards */}
                         <div className="p-6 space-y-4 max-h-[500px] overflow-y-auto">
-                            {processes.map(p => {
+                            {filteredProcesses.map(p => {
                                 const bottleneck = getBottleneckInfo(p.status);
                                 const stageNum = getStageNumber(p.status);
                                 return (
@@ -1647,7 +1658,7 @@ const MobilizationDashboard: React.FC<{ companies?: Company[]; racDefinitions?: 
                                     </div>
                                 );
                             })}
-                            {processes.length === 0 && (
+                            {filteredProcesses.length === 0 && (
                                 <div className="p-12 text-center text-slate-400">
                                     <Briefcase size={48} className="mx-auto mb-4 opacity-25"/>
                                     <p className="font-bold">{t.proposal.mobilization.steps?.noActiveRecruitment || 'No active recruitment processes in the system.'}</p>
