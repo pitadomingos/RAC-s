@@ -17,6 +17,8 @@ import { useNavigate, Navigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { UserRole, BookingStatus } from '../types';
 import MobilizationDashboard from './MobilizationDashboard';
+import AnalyticsDashboard from './safemap/AnalyticsDashboard';
+import ExecutiveDashboard from './ExecutiveDashboard';
 import DatabasePage from './DatabasePage';
 import BookingForm from './BookingForm';
 import ResultsPage from './ResultsPage';
@@ -43,11 +45,12 @@ const PresentationPage: React.FC = () => {
     const [trainers, setTrainers] = useState<any[]>([]);
     const [employees, setEmployees] = useState<any[]>([]);
     const [racDefinitions, setRacDefinitions] = useState<any[]>([]);
+    const [unsafeConditions, setUnsafeConditions] = useState<any[]>([]);
     const [currentSiteId, setCurrentSiteId] = useState<string>('all');
 
     const refreshTrainingData = async () => {
         try {
-            const [c, s, sess, b, req, racs, rms, trns, emps] = await Promise.all([
+            const [c, s, sess, b, req, racs, rms, trns, emps, conds] = await Promise.all([
                 db.getCompanies(),
                 db.getSites(),
                 db.getSessions(),
@@ -56,7 +59,8 @@ const PresentationPage: React.FC = () => {
                 db.getRacDefinitions(),
                 db.getRooms(),
                 db.getTrainers(),
-                db.getEmployees()
+                db.getEmployees(),
+                db.getUnsafeConditions()
             ]);
             setCompanies(c);
             setSites(s);
@@ -67,6 +71,7 @@ const PresentationPage: React.FC = () => {
             setRooms(rms);
             setTrainers(trns);
             setEmployees(emps);
+            setUnsafeConditions(conds);
         } catch (e) {
             console.error("Presentation data refresh failed:", e);
         }
@@ -121,6 +126,8 @@ const PresentationPage: React.FC = () => {
         { id: 'simCards', type: 'simCards', title: 'Simulation: Card Requests' },
         { id: 'simTrainer', type: 'simTrainer', title: 'Simulation: Instructor Portal' },
         { id: 'simSettings', type: 'simSettings', title: 'Simulation: Training Settings' },
+        { id: 'simSafeSite', type: 'simSafeSite', title: 'Simulation: SafeSite Dashboard' },
+        { id: 'simExecutive', type: 'simExecutive', title: 'Simulation: Executive Dashboard' },
         { id: 'organogram', type: 'organogram', title: t.proposal.organogram.title },
         { id: 'timeline', type: 'timeline', title: t.proposal.timeline.title },
         { id: 'tech', type: 'tech', title: t.proposal.techStack.title },
@@ -784,6 +791,8 @@ const PresentationPage: React.FC = () => {
             case 'simCards': return <SimCardsSlide />;
             case 'simTrainer': return <SimTrainerSlide />;
             case 'simSettings': return <SimSettingsSlide />;
+            case 'simSafeSite': return <SimSafeSiteSlide />;
+            case 'simExecutive': return <SimExecutiveSlide />;
             case 'organogram': return <OrganogramSlide />;
             case 'timeline': return <TimelineSlide />;
             case 'tech': return <TechSlide />;
@@ -796,6 +805,45 @@ const PresentationPage: React.FC = () => {
             default: return <div className="flex items-center justify-center min-h-[70vh] text-slate-500 italic">Documentation Slide {currentSlide + 1} Content alignment check...</div>;
         }
     };
+
+    const SimSafeSiteSlide = () => (
+        <div className="flex flex-col justify-center min-h-[75vh] w-full max-w-[1800px] mx-auto px-4 relative z-10 animate-fade-in-up mt-8">
+            <div className="w-full h-[80vh] overflow-y-auto bg-slate-100 dark:bg-slate-900 rounded-3xl border-4 border-slate-800 shadow-[0_0_50px_rgba(0,0,0,0.5)]">
+                <div className="sticky top-0 z-50 bg-slate-900 text-white p-3 flex justify-between items-center border-b border-slate-700 shadow-md">
+                    <div className="flex items-center gap-3">
+                        <div className="flex gap-2"><div className="w-3 h-3 rounded-full bg-red-500"></div><div className="w-3 h-3 rounded-full bg-yellow-500"></div><div className="w-3 h-3 rounded-full bg-green-500"></div></div>
+                        <span className="text-xs font-mono opacity-50 tracking-widest uppercase">SafeSite Module Live Preview</span>
+                    </div>
+                </div>
+                <div className="p-8">
+                    <AnalyticsDashboard conditions={unsafeConditions} companies={companies} />
+                </div>
+            </div>
+        </div>
+    );
+
+    const SimExecutiveSlide = () => (
+        <div className="flex flex-col justify-center min-h-[75vh] w-full max-w-[1800px] mx-auto px-4 relative z-10 animate-fade-in-up mt-8">
+            <div className="w-full h-[80vh] overflow-y-auto bg-slate-50 dark:bg-slate-900 rounded-3xl border-4 border-slate-800 shadow-[0_0_50px_rgba(0,0,0,0.5)] relative">
+                <div className="sticky top-0 z-50 bg-slate-900 text-white p-3 flex justify-between items-center border-b border-slate-700 shadow-md">
+                    <div className="flex items-center gap-3">
+                        <div className="flex gap-2"><div className="w-3 h-3 rounded-full bg-red-500"></div><div className="w-3 h-3 rounded-full bg-yellow-500"></div><div className="w-3 h-3 rounded-full bg-green-500"></div></div>
+                        <span className="text-xs font-mono opacity-50 tracking-widest uppercase">Executive Dashboard Live Preview</span>
+                    </div>
+                </div>
+                <div className="p-8">
+                    <ExecutiveDashboard 
+                        bookings={bookings}
+                        requirements={requirements}
+                        companies={companies}
+                        unsafeConditions={unsafeConditions}
+                        sites={sites}
+                        userRole={user?.role}
+                    />
+                </div>
+            </div>
+        </div>
+    );
 
     const MobilizationDemoSlide = () => (
         <div className="flex flex-col min-h-[75vh] w-full max-w-[1600px] mx-auto px-6 relative z-10 animate-fade-in-up py-4 select-text">

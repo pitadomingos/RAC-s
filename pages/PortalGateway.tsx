@@ -63,11 +63,11 @@ const PortalGateway: React.FC<PortalGatewayProps> = ({ onSelectModule }) => {
                         </div>
                     </div>
 
-                    <div className="flex items-center justify-between mt-6 pt-4 border-t border-slate-800/60">
-                        <span className="text-xs font-black uppercase tracking-widest text-indigo-400 group-hover:translate-x-1 transition-transform flex items-center gap-1">
+                    <div className="flex items-center justify-between mt-6 pt-4 border-t border-slate-800/60 flex-wrap gap-y-2">
+                        <span className="text-xs font-black uppercase tracking-widest text-indigo-400 group-hover:translate-x-1 transition-transform flex items-center gap-1 shrink-0 whitespace-nowrap">
                             Access Portal <ChevronRight size={14} />
                         </span>
-                        <span className="text-[10px] font-black uppercase bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 px-3 py-1 rounded-full">
+                        <span className="text-[10px] font-black uppercase bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 px-3 py-1 rounded-full shrink-0 whitespace-nowrap">
                             Active Pipeline
                         </span>
                     </div>
@@ -98,11 +98,11 @@ const PortalGateway: React.FC<PortalGatewayProps> = ({ onSelectModule }) => {
                         </div>
                     </div>
 
-                    <div className="flex items-center justify-between mt-6 pt-4 border-t border-slate-800/60">
-                        <span className="text-xs font-black uppercase tracking-widest text-amber-400 group-hover:translate-x-1 transition-transform flex items-center gap-1">
+                    <div className="flex items-center justify-between mt-6 pt-4 border-t border-slate-800/60 flex-wrap gap-y-2">
+                        <span className="text-xs font-black uppercase tracking-widest text-amber-400 group-hover:translate-x-1 transition-transform flex items-center gap-1 shrink-0 whitespace-nowrap">
                             Access Portal <ChevronRight size={14} />
                         </span>
-                        <span className="text-[10px] font-black uppercase bg-amber-500/10 border border-amber-500/20 text-amber-400 px-3 py-1 rounded-full">
+                        <span className="text-[10px] font-black uppercase bg-amber-500/10 border border-amber-500/20 text-amber-400 px-3 py-1 rounded-full shrink-0 whitespace-nowrap">
                             Active Training
                         </span>
                     </div>
@@ -133,11 +133,11 @@ const PortalGateway: React.FC<PortalGatewayProps> = ({ onSelectModule }) => {
                         </div>
                     </div>
 
-                    <div className="flex items-center justify-between mt-6 pt-4 border-t border-slate-800/60">
-                        <span className="text-xs font-black uppercase tracking-widest text-emerald-400 group-hover:translate-x-1 transition-transform flex items-center gap-1">
+                    <div className="flex items-center justify-between mt-6 pt-4 border-t border-slate-800/60 flex-wrap gap-y-2">
+                        <span className="text-xs font-black uppercase tracking-widest text-emerald-400 group-hover:translate-x-1 transition-transform flex items-center gap-1 shrink-0 whitespace-nowrap">
                             Access Portal <ChevronRight size={14} />
                         </span>
-                        <span className="text-[10px] font-black uppercase bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 px-3 py-1 rounded-full">
+                        <span className="text-[10px] font-black uppercase bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 px-3 py-1 rounded-full shrink-0 whitespace-nowrap">
                             Active Monitoring
                         </span>
                     </div>
