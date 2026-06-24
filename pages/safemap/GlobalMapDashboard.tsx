@@ -6,6 +6,7 @@ import L from 'leaflet';
 import { MapPin, Info, ArrowRight, LayoutDashboard, List } from 'lucide-react';
 import ConditionWorkflowModal from './ConditionWorkflowModal';
 import { useNavigate } from 'react-router-dom';
+import { useLanguage } from '../../contexts/LanguageContext';
 
 interface Props {
   conditions: UnsafeCondition[];
@@ -29,6 +30,7 @@ const greenIcon = createStatusIcon('#22c55e');
 export default function GlobalMapDashboard({ conditions, onConditionUpdated, users }: Props) {
   const [selectedCondition, setSelectedCondition] = useState<UnsafeCondition | null>(null);
   const navigate = useNavigate();
+  const { t } = useLanguage();
 
   const getIconForStatus = (status: string) => {
     switch (status) {
@@ -46,9 +48,9 @@ export default function GlobalMapDashboard({ conditions, onConditionUpdated, use
             <div>
                 <h1 className="text-3xl font-black text-slate-900 dark:text-white flex items-center gap-3">
                   <MapPin className="text-indigo-500 h-8 w-8" />
-                  Global Condition Map
+                  {t.safesite.map.title}
                 </h1>
-                <p className="text-slate-500 mt-2">Interactive overview of all reported unsafe conditions.</p>
+                <p className="text-slate-500 mt-2">{t.safesite.map.subtitle}</p>
             </div>
             
             <div className="flex gap-3">
@@ -57,14 +59,14 @@ export default function GlobalMapDashboard({ conditions, onConditionUpdated, use
                     className="flex items-center gap-2 px-4 py-2 bg-indigo-100 hover:bg-indigo-200 text-indigo-700 rounded-xl font-bold transition-all"
                 >
                     <LayoutDashboard size={18} />
-                    SafeSite Dashboard
+                    {t.safesite.nav.dashboard}
                 </button>
                 <button 
                     onClick={() => navigate('/safemap/report')}
                     className="flex items-center gap-2 px-4 py-2 bg-emerald-100 hover:bg-emerald-200 text-emerald-700 rounded-xl font-bold transition-all"
                 >
                     <List size={18} />
-                    Reporting Table
+                    {t.safesite.nav.reportingTable}
                 </button>
             </div>
         </div>
@@ -73,15 +75,15 @@ export default function GlobalMapDashboard({ conditions, onConditionUpdated, use
         <div className="flex gap-6 mt-4 mb-4">
           <div className="flex items-center gap-2">
             <div className="w-4 h-4 rounded-full bg-red-500 border-2 border-white shadow"></div>
-            <span className="text-sm font-bold text-slate-700 dark:text-slate-300">Delayed (Atrasado)</span>
+            <span className="text-sm font-bold text-slate-700 dark:text-slate-300">{t.safesite.dashboard.delayed}</span>
           </div>
           <div className="flex items-center gap-2">
             <div className="w-4 h-4 rounded-full bg-yellow-500 border-2 border-white shadow"></div>
-            <span className="text-sm font-bold text-slate-700 dark:text-slate-300">Recent (Recente)</span>
+            <span className="text-sm font-bold text-slate-700 dark:text-slate-300">{t.safesite.dashboard.pending}</span>
           </div>
           <div className="flex items-center gap-2">
             <div className="w-4 h-4 rounded-full bg-green-500 border-2 border-white shadow"></div>
-            <span className="text-sm font-bold text-slate-700 dark:text-slate-300">Resolved (Resolvido)</span>
+            <span className="text-sm font-bold text-slate-700 dark:text-slate-300">{t.safesite.dashboard.resolved}</span>
           </div>
         </div>
       </div>

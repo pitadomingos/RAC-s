@@ -1529,6 +1529,58 @@ export const translations = {
                 revokeBtn: 'Revoke',
                 noBadges: 'No active badges found'
             }
+        },
+        safesite: {
+            dashboard: {
+                title: 'SafeSite Dashboard',
+                subtitle: 'Comprehensive decisive overview of unsafe conditions and resolution metrics.',
+                totalReported: 'Total Reported',
+                resolved: 'Resolved',
+                pending: 'Pending',
+                delayed: 'Delayed (SLA Breach)',
+                situationChart: 'Condition Status',
+                stateChart: 'Workflow State Distribution',
+                trendChart: 'Reporting Evolution'
+            },
+            nav: {
+                backToGateway: 'Back to Gateway',
+                globalMap: 'Global Map',
+                reportingTable: 'Reporting Table',
+                dashboard: 'Dashboard'
+            },
+            map: {
+                title: 'Global Condition Map',
+                subtitle: 'Interactive overview of all reported unsafe conditions.',
+                addCondition: 'Add Condition',
+                legend: 'Legend',
+                critical: 'Critical',
+                high: 'High',
+                medium: 'Medium',
+                low: 'Low'
+            },
+            report: {
+                title: 'Reporting Table',
+                subtitle: 'Filter and manage unsafe condition reports.',
+                exportCsv: 'Export CSV',
+                searchPlaceholder: 'Search by location, type, description...',
+                filterAll: 'All Statuses',
+                columns: {
+                    id: 'ID',
+                    date: 'Date',
+                    location: 'Location',
+                    type: 'Type',
+                    risk: 'Risk',
+                    status: 'Status',
+                    actions: 'Actions'
+                }
+            },
+            workflow: {
+                created: 'Created',
+                inCorrection: 'In Correction',
+                submittedManager: 'Submitted to Manager',
+                hseAnalysis: 'HSE Analysis',
+                resolved: 'Resolved'
+            }
         }
     },
     pt: {
@@ -3038,6 +3090,58 @@ export const translations = {
                 },
                 revokeBtn: 'Revogar',
                 noBadges: 'Nenhum crachá ativo encontrado'
+            }
+        },
+        safesite: {
+            dashboard: {
+                title: 'Dashboard SafeSite',
+                subtitle: 'Visão executiva e decisiva das condições inseguras e métricas de resolução.',
+                totalReported: 'Total Registrado',
+                resolved: 'Resolvido',
+                pending: 'Pendente',
+                delayed: 'Atrasado (Violação SLA)',
+                situationChart: 'Situação dos RECs',
+                stateChart: 'Distribuição por Estado',
+                trendChart: 'Evolução de Relatos'
+            },
+            nav: {
+                backToGateway: 'Voltar ao Gateway',
+                globalMap: 'Mapa Global',
+                reportingTable: 'Tabela de Registros',
+                dashboard: 'Dashboard'
+            },
+            map: {
+                title: 'Mapa Global de Condições',
+                subtitle: 'Visão interativa de todas as condições inseguras registradas.',
+                addCondition: 'Adicionar Condição',
+                legend: 'Legenda',
+                critical: 'Crítico',
+                high: 'Alto',
+                medium: 'Médio',
+                low: 'Baixo'
+            },
+            report: {
+                title: 'Tabela de Registros',
+                subtitle: 'Filtre e gerencie os registros de condições inseguras.',
+                exportCsv: 'Exportar CSV',
+                searchPlaceholder: 'Buscar por local, tipo, descrição...',
+                filterAll: 'Todos os Status',
+                columns: {
+                    id: 'ID',
+                    date: 'Data',
+                    location: 'Local',
+                    type: 'Tipo',
+                    risk: 'Risco',
+                    status: 'Status',
+                    actions: 'Ações'
+                }
+            },
+            workflow: {
+                created: 'Criado',
+                inCorrection: 'Em Correção',
+                submittedManager: 'Submetido ao Gerente',
+                hseAnalysis: 'Análise SSMA',
+                resolved: 'Resolvido'
             }
         }
     }

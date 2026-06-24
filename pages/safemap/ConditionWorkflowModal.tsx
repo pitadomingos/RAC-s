@@ -3,6 +3,7 @@ import { UnsafeCondition, User, SafeMapState } from '../../types';
 import { db } from '../../services/databaseService';
 import { useAuth } from '../../contexts/AuthContext';
 import { X, Check, ArrowRight, Camera, AlertTriangle, User as UserIcon, Calendar, MapPin } from 'lucide-react';
+import { useLanguage } from '../../contexts/LanguageContext';
 
 interface Props {
   condition: UnsafeCondition;
@@ -13,6 +14,7 @@ interface Props {
 
 export default function ConditionWorkflowModal({ condition, onClose, onUpdate, users }: Props) {
   const { user } = useAuth();
+  const { t } = useLanguage();
   const [submitting, setSubmitting] = useState(false);
   const [correctionPhotos, setCorrectionPhotos] = useState<string[]>(condition.correctionPhotos || []);
   const [actionPlanInput, setActionPlanInput] = useState(condition.actionPlan || '');
@@ -247,7 +249,11 @@ export default function ConditionWorkflowModal({ condition, onClose, onUpdate, u
                 <h4 className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">Workflow State</h4>
                 <div className="flex items-center gap-3">
                   <div className="text-lg font-black text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-900/20 px-4 py-2 rounded-xl border border-indigo-200 dark:border-indigo-800">
-                    {condition.state}
+                    {condition.state === 'Criado' ? t.safesite.workflow.created : 
+                     condition.state === 'Em Correção' ? t.safesite.workflow.inCorrection :
+                     condition.state === 'Submetido ao Gerente' ? t.safesite.workflow.submittedManager :
+                     condition.state === 'Análise SSMA' ? t.safesite.workflow.hseAnalysis :
+                     condition.state === 'Resolvido' ? t.safesite.workflow.resolved : condition.state}
                   </div>
                 </div>
               </div>

@@ -213,6 +213,20 @@ const ExecutiveDashboard: React.FC<ExecutiveDashboardProps> = ({ bookings, requi
 
   const safeSiteResolutionRate = safeSiteStats.total > 0 ? (safeSiteStats.resolved / safeSiteStats.total) * 100 : 100;
 
+  const safeSiteLocationData = useMemo(() => {
+    const locMap: Record<string, { reported: number; resolved: number }> = {};
+    unsafeConditions.forEach(c => {
+        const loc = c.functionLocation || 'Unknown';
+        if (!locMap[loc]) locMap[loc] = { reported: 0, resolved: 0 };
+        locMap[loc].reported++;
+        if (c.state === 'Resolvido') locMap[loc].resolved++;
+    });
+    return Object.entries(locMap)
+      .map(([name, data]) => ({ name, ...data }))
+      .sort((a, b) => b.reported - a.reported)
+      .slice(0, 5); // top 5 locations
+  }, [unsafeConditions]);
+
   return (
     <div className="space-y-8 pb-20 animate-fade-in-up">
         
@@ -405,6 +419,30 @@ const ExecutiveDashboard: React.FC<ExecutiveDashboardProps> = ({ bookings, requi
                         </div>
                     ))}
                     {deptHeatmapData.length === 0 && <p className="text-slate-400 text-sm py-4">No department data available.</p>}
+                </div>
+            </div>
+            {/* SafeSite Performance by Location */}
+            <div className="lg:col-span-2 bg-white dark:bg-slate-800 p-8 rounded-3xl shadow-lg border border-slate-100 dark:border-slate-700">
+                <div className="flex justify-between items-center mb-8">
+                    <div>
+                        <h3 className="text-xl font-black text-slate-800 dark:text-white flex items-center gap-2">
+                            <AlertOctagon className="text-orange-500"/> Hazards by Location (Reported vs Resolved)
+                        </h3>
+                        <p className="text-sm text-slate-500 font-medium">Top 5 critical areas by incident volume</p>
+                    </div>
+                </div>
+                
+                <div className="h-72">
+                    <ResponsiveContainer width="100%" height="100%">
+                        <BarChart data={safeSiteLocationData} margin={{ top: 20, right: 30, left: 0, bottom: 5 }}>
+                            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
+                            <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 12, fontWeight: 'bold', fill: '#64748b' }} />
+                            <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#64748b' }} />
+                            <Tooltip cursor={{ fill: 'rgba(249, 115, 22, 0.05)' }} contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 10px 25px rgba(0,0,0,0.1)' }} />
+                            <Bar dataKey="reported" name="Reported" fill="#f97316" radius={[4, 4, 0, 0]} maxBarSize={40} />
+                            <Bar dataKey="resolved" name="Resolved" fill="#10b981" radius={[4, 4, 0, 0]} maxBarSize={40} />
+                        </BarChart>
+                    </ResponsiveContainer>
                 </div>
             </div>
 

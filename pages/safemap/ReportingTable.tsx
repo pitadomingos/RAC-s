@@ -3,6 +3,7 @@ import { UnsafeCondition, User, Company } from '../../types';
 import { Search, Filter, Download, Eye, MapPin, LayoutDashboard, ArrowRight, ChevronDown, ChevronRight } from 'lucide-react';
 import ConditionWorkflowModal from './ConditionWorkflowModal';
 import { useNavigate } from 'react-router-dom';
+import { useLanguage } from '../../contexts/LanguageContext';
 
 interface Props {
   conditions: UnsafeCondition[];
@@ -17,6 +18,7 @@ export default function ReportingTable({ conditions, onConditionUpdated, users }
   const [selectedCondition, setSelectedCondition] = useState<UnsafeCondition | null>(null);
   const [expandedRow, setExpandedRow] = useState<string | null>(null);
   const navigate = useNavigate();
+  const { t } = useLanguage();
 
   const toggleRow = (id: string) => {
     setExpandedRow(expandedRow === id ? null : id);
@@ -45,8 +47,8 @@ export default function ReportingTable({ conditions, onConditionUpdated, users }
     <div className="h-full flex flex-col bg-slate-50 dark:bg-slate-900 p-6">
       <div className="flex justify-between items-start mb-6">
         <div>
-          <h1 className="text-3xl font-black text-slate-900 dark:text-white">Reporting Table</h1>
-          <p className="text-slate-500 mt-2">Filter and manage unsafe condition reports.</p>
+          <h1 className="text-3xl font-black text-slate-900 dark:text-white">{t.safesite.report.title}</h1>
+          <p className="text-slate-500 mt-2">{t.safesite.report.subtitle}</p>
         </div>
         <div className="flex gap-3">
           <button 
@@ -54,17 +56,17 @@ export default function ReportingTable({ conditions, onConditionUpdated, users }
             className="flex items-center gap-2 px-4 py-2 bg-indigo-100 hover:bg-indigo-200 text-indigo-700 rounded-xl font-bold transition-all"
           >
             <LayoutDashboard size={18} />
-            SafeSite Dashboard
+            {t.safesite.nav.dashboard}
           </button>
           <button 
             onClick={() => navigate('/safemap/global')}
             className="flex items-center gap-2 px-4 py-2 bg-emerald-100 hover:bg-emerald-200 text-emerald-700 rounded-xl font-bold transition-all"
           >
             <MapPin size={18} />
-            Global Map
+            {t.safesite.nav.globalMap}
           </button>
           <button className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 px-4 py-2 rounded-xl font-bold flex items-center gap-2 hover:bg-slate-50 transition-all shadow-sm">
-            <Download size={16} /> Export CSV
+            <Download size={16} /> {t.safesite.report.exportCsv}
           </button>
         </div>
       </div>
@@ -74,7 +76,7 @@ export default function ReportingTable({ conditions, onConditionUpdated, users }
           <Search className="absolute left-3 top-3 text-slate-400" size={18} />
           <input 
             type="text" 
-            placeholder="Search by location, type, description..."
+            placeholder={t.safesite.report.searchPlaceholder}
             value={searchTerm}
             onChange={e => setSearchTerm(e.target.value)}
             className="w-full bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl pl-10 pr-4 py-3 text-sm text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500"
@@ -89,12 +91,12 @@ export default function ReportingTable({ conditions, onConditionUpdated, users }
             onChange={e => setStatusFilter(e.target.value)}
             className="w-full bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl pl-10 pr-4 py-3 text-sm text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500 appearance-none"
           >
-            <option value="">All Statuses</option>
-            <option value="Criado">Criado</option>
-            <option value="Em Correção">Em Correção</option>
-            <option value="Submetido ao Gerente">Submetido ao Gerente</option>
-            <option value="Análise SSMA">Análise SSMA</option>
-            <option value="Resolvido">Resolvido</option>
+            <option value="">{t.safesite.report.filterAll}</option>
+            <option value="Criado">{t.safesite.workflow.created}</option>
+            <option value="Em Correção">{t.safesite.workflow.inCorrection}</option>
+            <option value="Submetido ao Gerente">{t.safesite.workflow.submittedManager}</option>
+            <option value="Análise SSMA">{t.safesite.workflow.hseAnalysis}</option>
+            <option value="Resolvido">{t.safesite.workflow.resolved}</option>
           </select>
         </div>
       </div>
@@ -105,13 +107,13 @@ export default function ReportingTable({ conditions, onConditionUpdated, users }
             <thead>
               <tr className="bg-slate-50 dark:bg-slate-900/50 border-b border-slate-200 dark:border-slate-700">
                 <th className="w-10"></th>
-                <th className="p-4 text-xs font-black uppercase text-slate-500 tracking-wider">ID</th>
-                <th className="p-4 text-xs font-black uppercase text-slate-500 tracking-wider">Date</th>
-                <th className="p-4 text-xs font-black uppercase text-slate-500 tracking-wider">Location</th>
-                <th className="p-4 text-xs font-black uppercase text-slate-500 tracking-wider">Type</th>
+                <th className="p-4 text-xs font-black uppercase text-slate-500 tracking-wider">{t.safesite.report.columns.id}</th>
+                <th className="p-4 text-xs font-black uppercase text-slate-500 tracking-wider">{t.safesite.report.columns.date}</th>
+                <th className="p-4 text-xs font-black uppercase text-slate-500 tracking-wider">{t.safesite.report.columns.location}</th>
+                <th className="p-4 text-xs font-black uppercase text-slate-500 tracking-wider">{t.safesite.report.columns.type}</th>
                 <th className="p-4 text-xs font-black uppercase text-slate-500 tracking-wider">Area</th>
-                <th className="p-4 text-xs font-black uppercase text-slate-500 tracking-wider">Status</th>
-                <th className="p-4 text-xs font-black uppercase text-slate-500 tracking-wider">Actions</th>
+                <th className="p-4 text-xs font-black uppercase text-slate-500 tracking-wider">{t.safesite.report.columns.status}</th>
+                <th className="p-4 text-xs font-black uppercase text-slate-500 tracking-wider">{t.safesite.report.columns.actions}</th>
               </tr>
             </thead>
             <tbody>
@@ -135,7 +137,11 @@ export default function ReportingTable({ conditions, onConditionUpdated, users }
                     <td className="p-4 text-sm text-slate-600 dark:text-slate-400">{condition.responsibleArea}</td>
                     <td className="p-4">
                       <span className={`px-3 py-1 rounded-full text-xs font-bold ${getStatusBadge(condition.state)}`}>
-                        {condition.state}
+                        {condition.state === 'Criado' ? t.safesite.workflow.created : 
+                         condition.state === 'Em Correção' ? t.safesite.workflow.inCorrection :
+                         condition.state === 'Submetido ao Gerente' ? t.safesite.workflow.submittedManager :
+                         condition.state === 'Análise SSMA' ? t.safesite.workflow.hseAnalysis :
+                         condition.state === 'Resolvido' ? t.safesite.workflow.resolved : condition.state}
                       </span>
                     </td>
                     <td className="p-4">
