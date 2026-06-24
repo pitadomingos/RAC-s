@@ -1,10 +1,10 @@
 import React from 'react';
-import { Shield, Users, Award, ChevronRight, Sparkles, LogOut, ArrowRightLeft } from 'lucide-react';
+import { Shield, Users, Award, ChevronRight, Sparkles, LogOut, ArrowRightLeft, Map } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useLanguage } from '../contexts/LanguageContext';
 
 interface PortalGatewayProps {
-    onSelectModule: (module: 'mobilization' | 'training') => void;
+    onSelectModule: (module: 'mobilization' | 'training' | 'safemap') => void;
 }
 
 const PortalGateway: React.FC<PortalGatewayProps> = ({ onSelectModule }) => {
@@ -17,7 +17,7 @@ const PortalGateway: React.FC<PortalGatewayProps> = ({ onSelectModule }) => {
             <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_30%,#1e1b4b_0%,#020617_80%)]"></div>
             <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] bg-indigo-600/10 blur-[150px] rounded-full animate-pulse-slow"></div>
             <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-amber-600/10 blur-[150px] rounded-full animate-pulse-slow"></div>
-            <div className="absolute inset-0 opacity-[0.02]" style={{ backgroundImage: 'radial-gradient(#ffffff 1px, transparent 1px)', backgroundSize: '40px 40px' }}></div>
+            <div className="absolute inset-0 opacity-[0.02] bg-[radial-gradient(#ffffff_1px,transparent_1px)] bg-[length:40px_40px]"></div>
 
             {/* Header / Brand */}
             <div className="relative z-10 text-center mb-12 max-w-2xl animate-fade-in-up">
@@ -35,8 +35,8 @@ const PortalGateway: React.FC<PortalGatewayProps> = ({ onSelectModule }) => {
                 </p>
             </div>
 
-            {/* Dual Modules Grid */}
-            <div className="relative z-10 grid grid-cols-1 md:grid-cols-2 gap-8 w-full max-w-4xl px-4 animate-fade-in-up" style={{ animationDelay: '0.1s' }}>
+            {/* Three Modules Grid */}
+            <div className="relative z-10 grid grid-cols-1 md:grid-cols-3 gap-8 w-full max-w-6xl px-4 animate-fade-in-up [animation-delay:100ms]">
                 
                 {/* Module 1: Workforce Mobilization */}
                 <div 
@@ -108,10 +108,45 @@ const PortalGateway: React.FC<PortalGatewayProps> = ({ onSelectModule }) => {
                     </div>
                 </div>
 
+            {/* Module 3: SafeSite / SafeMap System */}
+                <div 
+                    onClick={() => onSelectModule('safemap')}
+                    className="group bg-slate-900/40 backdrop-blur-xl hover:bg-slate-900/70 border-2 border-slate-800/80 hover:border-emerald-500/50 rounded-[2.5rem] p-8 shadow-2xl transition-all cursor-pointer transform hover:-translate-y-2 flex flex-col justify-between h-[360px] relative overflow-hidden"
+                >
+                    {/* Visual Hover Glow */}
+                    <div className="absolute -right-16 -top-16 w-40 h-40 bg-emerald-500/5 rounded-full blur-3xl group-hover:bg-emerald-500/10 transition-all"></div>
+                    
+                    <div className="space-y-6">
+                        <div className="w-14 h-14 bg-emerald-950/50 border border-emerald-500/30 rounded-2xl flex items-center justify-center text-emerald-400 shadow-inner group-hover:scale-110 transition-transform">
+                            <Map size={28} />
+                        </div>
+                        <div>
+                            <h3 className="text-2xl font-black uppercase text-white tracking-tight group-hover:text-emerald-300 transition-colors">
+                                SafeSite
+                            </h3>
+                            <p className="text-slate-400 text-xs mt-1 font-bold uppercase tracking-widest text-emerald-400/80">
+                                Incident Management
+                            </p>
+                            <p className="text-slate-400 text-sm mt-3 font-medium leading-relaxed">
+                                Intelligent mapping of unsafe conditions. Report incidents, assign responsible teams, process workflows, and track resolutions.
+                            </p>
+                        </div>
+                    </div>
+
+                    <div className="flex items-center justify-between mt-6 pt-4 border-t border-slate-800/60">
+                        <span className="text-xs font-black uppercase tracking-widest text-emerald-400 group-hover:translate-x-1 transition-transform flex items-center gap-1">
+                            Access Portal <ChevronRight size={14} />
+                        </span>
+                        <span className="text-[10px] font-black uppercase bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 px-3 py-1 rounded-full">
+                            Active Monitoring
+                        </span>
+                    </div>
+                </div>
+
             </div>
 
             {/* Presentation Page Link */}
-            <div className="relative z-10 mt-10 animate-fade-in-up" style={{ animationDelay: '0.15s' }}>
+            <div className="relative z-10 mt-10 animate-fade-in-up [animation-delay:150ms]">
                 <a 
                     href="#/presentation" 
                     className="flex items-center gap-2 px-6 py-3 bg-slate-900/60 border border-slate-800 hover:border-indigo-500/50 hover:bg-slate-900 rounded-full text-xs font-bold uppercase tracking-widest text-slate-300 hover:text-white transition-all shadow-lg active:scale-95 hover:scale-105"
@@ -122,7 +157,7 @@ const PortalGateway: React.FC<PortalGatewayProps> = ({ onSelectModule }) => {
             </div>
 
             {/* Portal Footer / User Info */}
-            <div className="relative z-10 mt-12 flex flex-col items-center gap-4 animate-fade-in-up font-mono text-xs text-slate-500" style={{ animationDelay: '0.2s' }}>
+            <div className="relative z-10 mt-12 flex flex-col items-center gap-4 animate-fade-in-up [animation-delay:200ms] font-mono text-xs text-slate-500">
                 <div className="flex items-center gap-3 bg-slate-900/60 border border-slate-800 rounded-2xl px-5 py-3">
                     <div className="w-6 h-6 rounded-lg bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-400 font-bold">
                         {user?.name.charAt(0) || 'U'}

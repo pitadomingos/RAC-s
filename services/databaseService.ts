@@ -1,6 +1,6 @@
 
 import { supabase, isSupabaseConfigured } from './supabaseClient';
-import { Booking, Employee, TrainingSession, EmployeeRequirement, Site, Company, BookingStatus, User, UserRole, RacDef, Room, Trainer, Feedback, SystemNotification, DataConnector } from '../types';
+import { Booking, Employee, TrainingSession, EmployeeRequirement, Site, Company, BookingStatus, User, UserRole, RacDef, Room, Trainer, Feedback, SystemNotification, DataConnector, UnsafeCondition } from '../types';
 import { MOCK_EMPLOYEES, MOCK_BOOKINGS, MOCK_SESSIONS, MOCK_REQUIREMENTS } from '../constants';
 import {
     DEMO_EMPLOYEES,
@@ -13,6 +13,7 @@ import {
     DEMO_TRAINERS,
     DEMO_RAC_DEFINITIONS,
     DEMO_USERS,
+    DEMO_UNSAFE_CONDITIONS
 } from '../mockData';
 
 // Helper to load/save JSON in localStorage for offline persistence
@@ -138,7 +139,7 @@ let FALLBACK_ROOMS: Room[] = getLocalStorageJson('fallback_rooms', initialRooms)
 let FALLBACK_TRAINERS: Trainer[] = getLocalStorageJson('fallback_trainers', initialTrainers);
 let FALLBACK_RAC_DEFS: RacDef[] = getLocalStorageJson('fallback_rac_defs', initialRacDefs);
 let FALLBACK_USERS: User[] = getLocalStorageJson('fallback_users', initialUsers);
-
+let FALLBACK_UNSAFE_CONDITIONS: UnsafeCondition[] = getLocalStorageJson('fallback_unsafe_conditions', DEMO_UNSAFE_CONDITIONS);
 
 // Helper to validate UUID format to prevent Supabase database crashes
 // Standard UUID is 8-4-4-4-12 (36 chars with hyphens)
@@ -151,9 +152,12 @@ export const isUUID = (str: string | undefined): boolean => {
 export const db = {
     async syncFromLocalServer() {
         try {
-            const res = await fetch('http://localhost:5000/api/db');
-            if (res.ok) {
-                const data = await res.json();
+            // Disabled to prevent ERR_CONNECTION_REFUSED console spam when python backend is not running
+            // const res = await fetch('http://localhost:5000/api/db');
+            // if (res.ok) {
+            if (false) {
+                const res = { json: async () => ({}) };
+                const data: any = await res.json();
                 if (data.companies) {
                     FALLBACK_COMPANIES = data.companies;
                     localStorage.setItem('fallback_companies', JSON.stringify(FALLBACK_COMPANIES));
@@ -273,6 +277,34 @@ export const db = {
         } catch (e: any) {
             return fallback;
         }
+    },
+
+    // ─── SafeMap Module ────────────────────────────────────────────────────────
+    
+    async getUnsafeConditions(): Promise<UnsafeCondition[]> {
+        return [...FALLBACK_UNSAFE_CONDITIONS];
+    },
+
+    async createUnsafeCondition(condition: Omit<UnsafeCondition, 'id'>): Promise<UnsafeCondition> {
+        const newCondition: UnsafeCondition = {
+            ...condition,
+            id: `sm-${Date.now()}`
+        };
+        FALLBACK_UNSAFE_CONDITIONS.push(newCondition);
+        saveLocalStorageJson('fallback_unsafe_conditions', FALLBACK_UNSAFE_CONDITIONS);
+        return newCondition;
+    },
+
+    async updateUnsafeCondition(id: string, updates: Partial<UnsafeCondition>): Promise<UnsafeCondition | null> {
+        const index = FALLBACK_UNSAFE_CONDITIONS.findIndex(c => c.id === id);
+        if (index === -1) return null;
+        
+        FALLBACK_UNSAFE_CONDITIONS[index] = {
+            ...FALLBACK_UNSAFE_CONDITIONS[index],
+            ...updates
+        };
+        saveLocalStorageJson('fallback_unsafe_conditions', FALLBACK_UNSAFE_CONDITIONS);
+        return FALLBACK_UNSAFE_CONDITIONS[index];
     },
 
     mapUserFromDb(data: any): User {

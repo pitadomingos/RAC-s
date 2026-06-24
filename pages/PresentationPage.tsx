@@ -78,6 +78,9 @@ const PresentationPage: React.FC = () => {
 
     // Auto-set presentation_active to 'true' to prevent redirect loop for non-admins
     if (localStorage.getItem('presentation_active') !== 'true') {
+        if (user) {
+            localStorage.setItem('pre_presentation_user', JSON.stringify(user));
+        }
         localStorage.setItem('presentation_active', 'true');
     }
 

@@ -28,10 +28,11 @@ import {
   SystemNotification,
   RacDef,
   RecruitmentStatus,
-  RecruitmentProcess
+  RecruitmentProcess,
+  UnsafeCondition
 } from './types';
 
-// â”€â”€â”€ Helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ——— Helpers ——————————————————————————————————————————————————————
 
 const d = (daysOffset: number) => {
   const date = new Date();
@@ -158,7 +159,7 @@ export const DEMO_TRAINERS: Trainer[] = [
   { id: 'tr-5', name: 'Jorge Mondlane', racs: ['RAC02', 'RAC11'], siteId: 's-lichinga' },
 ];
 
-// â”€â”€â”€ 5. RAC Definitions â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ——— 5. RAC Definitions ——————————————————————————————————————————
 
 export const DEMO_RAC_DEFINITIONS: RacDef[] = [
   { id: 'rac1', code: 'RAC01', name: 'RAC 01 - Working at Height', validityMonths: 24, requiresPractical: true, passScore: 75 },
@@ -176,16 +177,16 @@ export const DEMO_RAC_DEFINITIONS: RacDef[] = [
   { id: 'art', code: 'ART', name: 'ART - Risk Assessment', validityMonths: 24, requiresPractical: true, passScore: 70 },
 ];
 
-// â”€â”€â”€ 6. Users (Platform Accounts) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ——— 6. Users (Platform Accounts) —————————————————————————————————
 
 export const DEMO_USERS: User[] = [
-  { id: 1, name: 'Pita Domingos', email: 'p.domingos@vulcan.com', role: UserRole.SYSTEM_ADMIN, status: 'Active', company: 'Vulcan Resources Mozambique', jobTitle: 'Lead System Architect', siteId: 'all' },
-  { id: 2, name: 'Carlos MacuÃ¡cua', email: 'c.macuacua@vulcan.com', role: UserRole.ENTERPRISE_ADMIN, status: 'Active', company: 'Vulcan Resources Mozambique', jobTitle: 'HSE Director', siteId: 'all' },
-  { id: 3, name: 'Ana Bila', email: 'a.bila@vulcan.com', role: UserRole.SITE_ADMIN, status: 'Active', company: 'Vulcan Resources Mozambique', jobTitle: 'Site Safety Manager', siteId: 's-moatize' },
-  { id: 4, name: 'Fernando Nhantumbo', email: 'f.nhantumbo@vulcan.com', role: UserRole.SITE_ADMIN, status: 'Active', company: 'Vulcan Resources Mozambique', jobTitle: 'Site Safety Manager', siteId: 's-nacala' },
+  { id: 1, name: 'Pita Domingos', email: 'p.domingos@vulcan.com', role: UserRole.SYSTEM_ADMIN, status: 'Active', company: 'Vulcan Resources Mozambique', jobTitle: 'Lead System Architect', siteId: 'all', appModule: 'both' },
+  { id: 2, name: 'Carlos Macuácua', email: 'c.macuacua@vulcan.com', role: UserRole.ENTERPRISE_ADMIN, status: 'Active', company: 'Vulcan Resources Mozambique', jobTitle: 'HSE Director', siteId: 'all', appModule: 'both' },
+  { id: 3, name: 'Ana Bila', email: 'a.bila@vulcan.com', role: UserRole.SITE_ADMIN, status: 'Active', company: 'Vulcan Resources Mozambique', jobTitle: 'Site Safety Manager', siteId: 's-moatize', appModule: 'training' },
+  { id: 4, name: 'Fernando Nhantumbo', email: 'f.nhantumbo@vulcan.com', role: UserRole.SITE_ADMIN, status: 'Active', company: 'Vulcan Resources Mozambique', jobTitle: 'Site Safety Manager', siteId: 's-nacala', appModule: 'mobilization' },
   { id: 5, name: 'Grace Matsinhe', email: 'g.matsinhe@vulcan.com', role: UserRole.RAC_ADMIN, status: 'Active', company: 'Vulcan Resources Mozambique', jobTitle: 'Training Coordinator', siteId: 's-maputo' },
-  { id: 6, name: 'HÃ©lio Tembe', email: 'h.tembe@vulcan.com', role: UserRole.DEPT_ADMIN, status: 'Active', company: 'Vulcan Resources Mozambique', jobTitle: 'Mine Ops Supervisor', siteId: 's-moatize' },
-  { id: 7, name: 'AntÃ³nio Sitoe', email: 'a.sitoe@vulcan.com', role: UserRole.RAC_TRAINER, status: 'Active', company: 'Vulcan Resources Mozambique', jobTitle: 'Senior RAC Trainer', siteId: 's-moatize' },
+  { id: 6, name: 'Hélio Tembe', email: 'h.tembe@vulcan.com', role: UserRole.DEPT_ADMIN, status: 'Active', company: 'Vulcan Resources Mozambique', jobTitle: 'Mine Ops Supervisor', siteId: 's-moatize' },
+  { id: 7, name: 'António Sitoe', email: 'a.sitoe@vulcan.com', role: UserRole.RAC_TRAINER, status: 'Active', company: 'Vulcan Resources Mozambique', jobTitle: 'Senior RAC Trainer', siteId: 's-moatize' },
   { id: 8, name: 'Felicidade Cossa', email: 'f.cossa@vulcan.com', role: UserRole.RAC_TRAINER, status: 'Active', company: 'Vulcan Resources Mozambique', jobTitle: 'Electrical Safety Trainer', siteId: 's-nacala' },
   { id: 9, name: 'Jessica Bata', email: 'jessica@vulcan.com', role: UserRole.USER, status: 'Active', company: 'Vulcan Resources Mozambique', jobTitle: 'Safety Officer', siteId: 's-nacala' },
   { id: 10, name: 'Kelven Ubisse', email: 'kelven@vulcan.com', role: UserRole.USER, status: 'Active', company: 'Vulcan Resources Mozambique', jobTitle: 'Mining Engineer', siteId: 's-moatize' },
@@ -193,7 +194,7 @@ export const DEMO_USERS: User[] = [
   { id: 12, name: 'Domingos Guambe', email: 'd.guambe@motaengil.com', role: UserRole.DEPT_ADMIN, status: 'Active', company: 'Mota-Engil Africa', jobTitle: 'Civil Works Supervisor', siteId: 's-moatize' },
 ];
 
-// â”€â”€â”€ 7. Employees â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ——— 7. Employees ————————————————————————————————————————————————
 
 export const DEMO_EMPLOYEES: Employee[] = [
   // Vulcan â€” Mine Operations
@@ -792,3 +793,76 @@ export const DEMO_RECRUITMENT_PROCESSES: RecruitmentProcess[] = [
     safetyInspectionComments: 'Brakes, steering, lights, tire thread verified and fully compliant.'
   }
 ];
+
+// ─── 14. SafeMap Unsafe Conditions ──────────────────────────────────────────────
+
+export const DEMO_UNSAFE_CONDITIONS: UnsafeCondition[] = [
+  {
+    id: 'sm-001',
+    latitude: -16.145,
+    longitude: 33.567,
+    functionLocation: 'CHPP Plant A - Level 2',
+    conditionType: 'Missing Guardrail',
+    responsibleArea: 'Equipment Maintenance',
+    description: 'Guardrail is missing on the main conveyor walkway. Fall hazard.',
+    initialPhotos: ['https://images.unsplash.com/photo-1542384650-7058fbca25ec?q=80&w=300'],
+    correctionPhotos: [],
+    observerId: 'emp-001',
+    observerName: 'João Silva',
+    ssmaFocalPointId: 'emp-003',
+    ssmaFocalPointName: 'Carlos Mendonça',
+    areaResponsibleId: 'emp-004',
+    areaResponsibleName: 'Pedro Santos',
+    areaManagerId: 'u-1',
+    areaManagerName: 'Admin User',
+    state: 'Em Correção',
+    mapStatus: 'Atrasado',
+    createdAt: d(-5),
+  },
+  {
+    id: 'sm-002',
+    latitude: -16.148,
+    longitude: 33.570,
+    functionLocation: 'Workshop B',
+    conditionType: 'Oil Spill',
+    responsibleArea: 'Operations',
+    description: 'Large oil spill near the entrance of Workshop B.',
+    initialPhotos: ['https://images.unsplash.com/photo-1596245366914-99a38f322ea3?q=80&w=300'],
+    correctionPhotos: [],
+    observerId: 'emp-002',
+    observerName: 'Maria José',
+    ssmaFocalPointId: 'emp-003',
+    ssmaFocalPointName: 'Carlos Mendonça',
+    areaResponsibleId: 'emp-005',
+    areaResponsibleName: 'Ana Ferreira',
+    areaManagerId: 'u-1',
+    areaManagerName: 'Admin User',
+    state: 'Criado',
+    mapStatus: 'Recente',
+    createdAt: d(0),
+  },
+  {
+    id: 'sm-003',
+    latitude: -16.140,
+    longitude: 33.560,
+    functionLocation: 'Main Entrance Gate',
+    conditionType: 'Exposed Wiring',
+    responsibleArea: 'Electrical',
+    description: 'Exposed live wires on the temporary lighting pole.',
+    initialPhotos: ['https://images.unsplash.com/photo-1544724569-5f546fd6f2b6?q=80&w=300'],
+    correctionPhotos: ['https://images.unsplash.com/photo-1517420704952-d9f39e95b43e?q=80&w=300'],
+    observerId: 'emp-004',
+    observerName: 'Pedro Santos',
+    ssmaFocalPointId: 'emp-003',
+    ssmaFocalPointName: 'Carlos Mendonça',
+    areaResponsibleId: 'emp-006',
+    areaResponsibleName: 'Ricardo Lopes',
+    areaManagerId: 'u-1',
+    areaManagerName: 'Admin User',
+    state: 'Resolvido',
+    mapStatus: 'Resolvido',
+    createdAt: d(-10),
+    resolvedAt: d(-2),
+  }
+];
+

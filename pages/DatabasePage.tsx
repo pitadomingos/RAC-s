@@ -26,9 +26,10 @@ interface DatabasePageProps {
   addNotification: (notif: SystemNotification) => void;
   currentSiteId: string;
   companies?: Company[];
+  activeModule?: string | null;
 }
 
-const DatabasePage: React.FC<DatabasePageProps> = ({ employees = [], bookings, requirements, updateRequirements, sessions, onUpdateEmployee, onDeleteEmployee, racDefinitions, addNotification, currentSiteId, companies = [] }) => {
+const DatabasePage: React.FC<DatabasePageProps> = ({ employees = [], bookings, requirements, updateRequirements, sessions, onUpdateEmployee, onDeleteEmployee, racDefinitions, addNotification, currentSiteId, companies = [], activeModule }) => {
   const { t } = useLanguage();
   const { user } = useAuth();
   const [selectedCompany, setSelectedCompany] = useState('All');
@@ -149,8 +150,9 @@ const DatabasePage: React.FC<DatabasePageProps> = ({ employees = [], bookings, r
                     company: cols[2] || 'Unknown',
                     department: cols[3] || 'N/A',
                     role: cols[4] || 'N/A',
-                    siteId: currentSiteId !== 'all' ? currentSiteId : 's1',
-                    isActive: true
+                    isActive: true,
+                    siteId: currentSiteId !== 'all' ? currentSiteId : undefined,
+                    appModule: (activeModule as 'mobilization' | 'training' | 'both') || 'both'
                 });
 
                 const reqRacs: Record<string, boolean> = {};
@@ -463,6 +465,19 @@ const DatabasePage: React.FC<DatabasePageProps> = ({ employees = [], bookings, r
                                 className="w-4 h-4 rounded accent-indigo-600"
                             />
                             <label htmlFor="emp-active" className="text-sm font-bold text-slate-700 dark:text-slate-200">Active Employee</label>
+                        </div>
+                        <div>
+                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-1">App Module Access</label>
+                            <select 
+                                className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 text-sm font-medium text-slate-800 dark:text-white outline-none focus:ring-2 focus:ring-indigo-500 transition-all" 
+                                value={editingEmployee.appModule || 'both'} 
+                                onChange={e => setEditingEmployee(prev => prev ? { ...prev, appModule: e.target.value as 'mobilization' | 'training' | 'both' } : null)}
+                                title="App Module Access"
+                            >
+                                <option value="both">Both (SaaS Suite)</option>
+                                <option value="mobilization">Mobilization Only</option>
+                                <option value="training">Training Only</option>
+                            </select>
                         </div>
                     </div>
                     <div className="flex gap-3 mt-6">

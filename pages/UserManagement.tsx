@@ -14,9 +14,10 @@ interface UserManagementProps {
     sites: Site[];
     currentSiteId: string;
     companies?: Company[];
+    activeModule?: string | null;
 }
 
-const UserManagement: React.FC<UserManagementProps> = ({ users, onUpdateUser, onDeleteUser, addNotification, sites, currentSiteId, companies = [] }) => {
+const UserManagement: React.FC<UserManagementProps> = ({ users, onUpdateUser, onDeleteUser, addNotification, sites, currentSiteId, companies = [], activeModule }) => {
   const { t } = useLanguage();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -26,7 +27,7 @@ const UserManagement: React.FC<UserManagementProps> = ({ users, onUpdateUser, on
   const defaultCompany = useMemo(() => companies[0]?.name || 'Internal', [companies]);
 
   const [newUser, setNewUser] = useState<Partial<User>>({
-      name: '', email: '', phoneNumber: '', role: UserRole.USER, status: 'Active', company: defaultCompany, jobTitle: '', siteId: currentSiteId !== 'all' ? currentSiteId : (sites[0]?.id || 'all')
+      name: '', email: '', phoneNumber: '', role: UserRole.USER, status: 'Active', company: defaultCompany, jobTitle: '', siteId: currentSiteId !== 'all' ? currentSiteId : (sites[0]?.id || 'all'), appModule: (activeModule as 'mobilization' | 'training') || 'both'
   });
   const [editingUser, setEditingUser] = useState<Partial<User> | null>(null);
   const [openActionId, setOpenActionId] = useState<number | null>(null);
@@ -75,13 +76,14 @@ const UserManagement: React.FC<UserManagementProps> = ({ users, onUpdateUser, on
               status: targetUser.status || 'Active',
               company: targetUser.company || 'Unknown',
               jobTitle: targetUser.jobTitle || 'N/A',
-              siteId: targetUser.siteId || (currentSiteId !== 'all' ? currentSiteId : 'all')
+              siteId: targetUser.siteId || (currentSiteId !== 'all' ? currentSiteId : 'all'),
+              appModule: targetUser.appModule || 'both'
           };
           
           await onUpdateUser(userToAdd);
           
           setIsModalOpen(false);
-          setNewUser({ name: '', email: '', phoneNumber: '', role: UserRole.USER, status: 'Active', company: defaultCompany, jobTitle: '', siteId: currentSiteId !== 'all' ? currentSiteId : 'all' });
+          setNewUser({ name: '', email: '', phoneNumber: '', role: UserRole.USER, status: 'Active', company: defaultCompany, jobTitle: '', siteId: currentSiteId !== 'all' ? currentSiteId : 'all', appModule: (activeModule as 'mobilization' | 'training') || 'both' });
           setEditingUser(null);
           addNotification({
               id: uuidv4(),
@@ -526,6 +528,22 @@ const UserManagement: React.FC<UserManagementProps> = ({ users, onUpdateUser, on
                                </select>
                            </div>
                        )}
+                       <div>
+                           <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-1">App Module Access</label>
+                           <select 
+                               className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 text-sm font-medium text-slate-800 dark:text-white outline-none focus:ring-2 focus:ring-indigo-500 transition-all" 
+                               value={editingUser ? (editingUser.appModule || 'both') : (newUser.appModule || 'both')} 
+                               onChange={e => {
+                                   if (editingUser) setEditingUser({...editingUser, appModule: e.target.value as 'mobilization' | 'training' | 'both'});
+                                   else setNewUser({...newUser, appModule: e.target.value as 'mobilization' | 'training' | 'both'});
+                               }}
+                               title="App Module Access"
+                           >
+                               <option value="both">Both (SaaS Suite)</option>
+                               <option value="mobilization">Mobilization Only</option>
+                               <option value="training">Training Only</option>
+                           </select>
+                       </div>
                    </div>
                    <div className="p-6 bg-slate-50 dark:bg-slate-900/50 border-t border-slate-100 dark:border-slate-700 flex justify-end gap-3">
                        <button onClick={() => { setIsModalOpen(false); setEditingUser(null); }} className="px-6 py-3 text-sm text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-xl font-bold transition-colors">{t.common.cancel}</button>

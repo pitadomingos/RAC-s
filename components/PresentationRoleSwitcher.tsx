@@ -121,7 +121,19 @@ const PresentationRoleSwitcher: React.FC = () => {
     const handleExit = () => {
         localStorage.removeItem('presentation_active');
         setIsActive(false);
-        logout();
+        
+        const preUserStr = localStorage.getItem('pre_presentation_user');
+        if (preUserStr) {
+            try {
+                login(JSON.parse(preUserStr));
+            } catch {
+                login(switcherUsers[0]);
+            }
+            localStorage.removeItem('pre_presentation_user');
+        } else {
+            login(switcherUsers[0]);
+        }
+        
         navigate('/');
     };
 
@@ -154,6 +166,7 @@ const PresentationRoleSwitcher: React.FC = () => {
                         </div>
                         <button 
                             onClick={() => setIsOpen(false)}
+                            title="Close"
                             className="p-1.5 hover:bg-white/5 text-slate-400 hover:text-white rounded-lg transition-colors"
                         >
                             <X size={16} />
@@ -202,22 +215,16 @@ const PresentationRoleSwitcher: React.FC = () => {
                     </div>
 
                     {/* Footer Actions */}
-                    <div className="grid grid-cols-2 gap-2 border-t border-white/10 pt-4 mt-1">
+                    <div className="border-t border-white/10 pt-4 mt-1">
                         <button
                             onClick={() => {
                                 navigate('/presentation');
                                 setIsOpen(false);
                             }}
-                            className="bg-indigo-600 hover:bg-indigo-500 text-white text-[10px] font-black uppercase tracking-widest py-3.5 rounded-xl transition-all shadow-md active:scale-95 flex items-center justify-center gap-1.5"
+                            className="w-full bg-indigo-600 hover:bg-indigo-500 text-white text-[10px] font-black uppercase tracking-widest py-3.5 rounded-xl transition-all shadow-md active:scale-95 flex items-center justify-center gap-1.5"
                         >
                             <Play size={12} />
                             <span>{sw.slidesDeck}</span>
-                        </button>
-                        <button
-                            onClick={handleExit}
-                            className="bg-red-500/10 hover:bg-red-500 border border-red-500/20 hover:border-red-500 text-red-400 hover:text-white text-[10px] font-black uppercase tracking-widest py-3.5 rounded-xl transition-all active:scale-95"
-                        >
-                            {sw.exitSwitcher}
                         </button>
                     </div>
                 </div>

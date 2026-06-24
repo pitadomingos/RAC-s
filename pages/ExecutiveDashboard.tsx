@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { Site, Booking, EmployeeRequirement, BookingStatus, UserRole, Company, RecruitmentProcess, RecruitmentStatus } from '../types';
+import { Site, Booking, EmployeeRequirement, BookingStatus, UserRole, Company, RecruitmentProcess, RecruitmentStatus, UnsafeCondition } from '../types';
 import { isCompanyDescendant } from '../utils/companyUtils';
 import { DEMO_RECRUITMENT_PROCESSES } from '../mockData';
 import { 
@@ -8,7 +8,7 @@ import {
 } from 'recharts';
 import { 
   TrendingUp, AlertTriangle, Users, Building2, 
-  Briefcase, Activity, UserCheck, Clock, ShieldCheck, GraduationCap
+  Briefcase, Activity, UserCheck, Clock, ShieldCheck, GraduationCap, Globe, AlertOctagon
 } from 'lucide-react';
 import { DEPARTMENTS } from '../constants';
 import { useLanguage } from '../contexts/LanguageContext';
@@ -19,10 +19,11 @@ interface ExecutiveDashboardProps {
   requirements: EmployeeRequirement[];
   userRole?: UserRole;
   companies?: Company[];
+  unsafeConditions?: UnsafeCondition[];
 }
 
-const ExecutiveDashboard: React.FC<ExecutiveDashboardProps> = ({ bookings, requirements, companies = [] }) => {
-  const { t } = useLanguage();
+const ExecutiveDashboard: React.FC<ExecutiveDashboardProps> = ({ bookings, requirements, companies = [], unsafeConditions = [] }) => {
+  const { language, setLanguage, t } = useLanguage();
   
   const [selectedCompany, setSelectedCompany] = useState<string>('All');
   const [selectedDept, setSelectedDept] = useState<string>('All');
@@ -185,6 +186,33 @@ const ExecutiveDashboard: React.FC<ExecutiveDashboardProps> = ({ bookings, requi
       return 'text-red-500';
   };
 
+  // --- SAFESITE (SAFEMAP) DATA ---
+  const safeSiteStats = useMemo(() => {
+    let total = 0;
+    let resolved = 0;
+    let pending = 0;
+    let delayed = 0;
+
+    unsafeConditions.forEach(c => {
+        // Filter by selected company (SafeSite conditions are linked to responsibleArea, but we'll approximate company filter)
+        // For a more accurate dashboard, we'd map responsibleArea to company. 
+        // Here we just use the global total if 'All' is selected.
+        total++;
+        if (c.state === 'Resolvido') {
+            resolved++;
+        } else if (c.mapStatus === 'Atrasado') {
+            delayed++;
+            pending++;
+        } else {
+            pending++;
+        }
+    });
+
+    return { total, resolved, pending, delayed };
+  }, [unsafeConditions, selectedCompany, selectedDept]);
+
+  const safeSiteResolutionRate = safeSiteStats.total > 0 ? (safeSiteStats.resolved / safeSiteStats.total) * 100 : 100;
+
   return (
     <div className="space-y-8 pb-20 animate-fade-in-up">
         
@@ -208,6 +236,8 @@ const ExecutiveDashboard: React.FC<ExecutiveDashboardProps> = ({ bookings, requi
                 <div className="flex items-center gap-2 bg-slate-50 dark:bg-slate-900/50 p-3 rounded-2xl border border-slate-200 dark:border-slate-700">
                     <Building2 size={18} className="text-indigo-500" />
                     <select 
+                        aria-label="Company Filter"
+                        title="Company Filter"
                         value={selectedCompany}
                         onChange={(e) => setSelectedCompany(e.target.value)}
                         className="bg-transparent text-sm font-bold text-slate-700 dark:text-slate-200 outline-none cursor-pointer pr-2"
@@ -220,6 +250,8 @@ const ExecutiveDashboard: React.FC<ExecutiveDashboardProps> = ({ bookings, requi
                 <div className="flex items-center gap-2 bg-slate-50 dark:bg-slate-900/50 p-3 rounded-2xl border border-slate-200 dark:border-slate-700">
                     <Briefcase size={18} className="text-purple-500" />
                     <select 
+                        aria-label="Department Filter"
+                        title="Department Filter"
                         value={selectedDept}
                         onChange={(e) => setSelectedDept(e.target.value)}
                         className="bg-transparent text-sm font-bold text-slate-700 dark:text-slate-200 outline-none cursor-pointer pr-2"
@@ -228,6 +260,14 @@ const ExecutiveDashboard: React.FC<ExecutiveDashboardProps> = ({ bookings, requi
                         {DEPARTMENTS.map(d => <option key={d} value={d}>{d}</option>)}
                     </select>
                 </div>
+
+                <button 
+                    onClick={() => setLanguage(language === 'en' ? 'pt' : 'en')}
+                    className="flex items-center gap-2 bg-slate-50 dark:bg-slate-900/50 hover:bg-slate-100 dark:hover:bg-slate-800 p-3 rounded-2xl border border-slate-200 dark:border-slate-700 transition-colors text-slate-600 dark:text-slate-300"
+                >
+                    <Globe size={18} className="text-slate-400" />
+                    <span className="text-sm font-black uppercase tracking-widest">{language}</span>
+                </button>
             </div>
         </div>
 
@@ -288,6 +328,20 @@ const ExecutiveDashboard: React.FC<ExecutiveDashboardProps> = ({ bookings, requi
                     )}
                 </div>
             </div>
+
+            {/* SafeSite KPI Card */}
+            <div className="bg-gradient-to-br from-white to-slate-50 dark:from-slate-800 dark:to-slate-900 p-6 rounded-3xl shadow-lg border border-slate-100 dark:border-slate-700 relative overflow-hidden group">
+                <div className="absolute -right-6 -top-6 text-orange-500/10 dark:text-orange-500/5 group-hover:scale-110 transition-transform duration-500">
+                    <AlertOctagon size={120} />
+                </div>
+                <div className="relative z-10">
+                    <p className="text-xs font-black text-slate-400 uppercase tracking-widest mb-2 flex items-center gap-2"><AlertOctagon size={14}/> SafeSite Hazards</p>
+                    <div className="flex items-end gap-3">
+                        <h3 className={`text-5xl font-black tracking-tighter ${getHealthColor(safeSiteResolutionRate)}`}>{safeSiteResolutionRate.toFixed(0)}%</h3>
+                    </div>
+                    <p className="text-sm font-bold text-slate-500 mt-2">{safeSiteStats.resolved} of {safeSiteStats.total} hazards resolved ({safeSiteStats.delayed} delayed)</p>
+                </div>
+            </div>
         </div>
 
         {/* --- MAIN CHARTS AREA --- */}
@@ -342,9 +396,9 @@ const ExecutiveDashboard: React.FC<ExecutiveDashboardProps> = ({ bookings, requi
                                     <span className="text-xs font-bold text-slate-400 bg-slate-100 dark:bg-slate-900/50 px-2 py-1 rounded-md">{dept.total} staff</span>
                                 </div>
                                 <div className="h-2.5 w-full bg-slate-100 dark:bg-slate-900/50 rounded-full overflow-hidden">
+                                    <style>{`.dept-bar-${i} { width: ${dept.rate}%; }`}</style>
                                     <div 
-                                        className={`h-full rounded-full transition-all duration-1000 ${dept.rate >= 90 ? 'bg-emerald-500' : dept.rate >= 75 ? 'bg-amber-500' : 'bg-red-500'}`} 
-                                        style={{ width: `${dept.rate}%` }}
+                                        className={`dept-bar-${i} h-full rounded-full transition-all duration-1000 ${dept.rate >= 90 ? 'bg-emerald-500' : dept.rate >= 75 ? 'bg-amber-500' : 'bg-red-500'}`} 
                                     ></div>
                                 </div>
                             </div>

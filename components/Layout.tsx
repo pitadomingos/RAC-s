@@ -50,7 +50,8 @@ import {
   Compass,
   Heart,
   BadgeCheck,
-  Stethoscope
+  Stethoscope,
+  GraduationCap
 } from 'lucide-react';
 import { UserRole, SystemNotification, Site, Company } from '../types';
 import { useLanguage } from '../contexts/LanguageContext';
@@ -73,8 +74,8 @@ interface LayoutProps {
   simulatedDept?: string;
   setSimulatedDept?: (dept: string) => void;
   companies?: Company[]; 
-  activeModule?: 'mobilization' | 'training' | null;
-  onSwitchModule?: (module: 'mobilization' | 'training' | null) => void;
+  activeModule?: 'mobilization' | 'training' | 'safemap' | null;
+  onSwitchModule?: (module: 'mobilization' | 'training' | 'safemap' | null) => void;
 }
 
 const Layout: React.FC<LayoutProps> = ({ 
@@ -149,37 +150,49 @@ const Layout: React.FC<LayoutProps> = ({
       }
   };
 
-  const allNavItems = activeModule === 'mobilization' ? [
-    { path: '/recruitment', label: t.nav.mobilizationFlow, icon: Users, visible: true },
-    { path: '/hr-portal', label: t.nav.hrPortal, icon: FileText, visible: true },
-    { path: '/security-portal', label: t.nav.securityPortal, icon: Shield, visible: true },
-    { path: '/clinic-portal', label: t.nav.clinicPortal, icon: Heart, visible: true },
-    { path: '/safety-inspections', label: t.nav.safetyInspections, icon: ClipboardList, visible: true },
-    { path: '/messages', label: t.nav.communications, icon: Send, visible: true },
-    { path: '/manuals', label: t.nav.manuals, icon: BookOpen, visible: true },
-  ] : [
-    { path: '/system-blueprint', label: 'System Blueprint', icon: Compass, visible: userRole === UserRole.SYSTEM_ADMIN },
-    { path: '/', label: t.nav.dashboard, icon: LayoutDashboard, visible: ![UserRole.USER, UserRole.RAC_TRAINER].includes(userRole) },
-    { path: '/booking', label: t.nav.booking, icon: CalendarPlus, visible: userRole !== UserRole.RAC_TRAINER && userRole !== UserRole.ENTERPRISE_ADMIN && userRole !== UserRole.SITE_ADMIN },
-    { path: '/results', label: t.nav.records, icon: ClipboardList, visible: userRole !== UserRole.RAC_TRAINER && userRole !== UserRole.ENTERPRISE_ADMIN },
-    { path: '/bookings', label: t.nav.bookings, icon: ScrollText, visible: [UserRole.SYSTEM_ADMIN, UserRole.SITE_ADMIN, UserRole.ENTERPRISE_ADMIN, UserRole.RAC_ADMIN].includes(userRole) },
-    { path: '/database', label: t.nav.database, icon: Database, visible: userRole !== UserRole.USER && userRole !== UserRole.RAC_TRAINER },
-    { path: '/integration', label: t.nav.integration, icon: GitMerge, visible: [UserRole.SYSTEM_ADMIN, UserRole.ENTERPRISE_ADMIN].includes(userRole) },
-    { path: '/reports', label: t.nav.reports, icon: FileBarChart, visible: [UserRole.SYSTEM_ADMIN, UserRole.ENTERPRISE_ADMIN, UserRole.SITE_ADMIN].includes(userRole) },
-    { path: '/enterprise-dashboard', label: t.nav.enterpriseDashboard, icon: BarChart, visible: [UserRole.SYSTEM_ADMIN, UserRole.ENTERPRISE_ADMIN].includes(userRole) },
-    { path: '/executive-dashboard', label: 'Executive Dashboard', icon: Presentation, visible: [UserRole.SYSTEM_ADMIN, UserRole.ENTERPRISE_ADMIN, UserRole.SITE_ADMIN, UserRole.DEPT_ADMIN].includes(userRole) },
-    { path: '/alcohol-control', label: t.nav.alcohol, icon: Wine, visible: showAlcoholLink },
-    { path: '/request-cards', label: t.nav.requestCards, icon: Mail, visible: userRole !== UserRole.ENTERPRISE_ADMIN && userRole !== UserRole.RAC_TRAINER },
-    { path: '/messages', label: t.nav.communications, icon: Send, visible: userRole === UserRole.SYSTEM_ADMIN },
-    { path: '/schedule', label: t.nav.schedule, icon: CalendarDays, visible: [UserRole.SYSTEM_ADMIN, UserRole.SITE_ADMIN].includes(userRole) },
-    { path: '/site-governance', label: t.nav.siteGovernance, icon: GanttChart, visible: [UserRole.SYSTEM_ADMIN, UserRole.ENTERPRISE_ADMIN].includes(userRole) },
-    { path: '/trainer-input', label: t.nav.trainerInput, icon: PenTool, visible: [UserRole.SYSTEM_ADMIN, UserRole.RAC_TRAINER].includes(userRole) },
-    { path: '/users', label: t.nav.users, icon: Users, visible: userRole === UserRole.SYSTEM_ADMIN },
-    { path: '/settings', label: t.nav.settings, icon: Settings, visible: [UserRole.SYSTEM_ADMIN, UserRole.ENTERPRISE_ADMIN, UserRole.SITE_ADMIN].includes(userRole) },
-    { path: '/tech-docs', label: t.nav.techDocs, icon: FileCode, visible: [UserRole.SYSTEM_ADMIN, UserRole.ENTERPRISE_ADMIN].includes(userRole) },
-    { path: '/logs', label: t.nav.logs, icon: ScrollText, visible: [UserRole.SYSTEM_ADMIN, UserRole.ENTERPRISE_ADMIN].includes(userRole) },
-    { path: '/manuals', label: t.nav.manuals, icon: BookOpen, visible: true },
-  ];
+  let allNavItems: any[] = [];
+  if (activeModule === 'mobilization') {
+    allNavItems = [
+      { path: '/recruitment', label: t.nav.mobilizationFlow, icon: Users, visible: true },
+      { path: '/hr-portal', label: t.nav.hrPortal, icon: FileText, visible: true },
+      { path: '/security-portal', label: t.nav.securityPortal, icon: Shield, visible: true },
+      { path: '/clinic-portal', label: t.nav.clinicPortal, icon: Heart, visible: true },
+      { path: '/safety-inspections', label: t.nav.safetyInspections, icon: ClipboardList, visible: true },
+      { path: '/messages', label: t.nav.communications, icon: Send, visible: true },
+      { path: '/manuals', label: t.nav.manuals, icon: BookOpen, visible: true },
+    ];
+  } else if (activeModule === 'safemap') {
+    allNavItems = [
+      { path: '/safemap/analytics', label: 'Dashboard', icon: LayoutDashboard, visible: true },
+      { path: '/safemap/global', label: 'Global Map', icon: Map, visible: true },
+      { path: '/safemap/new', label: 'New Condition', icon: ClipboardList, visible: true },
+      { path: '/safemap/report', label: 'Reporting Table', icon: ScrollText, visible: true },
+    ];
+  } else {
+    allNavItems = [
+      { path: '/system-blueprint', label: 'System Blueprint', icon: Compass, visible: userRole === UserRole.SYSTEM_ADMIN },
+      { path: '/', label: t.nav.dashboard, icon: LayoutDashboard, visible: ![UserRole.USER, UserRole.RAC_TRAINER].includes(userRole) },
+      { path: '/booking', label: t.nav.booking, icon: CalendarPlus, visible: userRole !== UserRole.RAC_TRAINER && userRole !== UserRole.ENTERPRISE_ADMIN && userRole !== UserRole.SITE_ADMIN },
+      { path: '/results', label: t.nav.records, icon: ClipboardList, visible: userRole !== UserRole.RAC_TRAINER && userRole !== UserRole.ENTERPRISE_ADMIN },
+      { path: '/bookings', label: t.nav.bookings, icon: ScrollText, visible: [UserRole.SYSTEM_ADMIN, UserRole.SITE_ADMIN, UserRole.ENTERPRISE_ADMIN, UserRole.RAC_ADMIN].includes(userRole) },
+      { path: '/database', label: t.nav.database, icon: Database, visible: userRole !== UserRole.USER && userRole !== UserRole.RAC_TRAINER },
+      { path: '/integration', label: t.nav.integration, icon: GitMerge, visible: [UserRole.SYSTEM_ADMIN, UserRole.ENTERPRISE_ADMIN].includes(userRole) },
+      { path: '/reports', label: t.nav.reports, icon: FileBarChart, visible: [UserRole.SYSTEM_ADMIN, UserRole.ENTERPRISE_ADMIN, UserRole.SITE_ADMIN].includes(userRole) },
+      { path: '/enterprise-dashboard', label: t.nav.enterpriseDashboard, icon: BarChart, visible: [UserRole.SYSTEM_ADMIN, UserRole.ENTERPRISE_ADMIN].includes(userRole) },
+      { path: '/executive-dashboard', label: 'Executive Dashboard', icon: Presentation, visible: [UserRole.SYSTEM_ADMIN, UserRole.ENTERPRISE_ADMIN, UserRole.SITE_ADMIN, UserRole.DEPT_ADMIN].includes(userRole) },
+      { path: '/alcohol-control', label: t.nav.alcohol, icon: Wine, visible: showAlcoholLink },
+      { path: '/request-cards', label: t.nav.requestCards, icon: Mail, visible: userRole !== UserRole.ENTERPRISE_ADMIN && userRole !== UserRole.RAC_TRAINER },
+      { path: '/messages', label: t.nav.communications, icon: Send, visible: userRole === UserRole.SYSTEM_ADMIN },
+      { path: '/schedule', label: t.nav.schedule, icon: CalendarDays, visible: [UserRole.SYSTEM_ADMIN, UserRole.SITE_ADMIN].includes(userRole) },
+      { path: '/site-governance', label: t.nav.siteGovernance, icon: GanttChart, visible: [UserRole.SYSTEM_ADMIN, UserRole.ENTERPRISE_ADMIN].includes(userRole) },
+      { path: '/trainer-input', label: t.nav.trainerInput, icon: PenTool, visible: [UserRole.SYSTEM_ADMIN, UserRole.RAC_TRAINER].includes(userRole) },
+      { path: '/users', label: t.nav.users, icon: Users, visible: userRole === UserRole.SYSTEM_ADMIN },
+      { path: '/settings', label: t.nav.settings, icon: Settings, visible: [UserRole.SYSTEM_ADMIN, UserRole.ENTERPRISE_ADMIN, UserRole.SITE_ADMIN].includes(userRole) },
+      { path: '/tech-docs', label: t.nav.techDocs, icon: FileCode, visible: [UserRole.SYSTEM_ADMIN, UserRole.ENTERPRISE_ADMIN].includes(userRole) },
+      { path: '/logs', label: t.nav.logs, icon: ScrollText, visible: [UserRole.SYSTEM_ADMIN, UserRole.ENTERPRISE_ADMIN].includes(userRole) },
+      { path: '/manuals', label: t.nav.manuals, icon: BookOpen, visible: true },
+    ];
+  }
 
   const navItems = allNavItems.filter(item => item.visible);
   const currentNavItem = navItems.find(i => i.path === location.pathname);
@@ -230,15 +243,6 @@ const Layout: React.FC<LayoutProps> = ({
         </nav>
 
         <div className="w-full p-4 border-t border-slate-700 dark:border-slate-800 bg-slate-900 dark:bg-slate-950 space-y-3">
-            {activeModule && (
-              <button 
-                onClick={() => onSwitchModule && onSwitchModule(null)}
-                className="w-full flex items-center justify-center gap-2 bg-indigo-600/15 hover:bg-indigo-600 border border-indigo-500/20 hover:border-indigo-500 text-indigo-400 hover:text-white text-xs font-black uppercase tracking-widest py-3 px-4 rounded-xl transition-all shadow-md active:scale-95"
-              >
-                <Compass size={16} />
-                {!isCollapsed && <span>{t.nav.switchModule}</span>}
-              </button>
-            )}
             <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-xl bg-slate-800 border border-slate-700 flex items-center justify-center text-yellow-500 font-black">{user?.name.charAt(0) || 'U'}</div>
                 {!isCollapsed && (
@@ -291,6 +295,33 @@ const Layout: React.FC<LayoutProps> = ({
           </div>
 
           <div className="flex items-center space-x-2 md:space-x-4">
+            {/* Quick Module Switcher */}
+            {onSwitchModule && (
+                <div className="hidden lg:flex items-center bg-slate-100 dark:bg-slate-700/50 rounded-lg p-1 mr-2 border border-slate-200 dark:border-slate-700">
+                    <button 
+                        onClick={() => onSwitchModule('mobilization')}
+                        className={`px-3 py-1.5 rounded-md text-xs font-bold transition-all flex items-center gap-1.5 ${activeModule === 'mobilization' ? 'bg-white dark:bg-slate-800 text-indigo-600 dark:text-indigo-400 shadow-sm' : 'text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200'}`}
+                        title="Jump to Onboarding"
+                    >
+                        <Users size={14} /> Onboarding
+                    </button>
+                    <button 
+                        onClick={() => onSwitchModule('training')}
+                        className={`px-3 py-1.5 rounded-md text-xs font-bold transition-all flex items-center gap-1.5 ${activeModule === 'training' ? 'bg-white dark:bg-slate-800 text-amber-600 dark:text-amber-400 shadow-sm' : 'text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200'}`}
+                        title="Jump to Training"
+                    >
+                        <GraduationCap size={14} /> Training
+                    </button>
+                    <button 
+                        onClick={() => onSwitchModule('safemap')}
+                        className={`px-3 py-1.5 rounded-md text-xs font-bold transition-all flex items-center gap-1.5 ${activeModule === 'safemap' ? 'bg-white dark:bg-slate-800 text-emerald-600 dark:text-emerald-400 shadow-sm' : 'text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200'}`}
+                        title="Jump to SafeSite"
+                    >
+                        <ShieldCheck size={14} /> SafeSite
+                    </button>
+                </div>
+            )}
+
             {setCurrentSiteId && (userRole === UserRole.SYSTEM_ADMIN || userRole === UserRole.ENTERPRISE_ADMIN) && (
                 <div className="hidden md:flex items-center gap-2 bg-slate-50 dark:bg-slate-700 border border-slate-200 rounded-lg px-2 py-1">
                     <select value={currentSiteId} onChange={(e) => setCurrentSiteId(e.target.value)}

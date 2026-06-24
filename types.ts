@@ -67,6 +67,7 @@ export interface User {
     jobTitle?: string;
     department?: string;
     siteId?: string;
+    appModule?: 'mobilization' | 'training' | 'both' | 'safemap';
 }
 
 export interface Employee {
@@ -82,6 +83,7 @@ export interface Employee {
   driverLicenseNumber?: string;
   driverLicenseClass?: string;
   driverLicenseExpiry?: string;
+  appModule?: 'mobilization' | 'training' | 'both' | 'safemap';
 }
 
 export interface TrainingSession {
@@ -384,4 +386,34 @@ export interface InspectionRecord {
   findings?: string;
   correctiveAction?: string;
   signedOff?: boolean;
+}
+
+// ─── SafeMap Module ─────────────────────────────────────────────────────────────
+
+export type SafeMapState = 'Criado' | 'Em Correção' | 'Submetido ao Gerente' | 'Análise SSMA' | 'Resolvido';
+export type SafeMapStatus = 'Atrasado' | 'Recente' | 'Resolvido';
+
+export interface UnsafeCondition {
+  id: string;
+  latitude: number;
+  longitude: number;
+  functionLocation: string;
+  conditionType: string;
+  responsibleArea: string;
+  description: string;
+  actionPlan?: string;
+  initialPhotos: string[]; // max 2
+  correctionPhotos: string[]; // max 2
+  observerId: string; // User ID
+  observerName: string;
+  ssmaFocalPointId?: string;
+  ssmaFocalPointName?: string;
+  areaResponsibleId?: string;
+  areaResponsibleName?: string;
+  areaManagerId?: string;
+  areaManagerName?: string;
+  state: SafeMapState;
+  mapStatus: SafeMapStatus;
+  createdAt: string;
+  resolvedAt?: string;
 }
