@@ -6,6 +6,7 @@ import { useNavigate } from 'react-router-dom';
 import { v4 as uuidv4 } from 'uuid';
 import { useLanguage } from '../contexts/LanguageContext';
 import ConfirmModal from '../components/ConfirmModal';
+import { db } from '../services/databaseService';
 
 interface ScheduleTrainingProps {
     sessions: TrainingSession[];
@@ -240,7 +241,7 @@ const ScheduleTraining: React.FC<ScheduleTrainingProps> = ({
       }
   };
 
-  const handleAddSession = () => {
+  const handleAddSession = async () => {
       if (!newSession.date || !newSession.racType || !newSession.location) {
           addNotification({
               id: uuidv4(),
@@ -265,19 +266,32 @@ const ScheduleTraining: React.FC<ScheduleTrainingProps> = ({
           siteId: newSession.siteId || 's1'
       };
 
-      setSessions(prev => [...prev, sessionToAdd]);
-      setIsModalOpen(false);
-      
-      addNotification({
-          id: uuidv4(),
-          type: 'success',
-          title: 'Session Created',
-          message: `${sessionToAdd.racType} scheduled for ${sessionToAdd.date}`,
-          timestamp: new Date(),
-          isRead: false
-      });
+      try {
+          const saved = await db.saveSession(sessionToAdd);
+          setSessions(prev => [...prev, saved]);
+          setIsModalOpen(false);
+          
+          addNotification({
+              id: uuidv4(),
+              type: 'success',
+              title: 'Session Created',
+              message: `${saved.racType} scheduled for ${saved.date}`,
+              timestamp: new Date(),
+              isRead: false
+          });
 
-      setNewSession(prev => ({ ...prev, date: '', startTime: '08:00' }));
+          setNewSession(prev => ({ ...prev, date: '', startTime: '08:00' }));
+      } catch (err: any) {
+          console.error("Failed to save session:", err);
+          addNotification({
+              id: uuidv4(),
+              type: 'alert',
+              title: 'Database Error',
+              message: err.message || 'Failed to save the session to the database.',
+              timestamp: new Date(),
+              isRead: false
+          });
+      }
   };
 
   const handleDeleteSession = (id: string) => {
@@ -285,7 +299,30 @@ const ScheduleTraining: React.FC<ScheduleTrainingProps> = ({
           isOpen: true,
           title: 'Cancel Session?',
           message: 'Are you sure you want to cancel this training session? This will remove it from the schedule and cannot be undone.',
-          onConfirm: () => setSessions(prev => prev.filter(s => s.id !== id)),
+          onConfirm: async () => {
+              try {
+                  await db.deleteSession(id);
+                  setSessions(prev => prev.filter(s => s.id !== id));
+                  addNotification({
+                      id: uuidv4(),
+                      type: 'success',
+                      title: 'Session Cancelled',
+                      message: 'The training session has been cancelled and removed.',
+                      timestamp: new Date(),
+                      isRead: false
+                  });
+              } catch (err: any) {
+                  console.error("Failed to delete session:", err);
+                  addNotification({
+                      id: uuidv4(),
+                      type: 'alert',
+                      title: 'Database Error',
+                      message: err.message || 'Failed to delete the session from the database.',
+                      timestamp: new Date(),
+                      isRead: false
+                  });
+              }
+          },
           isDestructive: true
       });
   };

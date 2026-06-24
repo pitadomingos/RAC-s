@@ -174,8 +174,8 @@ const server = http.createServer(async (req, res) => {
             const { rows } = await pool.query(
                 `INSERT INTO employees (id, record_id, name, company, department, role, site_id, email, phone_number, photo_url, driver_license_number, driver_license_class, driver_license_expiry, is_active)
                  VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14)
-                 ON CONFLICT (id) DO UPDATE SET
-                    record_id=EXCLUDED.record_id, name=EXCLUDED.name, company=EXCLUDED.company,
+                 ON CONFLICT (record_id) DO UPDATE SET
+                    name=EXCLUDED.name, company=EXCLUDED.company,
                     department=EXCLUDED.department, role=EXCLUDED.role, site_id=EXCLUDED.site_id,
                     email=EXCLUDED.email, phone_number=EXCLUDED.phone_number, photo_url=EXCLUDED.photo_url,
                     driver_license_number=EXCLUDED.driver_license_number, driver_license_class=EXCLUDED.driver_license_class,

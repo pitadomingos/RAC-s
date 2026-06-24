@@ -90,7 +90,7 @@ export default function GlobalMapDashboard({ conditions, onConditionUpdated, use
 
       <div className="flex-1 p-6 pt-2">
         <div className="w-full h-full rounded-2xl overflow-hidden border-4 border-white dark:border-slate-800 shadow-2xl relative z-0">
-          <MapContainer center={[-16.17135, 33.76311]} zoom={13} style={{ height: '100%', width: '100%' }}>
+          <MapContainer center={[-15.914093, 33.013188]} zoom={13} style={{ height: '100%', width: '100%' }}>
             <TileLayer
               attribution='&copy; Google'
               url="https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}"

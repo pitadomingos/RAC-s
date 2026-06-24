@@ -22,7 +22,7 @@ interface Props {
 export default function NewConditionForm({ onConditionAdded }: Props) {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const [position, setPosition] = useState<[number, number]>([-16.17135, 33.76311]); // Moatize Coal Mine
+  const [position, setPosition] = useState<[number, number]>([-15.914093, 33.013188]); // Jindal Chirodzi Mine
   const [functionLocation, setFunctionLocation] = useState('');
   const [conditionType, setConditionType] = useState('');
   const [responsibleArea, setResponsibleArea] = useState('');
@@ -147,7 +147,7 @@ export default function NewConditionForm({ onConditionAdded }: Props) {
     <div className="flex h-full bg-slate-50 dark:bg-slate-900">
       {/* LEFT: Map */}
       <div className="w-1/2 h-full relative z-0">
-        <MapContainer center={[-16.17135, 33.76311]} zoom={13} style={{ height: '100%', width: '100%' }}>
+        <MapContainer center={[-15.914093, 33.013188]} zoom={13} style={{ height: '100%', width: '100%' }}>
           <TileLayer
             attribution='&copy; Google'
             url="https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}"

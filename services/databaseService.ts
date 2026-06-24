@@ -440,6 +440,26 @@ export const db = {
         return raw.map(mapSessionFromDb);
     },
 
+    async saveSession(session: Partial<TrainingSession>): Promise<TrainingSession> {
+        const payload = {
+            id: isUUID(session.id) ? session.id : uuidv4(),
+            rac_type: session.racType,
+            date: session.date,
+            start_time: session.startTime,
+            location: session.location,
+            instructor: session.instructor,
+            capacity: session.capacity,
+            session_language: session.sessionLanguage,
+            site_id: isUUID(session.siteId) ? session.siteId : null
+        };
+        const raw = await post<any>('/sessions', payload);
+        return mapSessionFromDb(raw);
+    },
+
+    async deleteSession(id: string): Promise<any> {
+        return del(`/sessions/${id}`);
+    },
+
     // ─── Bookings ───────────────────────────────────────────────────────────────
 
     async getBookings(): Promise<Booking[]> {

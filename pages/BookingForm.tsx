@@ -183,7 +183,8 @@ const BookingForm: React.FC<BookingFormProps> = ({ addBookings, sessions, userRo
 
     // Ensure confirmed employees exist in the employees table before creating bookings
     for (const b of newBookings) {
-        await db.upsertEmployee(b.employee);
+        const savedEmp = await db.upsertEmployee(b.employee);
+        b.employee = savedEmp;
     }
 
     // Call the application prop handler
