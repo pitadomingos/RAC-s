@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
     Users, FileText, Upload, Check, X, Clock, CheckCircle2,
     AlertTriangle, Eye, ChevronRight, Search, Filter, Download,
@@ -10,18 +10,9 @@ import { RecruitmentProcess, RecruitmentStatus, RecruitDocument } from '../types
 import { v4 as uuidv4 } from 'uuid';
 import { useLanguage } from '../contexts/LanguageContext';
 import FormBuilder from '../components/FormBuilder';
+import { db } from '../services/databaseService';
 
-// ─── Shared localStorage helpers ─────────────────────────────────────────────
-const LS_KEY = 'mobilization_processes';
-function loadProcesses(): RecruitmentProcess[] {
-    try {
-        const saved = localStorage.getItem(LS_KEY);
-        return saved ? JSON.parse(saved) : [];
-    } catch { return []; }
-}
-function saveProcesses(p: RecruitmentProcess[]) {
-    localStorage.setItem(LS_KEY, JSON.stringify(p));
-}
+
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 function timeSince(iso: string, isPt: boolean) {
@@ -57,7 +48,10 @@ export function HRPortalPage() {
         return statuses[status] || status;
     };
 
-    const [processes, setProcesses] = useState<RecruitmentProcess[]>(loadProcesses);
+    const [processes, setProcesses] = useState<RecruitmentProcess[]>([]);
+    useEffect(() => {
+        db.getRecruitmentProcesses().then(setProcesses).catch(err => console.error('HR: Failed to load processes:', err));
+    }, []);
     const [activeTab, setActiveTab] = useState<'queue' | 'history' | 'documents' | 'formbuilder'>('queue');
     const [selectedId, setSelectedId] = useState<string | null>(null);
     const [search, setSearch] = useState('');
@@ -87,7 +81,7 @@ export function HRPortalPage() {
     function update(updated: RecruitmentProcess) {
         const list = processes.map(p => p.id === updated.id ? updated : p);
         setProcesses(list);
-        saveProcesses(list);
+        db.saveRecruitmentProcess(updated).catch(e => console.error('HR: DB save failed:', e));
     }
 
     const [successMsg, setSuccessMsg] = useState('');

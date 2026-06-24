@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { Site, Booking, EmployeeRequirement, BookingStatus, UserRole, Company, RecruitmentProcess, RecruitmentStatus, UnsafeCondition } from '../types';
 import { isCompanyDescendant } from '../utils/companyUtils';
 import { 
@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import { DEPARTMENTS } from '../constants';
 import { useLanguage } from '../contexts/LanguageContext';
+import { db } from '../services/databaseService';
 
 interface ExecutiveDashboardProps {
   sites: Site[];
@@ -35,14 +36,10 @@ const ExecutiveDashboard: React.FC<ExecutiveDashboardProps> = ({ bookings, requi
   }, [companies]);
 
   // --- MOBILIZATION (ONBOARDING) DATA ---
-  const [processes] = useState<RecruitmentProcess[]>(() => {
-    try {
-      const saved = localStorage.getItem('mobilization_processes');
-      return saved ? JSON.parse(saved) : [];
-    } catch {
-      return [];
-    }
-  });
+  const [processes, setProcesses] = useState<RecruitmentProcess[]>([]);
+  useEffect(() => {
+    db.getRecruitmentProcesses().then(setProcesses).catch(err => console.error('Exec: Failed to load processes:', err));
+  }, []);
 
   const filteredProcesses = useMemo(() => {
     return processes.filter(p => {

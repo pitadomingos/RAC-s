@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
     Heart, Activity, Eye, CheckCircle2, AlertTriangle, X,
     Search, RefreshCw, Inbox, History, FileText,
@@ -12,18 +12,9 @@ import { RecruitmentProcess, RecruitmentStatus, MedicalExam, FitnessCertificate 
 import { v4 as uuidv4 } from 'uuid';
 import { useLanguage } from '../contexts/LanguageContext';
 import FormBuilder from '../components/FormBuilder';
+import { db } from '../services/databaseService';
 
-// ─── Shared localStorage helpers ─────────────────────────────────────────────
-const LS_KEY = 'mobilization_processes';
-function loadProcesses(): RecruitmentProcess[] {
-    try {
-        const saved = localStorage.getItem(LS_KEY);
-        return saved ? JSON.parse(saved) : [];
-    } catch { return []; }
-}
-function saveProcesses(p: RecruitmentProcess[]) {
-    localStorage.setItem(LS_KEY, JSON.stringify(p));
-}
+
 
 function timeSince(iso: string, language: 'en' | 'pt') {
     const diff = Date.now() - new Date(iso).getTime();
@@ -82,7 +73,10 @@ function blankCert(examinerName: string): Omit<FitnessCertificate, 'certificateN
 // ─── Main Component ───────────────────────────────────────────────────────────
 export function ClinicPortalPage() {
     const { t, language } = useLanguage();
-    const [processes, setProcesses] = useState<RecruitmentProcess[]>(loadProcesses);
+    const [processes, setProcesses] = useState<RecruitmentProcess[]>([]);
+    useEffect(() => {
+        db.getRecruitmentProcesses().then(setProcesses).catch(err => console.error('Clinic: Failed to load processes:', err));
+    }, []);
     const [activeTab, setActiveTab] = useState<'queue' | 'certificates' | 'history' | 'formbuilder'>('queue');
     const [selectedId, setSelectedId] = useState<string | null>(null);
     const [search, setSearch] = useState('');
@@ -115,7 +109,7 @@ export function ClinicPortalPage() {
     function update(updated: RecruitmentProcess) {
         const list = processes.map(p => p.id === updated.id ? updated : p);
         setProcesses(list);
-        saveProcesses(list);
+        db.saveRecruitmentProcess(updated).catch(e => console.error('Clinic: DB save failed:', e));
     }
 
     function toast(msg: string) { setSuccessMsg(msg); setTimeout(() => setSuccessMsg(''), 3500); }

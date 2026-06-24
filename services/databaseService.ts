@@ -1,6 +1,6 @@
 
 import { API_BASE, isSupabaseConfigured } from './supabaseClient';
-import { Booking, Employee, TrainingSession, EmployeeRequirement, Site, Company, BookingStatus, User, UserRole, RacDef, Room, Trainer, Feedback, SystemNotification, DataConnector, UnsafeCondition } from '../types';
+import { Booking, Employee, TrainingSession, EmployeeRequirement, Site, Company, BookingStatus, User, UserRole, RacDef, Room, Trainer, Feedback, SystemNotification, DataConnector, UnsafeCondition, RecruitmentProcess, RecruitmentStatus } from '../types';
 
 import { v4 as uuidv4 } from 'uuid';
 
@@ -214,6 +214,65 @@ function mapUnsafeConditionFromDb(c: any): UnsafeCondition {
         mapStatus: c.map_status,
         createdAt: c.created_at,
         resolvedAt: c.resolved_at
+    };
+}
+
+function mapRecruitmentProcessFromDb(r: any): RecruitmentProcess {
+    return {
+        id: r.id,
+        candidateName: r.candidate_name,
+        candidateEmail: r.candidate_email,
+        candidatePhone: r.candidate_phone,
+        candidateIdNumber: r.candidate_id_number,
+        workerType: r.worker_type || 'Prime',
+        primeCompany: r.prime_company,
+        contractorCompany: r.contractor_company,
+        company: r.company,
+        department: r.department,
+        role: r.role,
+        requiredRacs: r.required_racs || [],
+        status: r.status as RecruitmentStatus,
+        requestedBy: r.requested_by,
+        requestedAt: r.requested_at,
+        documents: r.documents || [],
+        amDocuments: r.am_documents || [],
+        temporaryBadgeNumber: r.temporary_badge_number,
+        securityCleared: r.security_cleared,
+        clinicFitnessCleared: r.clinic_fitness_cleared,
+        medicalExam: r.medical_exam || undefined,
+        fitnessCertificate: r.fitness_certificate || undefined,
+        inductionDate: r.induction_date,
+        inductionConfirmed: r.induction_confirmed,
+        trainingCompletedAt: r.training_completed_at,
+        receivedAt: r.received_at,
+        nudgeCount: r.nudge_count || 0,
+        lastNudgeAt: r.last_nudge_at,
+        employeeId: r.employee_id,
+        recordId: r.record_id,
+        requestType: r.request_type || 'Recruitment',
+        equipmentType: r.equipment_type,
+        equipmentId: r.equipment_id,
+        responsiblePersonName: r.responsible_person_name,
+        responsiblePersonPhone: r.responsible_person_phone,
+        safetyInspectionCleared: r.safety_inspection_cleared,
+        safetyInspectionComments: r.safety_inspection_comments,
+        safetyInspectionRecordId: r.safety_inspection_record_id,
+        requiresMedical: r.requires_medical,
+        requiresInduction: r.requires_induction,
+        requiresRac: r.requires_rac,
+        truckModel: r.truck_model,
+        truckRegNumber: r.truck_reg_number,
+        poNumber: r.po_number,
+        accessStartDate: r.access_start_date,
+        accessEndDate: r.access_end_date,
+        canteen: r.canteen || undefined,
+        accessReason: r.access_reason,
+        accessStatus: r.access_status,
+        denialReason: r.denial_reason,
+        accessDocumentRef: r.access_document_ref,
+        areaManagerName: r.area_manager_name,
+        areaManagerPhone: r.area_manager_phone,
+        areaManagerDepartment: r.area_manager_department
     };
 }
 
@@ -673,6 +732,82 @@ export const db = {
             timestamp: l.timestamp,
             aiFix: l.metadata?.aiFix || null
         }));
+    },
+
+    // ─── Recruitment Processes (Mobilization Pipeline) ────────────────────────
+
+    async getRecruitmentProcesses(): Promise<RecruitmentProcess[]> {
+        const raw = await apiFetch<any[]>('/recruitment-processes');
+        return raw.map(mapRecruitmentProcessFromDb);
+    },
+
+    async saveRecruitmentProcess(process: RecruitmentProcess): Promise<RecruitmentProcess> {
+        const payload = {
+            id: process.id,
+            candidate_name: process.candidateName,
+            candidate_email: process.candidateEmail,
+            candidate_phone: process.candidatePhone,
+            candidate_id_number: process.candidateIdNumber,
+            worker_type: process.workerType || 'Prime',
+            prime_company: process.primeCompany,
+            contractor_company: process.contractorCompany,
+            company: process.company,
+            department: process.department,
+            role: process.role,
+            required_racs: process.requiredRacs || [],
+            status: process.status,
+            requested_by: process.requestedBy,
+            requested_at: process.requestedAt,
+            documents: process.documents || [],
+            am_documents: process.amDocuments || [],
+            temporary_badge_number: process.temporaryBadgeNumber,
+            security_cleared: process.securityCleared || false,
+            clinic_fitness_cleared: process.clinicFitnessCleared || false,
+            medical_exam: process.medicalExam || null,
+            fitness_certificate: process.fitnessCertificate || null,
+            induction_date: process.inductionDate || null,
+            induction_confirmed: process.inductionConfirmed || false,
+            training_completed_at: process.trainingCompletedAt || null,
+            received_at: process.receivedAt || null,
+            nudge_count: process.nudgeCount || 0,
+            last_nudge_at: process.lastNudgeAt || null,
+            employee_id: process.employeeId,
+            record_id: process.recordId,
+            request_type: process.requestType || 'Recruitment',
+            equipment_type: process.equipmentType,
+            equipment_id: process.equipmentId,
+            responsible_person_name: process.responsiblePersonName,
+            responsible_person_phone: process.responsiblePersonPhone,
+            safety_inspection_cleared: process.safetyInspectionCleared || false,
+            safety_inspection_comments: process.safetyInspectionComments,
+            safety_inspection_record_id: process.safetyInspectionRecordId,
+            requires_medical: process.requiresMedical !== false,
+            requires_induction: process.requiresInduction !== false,
+            requires_rac: process.requiresRac !== false,
+            truck_model: process.truckModel,
+            truck_reg_number: process.truckRegNumber,
+            po_number: process.poNumber,
+            access_start_date: process.accessStartDate || null,
+            access_end_date: process.accessEndDate || null,
+            canteen: process.canteen || null,
+            access_reason: process.accessReason,
+            access_status: process.accessStatus,
+            denial_reason: process.denialReason,
+            access_document_ref: process.accessDocumentRef,
+            area_manager_name: process.areaManagerName,
+            area_manager_phone: process.areaManagerPhone,
+            area_manager_department: process.areaManagerDepartment
+        };
+        const raw = await post<any>('/recruitment-processes', payload);
+        return mapRecruitmentProcessFromDb(raw);
+    },
+
+    async deleteRecruitmentProcess(id: string): Promise<void> {
+        await del(`/recruitment-processes/${id}`);
+    },
+
+    async deleteAllRecruitmentProcesses(): Promise<void> {
+        await del('/recruitment-processes/all');
     },
 
     // ─── SafeMap Module ─────────────────────────────────────────────────────────

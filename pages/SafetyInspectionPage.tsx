@@ -14,6 +14,7 @@ import type {
 import { RecruitmentStatus } from '../types';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useToast } from '../contexts/ToastContext';
+import { db } from '../services/databaseService';
 
 // ─── Local Storage helpers ────────────────────────────────────────────────────
 const LS_TEMPLATES = 'safety_inspection_templates';
@@ -189,14 +190,11 @@ export function SafetyInspectionPage() {
     const [selectedProcessId, setSelectedProcessId] = useState<string | null>(null);
 
     React.useEffect(() => {
-        try {
-            const saved = localStorage.getItem('mobilization_processes');
-            if (saved) {
-                setProcesses(JSON.parse(saved));
-            }
-        } catch (e) {
-            console.error(e);
-        }
+        db.getRecruitmentProcesses().then(data => {
+            setProcesses(data);
+        }).catch(e => {
+            console.error('Safety: Failed to load processes:', e);
+        });
     }, [activeTab]);
 
     // Builder state
@@ -360,22 +358,19 @@ export function SafetyInspectionPage() {
         // Update mobilization process if linked
         if (selectedProcessId) {
             try {
-                const saved = localStorage.getItem('mobilization_processes');
-                const list = saved ? JSON.parse(saved) : [];
+                const allProcs = await db.getRecruitmentProcesses();
                 const nextStatus = inspectionStatus === 'Pass' ? RecruitmentStatus.SECURITY_PENDING : RecruitmentStatus.FAILED;
-                const updatedList = list.map((p: RecruitmentProcess) => {
-                    if (p.id === selectedProcessId) {
-                        return {
-                            ...p,
-                            status: nextStatus,
-                            safetyInspectionCleared: inspectionStatus === 'Pass',
-                            safetyInspectionComments: findings || correctiveAction || 'Physical inspection completed.',
-                            safetyInspectionRecordId: record.id
-                        };
-                    }
-                    return p;
-                });
-                localStorage.setItem('mobilization_processes', JSON.stringify(updatedList));
+                const target = allProcs.find((p: RecruitmentProcess) => p.id === selectedProcessId);
+                if (target) {
+                    const updatedProc = {
+                        ...target,
+                        status: nextStatus,
+                        safetyInspectionCleared: inspectionStatus === 'Pass',
+                        safetyInspectionComments: findings || correctiveAction || 'Physical inspection completed.',
+                        safetyInspectionRecordId: record.id
+                    };
+                    await db.saveRecruitmentProcess(updatedProc);
+                }
                 setSelectedProcessId(null);
             } catch (e) {
                 console.error(e);

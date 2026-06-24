@@ -616,6 +616,112 @@ const server = http.createServer(async (req, res) => {
         }
 
         // ════════════════════════════════════════════════════════════════════════
+        //  RECRUITMENT PROCESSES (Mobilization Pipeline)
+        // ════════════════════════════════════════════════════════════════════════
+
+        if ((params = matchRoute('GET', '/api/recruitment-processes', req.method, pathname))) {
+            const { rows } = await pool.query('SELECT * FROM recruitment_processes ORDER BY requested_at DESC');
+            return sendJson(res, 200, rows);
+        }
+
+        if ((params = matchRoute('POST', '/api/recruitment-processes', req.method, pathname))) {
+            const body = await parseBody(req);
+            const { rows } = await pool.query(
+                `INSERT INTO recruitment_processes (
+                    id, candidate_name, candidate_email, candidate_phone, candidate_id_number,
+                    worker_type, prime_company, contractor_company, company, department, role,
+                    required_racs, status, requested_by, requested_at,
+                    documents, am_documents, temporary_badge_number,
+                    security_cleared, clinic_fitness_cleared, medical_exam, fitness_certificate,
+                    induction_date, induction_confirmed, training_completed_at, received_at,
+                    nudge_count, last_nudge_at, employee_id, record_id,
+                    request_type, equipment_type, equipment_id,
+                    responsible_person_name, responsible_person_phone,
+                    safety_inspection_cleared, safety_inspection_comments, safety_inspection_record_id,
+                    requires_medical, requires_induction, requires_rac,
+                    truck_model, truck_reg_number, po_number,
+                    access_start_date, access_end_date, canteen,
+                    access_reason, access_status, denial_reason, access_document_ref,
+                    area_manager_name, area_manager_phone, area_manager_department
+                ) VALUES (
+                    $1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,
+                    $21,$22,$23,$24,$25,$26,$27,$28,$29,$30,$31,$32,$33,$34,$35,$36,$37,$38,
+                    $39,$40,$41,$42,$43,$44,$45,$46,$47,$48,$49,$50,$51,$52,$53,$54
+                ) ON CONFLICT (id) DO UPDATE SET
+                    candidate_name=EXCLUDED.candidate_name, candidate_email=EXCLUDED.candidate_email,
+                    candidate_phone=EXCLUDED.candidate_phone, candidate_id_number=EXCLUDED.candidate_id_number,
+                    worker_type=EXCLUDED.worker_type, prime_company=EXCLUDED.prime_company,
+                    contractor_company=EXCLUDED.contractor_company, company=EXCLUDED.company,
+                    department=EXCLUDED.department, role=EXCLUDED.role,
+                    required_racs=EXCLUDED.required_racs, status=EXCLUDED.status,
+                    requested_by=EXCLUDED.requested_by, requested_at=EXCLUDED.requested_at,
+                    documents=EXCLUDED.documents, am_documents=EXCLUDED.am_documents,
+                    temporary_badge_number=EXCLUDED.temporary_badge_number,
+                    security_cleared=EXCLUDED.security_cleared, clinic_fitness_cleared=EXCLUDED.clinic_fitness_cleared,
+                    medical_exam=EXCLUDED.medical_exam, fitness_certificate=EXCLUDED.fitness_certificate,
+                    induction_date=EXCLUDED.induction_date, induction_confirmed=EXCLUDED.induction_confirmed,
+                    training_completed_at=EXCLUDED.training_completed_at, received_at=EXCLUDED.received_at,
+                    nudge_count=EXCLUDED.nudge_count, last_nudge_at=EXCLUDED.last_nudge_at,
+                    employee_id=EXCLUDED.employee_id, record_id=EXCLUDED.record_id,
+                    request_type=EXCLUDED.request_type, equipment_type=EXCLUDED.equipment_type,
+                    equipment_id=EXCLUDED.equipment_id,
+                    responsible_person_name=EXCLUDED.responsible_person_name,
+                    responsible_person_phone=EXCLUDED.responsible_person_phone,
+                    safety_inspection_cleared=EXCLUDED.safety_inspection_cleared,
+                    safety_inspection_comments=EXCLUDED.safety_inspection_comments,
+                    safety_inspection_record_id=EXCLUDED.safety_inspection_record_id,
+                    requires_medical=EXCLUDED.requires_medical, requires_induction=EXCLUDED.requires_induction,
+                    requires_rac=EXCLUDED.requires_rac,
+                    truck_model=EXCLUDED.truck_model, truck_reg_number=EXCLUDED.truck_reg_number,
+                    po_number=EXCLUDED.po_number,
+                    access_start_date=EXCLUDED.access_start_date, access_end_date=EXCLUDED.access_end_date,
+                    canteen=EXCLUDED.canteen,
+                    access_reason=EXCLUDED.access_reason, access_status=EXCLUDED.access_status,
+                    denial_reason=EXCLUDED.denial_reason, access_document_ref=EXCLUDED.access_document_ref,
+                    area_manager_name=EXCLUDED.area_manager_name, area_manager_phone=EXCLUDED.area_manager_phone,
+                    area_manager_department=EXCLUDED.area_manager_department
+                RETURNING *`,
+                [
+                    body.id, body.candidate_name, body.candidate_email, body.candidate_phone, body.candidate_id_number,
+                    body.worker_type || 'Prime', body.prime_company, body.contractor_company,
+                    body.company, body.department, body.role,
+                    JSON.stringify(body.required_racs || []), body.status || 'AM Requested',
+                    body.requested_by, body.requested_at || new Date().toISOString(),
+                    JSON.stringify(body.documents || []), JSON.stringify(body.am_documents || []),
+                    body.temporary_badge_number,
+                    body.security_cleared || false, body.clinic_fitness_cleared || false,
+                    body.medical_exam ? JSON.stringify(body.medical_exam) : null,
+                    body.fitness_certificate ? JSON.stringify(body.fitness_certificate) : null,
+                    body.induction_date || null, body.induction_confirmed || false,
+                    body.training_completed_at || null, body.received_at || null,
+                    body.nudge_count || 0, body.last_nudge_at || null,
+                    body.employee_id, body.record_id,
+                    body.request_type || 'Recruitment', body.equipment_type, body.equipment_id,
+                    body.responsible_person_name, body.responsible_person_phone,
+                    body.safety_inspection_cleared || false, body.safety_inspection_comments,
+                    body.safety_inspection_record_id,
+                    body.requires_medical !== false, body.requires_induction !== false, body.requires_rac !== false,
+                    body.truck_model, body.truck_reg_number, body.po_number,
+                    body.access_start_date || null, body.access_end_date || null,
+                    body.canteen ? JSON.stringify(body.canteen) : null,
+                    body.access_reason, body.access_status, body.denial_reason, body.access_document_ref,
+                    body.area_manager_name, body.area_manager_phone, body.area_manager_department
+                ]
+            );
+            return sendJson(res, 200, rows[0]);
+        }
+
+        if ((params = matchRoute('DELETE', '/api/recruitment-processes/all', req.method, pathname))) {
+            await pool.query('DELETE FROM recruitment_processes');
+            return sendJson(res, 200, { success: true });
+        }
+
+        if ((params = matchRoute('DELETE', '/api/recruitment-processes/:id', req.method, pathname))) {
+            await pool.query('DELETE FROM recruitment_processes WHERE id = $1', [params.id]);
+            return sendJson(res, 200, { success: true });
+        }
+
+        // ════════════════════════════════════════════════════════════════════════
         //  EXEC SQL (FormBuilder)
         // ════════════════════════════════════════════════════════════════════════
 

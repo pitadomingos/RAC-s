@@ -26,10 +26,30 @@ const MobilizationDashboard: React.FC<{ companies?: Company[]; racDefinitions?: 
     };
     
     // Core Workflow State
-    const [processes, setProcesses] = useState<RecruitmentProcess[]>(() => {
-        const saved = localStorage.getItem('mobilization_processes');
-        return saved ? JSON.parse(saved) : [];
-    });
+    const [processes, setProcesses] = useState<RecruitmentProcess[]>([]);
+
+    // Load processes from PostgreSQL on mount
+    useEffect(() => {
+        db.getRecruitmentProcesses().then(data => {
+            setProcesses(data);
+        }).catch(err => console.error('Failed to load recruitment processes:', err));
+    }, []);
+
+    // DB-aware helpers: save changed process to PostgreSQL alongside local state update
+    const persistAndSetProcesses = async (updated: RecruitmentProcess[], changedProcess: RecruitmentProcess) => {
+        setProcesses(updated);
+        try { await db.saveRecruitmentProcess(changedProcess); } catch (e) { console.error('DB save failed:', e); }
+    };
+    const persistNewProcess = async (newProc: RecruitmentProcess, allUpdated: RecruitmentProcess[]) => {
+        setProcesses(allUpdated);
+        try { await db.saveRecruitmentProcess(newProc); } catch (e) { console.error('DB save failed:', e); }
+    };
+    const removeAndDeleteProcess = async (id: string) => {
+        const updated = processes.filter(p => p.id !== id);
+        setProcesses(updated);
+        try { await db.deleteRecruitmentProcess(id); } catch (e) { console.error('DB delete failed:', e); }
+        return updated;
+    };
 
     // Active tab in Mobilization: 'AM' | 'HR' | 'Security' | 'Clinic' | 'Environment'
     const [activeTab, setActiveTab] = useState<'AM' | 'HR' | 'Security' | 'Clinic' | 'Environment'>('AM');
@@ -209,10 +229,33 @@ const MobilizationDashboard: React.FC<{ companies?: Company[]; racDefinitions?: 
     const [indEnv, setIndEnv] = useState(false);
     const [indEvac, setIndEvac] = useState(false);
     const [indPPE, setIndPPE] = useState(false);
-
-    // Persist processes state
+    // Sync processes to PostgreSQL whenever they change (skip initial load)
+    const isInitialLoad = React.useRef(true);
+    const prevProcessesRef = React.useRef<RecruitmentProcess[]>([]);
     useEffect(() => {
-        localStorage.setItem('mobilization_processes', JSON.stringify(processes));
+        if (isInitialLoad.current) {
+            isInitialLoad.current = false;
+            prevProcessesRef.current = processes;
+            return;
+        }
+        // Find changed/new processes and persist them
+        const prevIds = new Set(prevProcessesRef.current.map(p => p.id));
+        const currentIds = new Set(processes.map(p => p.id));
+        
+        // Save changed or new processes
+        for (const proc of processes) {
+            const prev = prevProcessesRef.current.find(p => p.id === proc.id);
+            if (!prev || JSON.stringify(prev) !== JSON.stringify(proc)) {
+                db.saveRecruitmentProcess(proc).catch(e => console.error('DB sync failed:', e));
+            }
+        }
+        // Delete removed processes
+        for (const prevProc of prevProcessesRef.current) {
+            if (!currentIds.has(prevProc.id)) {
+                db.deleteRecruitmentProcess(prevProc.id).catch(e => console.error('DB delete failed:', e));
+            }
+        }
+        prevProcessesRef.current = processes;
     }, [processes]);
 
     const filteredProcesses = React.useMemo(() => {
@@ -1416,20 +1459,28 @@ const MobilizationDashboard: React.FC<{ companies?: Company[]; racDefinitions?: 
         }
     };
 
-    // Clean process (for presentation reset)
+    // Clean process (for reset)
     const handleResetProcesses = async () => {
         if (await confirm(
-            language === 'pt' ? 'Reiniciar Simulação' : 'Reset Simulation',
+            language === 'pt' ? 'Reiniciar Pipeline' : 'Reset Pipeline',
             t.proposal.mobilization.resetConfirm,
             { isDestructive: true }
         )) {
-            localStorage.removeItem('mobilization_processes');
-            setProcesses(DEMO_RECRUITMENT_PROCESSES);
-            setSelectedProcessId(DEMO_RECRUITMENT_PROCESSES[0].id);
-            showToast(
-                language === 'pt' ? 'Simulação reiniciada com sucesso' : 'Simulation reset successfully',
-                'success'
-            );
+            try {
+                await db.deleteAllRecruitmentProcesses();
+                setProcesses([]);
+                setSelectedProcessId(null);
+                showToast(
+                    language === 'pt' ? 'Pipeline reiniciado com sucesso' : 'Pipeline reset successfully',
+                    'success'
+                );
+            } catch (err) {
+                console.error('Failed to reset processes:', err);
+                showToast(
+                    language === 'pt' ? 'Erro ao reiniciar' : 'Failed to reset',
+                    'error'
+                );
+            }
         }
     };
 

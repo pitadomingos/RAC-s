@@ -15,17 +15,7 @@ import { generateAccessDocument } from '../utils/pdfGenerator';
 import { useToast } from '../contexts/ToastContext';
 import { db } from '../services/databaseService';
 
-// ─── Shared localStorage helpers ─────────────────────────────────────────────
-const LS_KEY = 'mobilization_processes';
-function loadProcesses(): RecruitmentProcess[] {
-    try {
-        const saved = localStorage.getItem(LS_KEY);
-        return saved ? JSON.parse(saved) : [];
-    } catch { return []; }
-}
-function saveProcesses(p: RecruitmentProcess[]) {
-    localStorage.setItem(LS_KEY, JSON.stringify(p));
-}
+
 
 function timeSince(iso: string, language: 'en' | 'pt') {
     const diff = Date.now() - new Date(iso).getTime();
@@ -82,7 +72,10 @@ const getZoneLabel = (zone: string, lang: 'en' | 'pt') => {
 export function SecurityPortalPage() {
     const { t, language } = useLanguage();
     const { showToast, confirm } = useToast();
-    const [processes, setProcesses] = useState<RecruitmentProcess[]>(loadProcesses);
+    const [processes, setProcesses] = useState<RecruitmentProcess[]>([]);
+    useEffect(() => {
+        db.getRecruitmentProcesses().then(setProcesses).catch(err => console.error('Security: Failed to load processes:', err));
+    }, []);
     const [activeTab, setActiveTab] = useState<'queue' | 'cleared' | 'badges' | 'formbuilder'>('queue');
     const [selectedId, setSelectedId] = useState<string | null>(null);
     const [search, setSearch] = useState('');
@@ -135,7 +128,7 @@ export function SecurityPortalPage() {
     function update(updated: RecruitmentProcess) {
         const list = processes.map(p => p.id === updated.id ? updated : p);
         setProcesses(list);
-        saveProcesses(list);
+        db.saveRecruitmentProcess(updated).catch(e => console.error('Security: DB save failed:', e));
     }
 
     function toast(msg: string) { 

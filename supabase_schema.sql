@@ -829,6 +829,101 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
+-- ─── 20. RECRUITMENT_PROCESSES (Mobilization Pipeline) ──────────────────────
+
+CREATE TABLE IF NOT EXISTS public.recruitment_processes (
+    id VARCHAR(100) PRIMARY KEY,
+    candidate_name VARCHAR(255) NOT NULL,
+    candidate_email VARCHAR(255),
+    candidate_phone VARCHAR(100),
+    candidate_id_number VARCHAR(100),
+    worker_type VARCHAR(50) DEFAULT 'Prime' CHECK (worker_type IN ('Prime', 'Contractor')),
+    prime_company VARCHAR(255),
+    contractor_company VARCHAR(255),
+    company VARCHAR(255),
+    department VARCHAR(255),
+    role VARCHAR(255),
+    required_racs JSONB DEFAULT '[]'::jsonb,
+    status VARCHAR(100) NOT NULL DEFAULT 'AM Requested',
+    requested_by VARCHAR(255),
+    requested_at TIMESTAMPTZ DEFAULT now(),
+    documents JSONB DEFAULT '[]'::jsonb,
+    am_documents JSONB DEFAULT '[]'::jsonb,
+    temporary_badge_number VARCHAR(100),
+    security_cleared BOOLEAN DEFAULT false,
+    clinic_fitness_cleared BOOLEAN DEFAULT false,
+    medical_exam JSONB,
+    fitness_certificate JSONB,
+    induction_date TIMESTAMPTZ,
+    induction_confirmed BOOLEAN DEFAULT false,
+    training_completed_at TIMESTAMPTZ,
+    received_at TIMESTAMPTZ,
+    nudge_count INTEGER DEFAULT 0,
+    last_nudge_at TIMESTAMPTZ,
+    employee_id VARCHAR(100),
+    record_id VARCHAR(100),
+    request_type VARCHAR(50) DEFAULT 'Recruitment',
+    equipment_type VARCHAR(255),
+    equipment_id VARCHAR(255),
+    responsible_person_name VARCHAR(255),
+    responsible_person_phone VARCHAR(100),
+    safety_inspection_cleared BOOLEAN DEFAULT false,
+    safety_inspection_comments TEXT,
+    safety_inspection_record_id VARCHAR(100),
+    requires_medical BOOLEAN DEFAULT true,
+    requires_induction BOOLEAN DEFAULT true,
+    requires_rac BOOLEAN DEFAULT true,
+    truck_model VARCHAR(255),
+    truck_reg_number VARCHAR(100),
+    po_number VARCHAR(100),
+    access_start_date TIMESTAMPTZ,
+    access_end_date TIMESTAMPTZ,
+    canteen JSONB,
+    access_reason TEXT,
+    access_status VARCHAR(20),
+    denial_reason TEXT,
+    access_document_ref VARCHAR(255),
+    area_manager_name VARCHAR(255),
+    area_manager_phone VARCHAR(100),
+    area_manager_department VARCHAR(255),
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS idx_recruitment_processes_status ON public.recruitment_processes(status);
+CREATE INDEX IF NOT EXISTS idx_recruitment_processes_company ON public.recruitment_processes(company);
+
+CREATE OR REPLACE FUNCTION update_recruitment_processes_updated_at()
+RETURNS TRIGGER AS $$
+BEGIN
+    NEW.updated_at = now();
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS trg_recruitment_processes_updated_at ON public.recruitment_processes;
+CREATE TRIGGER trg_recruitment_processes_updated_at
+    BEFORE UPDATE ON public.recruitment_processes
+    FOR EACH ROW
+    EXECUTE FUNCTION update_recruitment_processes_updated_at();
+
+ALTER TABLE public.recruitment_processes ENABLE ROW LEVEL SECURITY;
+
+DO $$ BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'recruitment_processes' AND policyname = 'recruitment_processes_select_policy') THEN
+        CREATE POLICY "recruitment_processes_select_policy" ON public.recruitment_processes FOR SELECT USING (true);
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'recruitment_processes' AND policyname = 'recruitment_processes_insert_policy') THEN
+        CREATE POLICY "recruitment_processes_insert_policy" ON public.recruitment_processes FOR INSERT WITH CHECK (true);
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'recruitment_processes' AND policyname = 'recruitment_processes_update_policy') THEN
+        CREATE POLICY "recruitment_processes_update_policy" ON public.recruitment_processes FOR UPDATE USING (true);
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'recruitment_processes' AND policyname = 'recruitment_processes_delete_policy') THEN
+        CREATE POLICY "recruitment_processes_delete_policy" ON public.recruitment_processes FOR DELETE USING (true);
+    END IF;
+END $$;
+
 -- ============================================================
 -- SCHEMA DEPLOYMENT COMPLETE
 -- ============================================================
