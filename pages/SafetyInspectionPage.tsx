@@ -331,7 +331,7 @@ export function SafetyInspectionPage() {
         setTimeout(() => photoInputRef.current?.click(), 50);
     };
 
-    const submitInspection = () => {
+    const submitInspection = async () => {
         if (!conductTemplate || !equipmentId || !inspectorName) {
             showAlert('Validation Error', 'Please fill in Equipment ID and Inspector Name.');
             return;
