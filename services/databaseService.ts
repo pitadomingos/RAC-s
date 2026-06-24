@@ -6,16 +6,31 @@ import { v4 as uuidv4 } from 'uuid';
 
 // ─── API helper ─────────────────────────────────────────────────────────────────
 
+let _serverReachable: boolean | null = null;
+
 async function apiFetch<T>(path: string, options?: RequestInit): Promise<T> {
-    const res = await fetch(`${API_BASE}${path}`, {
-        headers: { 'Content-Type': 'application/json' },
-        ...options
-    });
-    if (!res.ok) {
-        const err = await res.json().catch(() => ({ error: res.statusText }));
-        throw new Error(err.error || `API ${res.status}`);
+    try {
+        const res = await fetch(`${API_BASE}${path}`, {
+            headers: { 'Content-Type': 'application/json' },
+            ...options
+        });
+        if (!res.ok) {
+            const err = await res.json().catch(() => ({ error: res.statusText }));
+            throw new Error(err.error || `API ${res.status}`);
+        }
+        _serverReachable = true;
+        return res.json();
+    } catch (e: any) {
+        // If server is unreachable (static deployment / no backend), fail gracefully
+        if (e.message?.includes('Failed to fetch') || e.message?.includes('API 404') || e.message?.includes('NetworkError') || e.message?.includes('ECONNREFUSED')) {
+            if (_serverReachable !== false) {
+                console.warn('⚠️ API server not reachable — running in offline mode. Data will be empty.');
+                _serverReachable = false;
+            }
+            return [] as unknown as T;
+        }
+        throw e;
     }
-    return res.json();
 }
 
 function post<T>(path: string, body: any): Promise<T> {
