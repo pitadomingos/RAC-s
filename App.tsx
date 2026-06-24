@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useMemo, lazy, Suspense } from 'react';
-import { HashRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { HashRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import Layout from './components/Layout';
 
 // Lazy load page components for route-based code-splitting
@@ -53,6 +53,7 @@ import { db } from './services/databaseService';
 import { isSupabaseConfigured, supabase } from './services/supabaseClient';
 import { UserRole, Booking, EmployeeRequirement, TrainingSession, RacDef, Site, Company, SystemNotification, Employee, User, Room, Trainer, BookingStatus, UnsafeCondition } from './types';
 import { v4 as uuidv4 } from 'uuid';
+import { PageErrorBoundary } from './components/PageErrorBoundary';
 import { Loader2, Database, AlertCircle, CheckCircle2, Cloud, RefreshCw } from 'lucide-react';
 
 const stringifyError = (err: any): string => {
@@ -93,6 +94,18 @@ const PageLoadingFallback: React.FC = () => {
         <p className="text-slate-500 text-xs mt-2 uppercase tracking-widest">{t.app.fetchingResources}</p>
     </div>
   );
+};
+
+const SafeRoutesWrapper: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+    // We import useLocation dynamically or pass it. We are already inside Router here, so we can't use useLocation at the App level easily, but SafeRoutesWrapper is inside Router!
+    // However, AppContent is inside Router? No, Router is rendered inside AppContent.
+    // Wait, AppContent renders <Router>. So we need to put SafeRoutesWrapper INSIDE the Router.
+    const location = useLocation();
+    return (
+        <PageErrorBoundary key={location.pathname}>
+            {children}
+        </PageErrorBoundary>
+    );
 };
 
 const AppContent: React.FC = () => {
@@ -570,43 +583,45 @@ const AppContent: React.FC = () => {
               <Route path="/print-cards" element={<CardsPage bookings={bookings} requirements={requirements} racDefinitions={racDefinitions} sessions={sessions} userRole={user?.role} companies={companies} />} />
               <Route path="*" element={
                 <Layout userRole={user?.role || UserRole.USER} setUserRole={() => {}} notifications={notifications} clearNotifications={() => setNotifications([])} sites={sites} currentSiteId={currentSiteId} setCurrentSiteId={setCurrentSiteId} companies={companies} activeModule={activeModule} onSwitchModule={handleSelectModule}>
-                  <Routes>
-                    <Route path="/" element={<RoleBasedHome userRole={user?.role || UserRole.USER} dashboardProps={{ bookings, requirements, sessions, userRole: user?.role, racDefinitions, currentSiteId, companies }} />} />
-                    <Route path="/recruitment" element={<MobilizationDashboard companies={companies} racDefinitions={racDefinitions} />} />
-                    <Route path="/database" element={<DatabasePage employees={filteredEmployees} bookings={bookings} requirements={requirements} updateRequirements={handleUpdateRequirement} sessions={sessions} onUpdateEmployee={handleUpdateEmployee} onDeleteEmployee={handleDeleteEmployee} racDefinitions={racDefinitions} addNotification={addNotification} currentSiteId={currentSiteId} companies={companies} activeModule={activeModule} />} />
-                    <Route path="/booking" element={<BookingForm addBookings={handleAddBookings} sessions={sessions} userRole={user?.role || UserRole.USER} existingBookings={bookings} addNotification={addNotification} racDefinitions={racDefinitions} companies={companies} />} />
-                    <Route path="/results" element={<ResultsPage bookings={bookings} updateBookingStatus={handleUpdateBookingStatus} importBookings={handleImportBookings} userRole={user?.role || UserRole.USER} sessions={sessions} requirements={requirements} sites={sites} racDefinitions={racDefinitions} addNotification={addNotification} currentSiteId={currentSiteId} onRefresh={refreshData} />} />
-                    <Route path="/users" element={<UserManagement users={filteredUsers} onUpdateUser={handleUpdateUser} onDeleteUser={handleDeleteUser} addNotification={addNotification} sites={sites} currentSiteId={currentSiteId} companies={companies} activeModule={activeModule} />} />
-                    <Route path="/settings" element={<SettingsPage racDefinitions={racDefinitions} onUpdateRacs={handleUpdateRacs} rooms={rooms} onUpdateRooms={handleUpdateRooms} trainers={trainers} onUpdateTrainers={handleUpdateTrainers} sites={sites} onUpdateSites={handleUpdateSites} companies={companies} onUpdateCompanies={handleUpdateCompanies} userRole={user?.role} addNotification={addNotification} currentSiteId={currentSiteId} />} />
-                    <Route path="/schedule" element={<ScheduleTraining sessions={sessions} setSessions={setSessions} rooms={rooms} trainers={trainers} racDefinitions={racDefinitions} addNotification={addNotification} currentSiteId={currentSiteId} bookings={bookings} employees={filteredEmployees} requirements={requirements} onAddBookings={handleAddBookings} />} />
-                    <Route path="/trainer-input" element={<TrainerInputPage bookings={bookings} updateBookings={handleTrainerUpdateBookings} sessions={sessions} userRole={user?.role} currentUserName={user?.name} racDefinitions={racDefinitions} />} />
-                    <Route path="/manuals" element={<UserManualsPage userRole={user?.role || UserRole.USER} />} />
-                    <Route path="/tech-docs" element={<TechnicalDocs />} />
-                    <Route path="/system-blueprint" element={<SystemTechnicalManual />} />
-                    <Route path="/logs" element={<LogsPage />} />
-                    <Route path="/request-cards" element={<RequestCardsPage bookings={bookings} requirements={requirements} racDefinitions={racDefinitions} sessions={sessions} userRole={user?.role || UserRole.USER} currentSiteId={currentSiteId} companies={companies} />} />
-                    <Route path="/integration" element={<IntegrationHub userRole={user?.role || UserRole.USER} />} />
-                    <Route path="/reports" element={<ReportsPage bookings={bookings} sessions={sessions} requirements={requirements} sites={sites} currentSiteId={currentSiteId} racDefinitions={racDefinitions} companies={companies} />} />
-                    <Route path="/enterprise-dashboard" element={<EnterpriseDashboard sites={sites} bookings={bookings} requirements={requirements} userRole={user?.role} racDefinitions={racDefinitions} companies={companies} />} />
-                    <Route path="/executive-dashboard" element={<ExecutiveDashboard sites={sites} bookings={bookings} requirements={requirements} userRole={user?.role} companies={companies} unsafeConditions={unsafeConditions} />} />
-                    <Route path="/alcohol-control" element={<AlcoholIntegration addNotification={addNotification} />} />
-                    <Route path="/messages" element={<MessageLogPage />} />
-                    <Route path="/site-governance" element={<SiteGovernancePage sites={sites} setSites={setSites} racDefinitions={racDefinitions} bookings={bookings} requirements={requirements} updateRequirements={handleUpdateRequirement} />} />
-                    <Route path="/subcontractors" element={<SubcontractorPage companies={companies} />} />
-                    <Route path="/safety-inspections" element={<SafetyInspectionPage />} />
-                    <Route path="/hr-portal" element={<HRPortalPage />} />
-                    <Route path="/security-portal" element={<SecurityPortalPage />} />
-                    <Route path="/safemap" element={<Navigate to="/safemap/global" />} />
-                    <Route path="/safemap/new" element={<SafeMapNew onConditionAdded={refreshSafeMapData} />} />
-                    <Route path="/safemap/global" element={<SafeMapGlobal conditions={unsafeConditions} onConditionUpdated={refreshSafeMapData} users={users} />} />
-                    <Route path="/safemap/report" element={<SafeMapReport conditions={unsafeConditions} onConditionUpdated={refreshSafeMapData} users={users} companies={companies} />} />
-                    <Route path="/safemap/analytics" element={<SafeMapAnalytics conditions={unsafeConditions} companies={companies} />} />
-                    <Route path="/presentation" element={<PresentationPage />} />
-                    <Route path="/clinic-portal" element={<ClinicPortalPage />} />
-                    <Route path="/bookings" element={<BookingsPage bookings={bookings} sessions={sessions} updateBookingStatus={handleUpdateBookingStatus} userRole={user?.role} sites={sites} racDefinitions={racDefinitions} currentSiteId={currentSiteId} />} />
-                    
-                    <Route path="*" element={<Navigate to="/" replace />} />
-                  </Routes>
+                  <SafeRoutesWrapper>
+                    <Routes>
+                      <Route path="/" element={<RoleBasedHome userRole={user?.role || UserRole.USER} dashboardProps={{ bookings, requirements, sessions, userRole: user?.role, racDefinitions, currentSiteId, companies }} />} />
+                      <Route path="/recruitment" element={<MobilizationDashboard companies={companies} racDefinitions={racDefinitions} />} />
+                      <Route path="/database" element={<DatabasePage employees={filteredEmployees} bookings={bookings} requirements={requirements} updateRequirements={handleUpdateRequirement} sessions={sessions} onUpdateEmployee={handleUpdateEmployee} onDeleteEmployee={handleDeleteEmployee} racDefinitions={racDefinitions} addNotification={addNotification} currentSiteId={currentSiteId} companies={companies} activeModule={activeModule} />} />
+                      <Route path="/booking" element={<BookingForm addBookings={handleAddBookings} sessions={sessions} userRole={user?.role || UserRole.USER} existingBookings={bookings} addNotification={addNotification} racDefinitions={racDefinitions} companies={companies} />} />
+                      <Route path="/results" element={<ResultsPage bookings={bookings} updateBookingStatus={handleUpdateBookingStatus} importBookings={handleImportBookings} userRole={user?.role || UserRole.USER} sessions={sessions} requirements={requirements} sites={sites} racDefinitions={racDefinitions} addNotification={addNotification} currentSiteId={currentSiteId} onRefresh={refreshData} />} />
+                      <Route path="/users" element={<UserManagement users={filteredUsers} onUpdateUser={handleUpdateUser} onDeleteUser={handleDeleteUser} addNotification={addNotification} sites={sites} currentSiteId={currentSiteId} companies={companies} activeModule={activeModule} />} />
+                      <Route path="/settings" element={<SettingsPage racDefinitions={racDefinitions} onUpdateRacs={handleUpdateRacs} rooms={rooms} onUpdateRooms={handleUpdateRooms} trainers={trainers} onUpdateTrainers={handleUpdateTrainers} sites={sites} onUpdateSites={handleUpdateSites} companies={companies} onUpdateCompanies={handleUpdateCompanies} userRole={user?.role} addNotification={addNotification} currentSiteId={currentSiteId} />} />
+                      <Route path="/schedule" element={<ScheduleTraining sessions={sessions} setSessions={setSessions} rooms={rooms} trainers={trainers} racDefinitions={racDefinitions} addNotification={addNotification} currentSiteId={currentSiteId} bookings={bookings} employees={filteredEmployees} requirements={requirements} onAddBookings={handleAddBookings} />} />
+                      <Route path="/trainer-input" element={<TrainerInputPage bookings={bookings} updateBookings={handleTrainerUpdateBookings} sessions={sessions} userRole={user?.role} currentUserName={user?.name} racDefinitions={racDefinitions} />} />
+                      <Route path="/manuals" element={<UserManualsPage userRole={user?.role || UserRole.USER} />} />
+                      <Route path="/tech-docs" element={<TechnicalDocs />} />
+                      <Route path="/system-blueprint" element={<SystemTechnicalManual />} />
+                      <Route path="/logs" element={<LogsPage />} />
+                      <Route path="/request-cards" element={<RequestCardsPage bookings={bookings} requirements={requirements} racDefinitions={racDefinitions} sessions={sessions} userRole={user?.role || UserRole.USER} currentSiteId={currentSiteId} companies={companies} />} />
+                      <Route path="/integration" element={<IntegrationHub userRole={user?.role || UserRole.USER} />} />
+                      <Route path="/reports" element={<ReportsPage bookings={bookings} sessions={sessions} requirements={requirements} sites={sites} currentSiteId={currentSiteId} racDefinitions={racDefinitions} companies={companies} />} />
+                      <Route path="/enterprise-dashboard" element={<EnterpriseDashboard sites={sites} bookings={bookings} requirements={requirements} userRole={user?.role} racDefinitions={racDefinitions} companies={companies} />} />
+                      <Route path="/executive-dashboard" element={<ExecutiveDashboard sites={sites} bookings={bookings} requirements={requirements} userRole={user?.role} companies={companies} unsafeConditions={unsafeConditions} />} />
+                      <Route path="/alcohol-control" element={<AlcoholIntegration addNotification={addNotification} />} />
+                      <Route path="/messages" element={<MessageLogPage />} />
+                      <Route path="/site-governance" element={<SiteGovernancePage sites={sites} setSites={setSites} racDefinitions={racDefinitions} bookings={bookings} requirements={requirements} updateRequirements={handleUpdateRequirement} />} />
+                      <Route path="/subcontractors" element={<SubcontractorPage companies={companies} />} />
+                      <Route path="/safety-inspections" element={<SafetyInspectionPage />} />
+                      <Route path="/hr-portal" element={<HRPortalPage />} />
+                      <Route path="/security-portal" element={<SecurityPortalPage />} />
+                      <Route path="/safemap" element={<Navigate to="/safemap/global" />} />
+                      <Route path="/safemap/new" element={<SafeMapNew onConditionAdded={refreshSafeMapData} />} />
+                      <Route path="/safemap/global" element={<SafeMapGlobal conditions={unsafeConditions} onConditionUpdated={refreshSafeMapData} users={users} />} />
+                      <Route path="/safemap/report" element={<SafeMapReport conditions={unsafeConditions} onConditionUpdated={refreshSafeMapData} users={users} companies={companies} />} />
+                      <Route path="/safemap/analytics" element={<SafeMapAnalytics conditions={unsafeConditions} companies={companies} />} />
+                      <Route path="/presentation" element={<PresentationPage />} />
+                      <Route path="/clinic-portal" element={<ClinicPortalPage />} />
+                      <Route path="/bookings" element={<BookingsPage bookings={bookings} sessions={sessions} updateBookingStatus={handleUpdateBookingStatus} userRole={user?.role} sites={sites} racDefinitions={racDefinitions} currentSiteId={currentSiteId} />} />
+                      
+                      <Route path="*" element={<Navigate to="/" replace />} />
+                    </Routes>
+                  </SafeRoutesWrapper>
                   <GeminiAdvisor />
                 </Layout>
               } />
