@@ -144,8 +144,10 @@ export default async function handler(req, res) {
         DB_PORT: process.env.DB_PORT ? 'SET' : 'NOT SET',
         DB_NAME: process.env.DB_NAME ? 'SET' : 'NOT SET',
         DB_USER: process.env.DB_USER ? 'SET' : 'NOT SET',
-        DB_PASSWORD: process.env.DB_PASSWORD ? 'SET' : 'NOT SET'
-      }
+        DB_PASSWORD: process.env.DB_PASSWORD ? 'SET' : 'NOT SET',
+        DB_HOS: process.env.DB_HOS ? 'SET' : 'NOT SET'
+      },
+      env_keys: Object.keys(process.env)
     });
   }
 }
