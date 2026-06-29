@@ -13,6 +13,9 @@ function getPool() {
       user: process.env.DB_USER,
       password: process.env.DB_PASSWORD,
       ssl: { rejectUnauthorized: false }, // safe for most hosted DBs
+      max: 2,
+      idleTimeoutMillis: 5000,
+      connectionTimeoutMillis: 5000,
     });
   }
   return pool;
@@ -136,6 +139,6 @@ export default async function handler(req, res) {
 
   } catch (err) {
     console.error("ERROR:", err.message);
-    return send(res, 200, { error: err.message, stack: err.stack });
+    return send(res, 500, { error: err.message });
   }
 }
