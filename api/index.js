@@ -139,6 +139,6 @@ export default async function handler(req, res) {
 
   } catch (err) {
     console.error("ERROR:", err.message);
-    return send(res, 200, { error: err.message, stack: err.stack });
+    return send(res, 500, { error: err.message });
   }
 }
