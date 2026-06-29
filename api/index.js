@@ -1,4 +1,5 @@
-const { Pool } = require('pg');
+import pg from 'pg';
+const { Pool } = pg;
 
 // ───────── DB CONNECTION ─────────
 let pool;
@@ -23,7 +24,7 @@ function send(res, status, data) {
 }
 
 // ───────── MAIN HANDLER ─────────
-module.exports = async (req, res) => {
+export default async function handler(req, res) {
 
   // ✅ CORS (important)
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -137,4 +138,4 @@ module.exports = async (req, res) => {
     console.error("ERROR:", err.message);
     return send(res, 500, { error: err.message });
   }
-};
+}
