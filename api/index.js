@@ -1,170 +1,140 @@
 const { Pool } = require('pg');
-const fs = require('fs');
-const path = require('path');
 
-// ─── DB CONNECTION ─────────────────────────────────────────────
+// ───────── DB CONNECTION ─────────
 let pool;
 
 function getPool() {
-    if (!pool) {
-        let sslConfig = false;
-
-        try {
-            const caPath = path.join(__dirname, 'ca.pem');
-            if (fs.existsSync(caPath)) {
-                const caCert = fs.readFileSync(caPath, 'utf8');
-                sslConfig = { rejectUnauthorized: true, ca: caCert };
-            }
-        } catch (err) {
-            console.log("CA cert not found");
-        }
-
-        if (process.env.DB_CA_CERT) {
-            sslConfig = {
-                rejectUnauthorized: true,
-                ca: process.env.DB_CA_CERT
-            };
-        }
-
-        pool = new Pool({
-            host: process.env.DB_HOST,
-            port: parseInt(process.env.DB_PORT || '5432'),
-            database: process.env.DB_NAME,
-            user: process.env.DB_USER,
-            password: process.env.DB_PASSWORD,
-            ssl: sslConfig,
-            max: 5
-        });
-
-        pool.on('error', (err) => {
-            console.error('DB Pool Error:', err.message);
-        });
-    }
-
-    return pool;
+  if (!pool) {
+    pool = new Pool({
+      host: process.env.DB_HOST,
+      port: parseInt(process.env.DB_PORT || '5432'),
+      database: process.env.DB_NAME,
+      user: process.env.DB_USER,
+      password: process.env.DB_PASSWORD,
+      ssl: { rejectUnauthorized: false }, // safe for most hosted DBs
+    });
+  }
+  return pool;
 }
 
-// ─── HELPERS ─────────────────────────────────────────────
-function send(res, code, data) {
-    res.status(code).json(data);
+// ───────── HELPER ─────────
+function send(res, status, data) {
+  res.status(status).json(data);
 }
 
-function matchRoute(method, route, reqMethod, path) {
-    if (method !== reqMethod) return false;
-    return route === path;
-}
-
-// ─── MAIN HANDLER ─────────────────────────────────────────────
+// ───────── MAIN HANDLER ─────────
 module.exports = async (req, res) => {
 
-    // ✅ CORS
-    res.setHeader('Access-Control-Allow-Origin', '*');
-    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  // ✅ CORS (important)
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET,POST,PUT,DELETE,OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
-    if (req.method === 'OPTIONS') {
-        return res.status(200).end();
+  if (req.method === 'OPTIONS') {
+    return res.status(200).end();
+  }
+
+  const db = getPool();
+
+  // ✅ CLEAN & FIX PATH (CRITICAL)
+  let path = req.url.split('?')[0];
+
+  // remove trailing slash
+  if (path.length > 1 && path.endsWith('/')) {
+    path = path.slice(0, -1);
+  }
+
+  // ensure /api prefix
+  if (!path.startsWith('/api')) {
+    path = '/api' + path;
+  }
+
+  console.log("REQUEST:", req.method, path);
+
+  try {
+
+    // ✅ HEALTH CHECK
+    if (req.method === 'GET' && path === '/api/health') {
+      return send(res, 200, { status: "ok" });
     }
 
-    const db = getPool();
-
-    // ✅ FIXED PATH HANDLING (THIS SOLVES YOUR 404 PROBLEM)
-    let pathname = req.url.split('?')[0];
-
-    // Normalize path (VERY IMPORTANT)
-    if (!pathname.startsWith('/api')) {
-        pathname = '/api' + pathname;
+    // ✅ COMPANIES
+    if (req.method === 'GET' && path === '/api/companies') {
+      const { rows } = await db.query('SELECT * FROM companies');
+      return send(res, 200, rows);
     }
 
-    console.log("REQUEST:", req.method, pathname);
-
-    const body = req.body || {};
-
-    try {
-
-        // ✅ HEALTH CHECK
-        if (matchRoute('GET', '/api/health', req.method, pathname)) {
-            const { rows } = await db.query('SELECT NOW()');
-            return send(res, 200, { status: "ok", time: rows[0].now });
-        }
-
-        // ✅ COMPANIES
-        if (matchRoute('GET', '/api/companies', req.method, pathname)) {
-            const { rows } = await db.query('SELECT * FROM companies ORDER BY name');
-            return send(res, 200, rows);
-        }
-
-        // ✅ USERS
-        if (matchRoute('GET', '/api/users', req.method, pathname)) {
-            const { rows } = await db.query('SELECT * FROM users ORDER BY name');
-            return send(res, 200, rows);
-        }
-
-        // ✅ SITES
-        if (matchRoute('GET', '/api/sites', req.method, pathname)) {
-            const { rows } = await db.query('SELECT * FROM sites ORDER BY name');
-            return send(res, 200, rows);
-        }
-
-        // ✅ EMPLOYEES
-        if (matchRoute('GET', '/api/employees', req.method, pathname)) {
-            const { rows } = await db.query('SELECT * FROM employees ORDER BY name');
-            return send(res, 200, rows);
-        }
-
-        // ✅ SESSIONS
-        if (matchRoute('GET', '/api/sessions', req.method, pathname)) {
-            const { rows } = await db.query('SELECT * FROM training_sessions ORDER BY date ASC');
-            return send(res, 200, rows);
-        }
-
-        // ✅ BOOKINGS
-        if (matchRoute('GET', '/api/bookings', req.method, pathname)) {
-            const { rows } = await db.query('SELECT * FROM records');
-            return send(res, 200, rows);
-        }
-
-        // ✅ WAITLIST
-        if (matchRoute('GET', '/api/waitlist', req.method, pathname)) {
-            const { rows } = await db.query('SELECT * FROM waiting_list');
-            return send(res, 200, rows);
-        }
-
-        // ✅ REQUIREMENTS
-        if (matchRoute('GET', '/api/requirements', req.method, pathname)) {
-            const { rows } = await db.query('SELECT * FROM employee_requirements');
-            return send(res, 200, rows);
-        }
-
-        // ✅ ROOMS
-        if (matchRoute('GET', '/api/rooms', req.method, pathname)) {
-            const { rows } = await db.query('SELECT * FROM rooms');
-            return send(res, 200, rows);
-        }
-
-        // ✅ RAC DEFINITIONS
-        if (matchRoute('GET', '/api/rac-definitions', req.method, pathname)) {
-            const { rows } = await db.query('SELECT * FROM rac_definitions');
-            return send(res, 200, rows);
-        }
-
-        // ✅ TRAINERS
-        if (matchRoute('GET', '/api/trainers', req.method, pathname)) {
-            const { rows } = await db.query('SELECT * FROM trainers');
-            return send(res, 200, rows);
-        }
-
-        // ✅ UNSAFE CONDITIONS
-        if (matchRoute('GET', '/api/unsafe-conditions', req.method, pathname)) {
-            const { rows } = await db.query('SELECT * FROM unsafe_conditions');
-            return send(res, 200, rows);
-        }
-
-        // ❌ NOT FOUND
-        return send(res, 404, { error: "Route not found", path: pathname });
-
-    } catch (err) {
-        console.error("ERROR:", err);
-        return send(res, 500, { error: err.message });
+    // ✅ USERS
+    if (req.method === 'GET' && path === '/api/users') {
+      const { rows } = await db.query('SELECT * FROM users');
+      return send(res, 200, rows);
     }
+
+    // ✅ SITES
+    if (req.method === 'GET' && path === '/api/sites') {
+      const { rows } = await db.query('SELECT * FROM sites');
+      return send(res, 200, rows);
+    }
+
+    // ✅ EMPLOYEES
+    if (req.method === 'GET' && path === '/api/employees') {
+      const { rows } = await db.query('SELECT * FROM employees');
+      return send(res, 200, rows);
+    }
+
+    // ✅ SESSIONS
+    if (req.method === 'GET' && path === '/api/sessions') {
+      const { rows } = await db.query('SELECT * FROM training_sessions');
+      return send(res, 200, rows);
+    }
+
+    // ✅ BOOKINGS
+    if (req.method === 'GET' && path === '/api/bookings') {
+      const { rows } = await db.query('SELECT * FROM records');
+      return send(res, 200, rows);
+    }
+
+    // ✅ WAITLIST
+    if (req.method === 'GET' && path === '/api/waitlist') {
+      const { rows } = await db.query('SELECT * FROM waiting_list');
+      return send(res, 200, rows);
+    }
+
+    // ✅ REQUIREMENTS
+    if (req.method === 'GET' && path === '/api/requirements') {
+      const { rows } = await db.query('SELECT * FROM employee_requirements');
+      return send(res, 200, rows);
+    }
+
+    // ✅ ROOMS
+    if (req.method === 'GET' && path === '/api/rooms') {
+      const { rows } = await db.query('SELECT * FROM rooms');
+      return send(res, 200, rows);
+    }
+
+    // ✅ RAC DEFINITIONS
+    if (req.method === 'GET' && path === '/api/rac-definitions') {
+      const { rows } = await db.query('SELECT * FROM rac_definitions');
+      return send(res, 200, rows);
+    }
+
+    // ✅ TRAINERS
+    if (req.method === 'GET' && path === '/api/trainers') {
+      const { rows } = await db.query('SELECT * FROM trainers');
+      return send(res, 200, rows);
+    }
+
+    // ✅ UNSAFE CONDITIONS
+    if (req.method === 'GET' && path === '/api/unsafe-conditions') {
+      const { rows } = await db.query('SELECT * FROM unsafe_conditions');
+      return send(res, 200, rows);
+    }
+
+    // ❌ NOT FOUND
+    return send(res, 404, { error: "Route not found", path });
+
+  } catch (err) {
+    console.error("ERROR:", err.message);
+    return send(res, 500, { error: err.message });
+  }
 };
